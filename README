@@ -1,0 +1,4 @@
+flowgrind grinds flows. 
+
+./configure && make
+./flowgrind -h

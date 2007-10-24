@@ -1,0 +1,18 @@
++rewrite all the timing code to not contain struct timeval anymore but just relative times (jiffies like)
++unify client/server
++recover UDP option
++check what DEBUG_MSGs might be worth a "real" message
++(try to)track route changes (IP route record option)
++add DCCP/SCTP support
++add control connection less mode (-T: traffic only)
++fix 32/64-, network/host byte order issues
++sendfile() support (open("/dev/zero") at first)
++use urgend data for reporting? (maybe even SIGIO)
++functions to generate sending rate
++request/response test
++meet more the spirit of IPPM (connectivity test, etc.)
++fix inter arival time calculation for rate limited flows
++for rate rate limited flows make receiving peer check if the inter arrival times are distributed as choosen 
++add sequence numbers for block (even tcp) to meassure application level throuput (and to disclose aggregate queue capacity along network path)
++more timing precision!
++save whole RTT/IAT distribution

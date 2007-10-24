@@ -1,0 +1,417 @@
+#!/bin/sh
+
+export TMPDIR=/tmp/plot.$$
+
+isnumber ()    
+{             
+  [ $# -eq 1 ] || return 1
+  case $1 in 
+    *[!0-9]*|"") return 1;; 
+              *) return 0;; 
+  esac 
+} 
+
+mkdir -p $TMPDIR 
+
+ROWS=6
+LEFT=0
+RIGHT=0
+while [ $# -gt 0 ]; do
+	case "$1" in
+		"--epslatex")		export TERMINAL=epslatex;;
+		"--pdf")		export TERMINAL=pdf;;
+		"--average-flows")	AGGREGATE_SINGLE_FLOWS=1;;
+		"--left")		if isnumber $2 && [ $2 -gt 0 ]; then 
+						export LEFT=$2; 
+						shift; 
+					else 
+						echo "'left' requires a relative timestamp as a parameter."; 
+						exit; 
+					fi ;;
+		"--right")		if isnumber $2 && [ $2 -gt 0 ]; then 
+						export RIGHT=$2; 
+						shift; 
+					else 
+						echo "'right' requires a relative timestamp as a parameter."; 
+						exit; 
+					fi ;;
+		"--resample-flows")	if isnumber $2 && [ $2 -gt 0 ]; then 
+						export RESAMPLE_FLOWS=$2; 
+						shift; 
+					else 
+						echo "'resample-flows' requires the number of samples to average over as a parameter."; 
+						exit; 
+					fi ;;
+		"--no-title")		NO_TITLE=1;;
+		"--no-key")		NO_KEY=1;;
+		"--no-tput")		NO_TPUT=1; ROWS=$[$ROWS-1];;
+		"--no-cwnd")		NO_CWND=1; ROWS=$[$ROWS-1];;
+		"--no-iat")		NO_IAT=1; ROWS=$[$ROWS-1];;
+		"--no-rtt")		NO_RTT=1; ROWS=$[$ROWS-1];;
+		"--no-krtt")		NO_KRTT=1; ROWS=$[$ROWS-1];;
+		"--no-krttvar")		if [ $NO_KRTT ]; then 
+						echo "Bummer.";
+						exit;
+					else
+						NO_KRTTVAR=1
+					fi ;;
+		"--no-rto")		NO_RTO=1; ROWS=$[$ROWS-1];;
+		"--debug")		DEBUG=1;;
+		"--debugx")		DEBUG=1; PS4='$LINENO: '; set -xv;;
+		*)			break;;
+	esac;
+	shift
+done
+
+[ ! $DEBUG ] && trap "rm -Rf $TMPDIR" EXIT
+
+if [ $ROWS -eq 0 ]; then
+	echo "Bummer."
+	exit 2
+fi
+
+if [ -z "$1" ]; then
+	OFFSET=1
+else
+	if isnumber $1; then
+		OFFSET=$1
+		shift
+	fi
+fi
+
+if [ -n "$OFFSET" ]; then
+	LOG=$(command ls -tr1 flowlog-*|tail -$OFFSET|head -1)
+else
+	LOG=$1
+fi
+
+if [ ! -r "$LOG" ]; then
+	echo cannot read "$LOG"
+	exit 2
+fi
+
+TMPDIRLOG=$TMPDIR/$(basename $LOG)
+cp $LOG $TMPDIRLOG || exit
+LOGBASENAME=${LOG%%.*}
+export LOG=$TMPDIRLOG
+export TMPLOG=$LOG.x
+
+if [ $LEFT -gt 0 -o $RIGHT -gt 0 ]; then
+	if awk '
+	BEGIN {
+		left = ENVIRON["LEFT"];
+		right = ENVIRON["RIGHT"];
+	}
+
+	!/^#/ {
+		t1 = $2;
+		t2 = $3;
+		if (left > 0 && t1 < left)
+			next;
+		if (right > 0 && t2 > right)
+			next
+		print $0;
+	}
+	' $LOG > $TMPLOG ; then
+		mv $TMPLOG $LOG
+	else
+		echo "awk() failed."
+		exit
+	fi
+fi
+
+if [ $AGGREGATE_SINGLE_FLOWS ]; then
+	if awk '
+	function panic() {
+		print "FATAL ERROR.";
+		exit;
+	}
+
+	function print_average() { 
+		print "0", t1, t2, tcs/n, tsc/n, minr/n, ar/n, maxr/n, mini/n, 
+			ai/n, maxi/n, cwnd/n, sst/n, uack/n, sack/n, lost/n, retr/n,
+			fack/n, reor/n, rtt/n, rttvar/n, rto/n;
+	}
+
+	BEGIN {
+		current_flow_id = -1;
+	}
+
+	!/^#/ {
+		if ($1 > current_flow_id) {
+			n++;
+			current_flow_id	= $1;
+			t1	= $2;
+			t2	= $3;
+			tcs	+= $4;
+			tsc	+= $5;
+			minr	+= $6;
+			ar	+= $7;
+			maxr	+= $8;
+			mini	+= $9;
+			ai	+= $10;
+			maxi	+= $11;
+			cwnd	+= $12;
+			sst	+= $13;
+			uack	+= $14;
+			sack	+= $15;
+			lost	+= $16;
+			retr	+= $17;
+			fack	+= $18;
+			reor	+= $19;
+			rtt	+= $20;
+			rttvar	+= $21;
+			rto	+= $22;
+		} else {
+			print_average();
+			n	= 1;
+			l	= $1;
+			t1	= $2;
+			t2	= $3;
+			tcs	= $4;
+			tsc	= $5;
+			minrtt	= $6;
+			ar	= $7;
+			maxr	= $8;
+			mini	= $9;
+			ai	= $10;
+			maxi	= $11;
+			cwnd	= $12;
+			sst	= $13;
+			uack	= $14;
+			sack	= $15;
+			lost	= $16;
+			retr	= $17;
+			fack	= $18;
+			reor	= $19;
+			rtt	= $20;
+			rttvar	= $21;
+			rto	= $22;
+		}
+	}
+	END {
+		print_average();
+	}
+	' $LOG > $TMPLOG ; then
+		mv $TMPLOG $LOG
+	else
+		echo "awk() failed."
+		exit
+	fi
+fi
+
+MAX_FLOW=$(awk '
+	BEGIN{
+		max = 0;
+	}
+	!/^#/{
+		print $0 >>sprintf("%s.%d", FILENAME, $1);
+		if ($1>max)
+			max = $1;
+	}
+	END{
+		print max;
+	}
+' $LOG)
+
+if [ $RESAMPLE_FLOWS ]; then
+	for i in $(seq 0 $MAX_FLOW); do
+		if awk '
+		function print_average() { 
+			print "0", t1, t2, tcs/n, tsc/n, minr/n, ar/n, maxr/n, mini/n, 
+				ai/n, maxi/n, cwnd/n, sst/n, uack/n, sack/n, lost/n, retr/n,
+				fack/n, reor/n, rtt/n, rttvar/n, rto/n;
+		}
+
+		BEGIN {
+			n = ENVIRON["RESAMPLE_FLOWS"];
+		}
+
+		!/^#/ {
+			l = NR % (n+1); 
+			if (l==0) {
+				t1	= $2
+			}; 
+			if (l<=n) {
+				t2	= $3
+				tcs	+= $4;
+				tsc	+= $5;
+				minr	+= $6;
+				ar	+= $7;
+				maxr	+= $8;
+				mini	+= $9;
+				ai	+= $10;
+				maxi	+= $11;
+				cwnd	+= $12;
+				sst	+= $13;
+				uack	+= $14;
+				sack	+= $15;
+				lost	+= $16;
+				retr	+= $17;
+				fack	+= $18;
+				reor	+= $19;
+				rtt	+= $20;
+				rttvar	+= $21;
+				rto	+= $22;
+			}; 
+			if (l==n) {
+				print_average();
+				tcs	= 0;
+				tsc	= 0;
+				minr	= 0;
+				ar	= 0;
+				maxr	= 0;
+				mini	= 0;
+				ai	= 0;
+				maxi	= 0;
+				cwnd	= 0;
+				sst	= 0;
+				uack	= 0;
+				sack	= 0;
+				lost	= 0;
+				retr	= 0;
+				fack	= 0;
+				reor	= 0;
+				rtt	= 0;
+				rttvar	= 0;
+				rto	= 0;
+			}
+		}
+		END {
+			print_average();
+		}
+		' $LOG.$i > $TMPLOG ; then 
+			mv $TMPLOG $LOG.$i;
+		else
+			echo "awk() failed."
+			exit
+		fi
+	done
+fi
+
+title=$(head -n 1 $LOG | cut -c3-)
+
+p() { plot="${plot}\n$@"; }
+pa() { plot="${plot} $@"; }
+
+p "set size 1,1"
+p "set origin 0,0"
+
+case "$TERMINAL" in
+	"epslatex")		
+		p "set term epslatex color solid \"default\" 9"
+		p "set output \"$LOGBASENAME.tex\""
+		;;
+	"pdf")	
+		p "set term pdf enhanced"
+		p "set output \"$LOGBASENAME.pdf\""
+		;;
+	*)
+		p "set term x11"
+		#p "set term aqua"
+		break;
+esac;
+
+p "set multiplot layout $ROWS,1"
+[ $NO_TITLE ] ||  pa " title \"$title\""
+#p "set multiplot layout 6,1 scale 1,1"
+#p "set size ratio 1/5"
+[ $NO_KEY ] ||  p "set key tmargin center"
+
+ROW=1
+
+# Throuhput
+if [ ! $NO_TPUT ]; then
+	[ $ROW -eq $ROWS ] && p "set xlabel \"Time [s]\""
+	p "set ylabel \"Throughput [Mb/s]\""
+	p "plot"
+	for i in $(seq 0 $MAX_FLOW); do
+		flow_title=$(grep "# #$i:" $LOG|cut -c3-)
+		pa "\"$LOG.$i\" using 3:4 with lines "
+		[ $NO_KEY ] && pa "notitle" || pa "title \"$flow_title\""
+		pa ","
+		#pa "\"\" using 3:5 with lines notitle,"
+	done
+	pa "1/0 notitle"
+	ROW=$[ROW+1]
+fi
+
+
+# RTT
+if [ ! $NO_RTT ]; then
+	[ $ROW -eq $ROWS ] && p "set xlabel \"Time [s]\""
+	p "set ylabel \"RTT [ms]\""
+	p "plot"
+	for i in $(seq 0 $MAX_FLOW); do
+		pa "\"$LOG.$i\" using 3:7:6:8 with errorlines notitle,"
+	done
+	pa "1/0 notitle"
+	ROW=$[ROW+1]
+fi
+
+
+# IAT
+if [ ! $NO_IAT ]; then
+	[ $ROW -eq $ROWS ] && p "set xlabel \"Time [s]\""
+	p "set ylabel \"IAT [ms]\""
+	p "plot"
+	for i in $(seq 0 $MAX_FLOW); do
+		pa "\"$LOG.$i\" using 3:10:9:11 with errorlines notitle,"
+	done
+	pa "1/0 notitle"
+	ROW=$[ROW+1]
+fi
+
+
+# cwnd
+if [ ! $NO_CWND ]; then
+	[ $ROW -eq $ROWS ] && p "set xlabel \"Time [s]\""
+	p "set ylabel \"cwmd [#SMSS]\""
+	p "plot"
+	for i in $(seq 0 $MAX_FLOW); do
+		pa "\"$LOG.$i\" using 3:12 with lines notitle,"
+	done
+	pa "1/0 notitle"
+	ROW=$[ROW+1]
+fi
+
+
+# Kernel RTT
+if [ ! $NO_KRTT ]; then
+	[ $ROW -eq $ROWS ] && p "set xlabel \"Time [s]\""
+	p "set ylabel \"Kernel RTT [ms]\""
+	p "plot"
+	for i in $(seq 0 $MAX_FLOW); do
+		if [ $NO_KRTTVAR ]; then
+			pa "\"$LOG.$i\" using 3:20 with lines notitle,"
+		else 
+			pa "\"$LOG.$i\" using 3:20:21 with errorlines notitle,"
+		fi
+	done
+	pa "1/0 notitle"
+	ROW=$[ROW+1]
+fi
+
+
+# rto
+if [ ! $NO_RTO ]; then
+	[ $ROW -eq $ROWS ] && p "set xlabel \"Time [s]\""
+	p "set ylabel \"RTO [ms]\""
+	p "plot"
+	for i in $(seq 0 $MAX_FLOW); do
+		pa "\"$LOG.$i\" using 3:21 with lines notitle,"
+	done
+	pa "1/0 notitle"
+	ROW=$[ROW+1]
+fi
+
+p "unset multiplot"
+p "pause mouse keypress"
+
+
+[ $DEBUG ] && echo -e plot=$plot
+echo -e $plot | sed -e 's,#,\\\\#,g' | tee $LOGBASENAME.gpl | gnuplot - || echo "WARNING: gnuplot returned an error."
+[ $DEBUG ] && echo TMPDIR=$TMPDIR 
+
+exit 0
+
