@@ -1,5 +1,5 @@
 SUBDIRS = src
-EXTRA_DIST = configure make-version.pl version.conf
+EXTRA_DIST = configure make-version.pl
 CLEANFILES = svnversion.h
 BUILT_SOURCES = svnversion.h
 
