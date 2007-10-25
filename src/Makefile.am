@@ -1,4 +1,4 @@
-AM_CFLAGS = -Wall -std=c99 -D_GNU_SOURCE
+AM_CFLAGS = -Wall -D_GNU_SOURCE
 dist_bin_SCRIPTS = flow_plotter
 bin_PROGRAMS = flowgrind
 sbin_PROGRAMS = flowgrindd
