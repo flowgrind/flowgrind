@@ -1,4 +1,4 @@
-AC_PREREQ(2.60)
+AC_PREREQ(2.59)
 AC_INIT([flowgrind],[0.1],[daniel.schaffrath@mac.com])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
@@ -46,14 +46,16 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 
-AC_CHECK_FUNCS([bzero])
-AC_CHECK_FUNCS([gettimeofday])
-AC_CHECK_FUNCS([memset])
-AC_CHECK_FUNCS([select])
-AC_CHECK_FUNCS([socket])
-AC_CHECK_FUNCS([strchr])
-AC_CHECK_FUNCS([strerror])
-AC_CHECK_FUNCS([uname])
+AC_CHECK_FUNCS([ \
+	bzero \
+	gettimeofday \
+	memset \
+	select \
+	socket \
+	strchr \
+	strerror \
+	uname \
+])
 
 AC_CHECK_LIB([m], [log])
 AC_CHECK_LIB([socket], [socket])
@@ -65,23 +67,25 @@ AC_CHECK_LIB([tsci2], [tsci2_init])
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
-        syslog.h \
-        sys/time.h \
-        sys/socket.h \
-        sys/param.h \
-        sys/ioctl.h \
-        netinet/in.h \
-        netdb.h \
-        limits.h \
-        fcntl.h \
-        arpa/inet.h \
-        fasttime.h \
-        float.h \
-        tsci2.h])
+	syslog.h \
+	sys/time.h \
+	sys/socket.h \
+	sys/param.h \
+	sys/ioctl.h \
+	netinet/in.h \
+	netdb.h \
+	limits.h \
+	fcntl.h \
+	arpa/inet.h \
+	fasttime.h \
+	float.h \
+	tsci2.h
+])
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([
-        Makefile
-        src/Makefile])
+AC_CONFIG_FILES([ \
+	Makefile
+	src/Makefile \
+])
 
 AC_OUTPUT
