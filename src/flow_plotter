@@ -366,7 +366,7 @@ fi
 # cwnd
 if [ ! $NO_CWND ]; then
 	[ $ROW -eq $ROWS ] && p "set xlabel \"Time [s]\""
-	p "set ylabel \"cwmd [#SMSS]\""
+	p "set ylabel \"cwnd [#SMSS]\""
 	p "plot"
 	for i in $(seq 0 $MAX_FLOW); do
 		pa "\"$LOG.$i\" using 3:12 with lines notitle,"
