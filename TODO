@@ -16,3 +16,4 @@
 +add sequence numbers for block (even tcp) to meassure application level throuput (and to disclose aggregate queue capacity along network path)
 +more timing precision!
 +save whole RTT/IAT distribution
++allow send volume to be specified (instead of duration/rate)
