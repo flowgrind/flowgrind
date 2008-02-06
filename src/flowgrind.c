@@ -836,12 +836,13 @@ read_test_data(int id)
 			flow[id].read_errors++;
 			stop_flow(id);
 			return 0;
-		} else if (rc == 0) {
+		} 
+		if (rc == 0) {
 			DEBUG_MSG(1, "server shut down test socket of flow %d", id);
 			if (!flow[id].server_flow_finished) {
 				if (flow[id].server_flow_duration < 0 ||
-					time_is_after(&flow[id].server_flow_stop_timestamp, &now) || 
-					!flow[id].shutdown)
+					time_is_after(&flow[id].server_flow_stop_timestamp, &now)
+						|| !flow[id].shutdown)
 					error(ERR_WARNING, "premature shutdown of server flow");
 				flow[id].server_flow_finished = 1; 
 				if (flow[id].client_flow_finished) {
@@ -871,7 +872,7 @@ read_test_data(int id)
 			flow[id].read_block_count++;
 		}
 		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-			fprintf(stderr, "we got somethnk.\n");
+			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %u", id, cmsg.cmsg_type, cmsg.cmsg_len);
 		}
 		if (!flow[id].pushy)
 			break;
