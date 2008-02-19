@@ -2,6 +2,7 @@
 #include <config.h>
 #endif
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -13,6 +14,11 @@
 #include <netinet/tcp.h>
 #include <sys/fcntl.h>
 #include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <time.h>
 #include "common.h"
 
@@ -27,8 +33,6 @@
 #define SOL_IPV6	IPPROTO_IPV6
 #endif
 #endif
-
-extern int debug_level;
 
 void
 error(int errcode, const char *msg)
@@ -134,7 +138,9 @@ debug_timestamp()
 	if (first.tv_sec == 0 && first.tv_usec == 0)
 		first = now;
 	len = strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S", localtime(&now.tv_sec));
-	snprintf(buf+len, sizeof(buf)-len, ".%06ld [+%8.6lf] (%8.6lf)", (long)now.tv_usec, time_diff(&last, &now), time_diff(&first, &now));
+	snprintf(buf+len, sizeof(buf)-len, ".%06ld [+%8.6lf] (%8.6lf)",
+			(long)now.tv_usec, time_diff(&last, &now),
+			time_diff(&first, &now));
 	last = now;
 	return buf;
 }
@@ -345,7 +351,7 @@ get_mtu(int fd)
 	}
 	return mtu;
 #else
-	fd=0;
+	fd = 0;
 	return -1;
 #endif
 }
@@ -460,5 +466,75 @@ tsc_gettimeofday(struct timeval *tv)
 	}
 	normalize_tv(tv);
 
+	return 0;
+}
+
+
+const char *
+fg_nameinfo(const struct sockaddr *sa)
+{
+	static char host[NI_MAXHOST];
+
+	if (getnameinfo(sa, sizeof(*sa), host, sizeof(host), 
+				NULL, 0, NI_NUMERICHOST) != 0) {
+		*host = '\0';
+	}
+
+	if (*host == '\0')
+		inet_ntop(sa->sa_family, sa, host, sizeof(host));
+		
+	return host;
+}
+
+
+char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
+{
+	assert(a != NULL);
+	assert(b != NULL);
+
+	if (a->sa_family != b->sa_family)
+		return 0;
+
+	if (a->sa_family == AF_INET6) {
+		const struct sockaddr_in6 *a6 = (const struct sockaddr_in6 *)a;
+		const struct sockaddr_in6 *b6 = (const struct sockaddr_in6 *)b;
+
+		/* compare scope */
+		if (a6->sin6_scope_id && b6->sin6_scope_id &&
+				a6->sin6_scope_id != b6->sin6_scope_id)
+			return 0;
+
+		if ((memcmp(&(a6->sin6_addr), &in6addr_any,
+						sizeof(struct in6_addr)) != 0) &&
+				(memcmp(&(b6->sin6_addr), &in6addr_any,
+					sizeof(struct in6_addr)) != 0) &&
+				(memcmp(&(a6->sin6_addr), &(b6->sin6_addr), 
+					sizeof(struct in6_addr)) != 0))
+			return 0;
+
+		/* compare port part 
+		 * either port may be 0(any), resulting in a good match */
+		return (a6->sin6_port == 0) || (b6->sin6_port == 0) ||
+				(a6->sin6_port == b6->sin6_port);
+	}
+
+	if (a->sa_family == AF_INET) { 
+		const struct sockaddr_in *a_in = (const struct sockaddr_in *)a;
+		const struct sockaddr_in *b_in = (const struct sockaddr_in *)b;
+
+		/* compare address part
+		 * either may be INADDR_ANY, resulting in a good match */
+		if ((a_in->sin_addr.s_addr != INADDR_ANY) &&
+				(b_in->sin_addr.s_addr != INADDR_ANY) &&
+				(a_in->sin_addr.s_addr != b_in->sin_addr.s_addr))
+			return 0;
+
+		/* compare port part */
+		/* either port may be 0(any), resulting in a good match */
+		return (a_in->sin_port == 0) || (b_in->sin_port == 0) ||
+				(a_in->sin_port == b_in->sin_port);
+	}
+
+	/* For all other socket types, return false. Bummer */
 	return 0;
 }

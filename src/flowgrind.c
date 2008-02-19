@@ -113,7 +113,7 @@ static void usage(void)
 				"\n"
 
 			"Flow options:\n"
-				"\t-H host[/control host][:port]\n"
+				"\t-H host[/control host][,port]\n"
 				"\t\t\ttest against host. Optional control \n"
 				"\t\t\thost may be specified to handle connection\n"
 				"\t\t\tsetup via another interface/route.\n"
@@ -296,7 +296,8 @@ void log_output(const char *msg)
 
 void process_reply(int id, char *buffer)
 {
-	/* XXX: There is actually a conversion from network to host byte order needed here!! */
+	/* XXX: There is actually a conversion from 
+		network to host byte order needed here!! */
 	struct timeval *sent = (struct timeval *)buffer;
 	double current_rtt;
 	double *current_iat_ptr = (double *)(buffer + sizeof(struct timeval));
@@ -335,19 +336,15 @@ void process_reply(int id, char *buffer)
 }
 
 
-void timer_check (void)
+void timer_check(void)
 {
 	int id;
 
 	tsc_gettimeofday(&now);
-
 	if (time_is_after(&now, &timer.next)) {
-
 		for (id = 0; id < opt.num_flows; id++)
 			report_flow(id);
-
 		timer.last = now;
-
 		while (time_is_after(&now, &timer.next)) 
 			time_add(&timer.next, opt.reporting_interval);
 	}
@@ -493,7 +490,7 @@ void report_final(void)
 		if (strcmp(flow[id].server_name, flow[id].server_name_control) != 0)
 			CAT("/%s", flow[id].server_name_control)
 		if (flow[id].server_control_port != DEFAULT_LISTEN_PORT) 
-			CAT(":%d", flow[id].server_control_port)
+			CAT(",%d", flow[id].server_control_port)
 		CATC("MSS = %d", flow[id].mss);
 		if (flow[id].mtu != -1)
 			CATC("MTU = %d (%s)", flow[id].mtu, guess_topology(flow[id].mss, flow[id].mtu))
@@ -872,7 +869,7 @@ read_test_data(int id)
 			flow[id].read_block_count++;
 		}
 		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %u", id, cmsg.cmsg_type, cmsg.cmsg_len);
+			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %u", id, cmsg->cmsg_type, cmsg->cmsg_len);
 		}
 		if (!flow[id].pushy)
 			break;
@@ -1034,9 +1031,12 @@ void grind_flows (void)
 			if (client_flow_in_delay(id)) {
 				DEBUG_MSG(4, "flow %i not started yet (delayed)", id);
 			} else {
-				if (flow[id].late_connect && !flow[id].connect_called ) {
+				if (flow[id].late_connect 
+						&& !flow[id].connect_called ) {
 					DEBUG_MSG(1, "(late) connecting test socket for flow %d after %.3fs delay", id, flow[id].client_flow_delay);
-					rc = connect(flow[id].sock, flow[id].saddr, flow[id].saddr_len);
+					rc = connect(flow[id].sock, 
+							flow[id].saddr, 
+							flow[id].saddr_len);
 					if (rc == -1 && errno != EINPROGRESS) {
 						perror("connect");
 						error(ERR_WARNING, "connect failed");
@@ -1073,7 +1073,9 @@ void grind_flows (void)
 			}
 
 			/* Check for finished server flows */
-			if (flow[id].server_flow_duration >= 0 && time_is_after(&now, &flow[id].server_flow_stop_timestamp)) {
+			if (flow[id].server_flow_duration >= 0 
+					&& time_is_after(&now, 
+						&flow[id].server_flow_stop_timestamp)) {
 				if (!flow[id].server_flow_finished) {
 					flow[id].server_flow_finished = 1;
 					if (flow[id].shutdown) {
@@ -1120,7 +1122,10 @@ void grind_flows (void)
 					int error_number;
 					socklen_t error_number_size = sizeof(error_number);
 					DEBUG_MSG(5, "sock of flow %d in efds", id);
-					rc = getsockopt(flow[id].sock, SOL_SOCKET, SO_ERROR, (void *)&error_number, &error_number_size);
+					rc = getsockopt(flow[id].sock, SOL_SOCKET,
+							SO_ERROR,
+							(void *)&error_number,
+							&error_number_size);
 					if (rc == -1) {
 						perror("getsockopt");
 						error(ERR_WARNING, "failed to get errno for non-blocking connect");
@@ -1246,7 +1251,7 @@ void prepare_flow(int id)
 	DEBUG_MSG(3, "connect()");
 	flow[id].sock_control = name2socket(flow[id].server_name_control, flow[id].server_control_port, NULL, NULL, 1);
 	read_greeting(flow[id].sock_control);
-	to_write = snprintf(buf, sizeof(buf), "%s:t:%s:%hu:%u:%lf:%lf:%u:%u:%hhd:%hhd:%hhd+", 
+	to_write = snprintf(buf, sizeof(buf), "%s,t,%s,%hu,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+", 
 		FLOWGRIND_VERSION, 
 		flow[id].server_name, 
 		(opt.base_port ? opt.base_port++ : 0), 
@@ -1263,7 +1268,7 @@ void prepare_flow(int id)
 	write_proposal(flow[id].sock_control, buf, to_write);
 	read_until_plus(flow[id].sock_control, buf, sizeof(buf));
 	DEBUG_MSG(1, "proposal reply: %s", buf)
-	rc = sscanf(buf, "%u:%u+", &flow[id].server_data_port, &flow[id].server_window_size_real);
+	rc = sscanf(buf, "%u,%u+", &flow[id].server_data_port, &flow[id].server_window_size_real);
 	if (rc != 2)
 		error(ERR_FATAL, "malformed session response from server");
 
@@ -1540,7 +1545,7 @@ void parse_cmdline(int argc, char **argv)
 				*sepptr = '\0';
 				ASSIGN_FLOW_OPTION(server_name_control, sepptr + 1)
 			}
-			sepptr = strchr(optarg, ':');
+			sepptr = strchr(optarg, ',');
 			if (sepptr == NULL) {
 				ASSIGN_FLOW_OPTION(server_control_port, DEFAULT_LISTEN_PORT)
 			} else {

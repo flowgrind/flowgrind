@@ -8,7 +8,6 @@
 #include <stdarg.h>
 #include <strings.h>
 #include <signal.h>
-#include <syslog.h>
 #include <string.h>
 #include <fcntl.h>
 #include <math.h>
@@ -22,9 +21,12 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <time.h>
+#include <syslog.h>
 #include <sys/time.h>
 #include <netdb.h>
 #include "common.h"
+#include "fg_pcap.h"
+#include "log.h"
 #include "svnversion.h"
 
 #ifndef SVNVERSION
@@ -59,28 +61,7 @@ acl_t *acl_allow_add_list (acl_t *, struct sockaddr *, int);
 int acl_check (struct sockaddr *);
 
 
-/*
- * Logging
- */
-#define LOGGING_MAXLEN	255		/* maximum string length */
-
-enum {
-	LOGTYPE_SYSLOG,
-	LOGTYPE_STDERR
-};
-
-int debug_level = 0;
-
-char timestr[20];
-char *logstr = NULL;
-int log_type = LOGTYPE_SYSLOG;		/* default is syslog */
-
-/* Logging prototypes */
-void logging_init (void);
-void logging_exit (void);
-void logging_log (int, const char *, ...);
-void logging_log_string (int, const char *);
-char *logging_time (void);
+unsigned debug_level = 0;
 
 #define LISTEN_BACKLOG		64
 #define INDICATOR		"flowgrind"
@@ -96,20 +77,19 @@ acl_allow_add (char *str)
 	int mask = -1;
 	int rc;
 
-	/* Extract netmask. */
 	pmask = strchr(str, '/');
 	if (pmask != NULL) {
 		*pmask++ = '\0';
 		mask = atoi(pmask);
 	}
 
-	bzero(&hints, sizeof(struct addrinfo));
+	bzero(&hints, sizeof(hints));
 	hints.ai_flags = AI_NUMERICHOST;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
 	if ((rc = getaddrinfo(str, NULL, &hints, &res)) != 0) {
-		fprintf(stderr, "Error: getaddrinfo(): failed, %s\n",
+		fprintf(stderr, "getaddrinfo(): failed, %s\n",
 				gai_strerror(rc));
 		exit(1);
 	}
@@ -122,22 +102,22 @@ acl_allow_add (char *str)
 }
 
 acl_t *
-acl_allow_add_list (acl_t *p, struct sockaddr *ss, int mask)
+acl_allow_add_list (acl_t *acl, struct sockaddr *ss, int mask)
 {
-	if (p == NULL) {
-		p = malloc(sizeof(acl_t));
-		if (p == NULL) {
+	if (acl == NULL) {
+		acl = malloc(sizeof(acl_t));
+		if (acl == NULL) {
 			perror("malloc");
 			exit(1);
 		}
-		p->next = NULL;
-		memcpy(&p->sa, ss, sizeof(struct sockaddr_storage));
-		p->mask = mask;
+		acl->next = NULL;
+		memcpy(&acl->sa, ss, sizeof(struct sockaddr_storage));
+		acl->mask = mask;
 	} else {
-		p->next = acl_allow_add_list(p->next, ss, mask);
+		acl->next = acl_allow_add_list(acl->next, ss, mask);
 	}
 
-	return p;
+	return acl;
 }
 
 int
@@ -149,35 +129,27 @@ acl_check (struct sockaddr *sa)
 	acl_t *acl = NULL;
 	int allow, i;
 
-	/* If there are no hosts in ACL, then allow connection. */
 	if (acl_head == NULL) {
 		return ACL_ALLOW;
 	}
 
-	/* Check client sockaddr against entries in ACL */
 	for (acl = acl_head; acl != NULL; acl = acl->next) {
 
 		acl_sa = (struct sockaddr *)&acl->sa;
 
-		/* Check that type matches. */
 		if (sa->sa_family != acl_sa->sa_family) {
 			continue;
 		}
 
 		switch (sa->sa_family) {
 		case AF_INET:
-			/* IPv4 address */
 			sin = (struct sockaddr_in *)sa;
 			acl_sin = (struct sockaddr_in *)acl_sa;
 
-			/* Mask has been set to -1 if no netmask has been
-			 * supplied. So we set default netmask here if
-			 * that is the case. */
 			if (acl->mask == -1) {
 				acl->mask = 32;
 			}
 
-			/* Sanity check for mask. */
 			if (acl->mask < 1 || acl->mask > 32) {
 				fprintf(stderr, "Error: Bad netmask.\n");
 				break;
@@ -191,19 +163,15 @@ acl_check (struct sockaddr *sa)
 			}
 
 			break;
+
 		case AF_INET6:
-			/* IPv6 address */
 			sin6 = (struct sockaddr_in6 *)sa;
 			acl_sin6 = (struct sockaddr_in6 *)acl_sa;
 
-			/* Mask has been set to -1 if no netmask has been
-			 * supplied. So we set default netmask here if
-			 * that is the case. */
 			if (acl->mask == -1) {
 				acl->mask = 128;
 			}
 
-			/* Sanity check for netmask. */
 			if (acl->mask < 1 || acl->mask > 128) {
 				fprintf(stderr, "Error: Bad netmask.\n");
 				break;
@@ -231,6 +199,7 @@ acl_check (struct sockaddr *sa)
 			}
 
 			break;
+
 		default:
 			logging_log(LOG_WARNING, "Unknown address family.");
 			break;
@@ -240,92 +209,6 @@ acl_check (struct sockaddr *sa)
 	return ACL_DENY;
 }
 
-void
-logging_init (void)
-{
-	/* Allocate memory for logging string. */
-	logstr = malloc(LOGGING_MAXLEN);
-	if (logstr == NULL) {
-		fprintf(stderr, "Error: Unable to allocate memory for logging "
-				"string.\n");
-		exit(1);
-	}
-
-	switch (log_type) {
-		case LOGTYPE_SYSLOG:
-			openlog("flowgrind_daemon", LOG_NDELAY | LOG_CONS | LOG_PID,
-					LOG_DAEMON);
-			break;
-		case LOGTYPE_STDERR:
-			break;
-	}
-}
-
-void
-logging_exit (void)
-{
-	switch (log_type) {
-		case LOGTYPE_SYSLOG:
-			closelog();
-			break;
-		case LOGTYPE_STDERR:
-			break;
-	}
-
-	free(logstr);
-}
-
-void
-logging_log (int priority, const char *fmt, ...)
-{
-	int n;
-	va_list ap;
-
-	memset(logstr, 0, LOGGING_MAXLEN);
-
-	va_start(ap, fmt);
-	n = vsnprintf(logstr, LOGGING_MAXLEN, fmt, ap);
-	va_end(ap);
-
-	if (n > -1 && n < LOGGING_MAXLEN)
-		logging_log_string(priority, logstr);
-}
-
-void
-logging_log_string (int priority, const char *s)
-{
-	switch (log_type) {
-		case LOGTYPE_SYSLOG:
-			syslog(priority, "%s", s);
-			break;
-		case LOGTYPE_STDERR:
-			fprintf(stderr, "%s %s\n", logging_time(), s);
-			fflush(stderr);
-			break;
-	}
-}
-
-char *
-logging_time(void)
-{
-	time_t tp;
-	struct tm *loc = NULL;
-
-	/* Get current time. */
-	tp = time(NULL);
-
-	/* Convert it to local time representation. */
-	loc = localtime(&tp);
-
-	memset(&timestr, 0, sizeof(timestr));
-
-	/* We use the format `month/day/year hrs:mins:secs'. Read strftime(3)
-	 * if you want to change this. */
-	strftime(&timestr[0], sizeof(timestr), "%Y/%m/%d %H:%M:%S", loc);
-
-	return (&timestr[0]);
-}
-
 void __attribute__((noreturn))
 usage(void)
 {
@@ -333,7 +216,8 @@ usage(void)
 	fprintf(stderr, "\t-a address\tadd address to list of allowed hosts "
 			"(CIDR syntax)\n");
 	fprintf(stderr, "\t-p#\t\tserver port\n");
-	fprintf(stderr, "\t-D \t\tincrease debug verbosity (no daemon, log to stderr)\n");
+	fprintf(stderr, "\t-D \t\tincrease debug verbosity (no daemon, log to "
+					"stderr)\n");
 	fprintf(stderr, "\t-v\t\tPrint version information and exit\n");
 	exit(1);
 }
@@ -346,11 +230,16 @@ sighandler(int sig)
 	switch (sig) {
 	case SIGCHLD:
 		while (waitpid(-1, &status, WNOHANG) > 0)
-			logging_log(LOG_NOTICE, "child returned (status = %d)", status);
+			logging_log(LOG_NOTICE, "child returned (status = %d)",
+					status);
 		break;
 
 	case SIGHUP:
-		logging_log(LOG_NOTICE, "got SIGHUP, don't know what do do");
+		logging_log(LOG_NOTICE, "got SIGHUP, don't know what do do.");
+		break;
+
+	case SIGALRM:
+		DEBUG_MSG(1, "Caught SIGALRM.");
 		break;
 
 	case SIGPIPE:
@@ -358,49 +247,19 @@ sighandler(int sig)
 
 	default:
 		logging_log(LOG_ALERT, "got signal %d, but don't remember "
-				"intercepting it, aborting", sig);
+				"intercepting it, aborting...", sig);
 		abort();
-	}
-}
-
-char *
-sock_ntop(const struct sockaddr *sa)
-{
-	static char str[128];
-	struct sockaddr_in *sin = NULL;
-	struct sockaddr_in6 *sin6 = NULL;
-
-	switch (sa->sa_family) {
-	case AF_INET:
-		sin = (struct sockaddr_in *)sa;
-
-		if (inet_ntop(AF_INET, &sin->sin_addr, str,
-					sizeof(str)) == NULL)
-			return NULL;
-
-		return (str);
-	case AF_INET6:
-		sin6 = (struct sockaddr_in6 *)sa;
-
-		if (inet_ntop(AF_INET6, &sin6->sin6_addr, str,
-					sizeof(str)) == NULL)
-			return NULL;
-
-		return (str);
-	default:
-		return NULL;
 	}
 }
 
 void
 log_client_address(const struct sockaddr *sa)
 {
-	logging_log(LOG_NOTICE, "connection from %s", sock_ntop(sa));
+	logging_log(LOG_NOTICE, "connection from %s", fg_nameinfo(sa));
 }
 
 void tcp_test(int fd_control, char *proposal)
 {
-
 	char *server_name;
 	char server_service[7];
 	unsigned short server_test_port;
@@ -434,7 +293,7 @@ void tcp_test(int fd_control, char *proposal)
 
 	struct addrinfo hints, *res, *ressave;
 	int on = 1;
-	struct sockaddr *cliaddr = NULL;
+	struct sockaddr_storage caddr;
 	socklen_t addrlen;
 
 	int rc;
@@ -445,20 +304,24 @@ void tcp_test(int fd_control, char *proposal)
 	fd_set rfds_orig, wfds_orig, efds_orig;
 
 	server_name = proposal;
-	if ((proposal = strchr(proposal, ':')) == NULL) {
+	if ((proposal = strchr(proposal, ',')) == NULL) {
 		logging_log(LOG_WARNING, "malformed server name in proposal");
 		goto out;
 	}
 	*proposal++ = '\0';
 	
-	rc = sscanf(proposal, "%hu:%u:%lf:%lf:%u:%u:%hhd:%hhd:%hhd+", 
-			&requested_server_test_port, &requested_window_size, &flow_delay, &flow_duration, 
-			&read_block_size, &write_block_size, &pushy, &shutdown, &route_record);
+	rc = sscanf(proposal, "%hu,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+", 
+			&requested_server_test_port, &requested_window_size,
+			&flow_delay, &flow_duration, &read_block_size,
+			&write_block_size, &pushy, &shutdown, &route_record);
 	if (rc != 9) {
-		logging_log(LOG_WARNING, "malformed TCP session proposal from client");
+		logging_log(LOG_WARNING, "malformed TCP session "
+			"proposal from client");
 		goto out;
 	}
-	snprintf(server_service, sizeof(server_service), "%hu", requested_server_test_port);
+	snprintf(server_service, sizeof(server_service), "%hu", 
+			requested_server_test_port);
+
 	write_block = calloc(1, write_block_size);
 	read_block = calloc(1, read_block_size);
 	if (write_block == NULL || read_block == NULL) {
@@ -472,8 +335,10 @@ void tcp_test(int fd_control, char *proposal)
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-	if ((rc = getaddrinfo(server_name, server_service, &hints, &res)) != 0) {
-		logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n", gai_strerror(rc));
+	if ((rc = getaddrinfo(server_name, server_service, 
+			&hints, &res)) != 0) {
+		logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n", 
+			gai_strerror(rc));
 		/* XXX: Be nice and tell client. */
 		goto out_free;
 	}
@@ -481,7 +346,8 @@ void tcp_test(int fd_control, char *proposal)
 	ressave = res;
 
 	do {
-		listenfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		listenfd = socket(res->ai_family, res->ai_socktype, 
+			res->ai_protocol);
 		if (listenfd < 0)
 			continue;
 
@@ -489,14 +355,14 @@ void tcp_test(int fd_control, char *proposal)
 		if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
 					(char *)&on, sizeof(on)) == -1) {
 			perror("setsockopt");
-			logging_log(LOG_ALERT, "setsockopt(SO_REUSEADDR): failed, "
-					"continuing");
+			logging_log(LOG_ALERT, "setsockopt(SO_REUSEADDR): "
+					"failed, continuing.");
 		}
 
 		if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
-			break;		/* success */
+			break;
 
-		close(listenfd);	/* bind error, close and try next one */
+		close(listenfd);
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
@@ -518,11 +384,13 @@ void tcp_test(int fd_control, char *proposal)
 	}
 	switch (res->ai_addr->sa_family) {
 	case AF_INET:
-		server_test_port = ntohs(((struct sockaddr_in *)(res->ai_addr))->sin_port);
+		server_test_port = ntohs((
+			(struct sockaddr_in *)(res->ai_addr))->sin_port);
 		break;
 
 	case AF_INET6:
-		server_test_port = ntohs(((struct sockaddr_in6 *)(res->ai_addr))->sin6_port);
+		server_test_port = ntohs((
+			(struct sockaddr_in6 *)(res->ai_addr))->sin6_port);
 		break;
 			
 	default:
@@ -532,42 +400,45 @@ void tcp_test(int fd_control, char *proposal)
 	}
 
 	addrlen = res->ai_addrlen;
-	cliaddr = malloc(addrlen);
-	if (cliaddr == NULL) {
-		perror("malloc");
-		exit(1);
-	}
 
 	freeaddrinfo(ressave);
 	
-	real_listen_window_size = set_window_size(listenfd, requested_window_size);
-	/* XXX: It might be too brave to report the window size of the listen socket
-	 * to the client as the window size of test socket might differ from the
-	 * reported one. Close the socket in case. */
-	to_write = snprintf(buffer, sizeof(buffer), "%u:%u+", server_test_port, real_listen_window_size);
+	real_listen_window_size = set_window_size(listenfd, 
+			requested_window_size);
+	/* XXX: It might be too brave to report the window size of the listen 
+	 * socket to the client as the window size of test socket might differ
+	 * from the reported one. Close the socket in case. */
+	to_write = snprintf(buffer, sizeof(buffer), "%u,%u+", server_test_port,
+			real_listen_window_size);
 	DEBUG_MSG(1, "proposal reply: %s", buffer);
 	rc = write_exactly(fd_control, buffer, (size_t) to_write);
 	
 	/* Wait for client to connect. */
-	fd = accept(listenfd, cliaddr, &addrlen);
+	alarm(10);
+	fd = accept(listenfd, (struct sockaddr *)&caddr, &addrlen);
+	alarm(0);
 	if (fd == -1) {
-		logging_log(LOG_ALERT, "accept() failed.");
+		if (errno == EINTR)
+			logging_log(LOG_ALERT, "client did not connect().");
+		else
+			logging_log(LOG_ALERT, "accept() failed.");
 		goto out_free;
 	}
 	/* XXX: check if this is the same client. */
-
 	if (close(listenfd) == -1)
 		logging_log(LOG_WARNING, "close(): failed");
 
-	logging_log(LOG_NOTICE, "client %s connected for testing.", sock_ntop(cliaddr));
+	logging_log(LOG_NOTICE, "client %s connected for testing.", 
+		fg_nameinfo((struct sockaddr *)&caddr));
 	real_window_size = set_window_size(fd, real_listen_window_size);
 	if (!((real_listen_window_size == real_window_size) 
 #ifdef __LINUX__
 		|| (real_listen_window_size * 2 == real_window_size)
 #endif
 		)) {
-		logging_log(LOG_WARNING, "Failed to set window size of test socket "
-				"to window size of listen socket (listen = %u, test = %u).", 
+		logging_log(LOG_WARNING, "Failed to set window size of test "
+				"socket to window size of listen socket "
+				"(listen = %u, test = %u).", 
 				real_listen_window_size, real_window_size);
 		goto out_free;
 	}
@@ -576,8 +447,12 @@ void tcp_test(int fd_control, char *proposal)
 
 	set_non_blocking(fd);
 	set_non_blocking(fd_control);
-	/* XXX: I feel MSG_OOB would be more appropriate. But as this is complicated it is postponed... */
+
+	/* XXX: I feel MSG_OOB would be more appropriate. 
+		But as this is complicated it is postponed... */
+
 	set_nodelay(fd_control);
+	fg_pcap_go(fd);
 
 	tsc_gettimeofday(&start);
 	flow_start_timestamp = start;
@@ -620,45 +495,62 @@ void tcp_test(int fd_control, char *proposal)
 
 		if (FD_ISSET(fd, &rfds)) {
 			DEBUG_MSG(5, "test sock in rfds");
-			while (1) {
-				rc = recv(fd, read_block + read_block_bytes_read, read_block_size - read_block_bytes_read, 0);
+			for (;;) {
+				rc = recv(fd, read_block+read_block_bytes_read,
+					read_block_size - 
+						read_block_bytes_read, 0);
 				if (rc == -1) {
 					if (errno == EAGAIN)
 						break;
 					perror("recv");
-					logging_log(LOG_WARNING, "premature end of test");
+					logging_log(LOG_WARNING, "premature "
+						"end of test");
 					goto out_free;
 				} else if (rc == 0) {
 					DEBUG_MSG(1, "client shut down flow");
 					FD_CLR(fd, &rfds_orig);
 					break;
 				}
-				DEBUG_MSG(4, "received %d bytes (in read_block already = %u)", rc, read_block_bytes_read);
+				DEBUG_MSG(4, "received %d bytes "
+					"(in read_block already = %u)", 
+					rc, read_block_bytes_read);
 				read_block_bytes_read += rc;
 				if (read_block_bytes_read >= read_block_size) {
-					double *iat_ptr = (double *)(read_block + sizeof(struct timeval));
-					assert(read_block_bytes_read == read_block_size);
+					double *iat_ptr = (double *)(read_block
+						+ sizeof(struct timeval));
+					assert(read_block_bytes_read == 
+						read_block_size);
 					read_block_bytes_read = 0;
-					if (read_block_size < sizeof(reply_block))
+					if (read_block_size < 
+							sizeof(reply_block))
 						continue;
-					if (last_block_read.tv_sec == 0 && last_block_read.tv_usec == 0) {
+					if (last_block_read.tv_sec == 0 && 
+						last_block_read.tv_usec == 0) {
 						*iat_ptr = NAN;
-						DEBUG_MSG(5, "isnan = %d", isnan(*iat_ptr));
+						DEBUG_MSG(5, "isnan = %d", 
+							isnan(*iat_ptr));
 					} else
-						*iat_ptr = time_diff_now(&last_block_read);
+						*iat_ptr = time_diff_now(
+							&last_block_read);
 					tsc_gettimeofday(&last_block_read);
-					rc = write(fd_control, read_block, sizeof(reply_block));
+					rc = write(fd_control, read_block, 
+							sizeof(reply_block));
 					if (rc == -1) {
 						if (errno == EAGAIN) {
-							logging_log(LOG_WARNING, "congestion on control connection, "
+							logging_log(LOG_WARNING, 
+								"congestion on "
+								"control connection, "
 								"dropping reply block");
 							continue;
 						}
 						perror("write");
-						logging_log(LOG_WARNING, "premature end of test");
+						logging_log(LOG_WARNING, 
+							"premature end of test");
 						goto out_free;
 					}
-					DEBUG_MSG(4, "sent reply block (IAT = %.3lf)", (isnan(*iat_ptr) ? NAN : (*iat_ptr) * 1e3));
+					DEBUG_MSG(4, "sent reply block (IAT = "
+						"%.3lf)", (isnan(*iat_ptr) ? 
+							NAN : (*iat_ptr) * 1e3));
 				}
 				if (!pushy)
 					break;
@@ -685,10 +577,13 @@ void tcp_test(int fd_control, char *proposal)
 			DEBUG_MSG(5, "test sock in wfds");
 			if (time_is_after(&now, &flow_start_timestamp) &&
 				(flow_duration < 0 || time_is_after(&flow_stop_timestamp, &now))) {
-				while (1) {
+				for (;;) {
 					if (write_block_bytes_written == 0)
 						tsc_gettimeofday((struct timeval *)write_block);
-					rc = send(fd, write_block + write_block_bytes_written, write_block_size - write_block_bytes_written, 0);
+					rc = send(fd, write_block +
+							write_block_bytes_written,
+							write_block_size -
+							write_block_bytes_written, 0);
 					if (rc == -1 && errno != EAGAIN) {
 						perror("send");
 						logging_log(LOG_WARNING, "premature end of test");
@@ -697,8 +592,10 @@ void tcp_test(int fd_control, char *proposal)
 						break;
 					DEBUG_MSG(4, "sent %u bytes", rc);
 					write_block_bytes_written += rc;
-					if (write_block_bytes_written >= write_block_size) {
-						assert(write_block_bytes_written = write_block_size);
+					if (write_block_bytes_written >=
+							write_block_size) {
+						assert(write_block_bytes_written =
+								write_block_size);
 						write_block_bytes_written = 0;
 					}
 					if (!pushy)
@@ -706,6 +603,7 @@ void tcp_test(int fd_control, char *proposal)
 				}
 			}
 		}
+		fg_pcap_dispatch();
 	}
 out_free:
 	free(read_block);
@@ -753,13 +651,13 @@ serve_client(int fd_control)
 		goto log;
 	}
 	buf_ptr += sizeof(FLOWGRIND_VERSION) - 1;	
-	if (*buf_ptr != ':') {
+	if (*buf_ptr != ',') {
 		logging_log(LOG_WARNING, "protocol version not followed by "
-				"':'");
+				"','");
 		goto log;
 	}
 	buf_ptr++;			
-	if ((buf_ptr[0] == 't') && (buf_ptr[1] == ':')) {
+	if ((buf_ptr[0] == 't') && (buf_ptr[1] == ',')) {
 		buf_ptr += 2;
 		tcp_test(fd_control, buf_ptr);
 		return;
@@ -779,7 +677,6 @@ serve_client(int fd_control)
 		logging_log(LOG_WARNING, "close(): failed");
 }
 
-	
 int
 main(int argc, char *argv[])
 {
@@ -789,10 +686,11 @@ main(int argc, char *argv[])
 	int listenfd, rc;
 	struct addrinfo hints, *res, *ressave;
 	socklen_t addrlen, len;
-	struct sockaddr *cliaddr = NULL;
+	struct sockaddr_storage *caddr = NULL;
 	int ch;
 	int argcorig = argc;
 	struct sigaction sa;
+
 
 	while ((ch = getopt(argc, argv, "a:Dp:v")) != -1) {
 		switch (ch) {
@@ -834,7 +732,6 @@ main(int argc, char *argv[])
 	if (argc != 0)
 		usage();
 
-	/* Ignore SIGPIPE.  Always do in any socket code. */
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
 		perror("ignoring SIGPIPE");
 		error(ERR_FATAL, "could not ignore SIGPIPE");
@@ -849,7 +746,7 @@ main(int argc, char *argv[])
 	sigaction (SIGCHLD, &sa, NULL);
 
 	logging_init();
-
+	fg_pcap_init();
 	tsc_init();
 
 	bzero(&hints, sizeof(struct addrinfo));
@@ -901,46 +798,35 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	/* Save size of client address */
 	addrlen = res->ai_addrlen;
-
 	freeaddrinfo(ressave);
-	
-	/* Allocate memory for client address */
-	cliaddr = malloc(addrlen);
-	if (cliaddr == NULL) {
-		perror("malloc");
-		exit(1);
-	}
 
 	if (log_type == LOGTYPE_SYSLOG) {
 		if (daemon(0, 0) == -1) {
-			perror("daemon");	/* It could be going to
-						   /dev/null... */
+			perror("daemon");
 			exit(1);
-			/* NOTREACHED */
 		}
 	}
 
-	logging_log(LOG_NOTICE, "flowgrind daemonized, listening on port %u", port);
+	logging_log(LOG_NOTICE, "flowgrind daemonized, listening on port %u",
+			port);
 
-	/* Main loop. */
-	while (1) {
+	for (;;) {
 		int fd_control, pid;
-
 		len = addrlen;
 
-		fd_control = accept(listenfd, cliaddr, &len);
+		fd_control = accept(listenfd, (struct sockaddr *)&caddr, &len);
 		if (fd_control == -1) {
 			if (errno != EINTR) {
-				logging_log(LOG_WARNING, "accept(): failed, continuing");
+				logging_log(LOG_WARNING, "accept(): failed, "
+					"continuing");
 			}
 			continue;
 		}
 
-		if (acl_check(cliaddr) == ACL_DENY) {
+		if (acl_check((struct sockaddr *)&caddr) == ACL_DENY) {
 			logging_log(LOG_WARNING, "Access denied for host %s",
-					sock_ntop(cliaddr));
+					fg_nameinfo((struct sockaddr *)&caddr));
 			close(fd_control);
 			continue;
 		}
@@ -949,14 +835,16 @@ main(int argc, char *argv[])
 		switch (pid) {
 		case 0:
 			close(listenfd);
-			log_client_address(cliaddr);
+			log_client_address((struct sockaddr *)&caddr);
 			serve_client(fd_control);
+			fg_pcap_shutdown();
 			logging_exit();
 			_exit(0);
 			/* NOTREACHED */
 
 		case -1:
-			logging_log(LOG_ERR, "fork(): failed, closing connection");
+			logging_log(LOG_ERR, "fork(): failed, closing "
+						"connection");
 			close(fd_control);
 			break;
 

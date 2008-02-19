@@ -43,7 +43,8 @@ subdir = src
 DIST_COMMON = $(dist_bin_SCRIPTS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -57,7 +58,8 @@ PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
 am_flowgrind_OBJECTS = common.$(OBJEXT) flowgrind.$(OBJEXT)
 flowgrind_OBJECTS = $(am_flowgrind_OBJECTS)
 flowgrind_LDADD = $(LDADD)
-am_flowgrindd_OBJECTS = common.$(OBJEXT) flowgrindd.$(OBJEXT)
+am_flowgrindd_OBJECTS = common.$(OBJEXT) fg_pcap.$(OBJEXT) \
+	log.$(OBJEXT) flowgrindd.$(OBJEXT)
 flowgrindd_OBJECTS = $(am_flowgrindd_OBJECTS)
 flowgrindd_LDADD = $(LDADD)
 dist_binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
@@ -113,6 +115,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PCAP_LIBS = @PCAP_LIBS@
 PERL = @PERL@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -161,10 +164,11 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-AM_CFLAGS = -Wall -D_GNU_SOURCE
+AM_CFLAGS = -Wall -D_GNU_SOURCE -DDEBUG -g
 dist_bin_SCRIPTS = flow_plotter
 flowgrind_SOURCES = common.h common.c flowgrind.h flowgrind.c
-flowgrindd_SOURCES = common.h common.c flowgrindd.c
+flowgrindd_SOURCES = common.h common.c fg_pcap.h fg_pcap.c log.h log.c flowgrindd.c
+flowgrindd_LDFLAGS = -lpcap
 all: all-am
 
 .SUFFIXES:
@@ -277,8 +281,10 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fg_pcap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flowgrind.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flowgrindd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

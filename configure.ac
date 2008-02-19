@@ -65,6 +65,30 @@ AC_CHECK_LIB([rt], [nanosleep])
 AC_CHECK_LIB([fasttime], [fasttime_init_context])
 AC_CHECK_LIB([tsci2], [tsci2_init])
 
+AC_ARG_WITH(pcap,
+[  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=yes]]],
+[
+	if test $withval = no
+	then
+		want_pcap=no
+	elif test $withval = yes
+	then
+		want_pcap=yes
+	else
+		want_pcap=yes
+		pcap_dir=$withval
+	fi
+],[
+	want_pcap=yes
+	pcap_dir=
+])
+if test "x$want_pcap" = "xno" ; then
+	AC_MSG_RESULT(no)
+else
+	AC_MSG_RESULT(yes)
+	AC_PCAP_CHECK
+fi
+
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
 	syslog.h \
