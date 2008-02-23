@@ -1,18 +1,18 @@
 #ifndef _FLOWGRIND_H_
 #define _FLOWGRIND_H_
 
-#include "common.h"
 #ifdef __LINUX__
 #include <linux/tcp.h>
 #else
 #include <netinet/tcp.h>
 #endif
 
+#include "fg_time.h"
+
 #define	MAX_FLOWS		256
 #define CONGESTION_LIMIT 	10000
 #define DEFAULT_SELECT_TIMEOUT	10000
 
-unsigned debug_level = 0;
 struct timeval now;
 char sigint_caught = 0;
 
@@ -35,6 +35,7 @@ socklen_t server_len;
 struct {
 	unsigned short num_flows;	
 	double reporting_interval;
+	char advstats;
 	char dont_log_stdout;
 	char dont_log_logfile;
 	char *log_filename;
@@ -119,6 +120,7 @@ struct {
 	char server_flow_finished;
 
 	char stopped;
+	char closed;
 	struct timeval stopped_timestamp;
 
 	struct timeval initial_server_clock;
@@ -172,17 +174,22 @@ inline static int server_flow_sending(int id)
 {
 	return !server_flow_in_delay(id) && 
 		(flow[id].server_flow_duration < 0 || 
-			time_diff(&flow[id].server_flow_stop_timestamp, &now) + flow[id].max_rtt_since_first*1e6 < 0);
+		 time_diff(&flow[id].server_flow_stop_timestamp, &now) 
+		 + flow[id].max_rtt_since_first < 0);
+	/* XXX: This relies on the RTT measurement from the _client_
+	 * flow which does not necessarily exist. */
 }
 
 inline static int client_flow_sending(int id)
 {
-	return !client_flow_in_delay(id) && (flow[id].client_flow_duration < 0 || time_diff(&flow[id].client_flow_stop_timestamp, &now) < 0);
+	return !client_flow_in_delay(id) && (flow[id].client_flow_duration < 0
+		 || time_diff(&flow[id].client_flow_stop_timestamp, &now) < 0);
 }
 	
 inline static int client_flow_block_scheduled(int id)
 {
-	return !flow[id].rate || time_is_after(&now, &flow[id].next_write_block_timestamp);
+	return !flow[id].rate || 
+		time_is_after(&now, &flow[id].next_write_block_timestamp);
 }
 
 
