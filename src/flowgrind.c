@@ -905,30 +905,36 @@ void read_test_data(int id)
 	return;
 }
 
-int
-read_control_data(int id)
+void read_control_data(int id)
 {
-	int rc;
+	int rc = 0;
 
 	for (;;) {
 		rc = recv(flow[id].sock_control,
-				flow[id].reply_block + flow[id].reply_block_bytes_read,
-				sizeof(flow[id].reply_block) - flow[id].reply_block_bytes_read, 0);
+				flow[id].reply_block +
+				flow[id].reply_block_bytes_read,
+				sizeof(flow[id].reply_block) -
+				flow[id].reply_block_bytes_read, 0);
 		if (rc == -1) {
 			if (errno == EAGAIN)
 				break;
-			perror(flow[id].server_name);
-			error(ERR_WARNING, "premature end of test");
+			error(ERR_WARNING, "Premature end of test: %s",
+					strerror(errno));
 			flow[id].read_errors++;
 			stop_flow(id);
-			return 0;
-		} else if (rc == 0) { 
-			DEBUG_MSG(1, "server shut down control of flow %d", id);
+			return;
+		} 
+
+		if (rc == 0) { 
+			error(ERR_WARNING, "Premature end of test: server "
+					"shut down control of flow %d.", id);
 			stop_flow(id);
-			return 1;
+			return;
 		}
+
 		flow[id].reply_block_bytes_read += rc;
-		if (flow[id].reply_block_bytes_read >= sizeof(flow[id].reply_block)) {
+		if (flow[id].reply_block_bytes_read >= 
+				sizeof(flow[id].reply_block)) {
 			process_reply(id, flow[id].reply_block);
 			flow[id].reply_block_bytes_read = 0;
 		} else {
@@ -936,7 +942,7 @@ read_control_data(int id)
 		}
 
 	}
-	return 1;
+	return;
 }
 
 
