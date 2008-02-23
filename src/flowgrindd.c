@@ -711,7 +711,7 @@ main(int argc, char *argv[])
 
 		case 'D':
 			log_type = LOGTYPE_STDERR;
-			debug_level++;
+			increase_debuglevel(1);
 			break;
 
 		case 'p':
@@ -740,8 +740,8 @@ main(int argc, char *argv[])
 		usage();
 
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-		perror("ignoring SIGPIPE");
-		error(ERR_FATAL, "could not ignore SIGPIPE");
+		error(ERR_FATAL, "Could not ignore SIGPIPE: %s",
+				strerror(errno));
 		/* NOTREACHED */
 	}
 
@@ -779,14 +779,16 @@ main(int argc, char *argv[])
 
 		if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
 					(char *)&on, sizeof(on)) == -1) {
-			perror("setsockopt");
-			error(ERR_WARNING, "setsockopt(SO_REUSEADDR): failed, continuing");
+			error(ERR_WARNING, "setsockopt(SO_REUSEADDR): failed,"
+					" continuing: %s",
+					strerror(errno));
 		}
 
 		if (setsockopt(listenfd, SOL_SOCKET, SO_KEEPALIVE,
 				(char *)&on, sizeof(on)) == -1) {
-			perror("setsockopt");
-			error(ERR_WARNING, "setsockopt(SO_KEEPALIVE): failed, continuing");
+			error(ERR_WARNING, "setsockopt(SO_KEEPALIVE): failed,"
+					" continuing: %s",
+					strerror(errno));
 		}
 
 		if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
@@ -800,9 +802,8 @@ main(int argc, char *argv[])
 		/* NOTREACHED */
 	}
 
-	if (listen(listenfd, LISTEN_BACKLOG) < 0) {
-		perror("listen");
-		exit(1);
+	if (listen(listenfd, 64) < 0) {
+		error(ERR_FATAL, "listen() failed: %s", strerror(errno));
 	}
 
 	addrlen = res->ai_addrlen;
@@ -810,8 +811,7 @@ main(int argc, char *argv[])
 
 	if (log_type == LOGTYPE_SYSLOG) {
 		if (daemon(0, 0) == -1) {
-			perror("daemon");
-			exit(1);
+			error(ERR_FATAL, "daemon() failed: %s", strerror(errno));
 		}
 	}
 
