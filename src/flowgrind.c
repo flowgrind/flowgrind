@@ -1331,114 +1331,94 @@ void prepare_flow(int id)
 	char buf[1024];
 	int rc;
 	unsigned to_write;
-	int opt_on = 1;
 
-	DEBUG_MSG(2, "init flow %d", id)
+	DEBUG_MSG(2, "init flow %d", id);
 
 	DEBUG_MSG(3, "connect()");
-	flow[id].sock_control = name2socket(flow[id].server_name_control, flow[id].server_control_port, NULL, NULL, 1);
+	flow[id].sock_control =
+		name2socket(flow[id].server_name_control,
+				flow[id].server_control_port, NULL, NULL, 1);
 	read_greeting(flow[id].sock_control);
-	to_write = snprintf(buf, sizeof(buf), "%s,t,%s,%hu,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+", 
-		FLOWGRIND_VERSION, 
-		flow[id].server_name, 
-		(opt.base_port ? opt.base_port++ : 0), 
-		flow[id].server_window_size, 
-		flow[id].server_flow_delay, 
-		flow[id].server_flow_duration,
-		flow[id].write_block_size, 
-		flow[id].read_block_size,
-		flow[id].pushy,
-		flow[id].shutdown,
-		flow[id].route_record
-		);
-	DEBUG_MSG(1, "proposal: %s", buf)
+
+	to_write = snprintf(buf, sizeof(buf), 
+			"%s,t,%s,%hu,%hhd,%hhd,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+", 
+			FLOWGRIND_CALLSIGN FLOWGRIND_SEPERATOR FLOWGRIND_VERSION, 
+			flow[id].server_name, 
+			(opt.base_port ? opt.base_port++ : 0), 
+			opt.advstats, flow[id].so_debug,
+			flow[id].server_window_size, 
+			flow[id].server_flow_delay, 
+			flow[id].server_flow_duration,
+			flow[id].write_block_size, 
+			flow[id].read_block_size,
+			flow[id].pushy,
+			flow[id].shutdown,
+			flow[id].route_record
+			);
+	DEBUG_MSG(1, "proposal: %s", buf);
 	write_proposal(flow[id].sock_control, buf, to_write);
 	read_until_plus(flow[id].sock_control, buf, sizeof(buf));
-	DEBUG_MSG(1, "proposal reply: %s", buf)
-	rc = sscanf(buf, "%u,%u+", &flow[id].server_data_port, &flow[id].server_window_size_real);
+	DEBUG_MSG(1, "proposal reply: %s", buf);
+	rc = sscanf(buf, "%u,%u+", &flow[id].server_data_port,
+			&flow[id].server_window_size_real);
 	if (rc != 2)
 		error(ERR_FATAL, "malformed session response from server");
 
-	if (flow[id].server_window_size != 0 && flow[id].server_window_size_real != flow[id].server_window_size) {
-		fprintf(stderr, "warning: server failed to set requested window size %u, "
-			"actual = %u\n", flow[id].server_window_size, flow[id].server_window_size_real);
+	if (flow[id].server_window_size != 0 && 
+			flow[id].server_window_size_real != 
+			flow[id].server_window_size) {
+		fprintf(stderr, "warning: server failed to set requested "
+				"window size %u, actual = %u\n",
+				flow[id].server_window_size,
+				flow[id].server_window_size_real);
 	}
-	flow[id].sock = name2socket(flow[id].server_name, flow[id].server_data_port, &flow[id].saddr, &flow[id].saddr_len, 0);
+	flow[id].sock = name2socket(flow[id].server_name,
+			flow[id].server_data_port,
+			&flow[id].saddr, &flow[id].saddr_len, 0);
 
-
-	flow[id].client_window_size_real = set_window_size(flow[id].sock, flow[id].client_window_size);
-	if (flow[id].client_window_size != 0 && flow[id].client_window_size_real != flow[id].client_window_size) {
-		fprintf(stderr, "warning: failed to set requested client window size. \n");
-	}
-
-	if (flow[id].cc_alg) {
-#ifdef __LINUX__
-		int opt_len = strlen(flow[id].cc_alg);
-#ifndef TCP_CONG_MODULE
-#define TCP_CONG_MODULE 13
-#endif
-		rc = setsockopt( flow[id].sock, IPPROTO_TCP, TCP_CONG_MODULE,
-					flow[id].cc_alg, opt_len );
-		if (rc == -1) { 
-			fprintf(stderr, "Unable to set congestion control algorithm for flow id = %i\n", id);
-			error(ERR_FATAL, "setsockopt() failed.");
-		}
-#else
-		error(ERR_FATAL, "Setting congestion control algorithm only supported on Linux.");
-#endif
+	flow[id].client_window_size_real =
+		set_window_size(flow[id].sock, flow[id].client_window_size);
+	if (flow[id].client_window_size != 0 && 
+			flow[id].client_window_size_real != 
+			flow[id].client_window_size) {
+		fprintf(stderr, "warning: failed to set requested client "
+				"window size.\n");
 	}
 
-	if (flow[id].elcn) {
-#ifndef TCP_ELCN
-#define TCP_ELCN 20
-#endif
-		rc = setsockopt( flow[id].sock, IPPROTO_TCP, TCP_ELCN, &flow[id].elcn, sizeof(flow[id].elcn));
-		if (rc == -1) { 
-			fprintf(stderr, "Unable to set TCP_ELCN for flow id = %i\n", id);
-			error(ERR_FATAL, "setsockopt() failed.");
-		}
-	}
+	if (flow[id].cc_alg && !set_congestion_control(
+				flow[id].sock, flow[id].cc_alg))
+		error(ERR_FATAL, "Unable to set congestion control "
+				"algorithm for flow id = %i: %s",
+				id, strerror(errno));
 
-	if (flow[id].icmp) {
-#ifndef TCP_ICMP
-#define TCP_ICMP 21
-#endif
-		rc = setsockopt( flow[id].sock, IPPROTO_TCP, TCP_ICMP, &flow[id].icmp, sizeof(flow[id].icmp));
-		if (rc == -1) { 
-			fprintf(stderr, "Unable to set TCP_ICMP for flow id = %i\n", id);
-			error(ERR_FATAL, "setsockopt() failed.");
-		}
-	}
+	if (flow[id].elcn && !set_so_elcn(flow[id].sock, flow[id].elcn))
+		error(ERR_FATAL, "Unable to set TCP_ELCN "
+				"for flow id = %i: %s",
+				id, strerror(errno));
 
-	if (flow[id].cork) {
-#ifdef __LINUX__
-		rc = setsockopt( flow[id].sock, IPPROTO_TCP, TCP_CORK, &opt_on, sizeof(opt_on));
-		if (rc == -1) { 
-			fprintf(stderr, "Unable to set TCP_CORK for flow id = %i\n", id);
-			error(ERR_FATAL, "setsockopt() failed.");
-		}
-#else
-		error(ERR_FATAL, "TCP_CORK cannot be set on OS other than Linux.");
-#endif
-	}
+	if (flow[id].icmp && !set_so_icmp(flow[id].sock))
+		error(ERR_FATAL, "Unable to set TCP_ICMP "
+				"for flow id = %i: %s",
+				id, strerror(errno));
 
-	if (flow[id].so_debug) {
-		rc = setsockopt( flow[id].sock, SOL_IP, SO_DEBUG, &opt_on, sizeof(opt_on));
-		if (rc == -1) { 
-			fprintf(stderr, "Unable to set SO_DEBUG for flow id = %i\n", id);
-			error(ERR_FATAL, "setsockopt() failed.");
-		}
-	}
+	if (flow[id].cork && !set_so_cork(flow[id].sock))
+		error(ERR_FATAL, "Unable to set TCP_CORK "
+				"for flow id = %i: %s",
+				id, strerror(errno));
 
-	if (flow[id].route_record) {
-		set_route_record(flow[id].sock);
-	}
+	if (flow[id].so_debug && !set_so_debug(flow[id].sock))
+		error(ERR_FATAL, "Unable to set SO_DEBUG "
+				"for flow id = %i: %s",
+				id, strerror(errno));
 
-	if (flow[id].dscp) {
-		rc = set_dscp(flow[id].sock, flow[id].dscp);
-		if (rc == -1)
-			error(ERR_FATAL, "Unable to set DSCP value.");
-	}
+	if (flow[id].route_record && !set_route_record(flow[id].sock))
+		error(ERR_FATAL, "Unable to set route record "
+				"option for flow id = %i: %s",
+				id, strerror(errno));
+
+	if (flow[id].dscp && !set_dscp(flow[id].sock, flow[id].dscp))
+		error(ERR_FATAL, "Unable to set DSCP value"
+				"for flow %d: %s", id, strerror(errno));
 
 	flow[id].mss = get_mss(flow[id].sock);
 
@@ -1465,14 +1445,15 @@ void prepare_flows(void)
 	char start_ts_buffer[26];
 
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-		perror("signal(SIGPIPE, SIG_IGN)");
-		error(ERR_FATAL, "could not ignore SIGPIPE");
+		error(ERR_FATAL, "could not ignore SIGPIPE: %s",
+				strerror(errno));
 	}
 
 	FD_ZERO(&efds_orig);
 
 	for (id = 0; id < opt.num_flows; id++) {
 		unsigned byte_idx;
+
 		prepare_flow(id);
 
 		FD_SET(flow[id].sock, &efds_orig);
@@ -1486,20 +1467,29 @@ void prepare_flows(void)
 			error(ERR_FATAL, "malloc(): failed");
 		}
 		if (flow[id].byte_counting)
-			for (byte_idx = 0; byte_idx < flow[id].write_block_size; byte_idx++)
-				*(flow[id].write_block+byte_idx) = (unsigned char)(byte_idx & 0xff);
-		flow[id].read_block_bytes_read = flow[id].write_block_bytes_written = 0;
+			for (byte_idx = 0; byte_idx < flow[id].write_block_size;
+					byte_idx++)
+				*(flow[id].write_block+byte_idx) =
+					(unsigned char)(byte_idx & 0xff);
+		flow[id].read_block_bytes_read = 0;
+		flow[id].write_block_bytes_written = 0;
 	}
 	
 	rc = uname(&me);
 	start_ts = time(NULL);
 	ctime_r(&start_ts, start_ts_buffer);
 	start_ts_buffer[24] = '\0';
-	snprintf(headline, sizeof(headline), "# %s: originating host = %s, number of flows = %d, reporting interval = %.2fs, [tput] = %s (%s)\n",
-			(start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer), (rc == -1 ? "(unknown)" : me.nodename), 
-			opt.num_flows, opt.reporting_interval, (opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"), SVNVERSION);
+	snprintf(headline, sizeof(headline), "# %s: originating host = %s,"
+			"number of flows = %d, reporting interval = %.2fs,"
+			"[tput] = %s (%s)\n",
+			(start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
+			(rc == -1 ? "(unknown)" : me.nodename), 
+			opt.num_flows, opt.reporting_interval,
+			(opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
+			SVNVERSION);
 	log_output(headline);
-	log_output(opt.mbyte ? TCP_REPORT_HDR_STRING_MBYTE : TCP_REPORT_HDR_STRING_MBIT);
+	log_output(opt.mbyte ? TCP_REPORT_HDR_STRING_MBYTE :
+			TCP_REPORT_HDR_STRING_MBIT);
 }
 
 void parse_cmdline(int argc, char **argv)
