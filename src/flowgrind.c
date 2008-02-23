@@ -684,7 +684,8 @@ void report_flow(int id)
 
 
 int
-name2socket(char *server_name, unsigned port, struct sockaddr **saptr, socklen_t *lenp, char do_connect)
+name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
+		socklen_t *lenp, char do_connect)
 {
 	int fd, n;
 	struct addrinfo hints, *res, *ressave;
@@ -699,7 +700,6 @@ name2socket(char *server_name, unsigned port, struct sockaddr **saptr, socklen_t
 	if ((n = getaddrinfo(server_name, service, &hints, &res)) != 0) {
 		fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(n));
 		error(ERR_FATAL, "getaddrinfo(): failed");
-		/* NOTREACHED */
 	}
 	ressave = res;
 
@@ -712,21 +712,20 @@ name2socket(char *server_name, unsigned port, struct sockaddr **saptr, socklen_t
 			break;
 		else if (connect(fd, res->ai_addr, res->ai_addrlen) == 0)
 			break;
-		perror(server_name);
+		error(ERR_WARNING, "failed to connect to %s: %s",
+				server_name, strerror(errno));
 		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
 		error(ERR_FATAL, "could not establish connection to server");
-		/* NOTREACHED */
 	}
 
 	if (saptr && lenp) {
 		*saptr = malloc(res->ai_addrlen);
 		if (*saptr == NULL) {
-			perror("malloc");
-			error(ERR_FATAL, "malloc(): failed");
-			/* NOTREACHED */
+			error(ERR_FATAL, "malloc(): failed: %s",
+					strerror(errno));
 		}
 		memcpy(*saptr, res->ai_addr, res->ai_addrlen);
 		*lenp = res->ai_addrlen;
@@ -742,34 +741,31 @@ void read_greeting(int s)
 {
 	char buf[1024];
 	int rc;
-	size_t greetlen = sizeof(FLOWGRIND_GREET) - 1;
+	size_t greetlen = strlen(FLOWGRIND_GREETING);
 
 	rc = read_exactly(s, buf, greetlen);
-	assert(rc <= (int) greetlen);
 	if (rc != (int) greetlen) {
 		if (rc == -1)
-			perror("read");
-		error(ERR_FATAL, "could not read server banner");
-		/* NOTREACHED */
+			error(ERR_FATAL, "read: %s", strerror(errno));
+		error(ERR_FATAL, "Server greeting is wrong in length. "
+				"Not flowgrind?");
 	}
-	if (strncmp(buf, FLOWGRIND_VERSION, sizeof(FLOWGRIND_VERSION) - 1) != 0)
-		error(ERR_FATAL, "not a flowgrind server responded.");
-	if (buf[greetlen - 1] != '+') {
+	rc = strncmp(buf + strlen(FLOWGRIND_CALLSIGN FLOWGRIND_SEPERATOR),
+			FLOWGRIND_VERSION, strlen(FLOWGRIND_VERSION));
+	if (rc < 0)
+		error(ERR_FATAL, "flowgrind client outdated for this server.");
+	if (rc > 0)
+		error(ERR_FATAL, "flowgrind server outdated for this client.");
+
+	if (strncmp(&buf[greetlen - 1], FLOWGRIND_EOL, strlen(FLOWGRIND_EOL))) {
 		error(ERR_WARNING, "connection rejected");
 		rc = read(s, buf, sizeof(buf) - 1);
+		if (rc == -1)
+			error(ERR_FATAL, "Could not read rejection reason: %s",
+					strerror(errno));
 		buf[sizeof(buf) - 1] = '\0';
-		if (rc == -1) {
-			perror("reading rejection reason");
-			error(ERR_FATAL, "could not read rejection reason");
-			/* NOTREACHED */
-		}
-		assert(rc < (int) sizeof(buf));
-		buf[rc] = '\0';
-		fprintf(stderr, "server said: %s", buf);
-		if (buf[rc-1] != '\n')
-			fprintf(stderr, "\n");
-		error(ERR_FATAL, "stop");
-		/* NOTREACHED */
+		buf[rc - 1] = '\0';
+		error(ERR_FATAL, "Server said: %s", buf);
 	}
 }
 
@@ -782,32 +778,10 @@ void write_proposal(int s, char *proposal, int proposal_size)
 	assert(rc <= proposal_size);
 	if (rc < proposal_size) {
 		if (rc == -1)
-			perror("write");
-		error(ERR_FATAL, "could not write session proposal");
-		/* NOTREACHED */
+			error(ERR_FATAL, "write: %s", strerror(errno));
+		error(ERR_FATAL, "Could not write session proposal."
+				"Server died?");
 	}
-}
-
-
-int read_response(int s, char *buf, int max)
-{
-	int rc;
-
-	/* XXX: Assume that few-byte session response will come in one
-           TCP packet and read in one block. */
-	rc = read(s, buf, max - 1);
-	assert(rc < max);
-	if (rc == -1) {
-		perror("read");
-		error(ERR_FATAL, "could not read session response");
-		/* NOTREACHED */
-	} else if (rc == 0) {
-		error(ERR_FATAL, "server closed connection after proposal");
-		/* NOTREACHED */
-	}
-	assert(rc > 0);
-	buf[rc] = '\0';
-	return rc;
 }
 
 void
