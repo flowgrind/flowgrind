@@ -6,38 +6,34 @@
 #include <assert.h>
 #include <errno.h>
 #include <float.h>
+#include <limits.h>
+#include <math.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>	
 #include <netinet/ip.h>
-#include <arpa/inet.h>
-#include <assert.h>
 #include <signal.h>
-#include <sys/param.h>
-#include <sys/uio.h>
-#include <time.h>
-#include <sys/time.h>
-#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <strings.h>
-#include <math.h>
-#include <errno.h>
-#include "flowgrind.h"
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <sys/utsname.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "common.h"
+#include "fg_socket.h"
+#include "debug.h"
+#include "flowgrind.h"
 #include "svnversion.h"
 
 #ifndef SVNVERSION
 #define SVNVERSION "(unknown)"
 #endif
-
-#define FLOWGRIND_VERSION	"flowgrind/1"
-#define FLOWGRIND_GREET		FLOWGRIND_VERSION "+"
-
-#define IPV4_HEADER_SIZE	20
-#define IPV6_HEADER_SIZE	40
-#define UDP_HEADER_SIZE		8
-#define UDP_PAYLOAD_SIZE	24
-
-#define DEFAULT_LISTEN_PORT	5999
 
 #ifndef SOL_IP
 #ifdef IPPROTO_IP
@@ -70,6 +66,7 @@
 
 #define ASSIGN_MIN(s, c) if ((s)>(c)) (s) = (c)
 #define ASSIGN_MAX(s, c) if ((s)<(c)) (s) = (c)
+
 #ifdef __LINUX__
 #define TCP_REPORT_HDR_STRING_MBIT "# ID   begin     end   c/s Mb/s   s/c Mb/s RTT, ms: min        avg        max IAT, ms: min        avg        max    cwnd  ssth #uack #sack #lost #retr #fack #reor     rtt  rttvar      rto\n" 
 #define TCP_REPORT_HDR_STRING_MBYTE "# ID   begin     end   c/s MB/s   s/c MB/s RTT, ms: min        avg        max IAT, ms: min        avg        max    cwnd  ssth #uack #sack #lost #retr #fack #reor     rtt  rttvar      rto\n" 
@@ -92,6 +89,9 @@ static void usage(void)
 				"\t-m #\t\tnumber of test flows (default: 1)\n"
 				"\t-i #.#\t\treporting interval in seconds (default: 0.05s)\n"
 				"\t-M\t\treport in 2**20 bytes/second (default: 10**6 bit/sec)\n"
+#ifdef HAVE_LIBPCAP
+				"\t-S\t\tadvanced statistics (pcap))\n"
+#endif
 				"\t-q\t\tdo not log to screen (default: off)\n"
 				"\t-Q\t\tdo not log to logfile (default: off)\n"
 				"\t-L NAME\t\tuse log filename NAME {default: timestamp)\n"
@@ -158,7 +158,7 @@ void init_options_defaults(void)
 
 void init_flows_defaults(void)
 {
-	int id;
+	int id = 1;
 
 	for (id = 0; id<MAX_FLOWS; id++) {
 		flow[id].server_name = "localhost";
@@ -166,7 +166,7 @@ void init_flows_defaults(void)
 		flow[id].server_control_port = DEFAULT_LISTEN_PORT;
 		flow[id].mss = 0;
 
-		flow[id].client_flow_duration = 10.0;
+		flow[id].client_flow_duration = 0.0;
 		flow[id].client_flow_delay = 0;
 		flow[id].server_flow_duration = 0.0;
 		flow[id].server_flow_delay = 0;
@@ -222,9 +222,9 @@ void init_flows_defaults(void)
 
 void init_logfile(void)
 {
-	struct timeval now;
-	static char buf[60];
-	int len;
+	struct timeval now = {0, 0};
+	static char buf[60] = "";
+	int len = 0;
 
 	if (opt.dont_log_logfile)
 		return;
@@ -330,7 +330,7 @@ void process_reply(int id, char *buffer)
 
 void timer_check(void)
 {
-	int id;
+	int id = 0;
 
 	tsc_gettimeofday(&now);
 	if (time_is_after(&now, &timer.next)) {
@@ -345,7 +345,7 @@ void timer_check(void)
 
 void timer_start(void)
 {
-	int id;
+	int id = 0;
 
 	DEBUG_MSG(4, "starting timers");
 
