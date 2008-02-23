@@ -168,7 +168,7 @@ void init_flows_defaults(void)
 		flow[id].server_control_port = DEFAULT_LISTEN_PORT;
 		flow[id].mss = 0;
 
-		flow[id].client_flow_duration = 0.0;
+		flow[id].client_flow_duration = 1.0;
 		flow[id].client_flow_delay = 0;
 		flow[id].server_flow_duration = 0.0;
 		flow[id].server_flow_delay = 0;
@@ -1847,6 +1847,12 @@ void parse_cmdline(int argc, char **argv)
 				flow[id].server_flow_duration == 0) {
 			fprintf(stderr, "Server flow %d has a delay but "
 					"no runtime.\n", id);
+			error = 1;
+		}
+		if (!flow[id].server_flow_duration && 
+				!flow[id].client_flow_duration) {
+			fprintf(stderr, "Server and client flow have both "
+					"zero runtime for flow %d.\n", id);
 			error = 1;
 		}
 		if (flow[id].two_way) {
