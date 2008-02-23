@@ -1,14 +1,17 @@
 #ifndef _FG_PCAP_H_
 #define _FG_PCAP_H_
 
-#include <sys/socket.h>
-#include <string.h>
-#include <syslog.h>
 #include <arpa/inet.h>
 #include <netinet/if_ether.h> 
+#include <string.h>
+#include <sys/socket.h>
+#include <syslog.h>
 
-#include "log.h"
 #include "common.h"
+#include "debug.h"
+#include "fg_socket.h"
+#include "fg_time.h"
+#include "log.h"
 
 #ifdef HAVE_LIBPCAP
 
@@ -139,8 +142,8 @@ void fg_pcap_go(int fd)
 void 
 fg_pcap_handler(u_char *users, const struct pcap_pkthdr *h, const u_char *packet)
 {
-	DEBUG_MSG(5, "pcap: processing packet, ts = %lu.%lu"
-			", %hhu bytes.", h->ts.tv_sec, h->ts.tv_usec, h->caplen);
+	DEBUG_MSG(5, "pcap: processing packet, ts = %lu.%lu, %hhu bytes.",
+			h->ts.tv_sec, h->ts.tv_usec, h->caplen);
 
 	/* XXX: do something about it! */
 	return;
