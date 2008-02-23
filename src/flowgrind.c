@@ -800,12 +800,12 @@ stop_flow(int id)
 
 	flow[id].stopped = 1;
 	tsc_gettimeofday(&flow[id].stopped_timestamp);
-	active_flows--;
 }
 
 double flow_interpacket_delay(int id)
 {
 	double delay = 0;
+
 	DEBUG_MSG(5, "flow %d has rate %u", id, flow[id].rate);
 	if (flow[id].poisson_distributed) {
 		double urand = (double)((random()+1.0)/(RANDOM_MAX+1.0));
@@ -819,8 +819,7 @@ double flow_interpacket_delay(int id)
 	return delay;
 }
 
-int
-read_test_data(int id)
+void read_test_data(int id)
 {
 	int rc;
 	struct iovec iov;
@@ -830,9 +829,13 @@ read_test_data(int id)
 
 	for (;;) {
 		if (flow[id].read_block_bytes_read == 0)
-			DEBUG_MSG(5, "new read block %llu on flow %d", flow[id].read_block_count, id);
-		iov.iov_base = flow[id].read_block + flow[id].read_block_bytes_read;
-		iov.iov_len = flow[id].read_block_size - flow[id].read_block_bytes_read;
+			DEBUG_MSG(5, "new read block %llu on flow %d",
+					flow[id].read_block_count, id);
+
+		iov.iov_base = flow[id].read_block +
+			flow[id].read_block_bytes_read;
+		iov.iov_len = flow[id].read_block_size -
+			flow[id].read_block_bytes_read;
 		msg.msg_iov = &iov;
 		msg.msg_iovlen = 1;
 		msg.msg_control = cbuf;
@@ -842,53 +845,64 @@ read_test_data(int id)
 		if (rc == -1) {
 			if (errno == EAGAIN)
 				break;
-			perror(flow[id].server_name);
-			error(ERR_WARNING, "premature end of test");
+			error(ERR_WARNING, "Premature end of test: %s",
+					strerror(errno));
 			flow[id].read_errors++;
 			stop_flow(id);
-			return 0;
+			return;
 		} 
+
 		if (rc == 0) {
-			DEBUG_MSG(1, "server shut down test socket of flow %d", id);
-			if (!flow[id].server_flow_finished) {
-				if (flow[id].server_flow_duration < 0 ||
-					time_is_after(&flow[id].server_flow_stop_timestamp, &now)
-						|| !flow[id].shutdown)
-					error(ERR_WARNING, "premature shutdown of server flow");
-				flow[id].server_flow_finished = 1; 
-				if (flow[id].client_flow_finished) {
-					DEBUG_MSG(4, "flow %u finished", id);
-					active_flows--;
-				}
+			DEBUG_MSG(1, "server shut down test socket "
+					"of flow %d", id);
+			if (!flow[id].server_flow_finished ||
+					!flow[id].shutdown)
+				error(ERR_WARNING, "Premature shutdown of "
+						"server flow");
+			flow[id].server_flow_finished = 1; 
+			if (flow[id].client_flow_finished) {
+				DEBUG_MSG(4, "flow %u finished", id);
+				stop_flow(id);
 			}
-			return 1;
+			return;
 		}
+
 		DEBUG_MSG(4, "flow %d received %u bytes", id, rc);
+
 #if 0
 		if (flow[id].server_flow_duration == 0) 
-			error(ERR_WARNING, "Got unexpected data from server (no two-way)");
+			error(ERR_WARNING, "flow %d got unexpected data "
+					"from server (no two-way)", id);
 		else if (server_flow_in_delay(id))
-			error(ERR_WARNING, "Got unexpected data from server (too early)");
+			error(ERR_WARNING, "flow %d got unexpected data "
+					"from server (too early)", id);
 		else if (!server_flow_sending(id))
-			error(ERR_WARNING, "Got unexpected data from server (too late)");
+			error(ERR_WARNING, "flow %d got unexpected data "
+					"from server (too late)", id);
 #endif
 
 		flow[id].bytes_read_since_last += rc;
 		flow[id].bytes_read_since_first += rc;
 		flow[id].read_block_bytes_read += rc;
-		if (flow[id].read_block_bytes_read >= flow[id].read_block_size) {
-			assert(flow[id].read_block_bytes_read == flow[id].read_block_size);
+		if (flow[id].read_block_bytes_read >= 
+				flow[id].read_block_size) {
+			assert(flow[id].read_block_bytes_read 
+					== flow[id].read_block_size);
 			flow[id].read_block_bytes_read = 0;
 			tsc_gettimeofday(&flow[id].last_block_read);
 			flow[id].read_block_count++;
 		}
-		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %u", id, cmsg->cmsg_type, cmsg->cmsg_len);
+
+		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg;
+				cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %u",
+					id, cmsg->cmsg_type, cmsg->cmsg_len);
 		}
+
 		if (!flow[id].pushy)
 			break;
 	}
-	return 1;
+	return;
 }
 
 int
