@@ -2,17 +2,9 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <sys/utsname.h>
-#include <limits.h>
+#include <arpa/inet.h>
+#include <assert.h>
+#include <errno.h>
 #include <float.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>	
