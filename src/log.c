@@ -88,5 +88,3 @@ logging_time(void)
 
 	return (&timestr[0]);
 }
-
-
