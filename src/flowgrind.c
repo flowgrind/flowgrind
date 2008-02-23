@@ -121,10 +121,12 @@ static void usage(void)
 				"\t-f\t\tstop flow if it is experiencing local congestion\n"
 				"\t-w #\t\tsender and receiver window clamp, in bytes (default: unset)\n"
 				"\t-b #\t\tblock size (default: 8192B)\n"
+#ifdef __LINUX__
 				"\t-c ALG\t\tuse congestion control algorithm ALG\n"
+				"\t-k\t\tset TCP_CORK on test socket\n"
+#endif
 				"\t-E\t\tenable TCP_ELCN on test socket\n"
 				"\t-e\t\tdisable TCP_ELCN on test socket\n"
-				"\t-k\t\tset TCP_CORK on test socket\n"
 				"\t-I\t\tset TCP_ICMP on test socket\n"
 				"\t-g\t\tset SO_DEBUG on test socket\n"
 				"\t-R\t\tset ROUTE RECORD on test socket\n"
@@ -355,19 +357,26 @@ void timer_start(void)
 
 	for (id=0; id<opt.num_flows; id++) {
 		flow[id].client_flow_start_timestamp = timer.start;
-		time_add(&flow[id].client_flow_start_timestamp, flow[id].client_flow_delay);
+		time_add(&flow[id].client_flow_start_timestamp,
+				flow[id].client_flow_delay);
 		if (flow[id].client_flow_duration >= 0) {
-			flow[id].client_flow_stop_timestamp = flow[id].client_flow_start_timestamp;
-			time_add(&flow[id].client_flow_stop_timestamp, flow[id].client_flow_duration);
+			flow[id].client_flow_stop_timestamp =
+				flow[id].client_flow_start_timestamp;
+			time_add(&flow[id].client_flow_stop_timestamp,
+					flow[id].client_flow_duration);
 		}
 		if (flow[id].rate) 
-			flow[id].next_write_block_timestamp = flow[id].client_flow_start_timestamp;
+			flow[id].next_write_block_timestamp =
+				flow[id].client_flow_start_timestamp;
 
 		flow[id].server_flow_start_timestamp = timer.start;
-		time_add(&flow[id].server_flow_start_timestamp, flow[id].server_flow_delay);
+		time_add(&flow[id].server_flow_start_timestamp,
+				flow[id].server_flow_delay);
 		if (flow[id].server_flow_duration >= 0) {
-			flow[id].server_flow_stop_timestamp = flow[id].server_flow_start_timestamp;
-			time_add(&flow[id].server_flow_stop_timestamp, flow[id].server_flow_duration);
+			flow[id].server_flow_stop_timestamp =
+				flow[id].server_flow_start_timestamp;
+			time_add(&flow[id].server_flow_stop_timestamp,
+					flow[id].server_flow_duration);
 		}
 	}
 }
