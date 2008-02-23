@@ -1049,6 +1049,107 @@ void sigint_handler(int sig)
 	sigint_caught = 1;
 }
 
+void prepare_wfds (int id)
+{
+	int rc = 0;
+		
+	if (client_flow_in_delay(id)) {
+		DEBUG_MSG(4, "flow %i not started yet (delayed)", id);
+		return;
+	}
+
+	if (client_flow_sending(id)) {
+		assert(!flow[id].client_flow_finished);
+		if (client_flow_block_scheduled(id)) {
+			DEBUG_MSG(4, "adding sock of flow %d to wfds", id);
+			FD_SET(flow[id].sock, &wfds);
+		} else {
+			DEBUG_MSG(4, "no block for flow %d scheduled yet", id);
+		}
+	} else if (!flow[id].client_flow_finished) {
+		flow[id].client_flow_finished = 1;
+		if (flow[id].shutdown) {
+			DEBUG_MSG(4, "shutting down flow %d (WR)", id);
+			rc = shutdown(flow[id].sock, SHUT_WR);
+			if (rc == -1) {
+				error(ERR_WARNING, "shutdown() SHUT_WR failed: %s",
+						strerror(errno));
+			}
+		}
+	}
+
+	return;
+}
+
+void prepare_rfds (int id)
+{
+	int rc = 0;
+
+	FD_SET(flow[id].sock_control, &rfds);
+
+	if (!server_flow_in_delay(id) && !server_flow_sending(id)) {
+		if (!flow[id].server_flow_finished && flow[id].shutdown) {
+			error(ERR_WARNING, "server flow %u missed to shutdown", id);
+			rc = shutdown(flow[id].sock, SHUT_RD);
+			if (rc == -1) {
+				error(ERR_WARNING, "shutdown SHUT_RD "
+						"failed: %s", strerror(errno));
+			}
+			flow[id].server_flow_finished = 1;
+		}
+	}
+
+	if (flow[id].late_connect && !flow[id].connect_called ) {
+		DEBUG_MSG(1, "late connecting test socket "
+				"for flow %d after %.3fs delay",
+				id, flow[id].client_flow_delay);
+		rc = connect(flow[id].sock, flow[id].saddr, 
+				flow[id].saddr_len);
+		if (rc == -1 && errno != EINPROGRESS) {
+			error(ERR_WARNING, "Connect failed: %s",
+					strerror(errno));
+			stop_flow(id);
+			return;
+		}
+		flow[id].connect_called = 1;
+		flow[id].mtu = get_mtu(flow[id].sock);
+	}
+
+	/* Altough the server flow might be finished we keep the socket in
+	 * rfd in order to check for buggy servers */
+	if (flow[id].connect_called && !flow[id].server_flow_finished) {
+		DEBUG_MSG(4, "adding sock of flow %d to rfds", id);
+		FD_SET(flow[id].sock, &rfds);
+	}
+}
+
+void prepare_fds (void)
+{
+	int id = 0;
+
+	DEBUG_MSG(3, "preparing fds");
+
+	FD_ZERO(&rfds);
+	FD_ZERO(&wfds);
+
+	for (id = 0; id < opt.num_flows; id++) {
+		if (flow[id].stopped)
+			continue;
+
+		if (!server_flow_in_delay(id) && !server_flow_sending(id) &&
+				!client_flow_in_delay(id) &&
+				!client_flow_sending(id)) {
+			close_flow(id);
+			continue;
+		}
+
+		prepare_wfds(id);	
+		prepare_rfds(id);	
+
+	}
+
+	efds = efds_orig;
+}
 
 void grind_flows (void)
 {
@@ -1060,10 +1161,8 @@ void grind_flows (void)
 
 	DEBUG_MSG(1, "starting TCP test...");
 
-	if (signal(SIGINT, sigint_handler) == SIG_ERR) {
-		perror("signal(SIGINT, SIG_IGN)");
-		error(ERR_FATAL, "could not ignore SIGINT");
-	}
+	if (signal(SIGINT, sigint_handler) == SIG_ERR)
+		error(ERR_FATAL, "could not ignore SIGINT: %s", strerror(errno));
 
 	tsc_gettimeofday(&now);
 
@@ -1071,89 +1170,17 @@ void grind_flows (void)
 
 		timer_check();
 
-		DEBUG_MSG(3, "preparing select()");
+		prepare_fds();
+		if (!active_flows)
+			break;
 
-		FD_ZERO(&rfds);
-		FD_ZERO(&wfds);
-		for (id = 0; id < opt.num_flows; id++) {
-			if (flow[id].stopped)
-				continue;
-
-			FD_SET(flow[id].sock_control, &rfds);
-
-			if (client_flow_in_delay(id)) {
-				DEBUG_MSG(4, "flow %i not started yet (delayed)", id);
-			} else {
-				if (flow[id].late_connect 
-						&& !flow[id].connect_called ) {
-					DEBUG_MSG(1, "(late) connecting test socket for flow %d after %.3fs delay", id, flow[id].client_flow_delay);
-					rc = connect(flow[id].sock, 
-							flow[id].saddr, 
-							flow[id].saddr_len);
-					if (rc == -1 && errno != EINPROGRESS) {
-						perror("connect");
-						error(ERR_WARNING, "connect failed");
-						stop_flow(id);
-					}
-					flow[id].connect_called = 1;
-					flow[id].mtu = get_mtu(flow[id].sock);
-				}
-				if (client_flow_sending(id)) {
-					if (client_flow_block_scheduled(id)) {
-						DEBUG_MSG(4, "adding sock of flow %d to wfds", id);
-						FD_SET(flow[id].sock, &wfds);
-					} else
-						DEBUG_MSG(4, "no block for flow %d scheduled yet", id);
-				} else if (!flow[id].client_flow_finished) {
-					flow[id].client_flow_finished = 1;
-					if (flow[id].shutdown) {
-						rc = shutdown(flow[id].sock, SHUT_WR);
-						if (rc == -1) {
-							perror("shutdown");
-							error(ERR_WARNING, "shutdown SHUT_WR failed");
-						}
-					}
-					if (flow[id].server_flow_finished) {
-						DEBUG_MSG(4, "flow %u finished", id);
-						active_flows--;
-					}
-				}
-			} 
-
-			if (!flow[id].late_connect || time_is_after(&now, &flow[id].client_flow_start_timestamp)) {
-				DEBUG_MSG(4, "adding sock of flow %d to rfds", id);
-				FD_SET(flow[id].sock, &rfds);
-			}
-
-			/* Check for finished server flows */
-			if (flow[id].server_flow_duration >= 0 
-					&& time_is_after(&now, 
-						&flow[id].server_flow_stop_timestamp)) {
-				if (!flow[id].server_flow_finished) {
-					flow[id].server_flow_finished = 1;
-					if (flow[id].shutdown) {
-						rc = shutdown(flow[id].sock, SHUT_RD);
-						if (rc == -1) {
-							perror("shutdown");
-							error(ERR_WARNING, "shutdown SHUT_RD failed");
-						}
-					}
-					if (flow[id].client_flow_finished) {
-						DEBUG_MSG(4, "flow %u finished", id);
-						active_flows--;
-					}
-				}
-			}
-		}
-
-		efds = efds_orig;
 		timeout.tv_sec = 0;
 		timeout.tv_usec = select_timeout;
 
 		DEBUG_MSG(3, "calling select() (timeout = %u)", select_timeout);
 		rc = select(maxfd + 1, &rfds, &wfds, &efds, &timeout);
-		DEBUG_MSG(3, "select() returned (rc = %d, active_flows = %d)", rc, active_flows)
-
+		DEBUG_MSG(3, "select() returned (rc = %d, active_flows = %d)",
+				rc, active_flows)
 		tsc_gettimeofday(&now);
 
 		if (rc < 0) {
@@ -1161,62 +1188,57 @@ void grind_flows (void)
 				break;
 			if (errno == EINTR)
 				continue;
-			perror("select");
-			error(ERR_FATAL, "select(): failed");
-			/* NOTREACHED */
+			error(ERR_FATAL, "select(): failed: %s",
+					strerror(errno));
 		}
 
-		if (rc > 0) {
-			for (id = 0; id < opt.num_flows; id++) {
+		if (rc == 0)
+			continue;
 
-				DEBUG_MSG(6, "checking socks of flow %d.", id);
+		for (id = 0; id < opt.num_flows; id++) {
 
-				if (FD_ISSET(flow[id].sock, &efds)) {
-					int error_number;
-					socklen_t error_number_size = sizeof(error_number);
-					DEBUG_MSG(5, "sock of flow %d in efds", id);
-					rc = getsockopt(flow[id].sock, SOL_SOCKET,
-							SO_ERROR,
-							(void *)&error_number,
-							&error_number_size);
-					if (rc == -1) {
-						perror("getsockopt");
-						error(ERR_WARNING, "failed to get errno for non-blocking connect");
-					} else if (error_number == 0)
-						goto check_next;
-					else
-						fprintf(stderr, "connect: %s\n", strerror(error_number));
+			DEBUG_MSG(6, "checking socks of flow %d.", id);
+
+			if (FD_ISSET(flow[id].sock, &efds)) {
+				int error_number;
+				socklen_t error_number_size =
+					sizeof(error_number);
+				DEBUG_MSG(5, "sock of flow %d in efds", id);
+				rc = getsockopt(flow[id].sock, SOL_SOCKET,
+						SO_ERROR,
+						(void *)&error_number,
+						&error_number_size);
+				if (rc == -1) {
+					error(ERR_WARNING, "failed to get "
+							"errno for non-blocking "
+							"connect: %s",
+							strerror(errno));
 					stop_flow(id);
-					break;
+					continue;
+				} 
+				if (error_number != 0) {
+					fprintf(stderr, "connect: %s\n",
+							strerror(error_number));
+					stop_flow(id);
 				}
-
-check_next:
-				if (FD_ISSET(flow[id].sock, &rfds)) {
-					DEBUG_MSG(5, "sock of flow %d in rfds", id);
-					if (!read_test_data(id)) {
-						DEBUG_MSG(5, "read_test_data for flow %d failed", id);
-						break;
-					}
-				}
-
-				if (FD_ISSET(flow[id].sock_control, &rfds)) {
-					DEBUG_MSG(5, "sock_control of flow %d in rfds", id);
-					if (!read_control_data(id)) {
-						DEBUG_MSG(5, "read_control data for flow %d failed", id);
-						break;
-					}
-				}
-
-				if (FD_ISSET(flow[id].sock, &wfds)) {
-					DEBUG_MSG(5, "sock of flow %d in wfds", id);
-					if (!write_test_data(id)) {
-						DEBUG_MSG(5, "write_test_data for flow %d failed", id);
-						break;
-					}
-				}
-
-				DEBUG_MSG(6, "done checking socks of flow %d.", id);
 			}
+
+			if (FD_ISSET(flow[id].sock, &rfds)) {
+				DEBUG_MSG(5, "sock of flow %d in rfds", id);
+				read_test_data(id);
+			}
+
+			if (FD_ISSET(flow[id].sock_control, &rfds)) {
+				DEBUG_MSG(5, "sock_control of flow %d "
+						"in rfds", id);
+				read_control_data(id);
+			}
+
+			if (FD_ISSET(flow[id].sock, &wfds)) {
+				DEBUG_MSG(5, "sock of flow %d in wfds", id);
+				write_test_data(id);
+			}
+			DEBUG_MSG(6, "done checking socks of flow %d.", id);
 		}
 	}
 }
