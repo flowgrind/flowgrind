@@ -55,10 +55,12 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" \
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
-am_flowgrind_OBJECTS = common.$(OBJEXT) flowgrind.$(OBJEXT)
+am_flowgrind_OBJECTS = common.$(OBJEXT) debug.$(OBJEXT) \
+	fg_socket.$(OBJEXT) fg_time.$(OBJEXT) flowgrind.$(OBJEXT)
 flowgrind_OBJECTS = $(am_flowgrind_OBJECTS)
 flowgrind_LDADD = $(LDADD)
-am_flowgrindd_OBJECTS = common.$(OBJEXT) fg_pcap.$(OBJEXT) \
+am_flowgrindd_OBJECTS = common.$(OBJEXT) debug.$(OBJEXT) \
+	fg_pcap.$(OBJEXT) fg_socket.$(OBJEXT) fg_time.$(OBJEXT) \
 	log.$(OBJEXT) flowgrindd.$(OBJEXT)
 flowgrindd_OBJECTS = $(am_flowgrindd_OBJECTS)
 flowgrindd_LDADD = $(LDADD)
@@ -164,10 +166,12 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-AM_CFLAGS = -Wall -D_GNU_SOURCE -DDEBUG -g
+AM_CFLAGS = -Wall -D_GNU_SOURCE -DDEBUG -g -save-temps
 dist_bin_SCRIPTS = flow_plotter
-flowgrind_SOURCES = common.h common.c flowgrind.h flowgrind.c
-flowgrindd_SOURCES = common.h common.c fg_pcap.h fg_pcap.c log.h log.c flowgrindd.c
+flowgrind_SOURCES = common.c debug.c fg_socket.c fg_time.c flowgrind.c
+flowgrindd_SOURCES = common.c debug.c fg_pcap.c fg_socket.c \
+		     fg_time.c log.c flowgrindd.c
+
 flowgrindd_LDFLAGS = -lpcap
 all: all-am
 
@@ -281,7 +285,10 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debug.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fg_pcap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fg_socket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fg_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flowgrind.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flowgrindd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@
