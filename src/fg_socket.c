@@ -265,7 +265,7 @@ int set_so_debug(int fd)
 	int opt = 1;
 
 	DEBUG_MSG(3, "Setting TCP_DEBUG on fd %d", fd);
-	return setsockopt(fd, IPPROTO_IP, SO_DEBUG, &opt, sizeof(opt));
+	return setsockopt(fd, SOL_SOCKET, SO_DEBUG, &opt, sizeof(opt));
 }
 
 const char *fg_nameinfo(const struct sockaddr *sa)
