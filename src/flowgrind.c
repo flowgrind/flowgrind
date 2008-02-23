@@ -1246,13 +1246,25 @@ void grind_flows (void)
 
 void close_flow(int id)
 {
-	if (flow[id].stopped)
+	DEBUG_MSG(2, "closing flow %d.", id);
+
+	if (flow[id].stopped || flow[id].closed)
 		return;
 
 	if (close(flow[id].sock) == -1)
 		error(ERR_WARNING, "unable to close test socket.");
 	if (close(flow[id].sock_control) == -1)
 		error(ERR_WARNING, "unable to close control socket.");
+	flow[id].closed = 1;
+
+	FD_CLR(flow[id].sock, &rfds);
+	FD_CLR(flow[id].sock, &wfds);
+	FD_CLR(flow[id].sock_control, &rfds);
+
+	maxfd = max(maxfd, flow[id].sock);
+	maxfd = max(maxfd, flow[id].sock_control);
+
+	active_flows--;
 }
 
 
