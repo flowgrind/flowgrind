@@ -1497,6 +1497,7 @@ void parse_cmdline(int argc, char **argv)
 	int rc = 0;
 	int ch = 0;
 	int id = 0;
+	int error = 0;
 	char *sepptr = NULL;
 	char *tok = NULL;
 	int current_flow_ids[MAX_FLOWS] =  {-1};
@@ -1511,20 +1512,23 @@ void parse_cmdline(int argc, char **argv)
 			if (current_flow_ids[0] == -1) { \
 				int id; \
 				for (id = 0; id < MAX_FLOWS; id++) { \
-					flow[id].PROPERTY_NAME = (PROPERTY_VALUE); \
+					flow[id].PROPERTY_NAME = \
+					(PROPERTY_VALUE); \
 				} \
 			} else { \
 				int id; \
 				for (id = 0; id < MAX_FLOWS; id++) { \
 					if (current_flow_ids[id] == -1) \
 						break; \
-					flow[current_flow_ids[id]].PROPERTY_NAME = (PROPERTY_VALUE); \
+					flow[current_flow_ids[id]].PROPERTY_NAME = \
+					(PROPERTY_VALUE); \
 				} \
 			}
 
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "2ab:B:Cc:Dd:EeF:f:ghH:Ii:lL:Mm:nO:P:pQqSRr:st:T:Uu:W:w:VxY:y:")) != -1)
+	while ((ch = getopt(argc, argv, "2ab:B:Cc:Dd:EeF:f:ghH:Ii:lL:Mm:n"
+					"O:P:pQqSRr:Sst:T:Uu:W:w:VxY:y:")) != -1)
 		switch (ch) {
 		case '2':
 			ASSIGN_FLOW_OPTION(two_way, 1)
@@ -1537,7 +1541,8 @@ void parse_cmdline(int argc, char **argv)
 		case 'b':
 			rc = sscanf(optarg, "%u", &optunsigned);
                         if (rc != 1) {
-				fprintf(stderr, "block size must be a positive integer (in bytes)\n");
+				fprintf(stderr, "block size must be a positive "
+						"integer (in bytes)\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(write_block_size, optunsigned)
@@ -1546,7 +1551,8 @@ void parse_cmdline(int argc, char **argv)
 		case 'B':
 			rc = sscanf(optarg, "%u", &optunsigned);
                         if (rc != 1) {
-				fprintf(stderr, "block size must be a positive integer (in bytes)\n");
+				fprintf(stderr, "block size must be a positive "
+						"integer (in bytes)\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(read_block_size, optunsigned)
@@ -1561,13 +1567,14 @@ void parse_cmdline(int argc, char **argv)
 			break;
 
 		case 'D':
-			debug_level++;
+			increase_debuglevel(1);
 			break;
 
 		case 'd':
 			rc = sscanf(optarg, "%x", &optint);
 			if (rc != 1 || (optint & ~0x3f)) {
-				fprintf(stderr, "malformed differentiated service code point.\n");
+				fprintf(stderr, "malformed differentiated "
+						"service code point.\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(dscp, optint);
@@ -1624,7 +1631,8 @@ void parse_cmdline(int argc, char **argv)
 			}
 			sepptr = strchr(optarg, ',');
 			if (sepptr == NULL) {
-				ASSIGN_FLOW_OPTION(server_control_port, DEFAULT_LISTEN_PORT)
+				ASSIGN_FLOW_OPTION(server_control_port,
+						DEFAULT_LISTEN_PORT)
 			} else {
 				optint = atoi(optarg);
 				if (optint < 1) {
@@ -1664,7 +1672,8 @@ void parse_cmdline(int argc, char **argv)
 		case 'm':
 			rc = sscanf(optarg, "%u", &optunsigned);
                         if (rc != 1 || optunsigned > MAX_FLOWS) {
-				fprintf(stderr, "number of test flows must be within [1..%d]\n", MAX_FLOWS);
+				fprintf(stderr, "number of test flows must "
+						"be within [1..%d]\n", MAX_FLOWS);
 				usage();
 			}
 			opt.num_flows = (short)optunsigned;
@@ -1681,7 +1690,8 @@ void parse_cmdline(int argc, char **argv)
 		case 'O':
 			rc = sscanf(optarg, "%u", &optunsigned);
                         if (rc != 1 || optunsigned > USHRT_MAX) {
-				fprintf(stderr, "base port must be within [1..%d]\n", USHRT_MAX);
+				fprintf(stderr, "base port must be within "
+						"[1..%d]\n", USHRT_MAX);
 				usage();
 			}
 			opt.base_port = (short)optunsigned;
@@ -1709,6 +1719,10 @@ void parse_cmdline(int argc, char **argv)
 
 		case 'r':
 			ASSIGN_FLOW_OPTION(rate_str, optarg)
+			break;
+
+		case 'S':
+			opt.advstats = 1;
 			break;
 
 		case 's':
@@ -1744,7 +1758,8 @@ void parse_cmdline(int argc, char **argv)
 		case 'w':
 			optint = atoi(optarg);
 			if (optint <= 0) {
-				fprintf(stderr, "window must be a positive integer (in bytes)\n");
+				fprintf(stderr, "window must be a positive "
+						"integer (in bytes)\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(client_window_size, optint)
@@ -1753,7 +1768,8 @@ void parse_cmdline(int argc, char **argv)
 		case 'W':
 			optint = atoi(optarg);
 			if (optint <= 0) {
-				fprintf(stderr, "window must be a positive integer (in bytes)\n");
+				fprintf(stderr, "window must be a positive "
+						"integer (in bytes)\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(server_window_size, optint)
@@ -1762,7 +1778,8 @@ void parse_cmdline(int argc, char **argv)
 		case 'y':
 			rc = sscanf(optarg, "%lf", &optdouble);
 			if (rc != 1 || optdouble < 0) {
-				fprintf(stderr, "delay must be a non-negativ number (in seconds)\n");
+				fprintf(stderr, "delay must be a non-negativ "
+						"number (in seconds)\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(client_flow_delay, optdouble)
@@ -1771,7 +1788,8 @@ void parse_cmdline(int argc, char **argv)
 		case 'Y':
 			rc = sscanf(optarg, "%lf", &optdouble);
 			if (rc != 1 || optdouble <= 0) {
-				fprintf(stderr, "delay must be a positive number (in seconds)\n");
+				fprintf(stderr, "delay must be a positive "
+						"number (in seconds)\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(server_flow_delay, optdouble)
@@ -1782,7 +1800,10 @@ void parse_cmdline(int argc, char **argv)
 				if (current_flow_ids[id] == -1) {
 					current_flow_ids[id++] = opt.num_flows++;
 					if (id == MAX_FLOWS) {
-						fprintf(stderr, "maximum number of flows (%d) exceeded.\n", MAX_FLOWS);
+						fprintf(stderr, "maximum number "
+								"of flows (%d) "
+								"exceeded.\n",
+								MAX_FLOWS);
 						exit(2);
 					}
 					current_flow_ids[1] = -1;
@@ -1801,7 +1822,6 @@ void parse_cmdline(int argc, char **argv)
 		usage();
 	}
 #undef ASSIGN_FLOW_OPTION
-
 
 	/* Sanity checking flow options */
 	if (opt.num_flows <= max_flow_specifier) {
