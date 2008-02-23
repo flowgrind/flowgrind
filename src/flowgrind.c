@@ -383,19 +383,25 @@ void timer_start(void)
 
 
 void
-print_tcp_report_line(char hash, int id, double time1, double time2, long bytes_written, long bytes_read, double min_rtt, double tot_rtt, double max_rtt, double min_iat, double tot_iat, double max_iat
+print_tcp_report_line(char hash, int id, double time1, double time2,
+		long bytes_written, long bytes_read, double min_rtt,
+		double tot_rtt, double max_rtt, double min_iat,
+		double tot_iat, double max_iat
 #ifdef __LINUX__
-,
-unsigned cwnd, unsigned ssth, unsigned uack, unsigned sack, unsigned lost, unsigned retr, unsigned fack, unsigned reor, double rtt, double rttvar, double rto
+		,unsigned cwnd, unsigned ssth, unsigned uack,
+		unsigned sack, unsigned lost, unsigned retr,
+		unsigned fack, unsigned reor, double rtt,
+		double rttvar, double rto
 #endif
 )
 {
 	double avg_rtt = INFINITY;
 	double avg_iat = INFINITY;
-	unsigned blocks_written;
+	unsigned blocks_written = 0;
 	char comment_buffer[100] = "(";
-	char report_buffer[300];
-	double thruput;
+	char report_buffer[300] = "";
+	double thruput = 0.0;
+
 #define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 1) \
 		strncat(comment_buffer, "/", sizeof(comment_buffer)); \
 		strncat(comment_buffer, (s), sizeof(comment_buffer)); }while(0);
@@ -465,8 +471,8 @@ unsigned cwnd, unsigned ssth, unsigned uack, unsigned sack, unsigned lost, unsig
 
 void report_final(void)
 {
-	char header_buffer[300];
-	char header_nibble[300];
+	char header_buffer[300] = "";
+	char header_nibble[300] = "";
 
 #ifdef __LINUX__
 	int rc;
@@ -484,61 +490,77 @@ void report_final(void)
 
 		snprintf(header_buffer, sizeof(header_buffer), 
 			"# #%d: %s", id, flow[id].server_name);
-#define CAT(fmt, args...) do {snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
-				strncat(header_buffer, header_nibble, sizeof(header_nibble)); } while (0);
+
+#define CAT(fmt, args...) do {\
+	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
+	strncat(header_buffer, header_nibble, sizeof(header_nibble)); } while (0)
 #define CATC(fmt, args...) CAT(", "fmt, ##args)
 
 		if (strcmp(flow[id].server_name, flow[id].server_name_control) != 0)
-			CAT("/%s", flow[id].server_name_control)
+			CAT("/%s", flow[id].server_name_control);
 		if (flow[id].server_control_port != DEFAULT_LISTEN_PORT) 
-			CAT(",%d", flow[id].server_control_port)
+			CAT(",%d", flow[id].server_control_port);
 		CATC("MSS = %d", flow[id].mss);
 		if (flow[id].mtu != -1)
-			CATC("MTU = %d (%s)", flow[id].mtu, guess_topology(flow[id].mss, flow[id].mtu))
+			CATC("MTU = %d (%s)", flow[id].mtu,
+					guess_topology(flow[id].mss, flow[id].mtu));
 		if (flow[id].stopped)
-			thruput = flow[id].bytes_written_since_first / time_diff(&flow[id].client_flow_start_timestamp, &flow[id].stopped_timestamp);
+			thruput = flow[id].bytes_written_since_first 
+				/ time_diff(&flow[id].client_flow_start_timestamp,
+						&flow[id].stopped_timestamp);
 		else
-			thruput = flow[id].bytes_written_since_first / flow[id].client_flow_duration;
+			thruput = flow[id].bytes_written_since_first /
+				flow[id].client_flow_duration;
 		thruput = scale_thruput(thruput);
-		CATC("ws = %u/%u (%u/%u), bs = %u/%u, delay = %.2fs/%.2fs, duration = %.2fs/%.2fs, thruput = %.6fM%c/s (%llu blocks)", 
-			flow[id].client_window_size_real, flow[id].server_window_size_real,
-			flow[id].client_window_size, flow[id].server_window_size,
-			flow[id].write_block_size, flow[id].read_block_size,
-			flow[id].client_flow_delay, flow[id].server_flow_delay,
-			flow[id].client_flow_duration, flow[id].server_flow_duration,
-			thruput, (opt.mbyte ? 'B' : 'b'), flow[id].write_block_count)
+		CATC("ws = %u/%u (%u/%u), bs = %u/%u, delay = %.2fs/%.2fs, "
+				"duration = %.2fs/%.2fs, thruput = %.6fM%c/s "
+				"(%llu blocks)", 
+				flow[id].client_window_size_real,
+				flow[id].server_window_size_real,
+				flow[id].client_window_size,
+				flow[id].server_window_size,
+				flow[id].write_block_size,
+				flow[id].read_block_size,
+				flow[id].client_flow_delay,
+				flow[id].server_flow_delay,
+				flow[id].client_flow_duration,
+				flow[id].server_flow_duration,
+				thruput, (opt.mbyte ? 'B' : 'b'),
+				flow[id].write_block_count);
 		if (flow[id].rate_str)
 			CATC("rate = %s", flow[id].rate_str);
 		if (flow[id].elcn)
-			CATC("ELCN %s", flow[id].elcn==1 ? "enabled" : "disabled")
+			CATC("ELCN %s", flow[id].elcn==1 ? "enabled" : "disabled");
 		if (flow[id].cork)
-			CATC("TCP_CORK")
+			CATC("TCP_CORK");
 		if (flow[id].pushy)
-			CATC("PUSHY")
+			CATC("PUSHY");
 #ifdef __LINUX__
-		rc = getsockopt( flow[id].sock, IPPROTO_TCP, TCP_CONG_MODULE, cc_buf, &cc_buf_len);
+		rc = getsockopt( flow[id].sock, IPPROTO_TCP,
+				TCP_CONG_MODULE, cc_buf, &cc_buf_len);
 		if (rc == -1) {
 			CATC("cc = (failed")
-			if (flow[id].cc_alg) 
-				CATC(" was set to %s", flow[id].cc_alg)
+				if (flow[id].cc_alg) 
+					CATC(" was set to %s", flow[id].cc_alg);
 			CAT(")");
 		} else
 			CATC("cc = %s", cc_buf);
 		if (!flow[id].cc_alg)
-			CAT(" (default)")
+			CAT(" (default)");
 #endif
 		if (flow[id].dscp) 
-			CATC("dscp = 0x%02x", flow[id].dscp)
+			CATC("dscp = 0x%02x", flow[id].dscp);
 		if (flow[id].late_connect)
-			CATC("late connecting")
+			CATC("late connecting");
 		if (flow[id].shutdown)
-			CATC("calling shutdown")
+			CATC("calling shutdown");
 		if (flow[id].congestion_counter > CONGESTION_LIMIT)
-			CAT(" (overcongested)")
+			CAT(" (overcongested)");
 		else if (flow[id].congestion_counter > 0)
-			CAT(" (congested = %u)", flow[id].congestion_counter)
-		if (flow[id].stopped && flow[id].congestion_counter <= CONGESTION_LIMIT)
-			CAT(" (stopped)")
+			CAT(" (congested = %u)", flow[id].congestion_counter);
+		if (flow[id].stopped && 
+				flow[id].congestion_counter <= CONGESTION_LIMIT)
+			CAT(" (stopped)");
 		CAT("\n");
 
 		log_output(header_buffer);
@@ -547,15 +569,20 @@ void report_final(void)
 		if (flow[id].stopped) 
 			info = flow[id].last_tcp_info;
 		else {
-			rc = getsockopt(flow[id].sock, SOL_TCP, TCP_INFO, &info, &info_len);
+			rc = getsockopt(flow[id].sock, SOL_TCP, TCP_INFO,
+					&info, &info_len);
 			if (rc == -1)
-				error(ERR_WARNING, "getsockopt() failed");
+				error(ERR_WARNING, "getsockopt() failed: %s",
+						strerror(errno));
 		}
 #endif
 		if (flow[id].bytes_written_since_first == 0) {
 			print_tcp_report_line(
-				1, id, flow[id].client_flow_delay, flow[id].client_flow_duration + flow[id].client_flow_delay, 0, 0,
-				INFINITY, INFINITY, INFINITY, INFINITY, INFINITY, INFINITY
+				1, id, flow[id].client_flow_delay,
+				flow[id].client_flow_duration +
+				flow[id].client_flow_delay, 0, 0,
+				INFINITY, INFINITY, INFINITY, 
+				INFINITY, INFINITY, INFINITY
 #ifdef __LINUX__
 				, 
 				info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh,
@@ -569,10 +596,16 @@ void report_final(void)
 		}
 
 		print_tcp_report_line(
-			1, id, flow[id].client_flow_delay, time_diff(&timer.start, &flow[id].last_block_written), 
-			flow[id].bytes_written_since_first, flow[id].bytes_read_since_first, 
-			flow[id].min_rtt_since_first, flow[id].tot_rtt_since_first, flow[id].max_rtt_since_first, 
-			flow[id].min_iat_since_first, flow[id].tot_iat_since_first, flow[id].max_iat_since_first
+			1, id, flow[id].client_flow_delay,
+			time_diff(&timer.start, &flow[id].last_block_written), 
+			flow[id].bytes_written_since_first,
+			flow[id].bytes_read_since_first, 
+			flow[id].min_rtt_since_first,
+			flow[id].tot_rtt_since_first, 
+			flow[id].max_rtt_since_first, 
+			flow[id].min_iat_since_first,
+			flow[id].tot_iat_since_first,
+			flow[id].max_iat_since_first
 #ifdef __LINUX__
 			, 
 			info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh,
@@ -588,11 +621,11 @@ void report_final(void)
 
 void report_flow(int id)
 {
-	double diff_first_last;
-	double diff_first_now;
+	double diff_first_last = 0.0;
+	double diff_first_now = 0.0;
 
 #ifdef __LINUX__
-	int rc;
+	int rc = 0;
 	struct tcp_info info;
 #endif
 
@@ -612,9 +645,15 @@ void report_flow(int id)
 	diff_first_now = time_diff(&timer.start, &now);
 
 	print_tcp_report_line(
-			0, id, diff_first_last, diff_first_now, flow[id].bytes_written_since_last, flow[id].bytes_read_since_last, 
-			flow[id].min_rtt_since_last, flow[id].tot_rtt_since_last, flow[id].max_rtt_since_last, 
-			flow[id].min_iat_since_last, flow[id].tot_iat_since_last, flow[id].max_iat_since_last
+			0, id, diff_first_last, diff_first_now,
+			flow[id].bytes_written_since_last,
+			flow[id].bytes_read_since_last, 
+			flow[id].min_rtt_since_last,
+			flow[id].tot_rtt_since_last,
+			flow[id].max_rtt_since_last, 
+			flow[id].min_iat_since_last,
+			flow[id].tot_iat_since_last,
+			flow[id].max_iat_since_last
 #ifdef __LINUX__
 			, 
 			info.tcpi_snd_cwnd,
