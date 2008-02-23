@@ -946,10 +946,9 @@ void read_control_data(int id)
 }
 
 
-int
-write_test_data(int id)
+void write_test_data(int id)
 {
-	int rc;
+	int rc = 0;
 
 	/* Please note: you could argue that the following while loop
 	   is not necessary as not filling the socket send queue completely
@@ -960,58 +959,78 @@ write_test_data(int id)
 	   might trigger some scheduling or whatever heuristics which would
 	   not take place if we had written immediately. On the other hand,
 	   in case the network is not a bottleneck the loop may take forever. */
+	/* XXX: Detect this! */
 	for (;;) {
 		if (flow[id].write_block_bytes_written == 0) {
-			DEBUG_MSG(5, "new write block %llu on flow %d", flow[id].write_block_count, id);
+			DEBUG_MSG(5, "new write block %llu on flow %d",
+					flow[id].write_block_count, id);
 			tsc_gettimeofday((struct timeval *)flow[id].write_block);
 		}
 
 		rc = write(flow[id].sock,
-				flow[id].write_block + flow[id].write_block_bytes_written,
-				flow[id].write_block_size - flow[id].write_block_bytes_written);
+				flow[id].write_block +
+				flow[id].write_block_bytes_written,
+				flow[id].write_block_size -
+				flow[id].write_block_bytes_written);
 
 		if (rc == -1) {
 			if (errno == EAGAIN) {
-				DEBUG_MSG(5, "write queue limit hit for flow %d", id);
+				DEBUG_MSG(5, "write queue limit hit "
+						"for flow %d", id);
 				break;
 			}
-			perror(flow[id].server_name);
-			error(ERR_WARNING, "premature end of test");
+			error(ERR_WARNING, "Premature end of test: %s",
+					strerror(errno));
 			flow[id].write_errors++;
 			stop_flow(id);
-			return 0;
-		} else if (rc == 0) {
-			DEBUG_MSG(5, "flow %d sent zero bytes. what does that mean?", id);
+			return;
+		} 
+		
+		if (rc == 0) {
+			DEBUG_MSG(5, "flow %d sent zero bytes. what does "
+					"that mean?", id);
 			break;
 		}
+
 		DEBUG_MSG(4, "flow %d sent %d bytes of %u (already = %u)", id, rc, 
-				flow[id].write_block_size, flow[id].write_block_bytes_written);
+				flow[id].write_block_size,
+				flow[id].write_block_bytes_written);
 		flow[id].bytes_written_since_first += rc;
 		flow[id].bytes_written_since_last += rc;
 		flow[id].write_block_bytes_written += rc;
-		if (flow[id].write_block_bytes_written >= flow[id].write_block_size) {
-			assert(flow[id].write_block_bytes_written == flow[id].write_block_size);
+		if (flow[id].write_block_bytes_written >=
+				flow[id].write_block_size) {
 			flow[id].write_block_bytes_written = 0;
 			tsc_gettimeofday(&flow[id].last_block_written);
 			flow[id].write_block_count++;
+
 			if (flow[id].rate) {
-				time_add(&flow[id].next_write_block_timestamp, flow_interpacket_delay(id));
+				time_add(&flow[id].next_write_block_timestamp,
+						flow_interpacket_delay(id));
 				if (time_is_after(&now, &flow[id].next_write_block_timestamp)) {
-					/* TODO: log time_diff and check if it's growing (queue build up) */
-					DEBUG_MSG(3, "incipient congestion on flow %u (block %llu): new block scheduled"
-						" for %s, %.6lfs before now.", id, flow[id].write_block_count,
-						ctime_us(&flow[id].next_write_block_timestamp), 
-						time_diff(&flow[id].next_write_block_timestamp, &now));
+					/* TODO: log time_diff and check if
+					 * it's growing (queue build up) */
+					DEBUG_MSG(3, "incipient congestion on "
+							"flow %u (block %llu): "
+							"new block scheduled "
+							"for %s, %.6lfs before now.",
+							id, 
+							flow[id].write_block_count,
+							ctime_us(&flow[id].next_write_block_timestamp), 
+							time_diff(&flow[id].next_write_block_timestamp, &now));
 					flow[id].congestion_counter++;
-					if (flow[id].congestion_counter > CONGESTION_LIMIT && flow[id].flow_control)
+					if (flow[id].congestion_counter > 
+							CONGESTION_LIMIT && 
+							flow[id].flow_control)
 						stop_flow(id);
 				}
 			}
 		}
+
 		if (!flow[id].pushy)
 			break;
 	} 
-	return 1;
+	return;
 }
 
 
