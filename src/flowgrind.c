@@ -1831,40 +1831,52 @@ void parse_cmdline(int argc, char **argv)
 	for (id = 0; id<opt.num_flows; id++) {
 		DEBUG_MSG(4, "sanity checking parameter set of flow %d.", id);
 		if (flow[id].server_flow_duration > 0 && flow[id].late_connect && 
-			flow[id].server_flow_delay < flow[id].client_flow_delay) {
+				flow[id].server_flow_delay < 
+				flow[id].client_flow_delay) {
 			fprintf(stderr, "Server flow %d starts earlier than client "
-				"flow while late connecting.\n", id);
-			exit(2);
+					"flow while late connecting.\n", id);
+			error = 1;
 		}
-		if (flow[id].client_flow_delay > 0 && flow[id].client_flow_duration == 0) {
-			fprintf(stderr, "Client flow %d has a delay but no runtime.\n", id);
-			exit(2);
+		if (flow[id].client_flow_delay > 0 && 
+				flow[id].client_flow_duration == 0) {
+			fprintf(stderr, "Client flow %d has a delay but "
+					"no runtime.\n", id);
+			error = 1;
 		}
-		if (flow[id].server_flow_delay > 0 && flow[id].server_flow_duration == 0) {
-			fprintf(stderr, "Server flow %d has a delay but no runtime.\n", id);
-			exit(2);
+		if (flow[id].server_flow_delay > 0 && 
+				flow[id].server_flow_duration == 0) {
+			fprintf(stderr, "Server flow %d has a delay but "
+					"no runtime.\n", id);
+			error = 1;
 		}
 		if (flow[id].two_way) {
 			if (flow[id].server_flow_duration != 0 && 
-				flow[id].client_flow_duration != flow[id].server_flow_duration) {
-				fprintf(stderr, "Server flow duration specified albeit -2.\n");
-				exit(2);
+					flow[id].client_flow_duration != 
+					flow[id].server_flow_duration) {
+				fprintf(stderr, "Server flow duration "
+						"specified albeit -2.\n");
+				error = 1;
 			}
-			flow[id].server_flow_duration = flow[id].client_flow_duration;
+			flow[id].server_flow_duration = 
+				flow[id].client_flow_duration;
 			if (flow[id].server_flow_delay != 0 &&
-				flow[id].server_flow_delay != flow[id].client_flow_delay) {
-				fprintf(stderr, "Server flow delay specified albeit -2.\n");
-				exit(2);
+					flow[id].server_flow_delay != 
+					flow[id].client_flow_delay) {
+				fprintf(stderr, "Server flow delay specified "
+						"albeit -2.\n");
+				error = 1;
 			}
 			flow[id].server_flow_delay = flow[id].client_flow_delay;
 		}
 		if (flow[id].rate_str) {
 			unit = type = distribution = 0;
 			/* last %c for catching wrong input... this is not nice. */
-			rc = sscanf(flow[id].rate_str, "%lf%c%c%c%c", &optdouble, &unit, &type, &distribution, &unit);
+			rc = sscanf(flow[id].rate_str, "%lf%c%c%c%c",
+					&optdouble, &unit, &type,
+					&distribution, &unit);
 			if (rc < 1 || rc > 4) {
 				fprintf(stderr, "malformed rate for flow %u.\n", id);
-				usage();
+				error = 1;
 			}
 
 			if (optdouble == 0.0) {
@@ -1878,20 +1890,21 @@ void parse_cmdline(int argc, char **argv)
 				break;
 
 			case 'k': 
-				optdouble*=1<<10; 
+				optdouble *= 1<<10; 
 				break;
 
 			case 'M': 
-				optdouble*=1<<20; 
+				optdouble *= 1<<20; 
 				break;
 				
 			case 'G': 
-				optdouble*=1<<30; 
+				optdouble *= 1<<30; 
 				break;
 			
 			default:
-				fprintf(stderr, "illegal unit specifier in rate of flow %u.\n", id);
-				usage();
+				fprintf(stderr, "illegal unit specifier "
+						"in rate of flow %u.\n", id);
+				error = 1;
 			}
 
 			switch (type) {
@@ -1899,17 +1912,23 @@ void parse_cmdline(int argc, char **argv)
 			case 'b':
 				optdouble /= flow[id].write_block_size;
 				if (optdouble < 1) {
-					fprintf(stderr, "client block size for flow %u is too big for specified rate.\n", id);
-					usage();
+					fprintf(stderr, "client block size "
+							"for flow %u is too "
+							"big for specified "
+							"rate.\n", id);
+					error = 1;
 				}
 				break;
 
 			case 'B':
+				/* Is default */
 				break;
 			
 			default:
-				fprintf(stderr, "illegal type specifier (either block or byte) for flow %u.\n", id);
-				usage();
+				fprintf(stderr, "illegal type specifier "
+						"(either block or byte) for "
+						"flow %u.\n", id);
+				error = 1;
 			}
 
 			if (optdouble > 5e5)
@@ -1929,14 +1948,19 @@ void parse_cmdline(int argc, char **argv)
 				break;
 
 			default:
-				fprintf(stderr, "illegal distribution specifier in rate for flow %u.\n", id);
+				fprintf(stderr, "illegal distribution specifier "
+						"in rate for flow %u.\n", id);
 			}
 		}
 		if (flow[id].flow_control && !flow[id].rate_str) {
-			fprintf(stderr, "flow %d has flow control enabled but no rate.", id);
-			exit(2);
+			fprintf(stderr, "flow %d has flow control enabled but "
+					"no rate.", id);
+			error = 1;
 		}
 	}
+
+	if (error)
+		exit(EXIT_FAILURE);
 
 	if (max_flow_rate > 0) {
 		select_timeout = 1e6/max_flow_rate/2;
