@@ -624,9 +624,10 @@ serve_client(int fd_control)
 	char buffer[1024];
 	char *buf_ptr;
 
-	rc = write_exactly(fd_control, FLOWGRIND_GREET, sizeof(FLOWGRIND_GREET) - 1);
+	rc = write_exactly(fd_control, FLOWGRIND_GREETING,
+			sizeof(FLOWGRIND_GREETING) - 1);
 	if (rc == -1) {
-		logging_log(LOG_WARNING, "write(greeting): failed");
+		logging_log(LOG_WARNING, "write(greeting) failed");
 		goto log;
 	}
 
@@ -638,14 +639,16 @@ serve_client(int fd_control)
 	DEBUG_MSG(1, "proposal: %s", buffer);
 
 	buf_ptr = buffer;
-	rc = memcmp(buf_ptr, INDICATOR, sizeof(INDICATOR) - 1);
+	rc = memcmp(buf_ptr, FLOWGRIND_CALLSIGN, sizeof(FLOWGRIND_CALLSIGN) - 1);
 	if (rc != 0) {
-		logging_log(LOG_WARNING, "malformed protocol indicator");
+		logging_log(LOG_WARNING, "malformed callsign, not "
+				"flowgrind connecting?");
 		goto log;
 	}
-	buf_ptr += sizeof(INDICATOR) - 1;	
-	if (*buf_ptr != '/') {
-		logging_log(LOG_WARNING, "protocol indicator not followed by '/'");
+	buf_ptr += sizeof(FLOWGRIND_CALLSIGN) - 1;	
+	if (*buf_ptr != ',') {
+		logging_log(LOG_WARNING, "callsign not followed by "
+				"seperator");
 		goto log;
 	}
 	buf_ptr++;				
