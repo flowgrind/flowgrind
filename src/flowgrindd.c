@@ -24,8 +24,12 @@
 #include <syslog.h>
 #include <sys/time.h>
 #include <netdb.h>
+
 #include "common.h"
+#include "debug.h"
 #include "fg_pcap.h"
+#include "fg_socket.h"
+#include "fg_time.h"
 #include "log.h"
 #include "svnversion.h"
 
@@ -41,9 +45,6 @@
 struct timeval start; 
 struct timeval end; 
 
-/*
- * Access Control List (ACL)
- */
 #define ACL_ALLOW	1
 #define ACL_DENY	0
 
@@ -55,19 +56,9 @@ typedef struct acl {
 
 acl_t *acl_head = NULL;
 
-/* ACL Prototypes */
 int acl_allow_add (char *);
 acl_t *acl_allow_add_list (acl_t *, struct sockaddr *, int);
 int acl_check (struct sockaddr *);
-
-
-unsigned debug_level = 0;
-
-#define LISTEN_BACKLOG		64
-#define INDICATOR		"flowgrind"
-#define FLOWGRIND_VERSION	"1"
-#define FLOWGRIND_GREET		"flowgrind/1+"
-#define DEFAULT_LISTEN_PORT	5999
 
 int
 acl_allow_add (char *str)
@@ -107,7 +98,7 @@ acl_allow_add_list (acl_t *acl, struct sockaddr *ss, int mask)
 	if (acl == NULL) {
 		acl = malloc(sizeof(acl_t));
 		if (acl == NULL) {
-			perror("malloc");
+			logging_log(LOG_WARNING, "malloc: %s", strerror(errno));
 			exit(1);
 		}
 		acl->next = NULL;
@@ -289,7 +280,9 @@ void tcp_test(int fd_control, char *proposal)
 	double flow_duration;
 	char pushy = 0;
 	char route_record = 0;
-	char shutdown = 0;
+	char server_shutdown = 0;
+	char advstats = 0;
+	char so_debug = 0;
 
 	struct addrinfo hints, *res, *ressave;
 	int on = 1;
@@ -310,11 +303,12 @@ void tcp_test(int fd_control, char *proposal)
 	}
 	*proposal++ = '\0';
 	
-	rc = sscanf(proposal, "%hu,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+", 
-			&requested_server_test_port, &requested_window_size,
-			&flow_delay, &flow_duration, &read_block_size,
-			&write_block_size, &pushy, &shutdown, &route_record);
-	if (rc != 9) {
+	rc = sscanf(proposal, "%hu,%hhd,%hhd,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+", 
+			&requested_server_test_port, &advstats, &so_debug,
+			&requested_window_size, &flow_delay, &flow_duration,
+			&read_block_size, &write_block_size, &pushy,
+			&server_shutdown, &route_record);
+	if (rc != 11) {
 		logging_log(LOG_WARNING, "malformed TCP session "
 			"proposal from client");
 		goto out;
@@ -354,9 +348,9 @@ void tcp_test(int fd_control, char *proposal)
 		/* XXX: Do we need this? */
 		if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
 					(char *)&on, sizeof(on)) == -1) {
-			perror("setsockopt");
 			logging_log(LOG_ALERT, "setsockopt(SO_REUSEADDR): "
-					"failed, continuing.");
+					"failed, continuing: %s",
+					strerror(errno));
 		}
 
 		if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
@@ -370,16 +364,16 @@ void tcp_test(int fd_control, char *proposal)
 		goto out_free;	
 	}
 
-	if (listen(listenfd, 1) < 0) {
-		perror("listen");
-		logging_log(LOG_ALERT, "listen failed");
+	if (listen(listenfd, 0) < 0) {
+		logging_log(LOG_ALERT, "listen failed: %s",
+				strerror(errno));
 		goto out_free;
 	}
 
 	rc = getsockname(listenfd, res->ai_addr, &(res->ai_addrlen));
 	if (rc == -1) {
-		perror("getsockname");
-		logging_log(LOG_ALERT, "getsockname() failed.");
+		logging_log(LOG_ALERT, "getsockname() failed: %s",
+				strerror(errno));
 		goto out_free;
 	}
 	switch (res->ai_addr->sa_family) {
@@ -400,7 +394,6 @@ void tcp_test(int fd_control, char *proposal)
 	}
 
 	addrlen = res->ai_addrlen;
-
 	freeaddrinfo(ressave);
 	
 	real_listen_window_size = set_window_size(listenfd, 
@@ -424,18 +417,19 @@ void tcp_test(int fd_control, char *proposal)
 			logging_log(LOG_ALERT, "accept() failed.");
 		goto out_free;
 	}
-	/* XXX: check if this is the same client. */
+	/* XXX: Check if this is the same client. */
 	if (close(listenfd) == -1)
 		logging_log(LOG_WARNING, "close(): failed");
 
 	logging_log(LOG_NOTICE, "client %s connected for testing.", 
-		fg_nameinfo((struct sockaddr *)&caddr));
+			fg_nameinfo((struct sockaddr *)&caddr));
 	real_window_size = set_window_size(fd, real_listen_window_size);
 	if (!((real_listen_window_size == real_window_size) 
 #ifdef __LINUX__
-		|| (real_listen_window_size * 2 == real_window_size)
+				|| (real_listen_window_size * 2 
+					== real_window_size)
 #endif
-		)) {
+	     )) {
 		logging_log(LOG_WARNING, "Failed to set window size of test "
 				"socket to window size of listen socket "
 				"(listen = %u, test = %u).", 
@@ -444,15 +438,14 @@ void tcp_test(int fd_control, char *proposal)
 	}
 	if (route_record)
 		set_route_record(fd);
+	if (advstats)
+		fg_pcap_go(fd);
+	if (so_debug)
+		set_so_debug(fd);
 
 	set_non_blocking(fd);
 	set_non_blocking(fd_control);
-
-	/* XXX: I feel MSG_OOB would be more appropriate. 
-		But as this is complicated it is postponed... */
-
 	set_nodelay(fd_control);
-	fg_pcap_go(fd);
 
 	tsc_gettimeofday(&start);
 	flow_start_timestamp = start;
@@ -486,9 +479,8 @@ void tcp_test(int fd_control, char *proposal)
 		DEBUG_MSG(4, "select() returned (rc = %d)", rc)
 
 		if (rc < 0) {
-			perror("select");
-			error(ERR_FATAL, "select(): failed");
-			/* NOTREACHED */
+			error(ERR_FATAL, "select() failed: %s",
+					strerror(errno));
 		}
 
 		tsc_gettimeofday(&now);
@@ -502,9 +494,9 @@ void tcp_test(int fd_control, char *proposal)
 				if (rc == -1) {
 					if (errno == EAGAIN)
 						break;
-					perror("recv");
-					logging_log(LOG_WARNING, "premature "
-						"end of test");
+					logging_log(LOG_WARNING, "Premature "
+						"end of test: %s",
+						strerror(errno));
 					goto out_free;
 				} else if (rc == 0) {
 					DEBUG_MSG(1, "client shut down flow");
@@ -543,9 +535,9 @@ void tcp_test(int fd_control, char *proposal)
 								"dropping reply block");
 							continue;
 						}
-						perror("write");
 						logging_log(LOG_WARNING, 
-							"premature end of test");
+							"Premature end of test: %s",
+							strerror(errno));
 						goto out_free;
 					}
 					DEBUG_MSG(4, "sent reply block (IAT = "
@@ -562,8 +554,8 @@ void tcp_test(int fd_control, char *proposal)
 			DEBUG_MSG(5, "control sock in rfds");
 			rc = recv(fd_control, buffer, sizeof(buffer), 0);
 			if (rc == -1 && errno != EAGAIN) {
-				perror("recv");
-				logging_log(LOG_WARNING, "premature end of test");
+				logging_log(LOG_WARNING, "premature end of "
+						"test: %s", strerror(errno));
 				goto out_free;
 			} else if (rc == 0) {
 				DEBUG_MSG(1, "client shut down control connection");
@@ -576,7 +568,7 @@ void tcp_test(int fd_control, char *proposal)
 		if (FD_ISSET(fd, &wfds)) {
 			DEBUG_MSG(5, "test sock in wfds");
 			if (time_is_after(&now, &flow_start_timestamp) &&
-				(flow_duration < 0 || time_is_after(&flow_stop_timestamp, &now))) {
+					(flow_duration < 0 || time_is_after(&flow_stop_timestamp, &now))) {
 				for (;;) {
 					if (write_block_bytes_written == 0)
 						tsc_gettimeofday((struct timeval *)write_block);
@@ -585,8 +577,8 @@ void tcp_test(int fd_control, char *proposal)
 							write_block_size -
 							write_block_bytes_written, 0);
 					if (rc == -1 && errno != EAGAIN) {
-						perror("send");
-						logging_log(LOG_WARNING, "premature end of test");
+						logging_log(LOG_WARNING, "Premature end of test: %s",
+								strerror(errno));
 						goto out_free;
 					} else if (rc == 0)
 						break;
@@ -603,8 +595,20 @@ void tcp_test(int fd_control, char *proposal)
 				}
 			}
 		}
+
+		if (server_shutdown && 
+				time_is_after(&now, &flow_stop_timestamp)) {
+			DEBUG_MSG(4, "shutting down data connection.");
+			rc = shutdown(fd, SHUT_WR);
+			if (rc == -1) {
+				logging_log(LOG_WARNING, "shutdown "
+						"failed: %s", strerror(errno));
+			}
+		}
+
 		fg_pcap_dispatch();
 	}
+
 out_free:
 	free(read_block);
 	free(write_block);
