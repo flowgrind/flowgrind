@@ -208,7 +208,7 @@ int set_keepalive(int fd, int how)
 {
 	DEBUG_MSG(3, "Setting TCP_KEEPALIVE(%d) on fd %d", how, fd);
 
-	return setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE, &how, sizeof(how));
+	return setsockopt(fd, IPPROTO_TCP, SO_KEEPALIVE, &how, sizeof(how));
 }
 
 int set_congestion_control(int fd, const char *cc_alg)

@@ -539,7 +539,7 @@ void report_final(void)
 		rc = getsockopt( flow[id].sock, IPPROTO_TCP,
 				TCP_CONG_MODULE, cc_buf, &cc_buf_len);
 		if (rc == -1) {
-			CATC("cc = (failed")
+			CATC("cc = (failed");
 				if (flow[id].cc_alg) 
 					CATC(" was set to %s", flow[id].cc_alg);
 			CAT(")");
@@ -667,7 +667,7 @@ void report_flow(int id)
 			info.tcpi_rttvar,
 			info.tcpi_rto
 #endif
-			);
+				);
 
 	flow[id].bytes_written_since_last = 0;
 	flow[id].bytes_read_since_last = 0;
