@@ -434,7 +434,7 @@ void tcp_test(int fd_control, char *proposal)
 				"socket to window size of listen socket "
 				"(listen = %u, test = %u).", 
 				real_listen_window_size, real_window_size);
-		goto out_free;
+	/*	goto out_free; */
 	}
 	if (route_record)
 		set_route_record(fd);
