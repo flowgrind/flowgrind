@@ -1386,38 +1386,38 @@ void prepare_flow(int id)
 				"window size.\n");
 	}
 
-	if (flow[id].cc_alg && !set_congestion_control(
+	if (flow[id].cc_alg && set_congestion_control(
 				flow[id].sock, flow[id].cc_alg))
 		error(ERR_FATAL, "Unable to set congestion control "
 				"algorithm for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].elcn && !set_so_elcn(flow[id].sock, flow[id].elcn))
+	if (flow[id].elcn && set_so_elcn(flow[id].sock, flow[id].elcn))
 		error(ERR_FATAL, "Unable to set TCP_ELCN "
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].icmp && !set_so_icmp(flow[id].sock))
+	if (flow[id].icmp && set_so_icmp(flow[id].sock))
 		error(ERR_FATAL, "Unable to set TCP_ICMP "
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].cork && !set_so_cork(flow[id].sock))
+	if (flow[id].cork && set_so_cork(flow[id].sock))
 		error(ERR_FATAL, "Unable to set TCP_CORK "
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].so_debug && !set_so_debug(flow[id].sock))
+	if (flow[id].so_debug && set_so_debug(flow[id].sock))
 		error(ERR_FATAL, "Unable to set SO_DEBUG "
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].route_record && !set_route_record(flow[id].sock))
+	if (flow[id].route_record && set_route_record(flow[id].sock))
 		error(ERR_FATAL, "Unable to set route record "
 				"option for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].dscp && !set_dscp(flow[id].sock, flow[id].dscp))
+	if (flow[id].dscp && set_dscp(flow[id].sock, flow[id].dscp))
 		error(ERR_FATAL, "Unable to set DSCP value"
 				"for flow %d: %s", id, strerror(errno));
 
