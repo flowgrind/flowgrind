@@ -1136,9 +1136,12 @@ void prepare_fds (void)
 		if (flow[id].stopped)
 			continue;
 
-		if (!server_flow_in_delay(id) && !server_flow_sending(id) &&
-				!client_flow_in_delay(id) &&
-				!client_flow_sending(id)) {
+		if ((!flow[id].server_flow_duration || 
+					(!server_flow_in_delay(id) && 
+					 !server_flow_sending(id))) &&
+				(!flow[id].client_flow_duration || 
+				 (!client_flow_in_delay(id) &&
+				  !client_flow_sending(id)))) {
 			close_flow(id);
 			continue;
 		}
@@ -1826,7 +1829,7 @@ void parse_cmdline(int argc, char **argv)
 	/* Sanity checking flow options */
 	if (opt.num_flows <= max_flow_specifier) {
 		fprintf(stderr, "Must not specify option for non-existing flow.\n"); 
-		exit(2);
+		error = 1;
 	}
 	for (id = 0; id<opt.num_flows; id++) {
 		DEBUG_MSG(4, "sanity checking parameter set of flow %d.", id);
@@ -1965,8 +1968,12 @@ void parse_cmdline(int argc, char **argv)
 		}
 	}
 
+#ifdef DEBUG
+	DEBUG_MSG(1, "Skipping errors discovered by sanity checks.");
+#else
 	if (error)
 		exit(EXIT_FAILURE);
+#endif
 
 	if (max_flow_rate > 0) {
 		select_timeout = 1e6/max_flow_rate/2;

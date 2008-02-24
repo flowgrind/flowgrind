@@ -160,17 +160,17 @@ void report_flow(int id);
 char *guess_topology (unsigned mss, unsigned mtu);
 void close_flow(int id);
 
-inline static int server_flow_in_delay(int id)
+static int server_flow_in_delay(int id)
 {
 	return time_is_after(&flow[id].server_flow_start_timestamp, &now);
 }
 
-inline static int client_flow_in_delay(int id)
+static int client_flow_in_delay(int id)
 {
 	return time_is_after(&flow[id].client_flow_start_timestamp, &now);
 }
 
-inline static int server_flow_sending(int id)
+static int server_flow_sending(int id)
 {
 	return !server_flow_in_delay(id) && 
 		(flow[id].server_flow_duration < 0 || 
@@ -180,13 +180,13 @@ inline static int server_flow_sending(int id)
 	 * flow which does not necessarily exist. */
 }
 
-inline static int client_flow_sending(int id)
+static int client_flow_sending(int id)
 {
 	return !client_flow_in_delay(id) && (flow[id].client_flow_duration < 0
 		 || time_diff(&flow[id].client_flow_stop_timestamp, &now) < 0);
 }
 	
-inline static int client_flow_block_scheduled(int id)
+static int client_flow_block_scheduled(int id)
 {
 	return !flow[id].rate || 
 		time_is_after(&now, &flow[id].next_write_block_timestamp);
