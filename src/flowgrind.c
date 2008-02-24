@@ -1260,9 +1260,7 @@ void close_flow(int id)
 		error(ERR_WARNING, "unable to close control socket.");
 	flow[id].closed = 1;
 
-	FD_CLR(flow[id].sock, &rfds);
-	FD_CLR(flow[id].sock, &wfds);
-	FD_CLR(flow[id].sock_control, &rfds);
+	FD_CLR(flow[id].sock, &efds_orig);
 
 	maxfd = max(maxfd, flow[id].sock);
 	maxfd = max(maxfd, flow[id].sock_control);
