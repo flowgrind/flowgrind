@@ -155,14 +155,15 @@ void fg_pcap_dispatch(void)
 	if (!pcap_init_done)
 		return;
 
-	rc = pcap_dispatch(pcap_handle, -1 /* all packets */, 
-			fg_pcap_handler, NULL);
-	if (rc == -1) {
-		logging_log(LOG_WARNING, "pcap_dispatch() failed. Packet "
-				"dispatching stopped.");
-		pcap_init_done = 0;
-	} else
-		DEBUG_MSG(4, "pcap: finished processing %u packets.", rc);
+        rc = pcap_dispatch(pcap_handle, -1 /* all packets */, 
+                        fg_pcap_handler, NULL);
+        if (rc == -1) {
+                logging_log(LOG_WARNING, "pcap_dispatch() failed. Packet "
+                                "dispatching stopped.");
+                pcap_init_done = 0;
+                return;
+        } 
+        DEBUG_MSG(4, "pcap: finished processing %u packets.", rc);
 
 	return;
 }
