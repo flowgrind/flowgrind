@@ -32,29 +32,8 @@
 #include "svnversion.h"
 
 #ifndef SVNVERSION
-#define SVNVERSION "(unknown)"
+#define SVNVERSION "(dev version)"
 #endif
-
-#ifndef SOL_IP
-#ifdef IPPROTO_IP
-#define SOL_IP			IPPROTO_IP
-#endif
-#endif
-
-#ifndef SOL_TCP
-#ifdef IPPROTO_TCP
-#define SOL_TCP			IPPROTO_TCP
-#endif
-#endif
-
-#ifdef __LINUX__
-#include <linux/tcp.h>
-#ifndef TCP_CONG_MODULE
-#define TCP_CONG_MODULE 13
-#endif
-#else
-#include <netinet/tcp.h>
-#endif 
 
 #ifdef __SOLARIS__
 #define RANDOM_MAX		4294967295UL	/* 2**32-1 */
@@ -63,9 +42,6 @@
 #else
 #define RANDOM_MAX		RAND_MAX	/* Linux, FreeBSD */
 #endif
-
-#define ASSIGN_MIN(s, c) if ((s)>(c)) (s) = (c)
-#define ASSIGN_MAX(s, c) if ((s)<(c)) (s) = (c)
 
 #ifdef __LINUX__
 #define TCP_REPORT_HDR_STRING_MBIT "# ID   begin     end   c/s Mb/s   s/c Mb/s RTT, ms: min        avg        max IAT, ms: min        avg        max    cwnd  ssth #uack #sack #lost #retr #fack #reor     rtt  rttvar      rto\n" 
@@ -471,20 +447,13 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 
 void report_final(void)
 {
+	int id = 0;
+	double thruput = 0.0;
 	char header_buffer[300] = "";
 	char header_nibble[300] = "";
-
 #ifdef __LINUX__
-	int rc;
-
-	struct tcp_info info;
-	socklen_t info_len = sizeof(struct tcp_info);
-
-	char cc_buf[30];
-	socklen_t cc_buf_len = sizeof(cc_buf);
+	struct tcp_info *info = NULL;
 #endif
-	int id;
-	double thruput;
 
 	for (id = 0; id < opt.num_flows; id++) {
 
@@ -535,18 +504,14 @@ void report_final(void)
 			CATC("TCP_CORK");
 		if (flow[id].pushy)
 			CATC("PUSHY");
+
 #ifdef __LINUX__
-		rc = getsockopt( flow[id].sock, IPPROTO_TCP,
-				TCP_CONG_MODULE, cc_buf, &cc_buf_len);
-		if (rc == -1) {
-			CATC("cc = (failed");
-				if (flow[id].cc_alg) 
-					CATC(" was set to %s", flow[id].cc_alg);
-			CAT(")");
-		} else
-			CATC("cc = %s", cc_buf);
+		CATC("cc = \"%s\"", *flow[id].final_cc_alg ? flow[id].final_cc_alg :
+				"(failed)");
 		if (!flow[id].cc_alg)
 			CAT(" (default)");
+		else if (strcmp(flow[id].final_cc_alg, flow[id].cc_alg) != 0)
+			CAT(" (was set to \"%s\")", flow[id].cc_alg);
 #endif
 		if (flow[id].dscp) 
 			CATC("dscp = 0x%02x", flow[id].dscp);
@@ -567,14 +532,9 @@ void report_final(void)
 
 #ifdef __LINUX__
 		if (flow[id].stopped) 
-			info = flow[id].last_tcp_info;
-		else {
-			rc = getsockopt(flow[id].sock, SOL_TCP, TCP_INFO,
-					&info, &info_len);
-			if (rc == -1)
-				error(ERR_WARNING, "getsockopt() failed: %s",
-						strerror(errno));
-		}
+			info = &flow[id].last_tcp_info;
+		else 
+			info = &flow[id].final_tcp_info;
 #endif
 		if (flow[id].bytes_written_since_first == 0) {
 			print_tcp_report_line(
@@ -585,11 +545,11 @@ void report_final(void)
 				INFINITY, INFINITY, INFINITY
 #ifdef __LINUX__
 				, 
-				info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh,
-				info.tcpi_unacked, info.tcpi_sacked,
-				info.tcpi_lost, info.tcpi_total_retrans,
-				info.tcpi_fackets, info.tcpi_reordering,
-				info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_rto
+				info->tcpi_snd_cwnd, info->tcpi_snd_ssthresh,
+				info->tcpi_unacked, info->tcpi_sacked,
+				info->tcpi_lost, info->tcpi_retrans, 
+				info->tcpi_fackets, info->tcpi_reordering,
+				info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto
 #endif
 			);
 			continue;
@@ -608,11 +568,11 @@ void report_final(void)
 			flow[id].max_iat_since_first
 #ifdef __LINUX__
 			, 
-			info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh,
-			info.tcpi_unacked, info.tcpi_sacked,
-			info.tcpi_lost, info.tcpi_retrans,
-			info.tcpi_fackets, info.tcpi_reordering,
-			info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_rto
+			info->tcpi_snd_cwnd, info->tcpi_snd_ssthresh,
+			info->tcpi_unacked, info->tcpi_sacked,
+			info->tcpi_lost, info->tcpi_retrans,
+			info->tcpi_fackets, info->tcpi_reordering,
+			info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto
 #endif
 		);
 	}
@@ -635,9 +595,13 @@ void report_flow(int id)
 #ifdef __LINUX__
 	socklen_t info_len = sizeof(struct tcp_info);
 
-	rc = getsockopt(flow[id].sock, SOL_TCP, TCP_INFO, &info, &info_len);
-	if (rc == -1)
-		error(ERR_WARNING, "getsockopt() failed");
+	rc = getsockopt(flow[id].sock, IPPROTO_TCP, TCP_INFO, &info, &info_len);
+	if (rc == -1) {
+		error(ERR_WARNING, "getsockopt() failed: %s",
+				strerror(errno));
+		stop_flow(id);
+		return;
+	}
 #endif
 
 	tsc_gettimeofday(&now);
@@ -683,8 +647,7 @@ void report_flow(int id)
 }
 
 
-int
-name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
+int name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
 		socklen_t *lenp, char do_connect)
 {
 	int fd, n;
@@ -697,29 +660,30 @@ name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
 
 	snprintf(service, sizeof(service), "%u", port);
 
-	if ((n = getaddrinfo(server_name, service, &hints, &res)) != 0) {
-		fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(n));
-		error(ERR_FATAL, "getaddrinfo(): failed");
-	}
+	if ((n = getaddrinfo(server_name, service, &hints, &res)) != 0) 
+		error(ERR_FATAL, "getaddrinfo() failed: %s",
+				gai_strerror(n));
 	ressave = res;
 
 	do {
 		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		if (fd < 0)
-			continue;	/* ignore this one */
+			continue;	
 
 		if (!do_connect)
 			break;
-		else if (connect(fd, res->ai_addr, res->ai_addrlen) == 0)
+
+		if (connect(fd, res->ai_addr, res->ai_addrlen) == 0)
 			break;
-		error(ERR_WARNING, "failed to connect to %s: %s",
+
+		error(ERR_WARNING, "Failed to connect to \"%s\": %s",
 				server_name, strerror(errno));
 		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
-	if (res == NULL) {
-		error(ERR_FATAL, "could not establish connection to server");
-	}
+	if (res == NULL) 
+		error(ERR_FATAL, "Could not establish connection to "
+				"\"%s\": %s", server_name, strerror(errno));
 
 	if (saptr && lenp) {
 		*saptr = malloc(res->ai_addrlen);
@@ -784,8 +748,7 @@ void write_proposal(int s, char *proposal, int proposal_size)
 	}
 }
 
-void
-stop_flow(int id)
+void stop_flow(int id)
 {
 	if (flow[id].stopped) {
 		DEBUG_MSG(3, "flow %d already stopped", id);
@@ -1187,7 +1150,7 @@ void grind_flows (void)
 		DEBUG_MSG(3, "calling select() (timeout = %u)", select_timeout);
 		rc = select(maxfd + 1, &rfds, &wfds, &efds, &timeout);
 		DEBUG_MSG(3, "select() returned (rc = %d, active_flows = %d)",
-				rc, active_flows)
+				rc, active_flows);
 		tsc_gettimeofday(&now);
 
 		if (rc < 0) {
@@ -1253,21 +1216,45 @@ void grind_flows (void)
 
 void close_flow(int id)
 {
+#ifdef __LINUX__
+	socklen_t opt_len = 0;
+#endif
+
 	DEBUG_MSG(2, "closing flow %d.", id);
 
 	if (flow[id].stopped || flow[id].closed)
 		return;
 
+#ifdef __LINUX__
+	opt_len = sizeof(flow[id].final_cc_alg);
+	if (getsockopt(flow[id].sock, IPPROTO_TCP, TCP_CONG_MODULE,
+				flow[id].final_cc_alg, &opt_len) == -1) {
+		error(ERR_WARNING, "failed to determine congestion control "
+				"algorihhm for flow %d: %s: ", id,
+				strerror(errno));
+		flow[id].final_cc_alg[0] = '\0';
+	}
+
+	opt_len = sizeof(flow[id].final_tcp_info);
+	if (getsockopt(flow[id].sock, IPPROTO_TCP, TCP_INFO,
+				&flow[id].final_tcp_info, &opt_len) == -1) {
+		error(ERR_WARNING, "failed to get last tcp_info: %s",
+				strerror(errno));
+		flow[id].stopped = 1;
+	}
+#endif
+
 	if (close(flow[id].sock) == -1)
-		error(ERR_WARNING, "unable to close test socket.");
+		error(ERR_WARNING, "unable to close test socket: %s",
+				strerror(errno));
 	if (close(flow[id].sock_control) == -1)
-		error(ERR_WARNING, "unable to close control socket.");
+		error(ERR_WARNING, "unable to close control socett: %s",
+				strerror(errno));
 	flow[id].closed = 1;
 
 	FD_CLR(flow[id].sock, &efds_orig);
-
-	maxfd = max(maxfd, flow[id].sock);
-	maxfd = max(maxfd, flow[id].sock_control);
+	maxfd = MAX(maxfd, flow[id].sock);
+	maxfd = MAX(maxfd, flow[id].sock_control);
 
 	active_flows--;
 }
@@ -1391,37 +1378,37 @@ void prepare_flow(int id)
 	}
 
 	if (flow[id].cc_alg && set_congestion_control(
-				flow[id].sock, flow[id].cc_alg))
+				flow[id].sock, flow[id].cc_alg) == -1)
 		error(ERR_FATAL, "Unable to set congestion control "
 				"algorithm for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].elcn && set_so_elcn(flow[id].sock, flow[id].elcn))
+	if (flow[id].elcn && set_so_elcn(flow[id].sock, flow[id].elcn) == -1)
 		error(ERR_FATAL, "Unable to set TCP_ELCN "
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].icmp && set_so_icmp(flow[id].sock))
+	if (flow[id].icmp && set_so_icmp(flow[id].sock) == -1)
 		error(ERR_FATAL, "Unable to set TCP_ICMP "
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].cork && set_so_cork(flow[id].sock))
+	if (flow[id].cork && set_tcp_cork(flow[id].sock) == -1)
 		error(ERR_FATAL, "Unable to set TCP_CORK "
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].so_debug && set_so_debug(flow[id].sock))
+	if (flow[id].so_debug && set_so_debug(flow[id].sock) == -1)
 		error(ERR_FATAL, "Unable to set SO_DEBUG "
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].route_record && set_route_record(flow[id].sock))
+	if (flow[id].route_record && set_route_record(flow[id].sock) == -1)
 		error(ERR_FATAL, "Unable to set route record "
 				"option for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].dscp && set_dscp(flow[id].sock, flow[id].dscp))
+	if (flow[id].dscp && set_dscp(flow[id].sock, flow[id].dscp) == -1)
 		error(ERR_FATAL, "Unable to set DSCP value"
 				"for flow %d: %s", id, strerror(errno));
 
@@ -1484,8 +1471,8 @@ void prepare_flows(void)
 	start_ts = time(NULL);
 	ctime_r(&start_ts, start_ts_buffer);
 	start_ts_buffer[24] = '\0';
-	snprintf(headline, sizeof(headline), "# %s: originating host = %s,"
-			"number of flows = %d, reporting interval = %.2fs,"
+	snprintf(headline, sizeof(headline), "# %s: originating host = %s, "
+			"number of flows = %d, reporting interval = %.2fs, "
 			"[tput] = %s (%s)\n",
 			(start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
 			(rc == -1 ? "(unknown)" : me.nodename), 
@@ -1532,7 +1519,7 @@ void parse_cmdline(int argc, char **argv)
 
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "2ab:B:Cc:Dd:EeF:f:ghH:Ii:lL:Mm:n"
+	while ((ch = getopt(argc, argv, "2ab:B:Cc:Dd:EeF:f:ghH:Ii:klL:Mm:n"
 					"O:P:pQqSRr:Sst:T:Uu:W:w:VxY:y:")) != -1)
 		switch (ch) {
 		case '2':
