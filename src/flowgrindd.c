@@ -465,7 +465,7 @@ void tcp_test(int fd_control, char *proposal)
 	if (flow_duration != 0)
 		FD_SET(fd, &wfds_orig);
 	FD_SET(fd, &efds_orig);
-	maxfd = max(fd_control, fd);
+	maxfd = MAX(fd_control, fd);
 	
 	for (;;) {
 		rfds = rfds_orig;
