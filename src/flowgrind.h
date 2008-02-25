@@ -1,10 +1,8 @@
 #ifndef _FLOWGRIND_H_
 #define _FLOWGRIND_H_
 
-#ifdef __LINUX__
-#include <linux/tcp.h>
-#else
-#include <netinet/tcp.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
 #endif
 
 #include "fg_time.h"
@@ -25,7 +23,7 @@ unsigned select_timeout = DEFAULT_SELECT_TIMEOUT;
 
 unsigned int client_port, server_port;
 unsigned int packet_size;
-unsigned int protocol_rate;	
+unsigned int protocol_rate;
 int tcp_sock, udp_sock;
 uint64_t npackets;
 struct sockaddr *server = NULL;
@@ -33,7 +31,7 @@ socklen_t server_len;
 
 
 struct {
-	unsigned short num_flows;	
+	unsigned short num_flows;
 	double reporting_interval;
 	char advstats;
 	char dont_log_stdout;
@@ -50,13 +48,13 @@ enum protocol {
 	PROTO_UDP
 };
 
-struct {
-	char *server_name;		
+struct _flow {
+	char *server_name;
 	char *server_name_control;
-	unsigned server_control_port;			
+	unsigned server_control_port;
 	unsigned server_data_port;
 
-	int sock;		
+	int sock;
 	int sock_control;
 	struct sockaddr *saddr;
 	socklen_t saddr_len;
@@ -65,18 +63,18 @@ struct {
 
 	unsigned mss;
 	int mtu;
-		
+
 	unsigned client_window_size;
 	unsigned client_window_size_real;
 	unsigned server_window_size;
 	unsigned server_window_size_real;
-	char *cc_alg;			/* Congestion algorithm to use with TCP flows */	
-	int elcn;			/* Flag to use TCP_ELCN */
-	int icmp;			/* Flag to use TCP_ICMP */
-	char cork;			/* Flag to use TCP_CORK */
+	char *cc_alg;
+	int elcn;
+	int icmp;
+	char cork;
 	char so_debug;
-	uint8_t dscp;			/* DSCP: 6 bit field */
-	char pushy;			/* Do not iterate through next select to continue sending */
+	uint8_t dscp;
+	char pushy;
 	char route_record;
 	char late_connect;
 	char connect_called;
@@ -89,8 +87,8 @@ struct {
 	char flow_control;
 	char byte_counting;
 
-	unsigned write_errors;		
-	unsigned read_errors;	
+	unsigned write_errors;
+	unsigned read_errors;
 
 	char *read_block;
 	unsigned read_block_size;
@@ -126,7 +124,9 @@ struct {
 	struct timeval initial_server_clock;
 
 #ifdef __LINUX__
+	char final_cc_alg[30];
 	struct tcp_info last_tcp_info;
+	struct tcp_info final_tcp_info;
 #endif
 
 	long bytes_read_since_first;
@@ -148,7 +148,8 @@ struct {
 	double max_iat_since_last;
 	double tot_iat_since_first;
 	double tot_iat_since_last;
-} flow[MAX_FLOWS];
+};
+struct _flow flow[MAX_FLOWS];
 
 struct {
 	struct timeval start;
@@ -159,6 +160,7 @@ struct {
 void report_flow(int id);
 char *guess_topology (unsigned mss, unsigned mtu);
 void close_flow(int id);
+void stop_flow(int id);
 
 static int server_flow_in_delay(int id)
 {
@@ -172,9 +174,9 @@ static int client_flow_in_delay(int id)
 
 static int server_flow_sending(int id)
 {
-	return !server_flow_in_delay(id) && 
-		(flow[id].server_flow_duration < 0 || 
-		 time_diff(&flow[id].server_flow_stop_timestamp, &now) 
+	return !server_flow_in_delay(id) &&
+		(flow[id].server_flow_duration < 0 ||
+		 time_diff(&flow[id].server_flow_stop_timestamp, &now)
 		 + flow[id].max_rtt_since_first < 0);
 	/* XXX: This relies on the RTT measurement from the _client_
 	 * flow which does not necessarily exist. */
@@ -185,10 +187,10 @@ static int client_flow_sending(int id)
 	return !client_flow_in_delay(id) && (flow[id].client_flow_duration < 0
 		 || time_diff(&flow[id].client_flow_stop_timestamp, &now) < 0);
 }
-	
+
 static int client_flow_block_scheduled(int id)
 {
-	return !flow[id].rate || 
+	return !flow[id].rate ||
 		time_is_after(&now, &flow[id].next_write_block_timestamp);
 }
 
@@ -200,4 +202,4 @@ inline static double scale_thruput(double thruput)
 
 	return thruput /= 1e6/(1<<3) ;
 }
-#endif 
+#endif
