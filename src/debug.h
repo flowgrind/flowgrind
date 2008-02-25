@@ -14,11 +14,13 @@ unsigned debug_level;
 inline const char *debug_timestamp(void);
 
 #define DEBUG_MSG(message_level, msg, args...) \
-	if (debug_level>=message_level) { \
-		fprintf(stderr, "%s %s:%d  [%d] " msg "\n", \
-				debug_timestamp(), __FUNCTION__, \
-				__LINE__, getpid(), ##args); \
-	}
+        do { \
+                if (debug_level>=message_level) { \
+                        fprintf(stderr, "%s %s:%d  [%d] " msg "\n", \
+                                        debug_timestamp(), __FUNCTION__, \
+                                        __LINE__, getpid(), ##args); \
+                } \
+        } while(0)
 
 #else
 

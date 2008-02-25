@@ -33,8 +33,8 @@
 #define ERR_FATAL	0
 #define ERR_WARNING	1
 
-#define min(a, b)	((a) < (b) ? (a) : (b))
-#define max(a, b)	((a) > (b) ? (a) : (b))
+#define ASSIGN_MIN(s, c) if ((s)>(c)) (s) = (c)
+#define ASSIGN_MAX(s, c) if ((s)<(c)) (s) = (c)
 
 struct _reply {
 	struct timeval sent;
@@ -44,4 +44,4 @@ struct _reply {
 
 void error(int errcode, const char *fmt, ...);
 
-#endif 
+#endif

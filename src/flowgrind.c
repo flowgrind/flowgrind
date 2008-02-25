@@ -1025,6 +1025,10 @@ void write_test_data(int id)
 						stop_flow(id);
 				}
 			}
+			if (flow[id].cork && toggle_tcp_cork(flow[id].sock) == -1)
+				DEBUG_MSG(4, "failed to recork test socket "
+						"for flow %d: %s",
+						id, strerror(errno));
 		}
 
 		if (!flow[id].pushy)

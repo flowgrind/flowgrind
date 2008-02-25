@@ -45,7 +45,7 @@ write_exactly(int d, const void *buf, size_t nbytes)
 			(rc = write(d, (const char *)buf+bytes_written,
 				    nbytes-bytes_written)) > 0) {
 		bytes_written += rc;
-		DEBUG_MSG(5, "written=%u", (unsigned)bytes_written)
+		DEBUG_MSG(5, "written=%u", (unsigned)bytes_written);
 	}
 	return rc == -1 ? rc : (ssize_t) bytes_written;
 }
@@ -74,9 +74,13 @@ int set_window_size_directed(int fd, int window, int direction)
 	int rc, try, w;
 	unsigned int optlen = sizeof w;
 
-	DEBUG_MSG(3, "Setting %sBUF on fd %d to %d", 
-			(direction == SO_SNDBUF ? "SND" : "RCV"),
-			 fd, window);
+	if (window <= 0)
+		DEBUG_MSG(3, "Getting %sBUF from fd %d ", 
+				(direction == SO_SNDBUF ? "SND" : "RCV"), fd);
+	else
+		DEBUG_MSG(3, "Setting %sBUF on fd %d to %d", 
+				(direction == SO_SNDBUF ? "SND" : "RCV"),
+				fd, window);
 
 	rc = getsockopt(fd, SOL_SOCKET, direction, (char *)&w, &optlen);
 	if (rc == -1)
@@ -109,7 +113,10 @@ int set_window_size(int fd, int window)
 {
 	int send, receive;
 
-	DEBUG_MSG(3, "Setting window size of fd %d to %d", fd, window);
+	if (window <= 0)
+		DEBUG_MSG(3, "Getting window size of fd %d", fd);
+	else
+		DEBUG_MSG(3, "Setting window size of fd %d to %d", fd, window);
 
 	send = set_window_size_directed(fd, window, SO_SNDBUF);
 	receive = set_window_size_directed(fd, window, SO_RCVBUF);

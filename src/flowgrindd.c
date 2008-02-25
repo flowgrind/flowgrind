@@ -476,7 +476,7 @@ void tcp_test(int fd_control, char *proposal)
 		timeout.tv_usec = 100000;
 
 		rc = select(maxfd + 1, &rfds, &wfds, &efds, &timeout);
-		DEBUG_MSG(4, "select() returned (rc = %d)", rc)
+		DEBUG_MSG(4, "select() returned (rc = %d)", rc);
 
 		if (rc < 0) {
 			error(ERR_FATAL, "select() failed: %s",
@@ -605,7 +605,6 @@ void tcp_test(int fd_control, char *proposal)
 						"failed: %s", strerror(errno));
 			}
 		}
-
 		fg_pcap_dispatch();
 	}
 
