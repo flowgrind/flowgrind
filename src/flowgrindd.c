@@ -423,18 +423,13 @@ void tcp_test(int fd_control, char *proposal)
 
 	logging_log(LOG_NOTICE, "client %s connected for testing.", 
 			fg_nameinfo((struct sockaddr *)&caddr));
-	real_window_size = set_window_size(fd, real_listen_window_size);
-	if (!((real_listen_window_size == real_window_size) 
-#ifdef __LINUX__
-				|| (real_listen_window_size * 2 
-					== real_window_size)
-#endif
-	     )) {
+	real_window_size = set_window_size(fd, requested_window_size);
+	if (real_listen_window_size != real_window_size) {
 		logging_log(LOG_WARNING, "Failed to set window size of test "
 				"socket to window size of listen socket "
 				"(listen = %u, test = %u).", 
 				real_listen_window_size, real_window_size);
-	/*	goto out_free; */
+		goto out_free; 
 	}
 	if (route_record)
 		set_route_record(fd);
