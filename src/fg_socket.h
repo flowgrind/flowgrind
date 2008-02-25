@@ -1,7 +1,16 @@
 #ifndef _FG_SOCKET_H
 #define _FG_SOCKET_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <netinet/tcp.h>
 #include <sys/socket.h>
+
+#ifndef TCP_CONG_MODULE
+#define TCP_CONG_MODULE 13
+#endif
 
 ssize_t read_exactly(int, void *, size_t);
 size_t read_until_plus(int d, char *buf, size_t nbytes);
@@ -17,7 +26,8 @@ int set_so_dscp(int fd, uint8_t);
 int set_so_elcn(int fd, int val);
 int set_so_icmp(int fd);
 int set_dscp(int sock, uint8_t dscp);
-int set_so_cork(int fd);
+int set_tcp_cork(int fd);
+int toggle_tcp_cork(int fd);
 int set_window_size(int, int);
 int set_window_size_directed(int, int, int);
 
