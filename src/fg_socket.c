@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
@@ -5,17 +9,18 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
-#include <netinet/tcp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <sys/types.h>
 
 #include "debug.h"
 #include "fg_socket.h"
+
+#ifndef SOL_TCP
+#define SOL_TCP	IPPROTO_TCP
+#endif
 
 ssize_t
 read_exactly(int d, void *buf, size_t nbytes)
@@ -161,7 +166,7 @@ int set_route_record(int fd)
 	rspace[1+IPOPT_OFFSET] = IPOPT_MINOFF;
 	if (!(rc = setsockopt(fd, IPPROTO_IP, IP_OPTIONS, rspace, sizeof(rspace))))
 		return rc;
-	return setsockopt(fd, IPPROTO_TCP, IP_TTL, &nroutes, sizeof(nroutes));
+	return setsockopt(fd, SOL_TCP, IP_TTL, &nroutes, sizeof(nroutes));
 }
 
 int set_non_blocking(int fd)
@@ -182,7 +187,7 @@ int set_nodelay(int fd)
 
 	DEBUG_MSG(3, "Setting TCP_NODELAY on fd %d", fd);
 
-	return setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt_on, sizeof(opt_on));
+	return setsockopt(fd, SOL_TCP, TCP_NODELAY, &opt_on, sizeof(opt_on));
 }
 
 int get_mtu(int fd)
@@ -205,7 +210,7 @@ int get_mss(int fd)
 	int mss;
 	socklen_t mss_len = sizeof(mss);
 
-	if (getsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, &mss, &mss_len) == -1)
+	if (getsockopt(fd, SOL_TCP, TCP_MAXSEG, &mss, &mss_len) == -1)
 		return -1;
 
 	return mss;
@@ -215,17 +220,14 @@ int set_keepalive(int fd, int how)
 {
 	DEBUG_MSG(3, "Setting TCP_KEEPALIVE(%d) on fd %d", how, fd);
 
-	return setsockopt(fd, IPPROTO_TCP, SO_KEEPALIVE, &how, sizeof(how));
+	return setsockopt(fd, SOL_TCP, SO_KEEPALIVE, &how, sizeof(how));
 }
 
 int set_congestion_control(int fd, const char *cc_alg)
 {
 #ifdef __LINUX__
-	int opt_len = strlen(cc_alg);
-
 	DEBUG_MSG(3, "Setting cc_alg=\"%s\" for fd %d", cc_alg, fd);
-	return setsockopt(flow[id].sock, IPPROTO_TCP,
-			TCP_CONG_MODULE, cc_alg, opt_len );
+	return setsockopt(fd, IPPROTO_TCP, TCP_CONG_MODULE, cc_alg, strlen(cc_alg));
 #else
 	DEBUG_MSG(2, "Cannot set cc_alg for OS other than Linux");
 	return -1;
@@ -239,7 +241,7 @@ int set_so_elcn(int fd, int val)
 #endif
 	DEBUG_MSG(3, "Setting TCP_ELCN on fd %d", fd);
 
-	return setsockopt(fd, IPPROTO_TCP, TCP_ELCN, &val, sizeof(val));
+	return setsockopt(fd, SOL_TCP, TCP_ELCN, &val, sizeof(val));
 }
 
 int set_so_icmp(int fd)
@@ -250,19 +252,34 @@ int set_so_icmp(int fd)
 	int opt = 1;
 	DEBUG_MSG(3, "Setting TCP_ICMP on fd %d", fd);
 
-	return setsockopt(fd, IPPROTO_TCP, TCP_ICMP, &opt, sizeof(opt));
+	return setsockopt(fd, SOL_TCP, TCP_ICMP, &opt, sizeof(opt));
 
 }
 
-int set_so_cork(int fd)
+int set_tcp_cork(int fd)
 {
 #ifdef __LINUX__
 	int opt = 1;
 
 	DEBUG_MSG(3, "Setting TCP_CORK on fd %d", fd);
-	return setsockopt(fd, IPPROTO_TCP, TCP_CORK, &opt, sizeof(opt));
+	return setsockopt(fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
 #else
 	DEBUG_MSG(2, "Cannot set TCP_CORK for OS other than Linux");
+	return -1;
+#endif
+}
+
+int toggle_tcp_cork(int fd) 
+{
+#ifdef __LINUX__
+	int opt = 0;
+
+	DEBUG_MSG(3, "Clearing TCP_CORK on fd %d", fd);
+	if (setsockopt(fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt)) == -1)
+		return -1;
+	return set_tcp_cork(fd);
+#else
+	DEBUG_MSG(2, "Cannot toggle TCP_CORK for OS other than Linux");
 	return -1;
 #endif
 }
