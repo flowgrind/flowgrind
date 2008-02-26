@@ -803,7 +803,7 @@ void read_test_data(int id)
 		msg.msg_iovlen = 1;
 		msg.msg_control = cbuf;
 		msg.msg_controllen = sizeof(cbuf);
-		rc = recvmsg(flow[id].sock, &msg, MSG_DONTROUTE);
+		rc = recvmsg(flow[id].sock, &msg, 0);
 				
 		if (rc == -1) {
 			if (errno == EAGAIN)
@@ -912,6 +912,9 @@ void read_control_data(int id)
 void write_test_data(int id)
 {
 	int rc = 0;
+
+	if (flow[id].stopped)
+		return;
 
 	/* Please note: you could argue that the following while loop
 	   is not necessary as not filling the socket send queue completely
@@ -1253,6 +1256,9 @@ void close_flow(int id)
 	flow[id].closed = 1;
 
 	FD_CLR(flow[id].sock, &efds_orig);
+	FD_CLR(flow[id].sock, &rfds);
+	FD_CLR(flow[id].sock, &wfds);
+	FD_CLR(flow[id].sock_control, &rfds);
 	maxfd = MAX(maxfd, flow[id].sock);
 	maxfd = MAX(maxfd, flow[id].sock_control);
 
