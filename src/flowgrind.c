@@ -1963,12 +1963,13 @@ void parse_cmdline(int argc, char **argv)
 		}
 	}
 
+	if (error) {
 #ifdef DEBUG
-	DEBUG_MSG(1, "Skipping errors discovered by sanity checks.");
+		DEBUG_MSG(1, "Skipping errors discovered by sanity checks.");
 #else
-	if (error)
 		exit(EXIT_FAILURE);
 #endif
+	}
 
 	if (max_flow_rate > 0) {
 		select_timeout = 1e6/max_flow_rate/2;
