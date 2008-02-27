@@ -1,4 +1,4 @@
-AM_CFLAGS = -Wall -D_GNU_SOURCE -DDEBUG -g -save-temps
+AM_CFLAGS = -Wall -Wextra -D_GNU_SOURCE -DDEBUG -ggdb
 dist_bin_SCRIPTS = flow_plotter
 bin_PROGRAMS = flowgrind
 sbin_PROGRAMS = flowgrindd
