@@ -435,8 +435,10 @@ void tcp_test(int fd_control, char *proposal)
 		set_route_record(fd);
 	if (advstats)
 		fg_pcap_go(fd);
-	if (so_debug)
-		set_so_debug(fd);
+	if (so_debug && set_so_debug(fd)) {
+		logging_log(LOG_WARNING, "Unable to set SO_DEBUG on test socket: %s",
+				  strerror(errno));
+	}
 
 	set_non_blocking(fd);
 	set_non_blocking(fd_control);
