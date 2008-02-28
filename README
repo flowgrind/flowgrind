@@ -1,4 +1,4 @@
-flowgrind grinds flows. 
+flowgrind grinds flows among hosts in your network.
 
-./configure && make
-./flowgrind -h
+For detailed information issue the command:
+configure && make && flowgrind -h

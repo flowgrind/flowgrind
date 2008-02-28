@@ -21,6 +21,8 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+#define UNUSED_ARGUMENT(x) (void)x
+
 #define FLOWGRIND_CALLSIGN	"flowgrind"
 #define FLOWGRIND_SEPERATOR	","
 #define FLOWGRIND_VERSION	"2"

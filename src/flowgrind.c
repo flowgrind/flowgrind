@@ -1006,6 +1006,8 @@ void write_test_data(int id)
 
 void sigint_handler(int sig)
 {
+	UNUSED_ARGUMENT(sig);
+
 	int id;
 
 	DEBUG_MSG(1, "caught %s", strsignal(sig));

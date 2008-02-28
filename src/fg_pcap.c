@@ -140,8 +140,12 @@ void fg_pcap_go(int fd)
 }
 
 void 
-fg_pcap_handler(u_char *users, const struct pcap_pkthdr *h, const u_char *packet)
+fg_pcap_handler(u_char *arg, const struct pcap_pkthdr *h, const u_char *packet)
 {
+	UNUSED_ARGUMENT(arg);
+	UNUSED_ARGUMENT(h);
+	UNUSED_ARGUMENT(packet);
+
 	DEBUG_MSG(5, "pcap: processing packet, ts = %lu.%lu, %hhu bytes.",
 			h->ts.tv_sec, h->ts.tv_usec, h->caplen);
 

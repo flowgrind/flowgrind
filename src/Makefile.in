@@ -15,6 +15,7 @@
 @SET_MAKE@
 
 
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -40,8 +41,8 @@ host_triplet = @host@
 bin_PROGRAMS = flowgrind$(EXEEXT)
 sbin_PROGRAMS = flowgrindd$(EXEEXT)
 subdir = src
-DIST_COMMON = $(dist_bin_SCRIPTS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+DIST_COMMON = $(dist_bin_SCRIPTS) $(noinst_HEADERS) \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/configure.ac
@@ -75,6 +76,7 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(flowgrind_SOURCES) $(flowgrindd_SOURCES)
 DIST_SOURCES = $(flowgrind_SOURCES) $(flowgrindd_SOURCES)
+HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -166,11 +168,12 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-AM_CFLAGS = -Wall -Wextra -D_GNU_SOURCE -DDEBUG -ggdb
+AM_CFLAGS = -Wall -Wextra -std=c99 -D_GNU_SOURCE
 dist_bin_SCRIPTS = flow_plotter
-flowgrind_SOURCES = common.c debug.c fg_socket.c fg_time.c flowgrind.c
+noinst_HEADERS = common.h debug.h fg_time.h fg_pcap.h fg_socket.h 
+flowgrind_SOURCES = common.c debug.c fg_socket.c fg_time.c flowgrind.h flowgrind.c
 flowgrindd_SOURCES = common.c debug.c fg_pcap.c fg_socket.c \
-		     fg_time.c log.c flowgrindd.c
+		     fg_time.c log.h log.c flowgrindd.c
 
 flowgrindd_LDFLAGS = -lpcap
 all: all-am
@@ -385,7 +388,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) $(SCRIPTS)
+all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
