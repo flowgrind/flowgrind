@@ -24,7 +24,7 @@ inline const char *debug_timestamp(void);
 
 #else
 
-#define DEBUG_MSG(message_level, msg, args...)
+#define DEBUG_MSG(message_level, msg, args...) do {} while(0)
 
 #endif
 #endif

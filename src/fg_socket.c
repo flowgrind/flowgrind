@@ -11,10 +11,18 @@
 #include <netinet/ip.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_STRING_H 
 #include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H 
+#include <strings.h>
+#endif
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
+#include "common.h"
 #include "debug.h"
 #include "fg_socket.h"
 
@@ -201,6 +209,7 @@ int get_mtu(int fd)
 
 	return mtu;
 #else
+	UNUSED_ARGUMENT(fd);
 	return 0;
 #endif
 }
@@ -229,6 +238,8 @@ int set_congestion_control(int fd, const char *cc_alg)
 	DEBUG_MSG(3, "Setting cc_alg=\"%s\" for fd %d", cc_alg, fd);
 	return setsockopt(fd, IPPROTO_TCP, TCP_CONG_MODULE, cc_alg, strlen(cc_alg));
 #else
+	UNUSED_ARGUMENT(fd);
+	UNUSED_ARGUMENT(cc_alg);
 	DEBUG_MSG(2, "Cannot set cc_alg for OS other than Linux");
 	return -1;
 #endif
@@ -264,6 +275,7 @@ int set_tcp_cork(int fd)
 	DEBUG_MSG(3, "Setting TCP_CORK on fd %d", fd);
 	return setsockopt(fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
 #else
+	UNUSED_ARGUMENT(fd);
 	DEBUG_MSG(2, "Cannot set TCP_CORK for OS other than Linux");
 	return -1;
 #endif
@@ -279,6 +291,7 @@ int toggle_tcp_cork(int fd)
 		return -1;
 	return set_tcp_cork(fd);
 #else
+	UNUSED_ARGUMENT(fd);
 	DEBUG_MSG(2, "Cannot toggle TCP_CORK for OS other than Linux");
 	return -1;
 #endif

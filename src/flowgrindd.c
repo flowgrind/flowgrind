@@ -396,11 +396,10 @@ void tcp_test(int fd_control, char *proposal)
 	addrlen = res->ai_addrlen;
 	freeaddrinfo(ressave);
 	
-	real_listen_window_size = set_window_size(listenfd, 
-			requested_window_size);
+	real_listen_window_size = set_window_size(listenfd, requested_window_size);
 	/* XXX: It might be too brave to report the window size of the listen 
 	 * socket to the client as the window size of test socket might differ
-	 * from the reported one. Close the socket in case. */
+	 * from the reported one. Close the socket in that case. */
 	to_write = snprintf(buffer, sizeof(buffer), "%u,%u+", server_test_port,
 			real_listen_window_size);
 	DEBUG_MSG(1, "proposal reply: %s", buffer);
