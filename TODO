@@ -1,3 +1,4 @@
++allow setsockopt of SO_DEBUG, TCP_ICMP, TCP_ELCN etc.. independently on server and client  [arnd 07.03.08]
 +rewrite all the timing code to not contain struct timeval anymore but just relative times (jiffies like)
 +unify client/server
 +recover UDP option
