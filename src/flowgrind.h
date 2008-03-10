@@ -196,8 +196,7 @@ static int client_flow_block_scheduled(int id)
 inline static double scale_thruput(double thruput)
 {
 	if (opt.mbyte)
-		return thruput /= 1<<20;
-
-	return thruput /= 1e6/(1<<3) ;
+		return thruput / (1<<20);
+	return thruput / 1e6 *(1<<3);
 }
 #endif
