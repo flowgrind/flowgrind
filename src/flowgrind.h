@@ -176,10 +176,8 @@ static int server_flow_sending(int id)
 {
 	return !server_flow_in_delay(id) &&
 		(flow[id].server_flow_duration < 0 ||
-		 time_diff(&flow[id].server_flow_stop_timestamp, &now)
-		 + flow[id].max_rtt_since_first < 0);
-	/* XXX: This relies on the RTT measurement from the _client_
-	 * flow which does not necessarily exist. */
+		 time_diff(&flow[id].server_flow_stop_timestamp, &now) < 0.0);
+		 
 }
 
 static int client_flow_sending(int id)
