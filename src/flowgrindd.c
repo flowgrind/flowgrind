@@ -688,7 +688,7 @@ main(int argc, char *argv[])
 	int listenfd, rc;
 	struct addrinfo hints, *res, *ressave;
 	socklen_t addrlen, len;
-	struct sockaddr_storage *caddr = NULL;
+	struct sockaddr_storage caddr;
 	int ch;
 	int argcorig = argc;
 	struct sigaction sa;
@@ -837,6 +837,8 @@ main(int argc, char *argv[])
 		switch (pid) {
 		case 0:
 			close(listenfd);
+			/* FIXME if caddr is overwritten by accept in parent
+                           is this change visible in child? */
 			log_client_address((struct sockaddr *)&caddr);
 			serve_client(fd_control);
 			fg_pcap_shutdown();
