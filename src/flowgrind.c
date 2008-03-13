@@ -477,11 +477,12 @@ void report_final(void)
 			thruput = flow[id].bytes_written_since_first /
 				flow[id].client_flow_duration;
 		thruput = scale_thruput(thruput);
-		CATC("ws = %u/%u (%u/%u), bs = %u/%u, delay = %.2fs/%.2fs, "
+		CATC("ws = %u/%u%s (%u/%u), bs = %u/%u, delay = %.2fs/%.2fs, "
 				"duration = %.2fs/%.2fs, thruput = %.6fM%c/s "
 				"(%llu blocks)", 
 				flow[id].client_window_size_real,
 				flow[id].server_window_size_real,
+				(flow[id].server_window_size ? "" : "(?)"),
 				flow[id].client_window_size,
 				flow[id].server_window_size,
 				flow[id].write_block_size,
