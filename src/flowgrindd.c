@@ -33,11 +33,6 @@
 #include "log.h"
 #include "svnversion.h"
 
-#ifndef SVNVERSION
-#define SVNVERSION "(unknown)"
-#endif
-
-
 #ifdef HAVE_FLOAT_H
 #include <float.h>
 #endif
@@ -209,7 +204,7 @@ usage(void)
 	fprintf(stderr, "\t-p#\t\tserver port\n");
 	fprintf(stderr, "\t-D \t\tincrease debug verbosity (no daemon, log to "
 					"stderr)\n");
-	fprintf(stderr, "\t-v\t\tPrint version information and exit\n");
+	fprintf(stderr, "\t-V\t\tPrint version information and exit\n");
 	exit(1);
 }
 
@@ -619,8 +614,8 @@ serve_client(int fd_control)
 	char buffer[1024];
 	char *buf_ptr;
 
-	rc = write_exactly(fd_control, FLOWGRIND_GREETING,
-			sizeof(FLOWGRIND_GREETING) - 1);
+	rc = write_exactly(fd_control, FLOWGRIND_PROT_GREETING,
+			sizeof(FLOWGRIND_PROT_GREETING) - 1);
 	if (rc == -1) {
 		logging_log(LOG_WARNING, "write(greeting) failed");
 		goto log;
@@ -634,25 +629,25 @@ serve_client(int fd_control)
 	DEBUG_MSG(1, "proposal: %s", buffer);
 
 	buf_ptr = buffer;
-	rc = memcmp(buf_ptr, FLOWGRIND_CALLSIGN, sizeof(FLOWGRIND_CALLSIGN) - 1);
+	rc = memcmp(buf_ptr, FLOWGRIND_PROT_CALLSIGN, sizeof(FLOWGRIND_PROT_CALLSIGN) - 1);
 	if (rc != 0) {
 		logging_log(LOG_WARNING, "malformed callsign, not "
 				"flowgrind connecting?");
 		goto log;
 	}
-	buf_ptr += sizeof(FLOWGRIND_CALLSIGN) - 1;	
+	buf_ptr += sizeof(FLOWGRIND_PROT_CALLSIGN) - 1;	
 	if (*buf_ptr != ',') {
 		logging_log(LOG_WARNING, "callsign not followed by "
 				"seperator");
 		goto log;
 	}
 	buf_ptr++;				
-	rc = memcmp(buf_ptr, FLOWGRIND_VERSION, sizeof(FLOWGRIND_VERSION) - 1);
+	rc = memcmp(buf_ptr, FLOWGRIND_PROT_VERSION, sizeof(FLOWGRIND_PROT_VERSION) - 1);
 	if (rc != 0) {
 		logging_log(LOG_WARNING, "malformed protocol version");
 		goto log;
 	}
-	buf_ptr += sizeof(FLOWGRIND_VERSION) - 1;	
+	buf_ptr += sizeof(FLOWGRIND_PROT_VERSION) - 1;	
 	if (*buf_ptr != ',') {
 		logging_log(LOG_WARNING, "protocol version not followed by "
 				"','");
@@ -694,7 +689,7 @@ main(int argc, char *argv[])
 	struct sigaction sa;
 
 
-	while ((ch = getopt(argc, argv, "a:Dp:v")) != -1) {
+	while ((ch = getopt(argc, argv, "a:Dp:V")) != -1) {
 		switch (ch) {
 		case 'a':
 			if (acl_allow_add(optarg) == -1) {
@@ -718,8 +713,8 @@ main(int argc, char *argv[])
 			}
 			break;
 
-		case 'v':
-			fprintf(stderr, "flowgrindd version: %s\n", SVNVERSION);
+		case 'V':
+			fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
 	
 		default:

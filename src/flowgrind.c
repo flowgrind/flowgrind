@@ -31,10 +31,6 @@
 #include "flowgrind.h"
 #include "svnversion.h"
 
-#ifndef SVNVERSION
-#define SVNVERSION "(dev version)"
-#endif
-
 #ifdef __SOLARIS__
 #define RANDOM_MAX		4294967295UL	/* 2**32-1 */
 #elif __DARWIN__
@@ -110,7 +106,7 @@ static void usage(void)
 				"\t-l\t\tconnect() socket immediately before sending (late)\n"
 				"\t-n\t\tshutdown() each socket direction after test flow\n"
 				"\t-a\t\tenumerate bytes in payload (default: don't)\n"
-				"\t-p\t\tDo not iterate through select to continue sending in case\n"
+				"\t-p\t\tDo not iterate through select() to continue sending in case\n"
 				"\t\t\tblock size did not suffice to fill sending queue (pushy)\n"
 				"\t-s\t\tSummarize only, skip interval reports\n"
 				"\n"
@@ -224,7 +220,7 @@ void init_logfile(void)
 		strcat(log_filename, buf);
 	}
 
-	DEBUG_MSG(2, "logging to %s", log_filename);
+	DEBUG_MSG(2, "logging to \"%s\"", log_filename);
 
 	if (!opt.clobber && access(log_filename, R_OK) == 0) {
 		fprintf(stderr, "fatal: log file exists\n");
@@ -705,7 +701,7 @@ void read_greeting(int s)
 {
 	char buf[1024];
 	int rc;
-	size_t greetlen = strlen(FLOWGRIND_GREETING);
+	size_t greetlen = strlen(FLOWGRIND_PROT_GREETING);
 
 	rc = read_exactly(s, buf, greetlen);
 	if (rc != (int) greetlen) {
@@ -714,14 +710,14 @@ void read_greeting(int s)
 		error(ERR_FATAL, "Server greeting is wrong in length. "
 				"Not flowgrind?");
 	}
-	rc = strncmp(buf + strlen(FLOWGRIND_CALLSIGN FLOWGRIND_SEPERATOR),
-			FLOWGRIND_VERSION, strlen(FLOWGRIND_VERSION));
+	rc = strncmp(buf + strlen(FLOWGRIND_PROT_CALLSIGN FLOWGRIND_PROT_SEPERATOR),
+			FLOWGRIND_PROT_VERSION, strlen(FLOWGRIND_PROT_VERSION));
 	if (rc < 0)
 		error(ERR_FATAL, "flowgrind client outdated for this server.");
 	if (rc > 0)
 		error(ERR_FATAL, "flowgrind server outdated for this client.");
 
-	if (strncmp(&buf[greetlen - 1], FLOWGRIND_EOL, strlen(FLOWGRIND_EOL))) {
+	if (strncmp(&buf[greetlen - 1], FLOWGRIND_PROT_EOL, strlen(FLOWGRIND_PROT_EOL))) {
 		error(ERR_WARNING, "connection rejected");
 		rc = read(s, buf, sizeof(buf) - 1);
 		if (rc == -1)
@@ -1342,7 +1338,7 @@ void prepare_flow(int id)
 
 	to_write = snprintf(buf, sizeof(buf), 
 			"%s,t,%s,%hu,%hhd,%hhd,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+", 
-			FLOWGRIND_CALLSIGN FLOWGRIND_SEPERATOR FLOWGRIND_VERSION, 
+			FLOWGRIND_PROT_CALLSIGN FLOWGRIND_PROT_SEPERATOR FLOWGRIND_PROT_VERSION, 
 			flow[id].server_name, 
 			(opt.base_port ? opt.base_port++ : 0), 
 			opt.advstats, flow[id].so_debug,
@@ -1486,7 +1482,7 @@ void prepare_flows(void)
 			(rc == -1 ? "(unknown)" : me.nodename), 
 			opt.num_flows, opt.reporting_interval,
 			(opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
-			SVNVERSION);
+			FLOWGRIND_VERSION);
 	log_output(headline);
 	log_output(opt.mbyte ? TCP_REPORT_HDR_STRING_MBYTE :
 			TCP_REPORT_HDR_STRING_MBIT);
@@ -1752,7 +1748,7 @@ void parse_cmdline(int argc, char **argv)
 			break;
 
 		case 'V':
-			fprintf(stderr, "flowgrind version: %s\n", SVNVERSION);
+			fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
 	
 		case 'w':
