@@ -913,7 +913,7 @@ void write_test_data(int id)
 	if (flow[id].stopped)
 		return;
 
-	/* Please note: you could argue that the following while loop
+	/* Please note: you could argue that the following loop
 	   is not necessary as not filling the socket send queue completely
 	   would make the next select call return this very socket in wfds
 	   and thus sending more blocks would immediately happen. However,
