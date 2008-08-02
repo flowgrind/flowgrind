@@ -48,6 +48,18 @@ enum protocol {
 	PROTO_UDP
 };
 
+struct _flow_endpoint {
+	// Flow options only affecting source or drain
+	unsigned window_size;
+	unsigned window_size_real;
+
+	double flow_duration;
+	double flow_delay;
+	struct timeval flow_start_timestamp;
+	struct timeval flow_stop_timestamp;
+	char flow_finished;
+};
+
 struct _flow {
 	char *server_name;
 	char *server_name_control;
@@ -64,10 +76,6 @@ struct _flow {
 	unsigned mss;
 	int mtu;
 
-	unsigned client_window_size;
-	unsigned client_window_size_real;
-	unsigned server_window_size;
-	unsigned server_window_size_real;
 	char *cc_alg;
 	int elcn;
 	int icmp;
@@ -106,17 +114,6 @@ struct _flow {
 	char reply_block[sizeof(struct timeval) + sizeof(double)];
 	unsigned reply_block_bytes_read;
 
-	double client_flow_duration;
-	double client_flow_delay;
-	struct timeval client_flow_start_timestamp;
-	struct timeval client_flow_stop_timestamp;
-	char client_flow_finished;
-	double server_flow_duration;
-	double server_flow_delay;
-	struct timeval server_flow_start_timestamp;
-	struct timeval server_flow_stop_timestamp;
-	char server_flow_finished;
-
 	char stopped;
 	char closed;
 	struct timeval stopped_timestamp;
@@ -148,6 +145,10 @@ struct _flow {
 	double max_iat_since_last;
 	double tot_iat_since_first;
 	double tot_iat_since_last;
+
+	// 0 for source
+	// 1 for drain
+	struct _flow_endpoint endpoint_options[2];
 };
 struct _flow flow[MAX_FLOWS];
 
@@ -164,26 +165,26 @@ void stop_flow(int id);
 
 static int server_flow_in_delay(int id)
 {
-	return time_is_after(&flow[id].server_flow_start_timestamp, &now);
+	return time_is_after(&flow[id].endpoint_options[1].flow_start_timestamp, &now);
 }
 
 static int client_flow_in_delay(int id)
 {
-	return time_is_after(&flow[id].client_flow_start_timestamp, &now);
+	return time_is_after(&flow[id].endpoint_options[0].flow_start_timestamp, &now);
 }
 
 static int server_flow_sending(int id)
 {
 	return !server_flow_in_delay(id) &&
-		(flow[id].server_flow_duration < 0 ||
-		 time_diff(&flow[id].server_flow_stop_timestamp, &now) < 0.0);
-		 
+		(flow[id].endpoint_options[1].flow_duration < 0 ||
+		 time_diff(&flow[id].endpoint_options[1].flow_stop_timestamp, &now) < 0.0);
+
 }
 
 static int client_flow_sending(int id)
 {
-	return !client_flow_in_delay(id) && (flow[id].client_flow_duration < 0
-		 || time_diff(&flow[id].client_flow_stop_timestamp, &now) < 0);
+	return !client_flow_in_delay(id) && (flow[id].endpoint_options[0].flow_duration < 0
+		 || time_diff(&flow[id].endpoint_options[0].flow_stop_timestamp, &now) < 0);
 }
 
 static int client_flow_block_scheduled(int id)
