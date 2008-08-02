@@ -40,8 +40,8 @@ read_exactly(int d, void *buf, size_t nbytes)
 	while (bytes_read < nbytes &&
 			(rc = read(d, (char *)buf + bytes_read,
 				   nbytes - bytes_read)) > 0) {
-		DEBUG_MSG(5, "read=%u", (unsigned)bytes_read);
 		bytes_read += rc;
+		DEBUG_MSG(5, "read=%u", (unsigned)bytes_read);
 	}
 
 	return rc == -1 ? rc : (ssize_t) bytes_read;

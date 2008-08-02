@@ -10,7 +10,7 @@
 #include <math.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <netinet/in_systm.h>	
+#include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <signal.h>
 #include <stdio.h>
@@ -40,93 +40,129 @@
 #endif
 
 #ifdef __LINUX__
-#define TCP_REPORT_HDR_STRING_MBIT "# ID   begin     end   c/s Mb/s   s/c Mb/s RTT, ms: min        avg        max IAT, ms: min        avg        max    cwnd  ssth #uack #sack #lost #retr #fack #reor     rtt  rttvar      rto\n" 
-#define TCP_REPORT_HDR_STRING_MBYTE "# ID   begin     end   c/s MB/s   s/c MB/s RTT, ms: min        avg        max IAT, ms: min        avg        max    cwnd  ssth #uack #sack #lost #retr #fack #reor     rtt  rttvar      rto\n" 
+#define TCP_REPORT_HDR_STRING_MBIT "# ID   begin     end   c/s Mb/s   s/c Mb/s RTT, ms: min        avg        max IAT, ms: min        avg        max    cwnd  ssth #uack #sack #lost #retr #fack #reor     rtt  rttvar      rto\n"
+#define TCP_REPORT_HDR_STRING_MBYTE "# ID   begin     end   c/s MB/s   s/c MB/s RTT, ms: min        avg        max IAT, ms: min        avg        max    cwnd  ssth #uack #sack #lost #retr #fack #reor     rtt  rttvar      rto\n"
 #define TCP_REPORT_FMT_STRING "%c%3d %7.3f %7.3f %10.6f %10.6f   %10.3f %10.3f %10.3f   %10.3f %10.3f %10.3f   %5u %5u %5u %5u %5u %5u %5u %5u %7.3f %7.3f %8.3f %s\n"
 #else
-#define TCP_REPORT_HDR_STRING_MBIT "# ID   begin     end   c/s Mb/s   s/c Mb/s RTT, ms: min        avg        max IAT, ms: min        avg        max\n" 
-#define TCP_REPORT_HDR_STRING_MBYTE "# ID   begin     end   c/s MB/s   s/c MB/s RTT, ms: min        avg        max IAT, ms: min        avg        max\n" 
+#define TCP_REPORT_HDR_STRING_MBIT "# ID   begin     end   c/s Mb/s   s/c Mb/s RTT, ms: min        avg        max IAT, ms: min        avg        max\n"
+#define TCP_REPORT_HDR_STRING_MBYTE "# ID   begin     end   c/s MB/s   s/c MB/s RTT, ms: min        avg        max IAT, ms: min        avg        max\n"
 #define TCP_REPORT_FMT_STRING "%c%3d %7.3f %7.3f %10.6f %10.6f   %10.3f %10.3f %10.3f   %10.3f %10.3f %10.3f %s\n"
 #endif
 
 
 static void usage(void)
 {
-	fprintf(stderr,	
-			"Usage: flowgrind [general options] [flow options]\n\n"
+	fprintf(stderr,
+		"Usage: flowgrind [general options] [flow options]\n"
+		"       flowgrind [-h|-v]\n\n"
 
-			"flowgrind allows you to generate traffic among hosts in your network.\n\n"
+		"flowgrind allows you to generate traffic among hosts in your network.\n\n"
 
-			"General options:\n"
-				"\t-m #\t\tnumber of test flows (default: 1)\n"
-				"\t-i #.#\t\treporting interval in seconds (default: 0.05s)\n"
-				"\t-M\t\treport in 2**20 bytes/second (default: 10**6 bit/sec)\n"
+		"Miscellaneous:\n"
+		"  -h [sockopt] show help and exit\n"
+		"  -v           print version information and exit\n\n"
+
+		"General options:\n"
 #ifdef HAVE_LIBPCAP
-				"\t-S\t\tadvanced statistics (pcap))\n"
+		"  -a           advanced statistics (pcap)\n"
 #endif
-				"\t-q\t\tdo not log to screen (default: off)\n"
-				"\t-Q\t\tdo not log to logfile (default: off)\n"
-				"\t-L NAME\t\tuse log filename NAME {default: timestamp)\n"
-				"\t-P PRE\t\tprepend prefix PRE to log filename (default: \"%s\")\n"
-				"\t-C\t\tclobber existing log files (default: don't)\n"
-				"\t-O PORT\t\tuse PORT as base port number of test flows (default: none)\n"
 #ifdef DEBUG
-				"\t-D\t\tincrease debugging verbosity\n"
+		"  -d           increase debugging verbosity. Add option multiple times to\n"
+						"be even more verbose.\n"
 #endif
-				"\t-V\t\tprint version information and exit\n"
-				"\n"
+		"  -e PRE       prepend prefix PRE to log filename (default: \"%s\")\n"
+		"  -i #.#       reporting interval in seconds (default: 0.05s)\n"
+		"  -l NAME      use log filename NAME (default: timestamp)\n"
+		"  -m           report throughput in 2**20 bytes/second\n"
+		"               (default: 10**6 bit/sec)\n"
+		"  -n #         number of test flows (default: 1)\n"
+		"  -o           overwrite existing log files (default: don't)\n"
+		"  -p PORT      use PORT as base port number of test flows (default: none)\n"
+		"               (default: none)\n"
+		"  -q           be quiet, do not log to screen (default: off)\n"
+		"  -w           write output to logfile (default: off)\n\n"
 
-			"Flow options:\n"
-				"\t-H host[/control host][,port]\n"
-				"\t\t\ttest against host. Optional control \n"
-				"\t\t\thost may be specified to handle connection\n"
-				"\t\t\tsetup via another interface/route.\n"
-				"\t-2\t\tgenerate two-way traffic (default: off)\n"
-				"\t-t #.#\t\tflow duration, in seconds (default: 10s),\n"
-				"\t\t\tnegative meaning don't stop.\n"
-				"\t-y #.#\t\tinitial delay before client flow starts\n"
-				"\t-r #.#[z|k|M|G][b|B][p|P]\n"
-				"\t\t\tsend at specified rate per second, where:\n"
-				"\t\t\tz = 2**0, k = 2**10, M = 2**20, G = 2**30,\n"
-				"\t\t\tb = bytes per second, B = blocks per second (default)\n"
-				"\t\t\tp = periodic, P = Poisson distributed (default)\n"
-				"\t-f\t\tstop flow if it is experiencing local congestion\n"
-				"\t-w #\t\tsender and receiver window clamp, in bytes (default: unset)\n"
-				"\t-b #\t\tblock size (default: 8192B)\n"
-#ifdef __LINUX__
-				"\t-c ALG\t\tuse congestion control algorithm ALG\n"
-				"\t-k\t\tset TCP_CORK on test socket\n"
-#endif
-				"\t-E\t\tenable TCP_ELCN on test socket\n"
-				"\t-e\t\tdisable TCP_ELCN on test socket\n"
-				"\t-I\t\tset TCP_ICMP on test socket\n"
-				"\t-g\t\tset SO_DEBUG on test socket\n"
-				"\t-R\t\tset ROUTE RECORD on test socket\n"
-				"\t-d DSCP\t\tDSCP value for TOS byte (default: unset)\n"
-				"\t-l\t\tconnect() socket immediately before sending (late)\n"
-				"\t-n\t\tshutdown() each socket direction after test flow\n"
-				"\t-a\t\tenumerate bytes in payload (default: don't)\n"
-				"\t-p\t\tDo not iterate through select() to continue sending in case\n"
-				"\t\t\tblock size did not suffice to fill sending queue (pushy)\n"
-				"\t-s\t\tSummarize only, skip interval reports\n"
-				"\n"
-			
-			"Options -t, -y, -w, -l have uppercase versions for the respective server setting.\n\n"
-			"Flow options following -F #[,#...] apply to flow #[,#...] only (-1 = all flows).\n"
-			"-x creates a new flow (with current properties), subsequent flow options are \n"
-			"applied to this flow only.\n"
-			"\n",
-			opt.log_filename_prefix
+		"Flow options:\n"
+		"  -B x=#       Set requested sending buffer in bytes\n"
+		"  -C x         Stop flow if it is experiencing local congestion\n"
+		"  -D x=DSCP    DSCP value for TOS byte\n"
+		"  -E x         Enumerate bytes in payload (default: don't)\n"
+		"  -F #{,#}     Flow options following this option apply only to flow #{,#}.\n"
+		"               Useful in combination with -n to set specific options\n"
+		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
+		"               to the second flow\n"
+		"  -H x=HOST[/HOST][:PORT]\n"
+		"               Test against host. Optional control host may be specified to\n"
+		"               handle connection setup via another interface/route\n"
+		"               (default: s=localhost,d=unset)\n"
+		"  -L x         connect() socket immediately before sending (late)\n"
+		"  -N x         shutdown() each socket direction after test flow\n"
+		"  -O x=OPT     Set specific socket options on test socket.\n"
+		"               type \"flowgrind -h sockopt\" to see the specific values for OPT\n"
+		"  -P x         Do not iterate through select() to continue sending in case\n"
+		"               block size did not suffice to fill sending queue (pushy)\n"
+		"  -Q x         Summarize only, skip interval reports (quite)\n"
+		"  -R x=#.#[z|k|M|G][b|B][p|P]\n"
+                "               send at specified rate per second, where:\n"
+		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
+		"               b = bytes per second, B = blocks per second (default)\n"
+		"               p = periodic, P = Poisson distributed (default)\n"
+		"  -S x=#       Set block size (default: s=8192,d=8192)\n"
+		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0),\n"
+		"               negative meaning don't stop.\n"
+		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
+		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n"
+
+		"x can be replaced with 's' for source or 'd' for destination. For all options\n"
+		"which take x, an additional parameter can be specified if separated by comma.\n"
+		"For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
+		"and 4096 at the destination.\n\n"
+
+		"The -O option, it is also possible to repeatedly specify s or d options\n"
+		"respectively. For instance -O s=SO_DEBUG,s=TCP_CORK,d=TCP_CONG_MODULE=reno.\n\n"
+
+		"Examples:\n"
+		"  flowgrind -H d=testhost\n"
+		"               start bulk TCP transfer from this host to testhost\n"
+		"  flowgrind -H d=192.168.0.69 -T s=0,d=5\n"
+		"               start bulk TCP transfer from 192.168.0.69 to this host\n"
+		"  flowgrind -n 2 -H d=192.168.0.69 -F 1 -H d=10.0.0.1\n"
+		"               start two TCP transfers one to 192.168.0.69 and another in\n"
+		"               parallel to 10.0.0.1\n",
+		opt.log_filename_prefix
 		);
 	exit(1);
 }
 
+static void usage_sockopt(void)
+{
+	fprintf(stderr,
+		"The following list contains possible values that can be set on the test socket:\n"
+		"  x=TCP_CONG_MODULE=ALG\n"
+		"               set congestion control algorithm ALG. The following list\n"
+		"               contains possible values for ALG:\n"
+		"                 //ToDo: create the list\n"
+		"  x=TCP_CORK   set TCP_CORK on test socket\n"
+		"  x=TCP_ELCN   set TCP_ELCN on test socket\n"
+		"  x=TCP_ICMP   set TCP_ICMP on test socket\n"
+		"  x=ROUTE_RECORD\n"
+		"               set ROUTE_RECORD on test socket\n\n"
+
+		"x can be replaced with 's' for source or 'd' for destination\n\n"
+
+		"Examples:\n"
+		"  flowgrind -H d=testhost -O s=TCP_CONG_MODULE=reno,d=SO_DEBUG\n"
+		"  //ToDo: write more examples and descriptions\n"
+		);
+	exit(1);
+}
 
 void init_options_defaults(void)
 {
 	opt.num_flows = 1;
 	opt.reporting_interval = 0.05;
 	opt.log_filename_prefix = "flowlog-";
+	opt.dont_log_logfile = 1;
 }
 
 
@@ -207,7 +243,7 @@ void init_logfile(void)
 		if (!opt.log_filename_prefix || strcmp(opt.log_filename_prefix, "log-") == 0)
 			log_filename = opt.log_filename;
 		else {
-			log_filename = malloc(strlen(opt.log_filename_prefix) + 
+			log_filename = malloc(strlen(opt.log_filename_prefix) +
 						strlen(opt.log_filename) + 2);
 			strcpy(log_filename, opt.log_filename_prefix);
 			strcat(log_filename, opt.log_filename);
@@ -227,7 +263,7 @@ void init_logfile(void)
 		exit(2);
 	}
 
-	log_stream = fopen(log_filename, "w"); 
+	log_stream = fopen(log_filename, "w");
 	if (log_stream == NULL) {
 		perror(log_filename);
 		exit(2);
@@ -262,7 +298,7 @@ void log_output(const char *msg)
 
 void process_reply(int id, char *buffer)
 {
-	/* XXX: There is actually a conversion from 
+	/* XXX: There is actually a conversion from
 		network to host byte order needed here!! */
 	struct timeval *sent = (struct timeval *)buffer;
 	double current_rtt;
@@ -277,7 +313,7 @@ void process_reply(int id, char *buffer)
 		error(ERR_WARNING, "Found block with illegal round trip time or illegal inter arrival time, ignoring block.");
 		return ;
 	}
-		
+
 	/* Update statistics for flow. */
 
 	/* Round trip times */
@@ -296,7 +332,7 @@ void process_reply(int id, char *buffer)
 		ASSIGN_MAX(flow[id].max_iat_since_last, *current_iat_ptr);
 		flow[id].tot_iat_since_first += *current_iat_ptr;
 		flow[id].tot_iat_since_last += *current_iat_ptr;
-	}	
+	}
 	// XXX: else: check that this only happens once!
 	DEBUG_MSG(4, "processed reply_block of flow %d, (RTT = %.3lfms, IAT = %.3lfms)", id, current_rtt * 1e3, isnan(*current_iat_ptr) ? NAN : *current_iat_ptr * 1e3);
 }
@@ -311,7 +347,7 @@ void timer_check(void)
 		for (id = 0; id < opt.num_flows; id++)
 			report_flow(id);
 		timer.last = now;
-		while (time_is_after(&now, &timer.next)) 
+		while (time_is_after(&now, &timer.next))
 			time_add(&timer.next, opt.reporting_interval);
 	}
 }
@@ -337,7 +373,7 @@ void timer_start(void)
 			time_add(&flow[id].client_flow_stop_timestamp,
 					flow[id].client_flow_duration);
 		}
-		if (flow[id].rate) 
+		if (flow[id].rate)
 			flow[id].next_write_block_timestamp =
 				flow[id].client_flow_start_timestamp;
 
@@ -431,7 +467,7 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3
 #ifdef __LINUX__
 		,
-		cwnd, ssth, uack, sack, lost, retr, fack, reor, 
+		cwnd, ssth, uack, sack, lost, retr, fack, reor,
 		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3
 #endif
 		,
@@ -453,7 +489,7 @@ void report_final(void)
 
 	for (id = 0; id < opt.num_flows; id++) {
 
-		snprintf(header_buffer, sizeof(header_buffer), 
+		snprintf(header_buffer, sizeof(header_buffer),
 			"# #%d: %s", id, flow[id].server_name);
 
 #define CAT(fmt, args...) do {\
@@ -463,14 +499,14 @@ void report_final(void)
 
 		if (strcmp(flow[id].server_name, flow[id].server_name_control) != 0)
 			CAT("/%s", flow[id].server_name_control);
-		if (flow[id].server_control_port != DEFAULT_LISTEN_PORT) 
+		if (flow[id].server_control_port != DEFAULT_LISTEN_PORT)
 			CAT(",%d", flow[id].server_control_port);
 		CATC("MSS = %d", flow[id].mss);
 		if (flow[id].mtu != -1)
 			CATC("MTU = %d (%s)", flow[id].mtu,
 					guess_topology(flow[id].mss, flow[id].mtu));
 		if (flow[id].stopped)
-			thruput = flow[id].bytes_written_since_first 
+			thruput = flow[id].bytes_written_since_first
 				/ time_diff(&flow[id].client_flow_start_timestamp,
 						&flow[id].stopped_timestamp);
 		else
@@ -479,7 +515,7 @@ void report_final(void)
 		thruput = scale_thruput(thruput);
 		CATC("ws = %u/%u%s (%u/%u), bs = %u/%u, delay = %.2fs/%.2fs, "
 				"duration = %.2fs/%.2fs, thruput = %.6fM%c/s "
-				"(%llu blocks)", 
+				"(%llu blocks)",
 				flow[id].client_window_size_real,
 				flow[id].server_window_size_real,
 				(flow[id].server_window_size ? "" : "(?)"),
@@ -510,7 +546,7 @@ void report_final(void)
 		else if (strcmp(flow[id].final_cc_alg, flow[id].cc_alg) != 0)
 			CAT(" (was set to \"%s\")", flow[id].cc_alg);
 #endif
-		if (flow[id].dscp) 
+		if (flow[id].dscp)
 			CATC("dscp = 0x%02x", flow[id].dscp);
 		if (flow[id].late_connect)
 			CATC("late connecting");
@@ -520,7 +556,7 @@ void report_final(void)
 			CAT(" (overcongested)");
 		else if (flow[id].congestion_counter > 0)
 			CAT(" (congested = %u)", flow[id].congestion_counter);
-		if (flow[id].stopped && 
+		if (flow[id].stopped &&
 				flow[id].congestion_counter <= CONGESTION_LIMIT)
 			CAT(" (stopped)");
 		CAT("\n");
@@ -528,9 +564,9 @@ void report_final(void)
 		log_output(header_buffer);
 
 #ifdef __LINUX__
-		if (flow[id].stopped) 
+		if (flow[id].stopped)
 			info = &flow[id].last_tcp_info;
-		else 
+		else
 			info = &flow[id].final_tcp_info;
 #endif
 		if (flow[id].bytes_written_since_first == 0) {
@@ -538,13 +574,13 @@ void report_final(void)
 				1, id, flow[id].client_flow_delay,
 				flow[id].client_flow_duration +
 				flow[id].client_flow_delay, 0, 0,
-				INFINITY, INFINITY, INFINITY, 
+				INFINITY, INFINITY, INFINITY,
 				INFINITY, INFINITY, INFINITY
 #ifdef __LINUX__
-				, 
+				,
 				info->tcpi_snd_cwnd, info->tcpi_snd_ssthresh,
 				info->tcpi_unacked, info->tcpi_sacked,
-				info->tcpi_lost, info->tcpi_retrans, 
+				info->tcpi_lost, info->tcpi_retrans,
 				info->tcpi_fackets, info->tcpi_reordering,
 				info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto
 #endif
@@ -554,17 +590,17 @@ void report_final(void)
 
 		print_tcp_report_line(
 			1, id, flow[id].client_flow_delay,
-			time_diff(&timer.start, &flow[id].last_block_written), 
+			time_diff(&timer.start, &flow[id].last_block_written),
 			flow[id].bytes_written_since_first,
-			flow[id].bytes_read_since_first, 
+			flow[id].bytes_read_since_first,
 			flow[id].min_rtt_since_first,
-			flow[id].tot_rtt_since_first, 
-			flow[id].max_rtt_since_first, 
+			flow[id].tot_rtt_since_first,
+			flow[id].max_rtt_since_first,
 			flow[id].min_iat_since_first,
 			flow[id].tot_iat_since_first,
 			flow[id].max_iat_since_first
 #ifdef __LINUX__
-			, 
+			,
 			info->tcpi_snd_cwnd, info->tcpi_snd_ssthresh,
 			info->tcpi_unacked, info->tcpi_sacked,
 			info->tcpi_lost, info->tcpi_retrans,
@@ -608,15 +644,15 @@ void report_flow(int id)
 	print_tcp_report_line(
 			0, id, diff_first_last, diff_first_now,
 			flow[id].bytes_written_since_last,
-			flow[id].bytes_read_since_last, 
+			flow[id].bytes_read_since_last,
 			flow[id].min_rtt_since_last,
 			flow[id].tot_rtt_since_last,
-			flow[id].max_rtt_since_last, 
+			flow[id].max_rtt_since_last,
 			flow[id].min_iat_since_last,
 			flow[id].tot_iat_since_last,
 			flow[id].max_iat_since_last
 #ifdef __LINUX__
-			, 
+			,
 			info.tcpi_snd_cwnd,
 			info.tcpi_snd_ssthresh,
 			info.tcpi_last_data_sent, info.tcpi_last_ack_recv,
@@ -657,7 +693,7 @@ int name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
 
 	snprintf(service, sizeof(service), "%u", port);
 
-	if ((n = getaddrinfo(server_name, service, &hints, &res)) != 0) 
+	if ((n = getaddrinfo(server_name, service, &hints, &res)) != 0)
 		error(ERR_FATAL, "getaddrinfo() failed: %s",
 				gai_strerror(n));
 	ressave = res;
@@ -665,7 +701,7 @@ int name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
 	do {
 		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		if (fd < 0)
-			continue;	
+			continue;
 
 		if (!do_connect)
 			break;
@@ -678,7 +714,7 @@ int name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
 		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
-	if (res == NULL) 
+	if (res == NULL)
 		error(ERR_FATAL, "Could not establish connection to "
 				"\"%s\": %s", server_name, strerror(errno));
 
@@ -801,7 +837,7 @@ void read_test_data(int id)
 		msg.msg_control = cbuf;
 		msg.msg_controllen = sizeof(cbuf);
 		rc = recvmsg(flow[id].sock, &msg, 0);
-				
+
 		if (rc == -1) {
 			if (errno == EAGAIN)
 				break;
@@ -810,7 +846,7 @@ void read_test_data(int id)
 			flow[id].read_errors++;
 			stop_flow(id);
 			return;
-		} 
+		}
 
 		if (rc == 0) {
 			DEBUG_MSG(1, "server shut down test socket "
@@ -819,7 +855,7 @@ void read_test_data(int id)
 					!flow[id].shutdown)
 				error(ERR_WARNING, "Premature shutdown of "
 						"server flow");
-			flow[id].server_flow_finished = 1; 
+			flow[id].server_flow_finished = 1;
 			if (flow[id].client_flow_finished) {
 				DEBUG_MSG(4, "flow %u finished", id);
 				stop_flow(id);
@@ -830,7 +866,7 @@ void read_test_data(int id)
 		DEBUG_MSG(4, "flow %d received %u bytes", id, rc);
 
 #if 0
-		if (flow[id].server_flow_duration == 0) 
+		if (flow[id].server_flow_duration == 0)
 			error(ERR_WARNING, "flow %d got unexpected data "
 					"from server (no two-way)", id);
 		else if (server_flow_in_delay(id))
@@ -844,9 +880,9 @@ void read_test_data(int id)
 		flow[id].bytes_read_since_last += rc;
 		flow[id].bytes_read_since_first += rc;
 		flow[id].read_block_bytes_read += rc;
-		if (flow[id].read_block_bytes_read >= 
+		if (flow[id].read_block_bytes_read >=
 				flow[id].read_block_size) {
-			assert(flow[id].read_block_bytes_read 
+			assert(flow[id].read_block_bytes_read
 					== flow[id].read_block_size);
 			flow[id].read_block_bytes_read = 0;
 			tsc_gettimeofday(&flow[id].last_block_read);
@@ -883,9 +919,9 @@ void read_control_data(int id)
 			flow[id].read_errors++;
 			stop_flow(id);
 			return;
-		} 
+		}
 
-		if (rc == 0) { 
+		if (rc == 0) {
 			error(ERR_WARNING, "Premature end of test: server "
 					"shut down control of flow %d.", id);
 			stop_flow(id);
@@ -893,7 +929,7 @@ void read_control_data(int id)
 		}
 
 		flow[id].reply_block_bytes_read += rc;
-		if (flow[id].reply_block_bytes_read >= 
+		if (flow[id].reply_block_bytes_read >=
 				sizeof(flow[id].reply_block)) {
 			process_reply(id, flow[id].reply_block);
 			flow[id].reply_block_bytes_read = 0;
@@ -947,15 +983,15 @@ void write_test_data(int id)
 			flow[id].write_errors++;
 			stop_flow(id);
 			return;
-		} 
-		
+		}
+
 		if (rc == 0) {
 			DEBUG_MSG(5, "flow %d sent zero bytes. what does "
 					"that mean?", id);
 			break;
 		}
 
-		DEBUG_MSG(4, "flow %d sent %d bytes of %u (already = %u)", id, rc, 
+		DEBUG_MSG(4, "flow %d sent %d bytes of %u (already = %u)", id, rc,
 				flow[id].write_block_size,
 				flow[id].write_block_bytes_written);
 		flow[id].bytes_written_since_first += rc;
@@ -977,13 +1013,13 @@ void write_test_data(int id)
 							"flow %u (block %llu): "
 							"new block scheduled "
 							"for %s, %.6lfs before now.",
-							id, 
+							id,
 							flow[id].write_block_count,
-							ctime_us(&flow[id].next_write_block_timestamp), 
+							ctime_us(&flow[id].next_write_block_timestamp),
 							time_diff(&flow[id].next_write_block_timestamp, &now));
 					flow[id].congestion_counter++;
-					if (flow[id].congestion_counter > 
-							CONGESTION_LIMIT && 
+					if (flow[id].congestion_counter >
+							CONGESTION_LIMIT &&
 							flow[id].flow_control)
 						stop_flow(id);
 				}
@@ -996,7 +1032,7 @@ void write_test_data(int id)
 
 		if (!flow[id].pushy)
 			break;
-	} 
+	}
 	return;
 }
 
@@ -1021,7 +1057,7 @@ void sigint_handler(int sig)
 void prepare_wfds (int id)
 {
 	int rc = 0;
-		
+
 	if (client_flow_in_delay(id)) {
 		DEBUG_MSG(4, "flow %i not started yet (delayed)", id);
 		return;
@@ -1072,7 +1108,7 @@ void prepare_rfds (int id)
 		DEBUG_MSG(1, "late connecting test socket "
 				"for flow %d after %.3fs delay",
 				id, flow[id].client_flow_delay);
-		rc = connect(flow[id].sock, flow[id].saddr, 
+		rc = connect(flow[id].sock, flow[id].saddr,
 				flow[id].saddr_len);
 		if (rc == -1 && errno != EINPROGRESS) {
 			error(ERR_WARNING, "Connect failed: %s",
@@ -1105,18 +1141,18 @@ void prepare_fds (void)
 		if (flow[id].stopped)
 			continue;
 
-		if ((!flow[id].server_flow_duration || 
-					(!server_flow_in_delay(id) && 
+		if ((!flow[id].server_flow_duration ||
+					(!server_flow_in_delay(id) &&
 					 !server_flow_sending(id))) &&
-				(!flow[id].client_flow_duration || 
+				(!flow[id].client_flow_duration ||
 				 (!client_flow_in_delay(id) &&
 				  !client_flow_sending(id)))) {
 			close_flow(id);
 			continue;
 		}
 
-		prepare_wfds(id);	
-		prepare_rfds(id);	
+		prepare_wfds(id);
+		prepare_rfds(id);
 
 	}
 
@@ -1187,7 +1223,7 @@ void grind_flows (void)
 							strerror(errno));
 					stop_flow(id);
 					continue;
-				} 
+				}
 				if (error_number != 0) {
 					fprintf(stderr, "connect: %s\n",
 							strerror(error_number));
@@ -1337,16 +1373,16 @@ void prepare_flow(int id)
 				flow[id].server_control_port, NULL, NULL, 1);
 	read_greeting(flow[id].sock_control);
 
-	to_write = snprintf(buf, sizeof(buf), 
-			"%s,t,%s,%hu,%hhd,%hhd,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+", 
-			FLOWGRIND_PROT_CALLSIGN FLOWGRIND_PROT_SEPERATOR FLOWGRIND_PROT_VERSION, 
-			flow[id].server_name, 
-			(opt.base_port ? opt.base_port++ : 0), 
+	to_write = snprintf(buf, sizeof(buf),
+			"%s,t,%s,%hu,%hhd,%hhd,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+",
+			FLOWGRIND_PROT_CALLSIGN FLOWGRIND_PROT_SEPERATOR FLOWGRIND_PROT_VERSION,
+			flow[id].server_name,
+			(opt.base_port ? opt.base_port++ : 0),
 			opt.advstats, flow[id].so_debug,
-			flow[id].server_window_size, 
-			flow[id].server_flow_delay, 
+			flow[id].server_window_size,
+			flow[id].server_flow_delay,
 			flow[id].server_flow_duration,
-			flow[id].write_block_size, 
+			flow[id].write_block_size,
 			flow[id].read_block_size,
 			flow[id].pushy,
 			flow[id].shutdown,
@@ -1361,8 +1397,8 @@ void prepare_flow(int id)
 	if (rc != 2)
 		error(ERR_FATAL, "malformed session response from server");
 
-	if (flow[id].server_window_size != 0 && 
-			flow[id].server_window_size_real != 
+	if (flow[id].server_window_size != 0 &&
+			flow[id].server_window_size_real !=
 			flow[id].server_window_size) {
 		fprintf(stderr, "warning: server failed to set requested "
 				"window size %u, actual = %u\n",
@@ -1375,8 +1411,8 @@ void prepare_flow(int id)
 
 	flow[id].client_window_size_real =
 		set_window_size(flow[id].sock, flow[id].client_window_size);
-	if (flow[id].client_window_size != 0 && 
-			flow[id].client_window_size_real != 
+	if (flow[id].client_window_size != 0 &&
+			flow[id].client_window_size_real !=
 			flow[id].client_window_size) {
 		fprintf(stderr, "warning: failed to set requested client "
 				"window size.\n");
@@ -1471,7 +1507,7 @@ void prepare_flows(void)
 		flow[id].read_block_bytes_read = 0;
 		flow[id].write_block_bytes_written = 0;
 	}
-	
+
 	rc = uname(&me);
 	start_ts = time(NULL);
 	ctime_r(&start_ts, start_ts_buffer);
@@ -1480,7 +1516,7 @@ void prepare_flows(void)
 			"number of flows = %d, reporting interval = %.2fs, "
 			"[tput] = %s (%s)\n",
 			(start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
-			(rc == -1 ? "(unknown)" : me.nodename), 
+			(rc == -1 ? "(unknown)" : me.nodename),
 			opt.num_flows, opt.reporting_interval,
 			(opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
 			FLOWGRIND_VERSION);
@@ -1504,8 +1540,20 @@ void parse_cmdline(int argc, char **argv)
 	int optint = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
+	int argread = 0;
+	enum {
+		SOURCE = 0,
+		DESTINATION
+	};
+	char *const token[] = {
+		[SOURCE] = "s",
+		[DESTINATION] = "d",
+		NULL
+	};
+	char *subopts;
+	char *value;
 
-#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
+	#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
 			if (current_flow_ids[0] == -1) { \
 				int id; \
 				for (id = 0; id < MAX_FLOWS; id++) { \
@@ -1524,125 +1572,29 @@ void parse_cmdline(int argc, char **argv)
 
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "2ab:B:Cc:Dd:EeF:f:ghH:Ii:klL:Mm:n"
-					"O:P:pQqSRr:Sst:T:Uu:W:w:VxY:y:")) != -1)
+	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvw")) != -1)
 		switch (ch) {
-		case '2':
-			ASSIGN_FLOW_OPTION(two_way, 1)
-			break;
 
 		case 'a':
-			ASSIGN_FLOW_OPTION(byte_counting, 1)
-			break;
-
-		case 'b':
-			rc = sscanf(optarg, "%u", &optunsigned);
-                        if (rc != 1) {
-				fprintf(stderr, "block size must be a positive "
-						"integer (in bytes)\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(write_block_size, optunsigned)
-			break;
-
-		case 'B':
-			rc = sscanf(optarg, "%u", &optunsigned);
-                        if (rc != 1) {
-				fprintf(stderr, "block size must be a positive "
-						"integer (in bytes)\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(read_block_size, optunsigned)
-			break;
-
-		case 'c':
-			ASSIGN_FLOW_OPTION(cc_alg, optarg)
-			break;
-
-		case 'C':
-			opt.clobber = 1;
-			break;
-
-		case 'D':
-			increase_debuglevel(1);
+			opt.advstats = 1;
 			break;
 
 		case 'd':
-			rc = sscanf(optarg, "%x", &optint);
-			if (rc != 1 || (optint & ~0x3f)) {
-				fprintf(stderr, "malformed differentiated "
-						"service code point.\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(dscp, optint);
-			break; 
-
-		case 'E':
-			ASSIGN_FLOW_OPTION(elcn, 2)
+			increase_debuglevel();
 			break;
 
 		case 'e':
-			ASSIGN_FLOW_OPTION(elcn, 1)
-			break;
-
-		case 'F':
-			tok = strtok(optarg, ",");
-			id = 0;
-			while (tok) {
-				rc = sscanf(tok, "%d", &optint);
-				if (rc != 1) {
-					fprintf(stderr, "malformed flow specifier\n");
-					usage();
-				}
-				if (optint == -1) {
-					id = 0;
-					break;
-				}
-				current_flow_ids[id++] = optint;
-				ASSIGN_MAX(max_flow_specifier, optint);
-				tok = strtok(NULL, ",");
-			}
-			current_flow_ids[id] = -1;
-			break;
-
-		case 'f':
-			ASSIGN_FLOW_OPTION(flow_control, 1);
-			break;
-
-		case 'g':
-			ASSIGN_FLOW_OPTION(so_debug, 1)
+			opt.log_filename_prefix = optarg;
 			break;
 
 		case 'h':
-			usage();
-			break;
-
-		case 'H':
-			ASSIGN_FLOW_OPTION(server_name, optarg)
-			sepptr = strchr(optarg, '/');
-			if (sepptr == NULL) {
-				ASSIGN_FLOW_OPTION(server_name_control, optarg)
-			} else {
-				*sepptr = '\0';
-				ASSIGN_FLOW_OPTION(server_name_control, sepptr + 1)
+			if(strcmp(optarg, "sockopt")) {
+				printf("Illegal subargument: %s\n", optarg);
+				usage();
 			}
-			sepptr = strchr(optarg, ',');
-			if (sepptr == NULL) {
-				ASSIGN_FLOW_OPTION(server_control_port,
-						DEFAULT_LISTEN_PORT)
-			} else {
-				optint = atoi(optarg);
-				if (optint < 1) {
-					fprintf(stderr, "invalid port\n");
-					usage();
-				}
-				*sepptr = '\0';
-				ASSIGN_FLOW_OPTION(server_control_port, optint)
+			else {
+				usage_sockopt();
 			}
-			break;
-
-		case 'I':
-			ASSIGN_FLOW_OPTION(icmp, 1)
 			break;
 
 		case 'i':
@@ -1654,21 +1606,17 @@ void parse_cmdline(int argc, char **argv)
 			}
 			break;
 
-		case 'k':
-			ASSIGN_FLOW_OPTION(cork, 1)
-			break;
-
-		case 'L':
+		case 'l':
 			opt.log_filename = optarg;
 			break;
 
-		case 'l':
-			ASSIGN_FLOW_OPTION(late_connect, 1)
+		case 'm':
+			opt.mbyte = 1;
 			break;
 
-		case 'm':
+		case 'n':
 			rc = sscanf(optarg, "%u", &optunsigned);
-                        if (rc != 1 || optunsigned > MAX_FLOWS) {
+			if (rc != 1 || optunsigned > MAX_FLOWS) {
 				fprintf(stderr, "number of test flows must "
 						"be within [1..%d]\n", MAX_FLOWS);
 				usage();
@@ -1676,15 +1624,11 @@ void parse_cmdline(int argc, char **argv)
 			opt.num_flows = (short)optunsigned;
 			break;
 
-		case 'M':
-			opt.mbyte = 1;
+		case 'o':
+			opt.clobber = 1;
 			break;
 
-		case 'n':
-			ASSIGN_FLOW_OPTION(shutdown, 1);
-			break;
-
-		case 'O':
+		case 'p':
 			rc = sscanf(optarg, "%u", &optunsigned);
                         if (rc != 1 || optunsigned > USHRT_MAX) {
 				fprintf(stderr, "base port must be within "
@@ -1694,118 +1638,16 @@ void parse_cmdline(int argc, char **argv)
 			opt.base_port = (short)optunsigned;
 			break;
 
-		case 'P':
-			opt.log_filename_prefix = optarg;
-			break;
-
-		case 'p':
-			ASSIGN_FLOW_OPTION(pushy, 1)
-			break;
-
 		case 'q':
 			opt.dont_log_stdout = 1;
 			break;
 
-		case 'Q':
-			opt.dont_log_logfile = 1;
-			break;
-
-		case 'R':
-			ASSIGN_FLOW_OPTION(route_record, 1)
-			break;
-
-		case 'r':
-			ASSIGN_FLOW_OPTION(rate_str, optarg)
-			break;
-
-		case 'S':
-			opt.advstats = 1;
-			break;
-
-		case 's':
-			ASSIGN_FLOW_OPTION(summarize_only, 1)
-			break;
-
-		case 't':
-			rc = sscanf(optarg, "%lf", &optdouble);
-			if (rc != 1) {
-				fprintf(stderr, "malformed flow duration\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(client_flow_duration, optdouble)
-			break;
-
-		case 'T':
-			rc = sscanf(optarg, "%lf", &optdouble);
-			if (rc != 1) {
-				fprintf(stderr, "malformed flow duration\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(server_flow_duration, optdouble)
-			break;
-
-		case 'u':
-			ASSIGN_FLOW_OPTION(proto, PROTO_UDP);
-			break;
-
-		case 'V':
+		case 'v':
 			fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
-	
+
 		case 'w':
-			optint = atoi(optarg);
-			if (optint <= 0) {
-				fprintf(stderr, "window must be a positive "
-						"integer (in bytes)\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(client_window_size, optint)
-			break;
-
-		case 'W':
-			optint = atoi(optarg);
-			if (optint <= 0) {
-				fprintf(stderr, "window must be a positive "
-						"integer (in bytes)\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(server_window_size, optint)
-			break;
-
-		case 'y':
-			rc = sscanf(optarg, "%lf", &optdouble);
-			if (rc != 1 || optdouble < 0) {
-				fprintf(stderr, "delay must be a non-negativ "
-						"number (in seconds)\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(client_flow_delay, optdouble)
-			break;
-
-		case 'Y':
-			rc = sscanf(optarg, "%lf", &optdouble);
-			if (rc != 1 || optdouble <= 0) {
-				fprintf(stderr, "delay must be a positive "
-						"number (in seconds)\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(server_flow_delay, optdouble)
-			break;
-
-		case 'x':
-			for (id = 0; id<MAX_FLOWS; id++)
-				if (current_flow_ids[id] == -1) {
-					current_flow_ids[id++] = opt.num_flows++;
-					if (id == MAX_FLOWS) {
-						fprintf(stderr, "maximum number "
-								"of flows (%d) "
-								"exceeded.\n",
-								MAX_FLOWS);
-						exit(2);
-					}
-					current_flow_ids[1] = -1;
-					break;
-				}
+			opt.dont_log_logfile = 0;
 			break;
 
 		default:
@@ -1822,48 +1664,48 @@ void parse_cmdline(int argc, char **argv)
 
 	/* Sanity checking flow options */
 	if (opt.num_flows <= max_flow_specifier) {
-		fprintf(stderr, "Must not specify option for non-existing flow.\n"); 
+		fprintf(stderr, "Must not specify option for non-existing flow.\n");
 		error = 1;
 	}
 	for (id = 0; id<opt.num_flows; id++) {
 		DEBUG_MSG(4, "sanity checking parameter set of flow %d.", id);
-		if (flow[id].server_flow_duration > 0 && flow[id].late_connect && 
-				flow[id].server_flow_delay < 
+		if (flow[id].server_flow_duration > 0 && flow[id].late_connect &&
+				flow[id].server_flow_delay <
 				flow[id].client_flow_delay) {
 			fprintf(stderr, "Server flow %d starts earlier than client "
 					"flow while late connecting.\n", id);
 			error = 1;
 		}
-		if (flow[id].client_flow_delay > 0 && 
+		if (flow[id].client_flow_delay > 0 &&
 				flow[id].client_flow_duration == 0) {
 			fprintf(stderr, "Client flow %d has a delay but "
 					"no runtime.\n", id);
 			error = 1;
 		}
-		if (flow[id].server_flow_delay > 0 && 
+		if (flow[id].server_flow_delay > 0 &&
 				flow[id].server_flow_duration == 0) {
 			fprintf(stderr, "Server flow %d has a delay but "
 					"no runtime.\n", id);
 			error = 1;
 		}
-		if (!flow[id].server_flow_duration && 
+		if (!flow[id].server_flow_duration &&
 				!flow[id].client_flow_duration) {
 			fprintf(stderr, "Server and client flow have both "
 					"zero runtime for flow %d.\n", id);
 			error = 1;
 		}
 		if (flow[id].two_way) {
-			if (flow[id].server_flow_duration != 0 && 
-					flow[id].client_flow_duration != 
+			if (flow[id].server_flow_duration != 0 &&
+					flow[id].client_flow_duration !=
 					flow[id].server_flow_duration) {
 				fprintf(stderr, "Server flow duration "
 						"specified albeit -2.\n");
 				error = 1;
 			}
-			flow[id].server_flow_duration = 
+			flow[id].server_flow_duration =
 				flow[id].client_flow_duration;
 			if (flow[id].server_flow_delay != 0 &&
-					flow[id].server_flow_delay != 
+					flow[id].server_flow_delay !=
 					flow[id].client_flow_delay) {
 				fprintf(stderr, "Server flow delay specified "
 						"albeit -2.\n");
@@ -1892,18 +1734,18 @@ void parse_cmdline(int argc, char **argv)
 			case 'z':
 				break;
 
-			case 'k': 
-				optdouble *= 1<<10; 
+			case 'k':
+				optdouble *= 1<<10;
 				break;
 
-			case 'M': 
-				optdouble *= 1<<20; 
+			case 'M':
+				optdouble *= 1<<20;
 				break;
-				
-			case 'G': 
-				optdouble *= 1<<30; 
+
+			case 'G':
+				optdouble *= 1<<30;
 				break;
-			
+
 			default:
 				fprintf(stderr, "illegal unit specifier "
 						"in rate of flow %u.\n", id);
@@ -1926,7 +1768,7 @@ void parse_cmdline(int argc, char **argv)
 			case 'B':
 				/* Is default */
 				break;
-			
+
 			default:
 				fprintf(stderr, "illegal type specifier "
 						"(either block or byte) for "
@@ -1973,7 +1815,7 @@ void parse_cmdline(int argc, char **argv)
 	if (max_flow_rate > 0) {
 		select_timeout = 1e6/max_flow_rate/2;
 		if (select_timeout > DEFAULT_SELECT_TIMEOUT)
-			select_timeout = DEFAULT_SELECT_TIMEOUT; 
+			select_timeout = DEFAULT_SELECT_TIMEOUT;
 		DEBUG_MSG(4, "setting select timeout = %uus", select_timeout);
 	}
 }

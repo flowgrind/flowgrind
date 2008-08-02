@@ -37,8 +37,8 @@
 #include <float.h>
 #endif
 
-struct timeval start; 
-struct timeval end; 
+struct timeval start;
+struct timeval end;
 
 #define ACL_ALLOW	1
 #define ACL_DENY	0
@@ -297,8 +297,8 @@ void tcp_test(int fd_control, char *proposal)
 		goto out;
 	}
 	*proposal++ = '\0';
-	
-	rc = sscanf(proposal, "%hu,%hhd,%hhd,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+", 
+
+	rc = sscanf(proposal, "%hu,%hhd,%hhd,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+",
 			&requested_server_test_port, &advstats, &so_debug,
 			&requested_window_size, &flow_delay, &flow_duration,
 			&read_block_size, &write_block_size, &pushy,
@@ -308,7 +308,7 @@ void tcp_test(int fd_control, char *proposal)
 			"proposal from client");
 		goto out;
 	}
-	snprintf(server_service, sizeof(server_service), "%hu", 
+	snprintf(server_service, sizeof(server_service), "%hu",
 			requested_server_test_port);
 
 	write_block = calloc(1, write_block_size);
@@ -317,16 +317,16 @@ void tcp_test(int fd_control, char *proposal)
 		logging_log(LOG_ALERT, "could not allocate memory");
 		goto out;
 	}
-	
+
 	/* Create socket for client to send test data to. */
 	bzero(&hints, sizeof(struct addrinfo));
 	hints.ai_flags = AI_PASSIVE;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-	if ((rc = getaddrinfo(server_name, server_service, 
+	if ((rc = getaddrinfo(server_name, server_service,
 			&hints, &res)) != 0) {
-		logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n", 
+		logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n",
 			gai_strerror(rc));
 		/* XXX: Be nice and tell client. */
 		goto out_free;
@@ -335,7 +335,7 @@ void tcp_test(int fd_control, char *proposal)
 	ressave = res;
 
 	do {
-		listenfd = socket(res->ai_family, res->ai_socktype, 
+		listenfd = socket(res->ai_family, res->ai_socktype,
 			res->ai_protocol);
 		if (listenfd < 0)
 			continue;
@@ -356,7 +356,7 @@ void tcp_test(int fd_control, char *proposal)
 
 	if (res == NULL) {
 		logging_log(LOG_ALERT, "failed to create listen socket");
-		goto out_free;	
+		goto out_free;
 	}
 
 	if (listen(listenfd, 0) < 0) {
@@ -381,25 +381,25 @@ void tcp_test(int fd_control, char *proposal)
 		server_test_port = ntohs((
 			(struct sockaddr_in6 *)(res->ai_addr))->sin6_port);
 		break;
-			
+
 	default:
 		logging_log(LOG_ALERT, "Unknown address family.");
 		goto out_free;
-		
+
 	}
 
 	addrlen = res->ai_addrlen;
 	freeaddrinfo(ressave);
-	
+
 	real_listen_window_size = set_window_size(listenfd, requested_window_size);
-	/* XXX: It might be too brave to report the window size of the listen 
+	/* XXX: It might be too brave to report the window size of the listen
 	 * socket to the client as the window size of test socket might differ
 	 * from the reported one. Close the socket in that case. */
 	to_write = snprintf(buffer, sizeof(buffer), "%u,%u+", server_test_port,
 			real_listen_window_size);
 	DEBUG_MSG(1, "proposal reply: %s", buffer);
 	rc = write_exactly(fd_control, buffer, (size_t) to_write);
-	
+
 	/* Wait for client to connect. */
 	alarm(10);
 	fd = accept(listenfd, (struct sockaddr *)&caddr, &addrlen);
@@ -415,16 +415,16 @@ void tcp_test(int fd_control, char *proposal)
 	if (close(listenfd) == -1)
 		logging_log(LOG_WARNING, "close(): failed");
 
-	logging_log(LOG_NOTICE, "client %s connected for testing.", 
+	logging_log(LOG_NOTICE, "client %s connected for testing.",
 			fg_nameinfo((struct sockaddr *)&caddr));
 	real_window_size = set_window_size(fd, requested_window_size);
 	if (requested_server_test_port &&
 			real_listen_window_size != real_window_size) {
 		logging_log(LOG_WARNING, "Failed to set window size of test "
 				"socket to window size of listen socket "
-				"(listen = %u, test = %u).", 
+				"(listen = %u, test = %u).",
 				real_listen_window_size, real_window_size);
-		goto out_free; 
+		goto out_free;
 	}
 	if (route_record)
 		set_route_record(fd);
@@ -458,7 +458,7 @@ void tcp_test(int fd_control, char *proposal)
 		FD_SET(fd, &wfds_orig);
 	FD_SET(fd, &efds_orig);
 	maxfd = MAX(fd_control, fd);
-	
+
 	for (;;) {
 		rfds = rfds_orig;
 		wfds = wfds_orig;
@@ -481,7 +481,7 @@ void tcp_test(int fd_control, char *proposal)
 			DEBUG_MSG(5, "test sock in rfds");
 			for (;;) {
 				rc = recv(fd, read_block+read_block_bytes_read,
-					read_block_size - 
+					read_block_size -
 						read_block_bytes_read, 0);
 				if (rc == -1) {
 					if (errno == EAGAIN)
@@ -496,44 +496,44 @@ void tcp_test(int fd_control, char *proposal)
 					break;
 				}
 				DEBUG_MSG(4, "received %d bytes "
-					"(in read_block already = %u)", 
+					"(in read_block already = %u)",
 					rc, read_block_bytes_read);
 				read_block_bytes_read += rc;
 				if (read_block_bytes_read >= read_block_size) {
 					double *iat_ptr = (double *)(read_block
 						+ sizeof(struct timeval));
-					assert(read_block_bytes_read == 
+					assert(read_block_bytes_read ==
 						read_block_size);
 					read_block_bytes_read = 0;
-					if (read_block_size < 
+					if (read_block_size <
 							sizeof(reply_block))
 						continue;
-					if (last_block_read.tv_sec == 0 && 
+					if (last_block_read.tv_sec == 0 &&
 						last_block_read.tv_usec == 0) {
 						*iat_ptr = NAN;
-						DEBUG_MSG(5, "isnan = %d", 
+						DEBUG_MSG(5, "isnan = %d",
 							isnan(*iat_ptr));
 					} else
 						*iat_ptr = time_diff_now(
 							&last_block_read);
 					tsc_gettimeofday(&last_block_read);
-					rc = write(fd_control, read_block, 
+					rc = write(fd_control, read_block,
 							sizeof(reply_block));
 					if (rc == -1) {
 						if (errno == EAGAIN) {
-							logging_log(LOG_WARNING, 
+							logging_log(LOG_WARNING,
 								"congestion on "
 								"control connection, "
 								"dropping reply block");
 							continue;
 						}
-						logging_log(LOG_WARNING, 
+						logging_log(LOG_WARNING,
 							"Premature end of test: %s",
 							strerror(errno));
 						goto out_free;
 					}
 					DEBUG_MSG(4, "sent reply block (IAT = "
-						"%.3lf)", (isnan(*iat_ptr) ? 
+						"%.3lf)", (isnan(*iat_ptr) ?
 							NAN : (*iat_ptr) * 1e3));
 				}
 				if (!pushy)
@@ -554,7 +554,7 @@ void tcp_test(int fd_control, char *proposal)
 				FD_CLR(fd_control, &rfds_orig);
 				goto out_free;
 			} else
-				logging_log(LOG_WARNING, "client send unexprected data on control connection");
+				logging_log(LOG_WARNING, "client send unexpected data on control connection");
 		}
 
 		if (FD_ISSET(fd, &wfds)) {
@@ -588,7 +588,7 @@ void tcp_test(int fd_control, char *proposal)
 			}
 		}
 
-		if (server_shutdown && 
+		if (server_shutdown &&
 				time_is_after(&now, &flow_stop_timestamp)) {
 			DEBUG_MSG(4, "shutting down data connection.");
 			rc = shutdown(fd, SHUT_WR);
@@ -636,25 +636,25 @@ serve_client(int fd_control)
 				"flowgrind connecting?");
 		goto log;
 	}
-	buf_ptr += sizeof(FLOWGRIND_PROT_CALLSIGN) - 1;	
+	buf_ptr += sizeof(FLOWGRIND_PROT_CALLSIGN) - 1;
 	if (*buf_ptr != ',') {
 		logging_log(LOG_WARNING, "callsign not followed by "
 				"seperator");
 		goto log;
 	}
-	buf_ptr++;				
+	buf_ptr++;
 	rc = memcmp(buf_ptr, FLOWGRIND_PROT_VERSION, sizeof(FLOWGRIND_PROT_VERSION) - 1);
 	if (rc != 0) {
 		logging_log(LOG_WARNING, "malformed protocol version");
 		goto log;
 	}
-	buf_ptr += sizeof(FLOWGRIND_PROT_VERSION) - 1;	
+	buf_ptr += sizeof(FLOWGRIND_PROT_VERSION) - 1;
 	if (*buf_ptr != ',') {
 		logging_log(LOG_WARNING, "protocol version not followed by "
 				"','");
 		goto log;
 	}
-	buf_ptr++;			
+	buf_ptr++;
 	if ((buf_ptr[0] == 't') && (buf_ptr[1] == ',')) {
 		buf_ptr += 2;
 		tcp_test(fd_control, buf_ptr);
@@ -702,7 +702,7 @@ main(int argc, char *argv[])
 
 		case 'D':
 			log_type = LOGTYPE_STDERR;
-			increase_debuglevel(1);
+			increase_debuglevel();
 			break;
 
 		case 'p':
@@ -717,7 +717,7 @@ main(int argc, char *argv[])
 		case 'V':
 			fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
-	
+
 		default:
 			usage();
 		}

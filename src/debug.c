@@ -12,16 +12,18 @@
 inline void decrease_debuglevel()
 {
 	debug_level--;
+	printf("DEBUG_LEVEL=%d", debug_level);
 }
 
 inline void increase_debuglevel()
 {
 	debug_level++;
+	printf("DEBUG_LEVEL=%d", debug_level);
 }
 
 static double time_diff(struct timeval *tv1, struct timeval *tv2)
 {
-		
+
 	return (double)(tv2->tv_sec - tv1->tv_sec) +
 		(double)(tv2->tv_usec - tv1->tv_usec)/1e6;
 }
@@ -40,7 +42,7 @@ const char *debug_timestamp()
 		last = first = now;
 
 	len = strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S", localtime(&now.tv_sec));
-	snprintf(buf+len, sizeof(buf)-len, ".%06ld [+%8.6lf] (%8.6lf)", 
+	snprintf(buf+len, sizeof(buf)-len, ".%06ld [+%8.6lf] (%8.6lf)",
 			(long)now.tv_usec, time_diff(&last, &now),
 			time_diff(&first, &now));
 	last = now;
@@ -50,6 +52,6 @@ const char *debug_timestamp()
 #else
 
 inline void decrease_debuglevel() { }
-inline void increase_debuglevel() { } 
+inline void increase_debuglevel() { }
 
 #endif
