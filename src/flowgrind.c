@@ -113,8 +113,9 @@ static void usage(void)
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n"
 
-		"x can be replaced with 's' for source or 'd' for destination. For all options\n"
-		"which take x, an additional parameter can be specified if separated by comma.\n"
+		"x has to be replaced with 's' for source, 'd' for destination or 'b' for both.\n"
+		"For all options which take x, an additional parameter can be specified if\n"
+		"separated by comma.\n"
 		"For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"and 4096 at the destination.\n\n"
 
@@ -153,6 +154,20 @@ static void usage_sockopt(void)
 		"Examples:\n"
 		"  flowgrind -H d=testhost -O s=TCP_CONG_MODULE=reno,d=SO_DEBUG\n"
 		"  //ToDo: write more examples and descriptions\n"
+		);
+	exit(1);
+}
+
+static void usage_flowopt(void)
+{
+	fprintf(stderr,
+		"Some options are used like this:\n"
+		"  -B x=#\n\n"
+		"x has to be replaced with 's' for source, 'd' for destination or 'b' for both.\n"
+		"For all options which take x, an additional parameter can be specified if\n"
+		"separated by comma.\n"
+		"For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
+		"and 4096 at the destination.\n\n"
 		);
 	exit(1);
 }
@@ -1524,8 +1539,66 @@ void prepare_flows(void)
 			TCP_REPORT_HDR_STRING_MBIT);
 }
 
-void parse_cmdline(int argc, char **argv)
-{
+static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
+	char* token;
+	char* arg;
+	char type;
+	int rc = 0;
+	double optdouble = 0.0;
+
+	#define ASSIGN_ENDPOINT_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
+			if (current_flow_ids[0] == -1) { \
+				int id; \
+				for (id = 0; id < MAX_FLOWS; id++) { \
+					if (type != 'd') \
+						flow[id].endpoint_options[0].PROPERTY_NAME = \
+						(PROPERTY_VALUE); \
+					if (type != 's') \
+						flow[id].endpoint_options[1].PROPERTY_NAME = \
+						(PROPERTY_VALUE); \
+				} \
+			} else { \
+				int id; \
+				for (id = 0; id < MAX_FLOWS; id++) { \
+					if (current_flow_ids[id] == -1) \
+						break; \
+					if (type != 'd') \
+						flow[current_flow_ids[id]].endpoint_options[0].PROPERTY_NAME = \
+						(PROPERTY_VALUE); \
+					if (type != 's') \
+						flow[current_flow_ids[id]].endpoint_options[1].PROPERTY_NAME = \
+						(PROPERTY_VALUE); \
+				} \
+			}
+
+	for (token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
+		type = token[0];
+		if (token[1] == '=')
+			arg = token + 2;
+		else
+			arg = token + 1;
+
+		if (type != 's' && type != 'd' && type != 'b') {
+			fprintf(stderr, "Syntax error in flow option: %c is not a valid endpoint.\n", type);
+			usage_flowopt();
+		}
+
+		switch (ch) {
+			case 'T':
+				rc = sscanf(arg, "%lf", &optdouble);
+				if (rc != 1) {
+					fprintf(stderr, "malformed flow duration\n");
+					usage();
+				}
+				ASSIGN_ENDPOINT_FLOW_OPTION(flow_duration, optdouble)
+				break;
+		}
+	}
+
+	#undef ASSIGN_ENDPOINT_FLOW_OPTION
+}
+
+static void parse_cmdline(int argc, char **argv) {
 	int rc = 0;
 	int ch = 0;
 	int id = 0;
@@ -1571,7 +1644,7 @@ void parse_cmdline(int argc, char **argv)
 
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvw")) != -1)
+	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvwT:")) != -1)
 		switch (ch) {
 
 		case 'a':
@@ -1648,6 +1721,11 @@ void parse_cmdline(int argc, char **argv)
 		case 'w':
 			opt.dont_log_logfile = 0;
 			break;
+
+		case 'T':
+			parse_flow_option(ch, optarg, current_flow_ids);
+			break;
+
 
 		default:
 			usage();

@@ -49,7 +49,7 @@ enum protocol {
 };
 
 struct _flow_endpoint {
-	// Flow options only affecting source or drain
+	// Flow options only affecting source or destination
 	unsigned window_size;
 	unsigned window_size_real;
 
@@ -147,7 +147,7 @@ struct _flow {
 	double tot_iat_since_last;
 
 	// 0 for source
-	// 1 for drain
+	// 1 for destination
 	struct _flow_endpoint endpoint_options[2];
 };
 struct _flow flow[MAX_FLOWS];
