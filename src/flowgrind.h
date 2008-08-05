@@ -49,15 +49,32 @@ enum protocol {
 };
 
 struct _flow_endpoint {
-	// Flow options only affecting source or destination
-	unsigned window_size;
-	unsigned window_size_real;
+	/* Flow options only affecting source or destination*/
+
+	/* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
+
+	/* SO_SNDBUF */
+	unsigned send_buffer_size;
+	unsigned send_buffer_size_real;
+
+	/* SO_RCVBUF */
+	unsigned receive_buffer_size;
+	unsigned receive_buffer_size_real;
 
 	double flow_duration;
 	double flow_delay;
 	struct timeval flow_start_timestamp;
 	struct timeval flow_stop_timestamp;
 	char flow_finished;
+
+	// For one endpoint this is the write block size.
+	// The corresponding read block size is the other endpoint's
+	// block size
+	unsigned block_size;
+
+	char *rate_str;
+	unsigned rate;
+	char poisson_distributed;
 };
 
 struct _flow {
@@ -89,9 +106,6 @@ struct _flow {
 	char shutdown;
 	char summarize_only;
 	char two_way;
-	char *rate_str;
-	unsigned rate;
-	char poisson_distributed;
 	char flow_control;
 	char byte_counting;
 
@@ -99,13 +113,11 @@ struct _flow {
 	unsigned read_errors;
 
 	char *read_block;
-	unsigned read_block_size;
 	unsigned read_block_bytes_read;
 	uint64_t read_block_count;
 	struct timeval last_block_read;
 
 	char *write_block;
-	unsigned write_block_size;
 	unsigned write_block_bytes_written;
 	uint64_t write_block_count;
 	struct timeval last_block_written;
@@ -189,7 +201,7 @@ static int client_flow_sending(int id)
 
 static int client_flow_block_scheduled(int id)
 {
-	return !flow[id].rate ||
+	return !flow[id].endpoint_options[0].rate ||
 		time_is_after(&now, &flow[id].next_write_block_timestamp);
 }
 

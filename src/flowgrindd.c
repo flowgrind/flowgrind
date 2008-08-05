@@ -250,9 +250,12 @@ void tcp_test(int fd_control, char *proposal)
 	char server_service[7];
 	unsigned short server_test_port;
 	unsigned short requested_server_test_port;
-	unsigned requested_window_size;
-	unsigned real_listen_window_size;
-	unsigned real_window_size;
+	unsigned requested_send_buffer_size;
+	unsigned real_listen_send_buffer_size;
+	unsigned real_send_buffer_size;
+	unsigned requested_receive_buffer_size;
+	unsigned real_listen_receive_buffer_size;
+	unsigned real_receive_buffer_size;
 
 	char *read_block = NULL;
 	unsigned read_block_size;
@@ -298,12 +301,13 @@ void tcp_test(int fd_control, char *proposal)
 	}
 	*proposal++ = '\0';
 
-	rc = sscanf(proposal, "%hu,%hhd,%hhd,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+",
+	rc = sscanf(proposal, "%hu,%hhd,%hhd,%u,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+",
 			&requested_server_test_port, &advstats, &so_debug,
-			&requested_window_size, &flow_delay, &flow_duration,
+			&requested_send_buffer_size, &requested_receive_buffer_size,
+   			&flow_delay, &flow_duration,
 			&read_block_size, &write_block_size, &pushy,
 			&server_shutdown, &route_record);
-	if (rc != 11) {
+	if (rc != 12) {
 		logging_log(LOG_WARNING, "malformed TCP session "
 			"proposal from client");
 		goto out;
@@ -391,12 +395,13 @@ void tcp_test(int fd_control, char *proposal)
 	addrlen = res->ai_addrlen;
 	freeaddrinfo(ressave);
 
-	real_listen_window_size = set_window_size(listenfd, requested_window_size);
+	real_listen_send_buffer_size = set_window_size_directed(listenfd, requested_send_buffer_size, SO_SNDBUF);
+	real_listen_receive_buffer_size = set_window_size_directed(listenfd, requested_receive_buffer_size, SO_RCVBUF);
 	/* XXX: It might be too brave to report the window size of the listen
 	 * socket to the client as the window size of test socket might differ
 	 * from the reported one. Close the socket in that case. */
-	to_write = snprintf(buffer, sizeof(buffer), "%u,%u+", server_test_port,
-			real_listen_window_size);
+	to_write = snprintf(buffer, sizeof(buffer), "%u,%u,%u+", server_test_port,
+			real_listen_send_buffer_size, real_listen_receive_buffer_size);
 	DEBUG_MSG(1, "proposal reply: %s", buffer);
 	rc = write_exactly(fd_control, buffer, (size_t) to_write);
 
@@ -417,13 +422,22 @@ void tcp_test(int fd_control, char *proposal)
 
 	logging_log(LOG_NOTICE, "client %s connected for testing.",
 			fg_nameinfo((struct sockaddr *)&caddr));
-	real_window_size = set_window_size(fd, requested_window_size);
+	real_send_buffer_size = set_window_size_directed(fd, requested_send_buffer_size, SO_SNDBUF);
 	if (requested_server_test_port &&
-			real_listen_window_size != real_window_size) {
-		logging_log(LOG_WARNING, "Failed to set window size of test "
-				"socket to window size of listen socket "
+			real_listen_send_buffer_size != real_send_buffer_size) {
+		logging_log(LOG_WARNING, "Failed to set send buffer size of test "
+				"socket to send buffer size size of listen socket "
 				"(listen = %u, test = %u).",
-				real_listen_window_size, real_window_size);
+				real_listen_send_buffer_size, real_send_buffer_size);
+		goto out_free;
+	}
+	real_receive_buffer_size = set_window_size_directed(fd, requested_receive_buffer_size, SO_RCVBUF);
+	if (requested_server_test_port &&
+			real_listen_receive_buffer_size != real_receive_buffer_size) {
+		logging_log(LOG_WARNING, "Failed to set receive buffer size (advertised window) of test "
+				"socket to receive buffer size of listen socket "
+				"(listen = %u, test = %u).",
+				real_listen_receive_buffer_size, real_receive_buffer_size);
 		goto out_free;
 	}
 	if (route_record)

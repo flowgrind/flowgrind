@@ -99,9 +99,9 @@ static void usage(void)
 		"  -N x         shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
 		"               type \"flowgrind -h sockopt\" to see the specific values for OPT\n"
-		"  -P x         Do not iterate through select() to continue sending in case\n"
+		"  -P           Do not iterate through select() to continue sending in case\n"
 		"               block size did not suffice to fill sending queue (pushy)\n"
-		"  -Q x         Summarize only, skip interval reports (quite)\n"
+		"  -Q           Summarize only, skip interval reports (quite)\n"
 		"  -R x=#.#[z|k|M|G][b|B][p|P]\n"
                 "               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
@@ -194,8 +194,10 @@ void init_flows_defaults(void)
 		flow[id].proto = PROTO_TCP;
 
 		for (int i = 0; i < 2; i++) {
-			flow[id].endpoint_options[i].window_size = 0;
+			flow[id].endpoint_options[i].send_buffer_size = 0;
+			flow[id].endpoint_options[i].receive_buffer_size = 0;
 			flow[id].endpoint_options[i].flow_delay = 0;
+			flow[id].endpoint_options[i].block_size = 8192;
 		}
 		flow[id].endpoint_options[0].flow_duration = 1.0;
 		flow[id].endpoint_options[1].flow_duration = 0.0;
@@ -213,10 +215,8 @@ void init_flows_defaults(void)
 		flow[id].read_errors = 0;
 
 		flow[id].read_block = NULL;
-		flow[id].read_block_size = 8192;
 		flow[id].read_block_bytes_read = 0;
 		flow[id].write_block = NULL;
-		flow[id].write_block_size = 8192;
 		flow[id].write_block_bytes_written = 0;
 
 		/* Stats */
@@ -387,7 +387,7 @@ void timer_start(void)
 			time_add(&flow[id].endpoint_options[0].flow_stop_timestamp,
 					flow[id].endpoint_options[0].flow_duration);
 		}
-		if (flow[id].rate)
+		if (flow[id].endpoint_options[0].rate)
 			flow[id].next_write_block_timestamp =
 				flow[id].endpoint_options[0].flow_start_timestamp;
 
@@ -431,7 +431,7 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 	if (flow[id].stopped)
 		COMMENT_CAT("stopped")
 	else {
-		blocks_written = bytes_written / flow[id].write_block_size;
+		blocks_written = bytes_written / flow[id].endpoint_options[0].block_size;
 		if (blocks_written == 0) {
 			if (client_flow_in_delay(id))
 				COMMENT_CAT("d")
@@ -527,24 +527,29 @@ void report_final(void)
 			thruput = flow[id].bytes_written_since_first /
 				flow[id].endpoint_options[0].flow_duration;
 		thruput = scale_thruput(thruput);
-		CATC("ws = %u/%u%s (%u/%u), bs = %u/%u, delay = %.2fs/%.2fs, "
+		CATC("sb = %u/%u%s (%u/%u), rb = %u/%u%s (%u/%u), bs = %u/%u, delay = %.2fs/%.2fs, "
 				"duration = %.2fs/%.2fs, thruput = %.6fM%c/s "
 				"(%llu blocks)",
-				flow[id].endpoint_options[0].window_size_real,
-				flow[id].endpoint_options[1].window_size_real,
-				(flow[id].endpoint_options[1].window_size ? "" : "(?)"),
-				flow[id].endpoint_options[0].window_size,
-				flow[id].endpoint_options[1].window_size,
-				flow[id].write_block_size,
-				flow[id].read_block_size,
+				flow[id].endpoint_options[0].send_buffer_size_real,
+				flow[id].endpoint_options[1].send_buffer_size_real,
+				(flow[id].endpoint_options[1].send_buffer_size ? "" : "(?)"),
+				flow[id].endpoint_options[0].send_buffer_size,
+				flow[id].endpoint_options[1].send_buffer_size,
+				flow[id].endpoint_options[0].receive_buffer_size_real,
+				flow[id].endpoint_options[1].receive_buffer_size_real,
+				(flow[id].endpoint_options[1].receive_buffer_size ? "" : "(?)"),
+				flow[id].endpoint_options[0].receive_buffer_size,
+				flow[id].endpoint_options[1].receive_buffer_size,
+				flow[id].endpoint_options[0].block_size,
+				flow[id].endpoint_options[1].block_size,
 				flow[id].endpoint_options[0].flow_delay,
 				flow[id].endpoint_options[1].flow_delay,
 				flow[id].endpoint_options[0].flow_duration,
 				flow[id].endpoint_options[1].flow_duration,
 				thruput, (opt.mbyte ? 'B' : 'b'),
 				flow[id].write_block_count);
-		if (flow[id].rate_str)
-			CATC("rate = %s", flow[id].rate_str);
+		if (flow[id].endpoint_options[0].rate_str)
+			CATC("rate = %s", flow[id].endpoint_options[0].rate_str);
 		if (flow[id].elcn)
 			CATC("ELCN %s", flow[id].elcn==1 ? "enabled" : "disabled");
 		if (flow[id].cork)
@@ -817,12 +822,12 @@ double flow_interpacket_delay(int id)
 	double delay = 0;
 
 	DEBUG_MSG(5, "flow %d has rate %u", id, flow[id].rate);
-	if (flow[id].poisson_distributed) {
+	if (flow[id].endpoint_options[0].poisson_distributed) {
 		double urand = (double)((random()+1.0)/(RANDOM_MAX+1.0));
-		double erand = -log(urand) * 1/(double)flow[id].rate;
+		double erand = -log(urand) * 1/(double)flow[id].endpoint_options[0].rate;
 		delay = erand;
 	} else {
-		delay = (double)1/flow[id].rate;
+		delay = (double)1/flow[id].endpoint_options[0].rate;
 	}
 
 	DEBUG_MSG(5, "new interpacket delay %.6f for flow %d.", delay, id);
@@ -844,7 +849,7 @@ void read_test_data(int id)
 
 		iov.iov_base = flow[id].read_block +
 			flow[id].read_block_bytes_read;
-		iov.iov_len = flow[id].read_block_size -
+		iov.iov_len = flow[id].endpoint_options[1].block_size -
 			flow[id].read_block_bytes_read;
 		msg.msg_iov = &iov;
 		msg.msg_iovlen = 1;
@@ -895,9 +900,9 @@ void read_test_data(int id)
 		flow[id].bytes_read_since_first += rc;
 		flow[id].read_block_bytes_read += rc;
 		if (flow[id].read_block_bytes_read >=
-				flow[id].read_block_size) {
+				flow[id].endpoint_options[1].block_size) {
 			assert(flow[id].read_block_bytes_read
-					== flow[id].read_block_size);
+					== flow[id].endpoint_options[1].block_size);
 			flow[id].read_block_bytes_read = 0;
 			tsc_gettimeofday(&flow[id].last_block_read);
 			flow[id].read_block_count++;
@@ -983,7 +988,7 @@ void write_test_data(int id)
 		rc = write(flow[id].sock,
 				flow[id].write_block +
 				flow[id].write_block_bytes_written,
-				flow[id].write_block_size -
+				flow[id].endpoint_options[0].block_size -
 				flow[id].write_block_bytes_written);
 
 		if (rc == -1) {
@@ -1006,18 +1011,18 @@ void write_test_data(int id)
 		}
 
 		DEBUG_MSG(4, "flow %d sent %d bytes of %u (already = %u)", id, rc,
-				flow[id].write_block_size,
+				flow[id].endpoint_options[0].block_size,
 				flow[id].write_block_bytes_written);
 		flow[id].bytes_written_since_first += rc;
 		flow[id].bytes_written_since_last += rc;
 		flow[id].write_block_bytes_written += rc;
 		if (flow[id].write_block_bytes_written >=
-				flow[id].write_block_size) {
+				flow[id].endpoint_options[0].block_size) {
 			flow[id].write_block_bytes_written = 0;
 			tsc_gettimeofday(&flow[id].last_block_written);
 			flow[id].write_block_count++;
 
-			if (flow[id].rate) {
+			if (flow[id].endpoint_options[0].rate) {
 				time_add(&flow[id].next_write_block_timestamp,
 						flow_interpacket_delay(id));
 				if (time_is_after(&now, &flow[id].next_write_block_timestamp)) {
@@ -1388,16 +1393,17 @@ void prepare_flow(int id)
 	read_greeting(flow[id].sock_control);
 
 	to_write = snprintf(buf, sizeof(buf),
-			"%s,t,%s,%hu,%hhd,%hhd,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+",
+			"%s,t,%s,%hu,%hhd,%hhd,%u,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+",
 			FLOWGRIND_PROT_CALLSIGN FLOWGRIND_PROT_SEPERATOR FLOWGRIND_PROT_VERSION,
 			flow[id].server_name,
 			(opt.base_port ? opt.base_port++ : 0),
 			opt.advstats, flow[id].so_debug,
-			flow[id].endpoint_options[1].window_size,
+			flow[id].endpoint_options[1].send_buffer_size,
+   			flow[id].endpoint_options[1].receive_buffer_size,
 			flow[id].endpoint_options[1].flow_delay,
 			flow[id].endpoint_options[1].flow_duration,
-			flow[id].write_block_size,
-			flow[id].read_block_size,
+			flow[id].endpoint_options[0].block_size,
+			flow[id].endpoint_options[1].block_size,
 			flow[id].pushy,
 			flow[id].shutdown,
 			flow[id].route_record
@@ -1406,30 +1412,47 @@ void prepare_flow(int id)
 	write_proposal(flow[id].sock_control, buf, to_write);
 	read_until_plus(flow[id].sock_control, buf, sizeof(buf));
 	DEBUG_MSG(1, "proposal reply: %s", buf);
-	rc = sscanf(buf, "%u,%u+", &flow[id].server_data_port,
-			&flow[id].endpoint_options[1].window_size_real);
-	if (rc != 2)
+	rc = sscanf(buf, "%u,%u,%u+", &flow[id].server_data_port,
+			&flow[id].endpoint_options[1].send_buffer_size_real,
+			&flow[id].endpoint_options[1].receive_buffer_size_real);
+	if (rc != 3)
 		error(ERR_FATAL, "malformed session response from server");
 
-	if (flow[id].endpoint_options[1].window_size != 0 &&
-			flow[id].endpoint_options[1].window_size_real !=
-			flow[id].endpoint_options[1].window_size) {
+	if (flow[id].endpoint_options[1].send_buffer_size != 0 &&
+			flow[id].endpoint_options[1].send_buffer_size_real !=
+			flow[id].endpoint_options[1].send_buffer_size) {
 		fprintf(stderr, "warning: server failed to set requested "
-				"window size %u, actual = %u\n",
-				flow[id].endpoint_options[1].window_size,
-				flow[id].endpoint_options[1].window_size_real);
+				"send buffer size %u, actual = %u\n",
+				flow[id].endpoint_options[1].send_buffer_size,
+				flow[id].endpoint_options[1].send_buffer_size_real);
+	}
+	if (flow[id].endpoint_options[1].receive_buffer_size != 0 &&
+			flow[id].endpoint_options[1].receive_buffer_size_real !=
+			flow[id].endpoint_options[1].receive_buffer_size) {
+		fprintf(stderr, "warning: server failed to set requested "
+				"receive buffer size (advertised window) %u, actual = %u\n",
+				flow[id].endpoint_options[1].receive_buffer_size,
+				flow[id].endpoint_options[1].receive_buffer_size_real);
 	}
 	flow[id].sock = name2socket(flow[id].server_name,
 			flow[id].server_data_port,
 			&flow[id].saddr, &flow[id].saddr_len, 0);
 
-	flow[id].endpoint_options[0].window_size_real =
-		set_window_size(flow[id].sock, flow[id].endpoint_options[0].window_size);
-	if (flow[id].endpoint_options[0].window_size != 0 &&
-			flow[id].endpoint_options[0].window_size_real !=
-			flow[id].endpoint_options[0].window_size) {
+	flow[id].endpoint_options[0].send_buffer_size_real =
+		set_window_size_directed(flow[id].sock, flow[id].endpoint_options[0].send_buffer_size, SO_SNDBUF);
+	flow[id].endpoint_options[0].receive_buffer_size_real =
+		set_window_size_directed(flow[id].sock, flow[id].endpoint_options[0].receive_buffer_size, SO_RCVBUF);
+	if (flow[id].endpoint_options[0].send_buffer_size != 0 &&
+			flow[id].endpoint_options[0].send_buffer_size_real !=
+			flow[id].endpoint_options[0].send_buffer_size) {
 		fprintf(stderr, "warning: failed to set requested client "
-				"window size.\n");
+				"send buffer size.\n");
+	}
+	if (flow[id].endpoint_options[0].receive_buffer_size != 0 &&
+			flow[id].endpoint_options[0].receive_buffer_size_real !=
+			flow[id].endpoint_options[0].receive_buffer_size) {
+		fprintf(stderr, "warning: failed to set requested client "
+				"receive buffer size (advertised window).\n");
 	}
 
 	if (flow[id].cc_alg && set_congestion_control(
@@ -1508,13 +1531,13 @@ void prepare_flows(void)
 
 		/* Allocate memory for writing and reading blocks. */
 		/* XXX: Maybe use single malloc for less memory fragmentation? */
-		flow[id].write_block = calloc(1, (size_t)flow[id].write_block_size);
-		flow[id].read_block = calloc(1, (size_t)flow[id].read_block_size);
+		flow[id].write_block = calloc(1, (size_t)flow[id].endpoint_options[0].block_size);
+		flow[id].read_block = calloc(1, (size_t)flow[id].endpoint_options[1].block_size);
 		if (flow[id].read_block == NULL || flow[id].write_block == NULL) {
 			error(ERR_FATAL, "malloc(): failed");
 		}
 		if (flow[id].byte_counting)
-			for (byte_idx = 0; byte_idx < flow[id].write_block_size;
+			for (byte_idx = 0; byte_idx < flow[id].endpoint_options[0].block_size;
 					byte_idx++)
 				*(flow[id].write_block+byte_idx) =
 					(unsigned char)(byte_idx & 0xff);
@@ -1544,6 +1567,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 	char* arg;
 	char type;
 	int rc = 0;
+	unsigned optunsigned = 0;
 	double optdouble = 0.0;
 
 	#define ASSIGN_ENDPOINT_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
@@ -1584,6 +1608,31 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 		}
 
 		switch (ch) {
+			case 'B':
+				rc = sscanf(arg, "%u", &optunsigned);
+				if (rc != 1) {
+					fprintf(stderr, "send buffer size must be a positive "
+						"integer (in bytes)\n");
+					usage();
+				}
+				ASSIGN_ENDPOINT_FLOW_OPTION(send_buffer_size, optunsigned)
+				break;
+			case 'R':
+				if (!*arg) {
+					fprintf(stderr, "-R requires a value for each given endpoint\n");
+					usage();
+				}
+				ASSIGN_ENDPOINT_FLOW_OPTION(rate_str, arg)
+				break;
+			case 'S':
+				rc = sscanf(arg, "%u", &optunsigned);
+				if (rc != 1) {
+					fprintf(stderr, "block size must be a positive "
+						"integer (in bytes)\n");
+					usage();
+				}
+				ASSIGN_ENDPOINT_FLOW_OPTION(block_size, optunsigned)
+				break;
 			case 'T':
 				rc = sscanf(arg, "%lf", &optdouble);
 				if (rc != 1) {
@@ -1591,6 +1640,24 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					usage();
 				}
 				ASSIGN_ENDPOINT_FLOW_OPTION(flow_duration, optdouble)
+				break;
+			case 'W':
+				rc = sscanf(arg, "%u", &optunsigned);
+				if (rc != 1) {
+					fprintf(stderr, "receive buffer size (advertised window) must be a positive "
+						"integer (in bytes)\n");
+					usage();
+				}
+				ASSIGN_ENDPOINT_FLOW_OPTION(receive_buffer_size, optunsigned)
+				break;
+			case 'Y':
+				rc = sscanf(arg, "%lf", &optdouble);
+				if (rc != 1 || optdouble < 0) {
+					fprintf(stderr, "delay must be a non-negativ "
+							"number (in seconds)\n");
+					usage();
+				}
+				ASSIGN_ENDPOINT_FLOW_OPTION(flow_delay, optdouble)
 				break;
 		}
 	}
@@ -1644,7 +1711,7 @@ static void parse_cmdline(int argc, char **argv) {
 
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvwT:")) != -1)
+	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvwB:PQS:T:W:Y:")) != -1)
 		switch (ch) {
 
 		case 'a':
@@ -1661,7 +1728,7 @@ static void parse_cmdline(int argc, char **argv) {
 
 		case 'h':
 			if(strcmp(optarg, "sockopt")) {
-				printf("Illegal subargument: %s\n", optarg);
+				fprintf(stderr, "Illegal subargument: %s\n", optarg);
 				usage();
 			}
 			else {
@@ -1722,7 +1789,17 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.dont_log_logfile = 0;
 			break;
 
+		case 'B':
+		case 'P':
+			ASSIGN_FLOW_OPTION(pushy, 1)
+			break;
+		case 'Q':
+			ASSIGN_FLOW_OPTION(summarize_only, 1)
+			break;
+		case 'S':
 		case 'T':
+		case 'W':
+		case 'Y':
 			parse_flow_option(ch, optarg, current_flow_ids);
 			break;
 
@@ -1790,94 +1867,98 @@ static void parse_cmdline(int argc, char **argv) {
 			}
 			flow[id].endpoint_options[1].flow_delay = flow[id].endpoint_options[0].flow_delay;
 		}
-		if (flow[id].rate_str) {
-			unit = type = distribution = 0;
-			/* last %c for catching wrong input... this is not nice. */
-			rc = sscanf(flow[id].rate_str, "%lf%c%c%c%c",
-					&optdouble, &unit, &type,
-					&distribution, &unit);
-			if (rc < 1 || rc > 4) {
-				fprintf(stderr, "malformed rate for flow %u.\n", id);
-				error = 1;
-			}
 
-			if (optdouble == 0.0) {
-				flow[id].rate_str = NULL;
-				continue;
-			}
-
-			switch (unit) {
-			case 0:
-			case 'z':
-				break;
-
-			case 'k':
-				optdouble *= 1<<10;
-				break;
-
-			case 'M':
-				optdouble *= 1<<20;
-				break;
-
-			case 'G':
-				optdouble *= 1<<30;
-				break;
-
-			default:
-				fprintf(stderr, "illegal unit specifier "
-						"in rate of flow %u.\n", id);
-				error = 1;
-			}
-
-			switch (type) {
-			case 0:
-			case 'b':
-				optdouble /= flow[id].write_block_size;
-				if (optdouble < 1) {
-					fprintf(stderr, "client block size "
-							"for flow %u is too "
-							"big for specified "
-							"rate.\n", id);
+		for (unsigned i = 0; i < 2; i++) {
+			if (flow[id].endpoint_options[i].rate_str) {
+				unit = type = distribution = 0;
+				/* last %c for catching wrong input... this is not nice. */
+				rc = sscanf(flow[id].endpoint_options[i].rate_str, "%lf%c%c%c%c",
+						&optdouble, &unit, &type,
+						&distribution, &unit);
+				if (rc < 1 || rc > 4) {
+					fprintf(stderr, "malformed rate for flow %u.\n", id);
 					error = 1;
 				}
-				break;
 
-			case 'B':
-				/* Is default */
-				break;
+				if (optdouble == 0.0) {
+					flow[id].endpoint_options[i].rate_str = NULL;
+					continue;
+				}
 
-			default:
-				fprintf(stderr, "illegal type specifier "
-						"(either block or byte) for "
-						"flow %u.\n", id);
+				switch (unit) {
+				case 0:
+				case 'z':
+					break;
+
+				case 'k':
+					optdouble *= 1<<10;
+					break;
+
+				case 'M':
+					optdouble *= 1<<20;
+					break;
+
+				case 'G':
+					optdouble *= 1<<30;
+					break;
+
+				default:
+					fprintf(stderr, "illegal unit specifier "
+							"in rate of flow %u.\n", id);
+					error = 1;
+				}
+
+				switch (type) {
+				case 0:
+				case 'b':
+					optdouble /= flow[id].endpoint_options[0].block_size;
+					if (optdouble < 1) {
+						fprintf(stderr, "client block size "
+								"for flow %u is too "
+								"big for specified "
+								"rate.\n", id);
+						error = 1;
+					}
+					break;
+
+				case 'B':
+					/* Is default */
+					break;
+
+				default:
+					fprintf(stderr, "illegal type specifier "
+							"(either block or byte) for "
+							"flow %u.\n", id);
+					error = 1;
+				}
+
+				if (optdouble > 5e5)
+					fprintf(stderr, "rate of flow %d too high.\n", id);
+				// TODO: Is this dependend on the destination's rate at all?
+				if (optdouble > max_flow_rate)
+					max_flow_rate = optdouble;
+				flow[id].endpoint_options[i].rate = optdouble;
+
+				switch (distribution) {
+				case 0:
+				case 'p':
+					flow[id].endpoint_options[i].poisson_distributed = 0;
+					break;
+
+				case 'P':
+					flow[id].endpoint_options[i].poisson_distributed = 1;
+					break;
+
+				default:
+					fprintf(stderr, "illegal distribution specifier "
+							"in rate for flow %u.\n", id);
+				}
+			}
+			if (flow[id].flow_control && !flow[id].endpoint_options[i].rate_str) {
+				fprintf(stderr, "flow %d has flow control enabled but "
+						"no rate.", id);
 				error = 1;
 			}
-
-			if (optdouble > 5e5)
-				fprintf(stderr, "rate of flow %d too high.\n", id);
-			if (optdouble > max_flow_rate)
-				max_flow_rate = optdouble;
-			flow[id].rate = optdouble;
-
-			switch (distribution) {
-			case 0:
-			case 'p':
-				flow[id].poisson_distributed = 0;
-				break;
-
-			case 'P':
-				flow[id].poisson_distributed = 1;
-				break;
-
-			default:
-				fprintf(stderr, "illegal distribution specifier "
-						"in rate for flow %u.\n", id);
-			}
-		}
-		if (flow[id].flow_control && !flow[id].rate_str) {
-			fprintf(stderr, "flow %d has flow control enabled but "
-					"no rate.", id);
-			error = 1;
 		}
 	}
 
