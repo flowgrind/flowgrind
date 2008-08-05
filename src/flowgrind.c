@@ -1446,13 +1446,17 @@ void prepare_flow(int id)
 			flow[id].endpoint_options[0].send_buffer_size_real !=
 			flow[id].endpoint_options[0].send_buffer_size) {
 		fprintf(stderr, "warning: failed to set requested client "
-				"send buffer size.\n");
+				"send buffer size %u, actual = %u\n",
+				flow[id].endpoint_options[0].send_buffer_size,
+				flow[id].endpoint_options[0].send_buffer_size_real);
 	}
 	if (flow[id].endpoint_options[0].receive_buffer_size != 0 &&
 			flow[id].endpoint_options[0].receive_buffer_size_real !=
 			flow[id].endpoint_options[0].receive_buffer_size) {
 		fprintf(stderr, "warning: failed to set requested client "
-				"receive buffer size (advertised window).\n");
+				"receive buffer size (advertised window) %u, actual = %u\n",
+				flow[id].endpoint_options[0].receive_buffer_size,
+				flow[id].endpoint_options[0].receive_buffer_size_real);
 	}
 
 	if (flow[id].cc_alg && set_congestion_control(
