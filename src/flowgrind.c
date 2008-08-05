@@ -1789,13 +1789,13 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.dont_log_logfile = 0;
 			break;
 
-		case 'B':
 		case 'P':
 			ASSIGN_FLOW_OPTION(pushy, 1)
 			break;
 		case 'Q':
 			ASSIGN_FLOW_OPTION(summarize_only, 1)
 			break;
+		case 'B':
 		case 'S':
 		case 'T':
 		case 'W':
