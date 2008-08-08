@@ -24,6 +24,7 @@
 #include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "common.h"
 #include "fg_socket.h"
@@ -84,8 +85,8 @@ static void usage(void)
 
 		"Flow options:\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
-		"  -C x         Stop flow if it is experiencing local congestion\n"
-		"  -D x=DSCP    DSCP value for TOS byte\n"
+		"  -C           Stop flow if it is experiencing local congestion\n"
+		"  -D DSCP      DSCP value for TOS byte\n"
 		"  -E x         Enumerate bytes in payload (default: don't)\n"
 		"  -F #{,#}     Flow options following this option apply only to flow #{,#}.\n"
 		"               Useful in combination with -n to set specific options\n"
@@ -137,15 +138,29 @@ static void usage(void)
 
 static void usage_sockopt(void)
 {
+	int fd;
+
 	fprintf(stderr,
 		"The following list contains possible values that can be set on the test socket:\n"
-		"  x=TCP_CONG_MODULE=ALG\n"
-		"               set congestion control algorithm ALG. The following list\n"
-		"               contains possible values for ALG:\n"
-		"                 //ToDo: create the list\n"
-		"  x=TCP_CORK   set TCP_CORK on test socket\n"
-		"  x=TCP_ELCN   set TCP_ELCN on test socket\n"
-		"  x=TCP_ICMP   set TCP_ICMP on test socket\n"
+		"  s=TCP_CONG_MODULE=ALG\n"
+		"               set congestion control algorithm ALG.\n");
+
+		// Read and print available congestion control algorithms
+		fd = open("/proc/sys/net/ipv4/tcp_available_congestion_control/", O_RDONLY);
+		if (fd != -1) {
+			fprintf(stderr, "               The following list contains possible values for ALG:\n"
+				"                 ");
+			char buffer[1024];
+			int r;
+			while ((r = read(fd, buffer, 1024)) > 0)
+				fwrite(buffer, r, 1, stderr);
+			close(fd);
+		}
+
+	fprintf(stderr,
+		"  s=TCP_CORK   set TCP_CORK on test socket\n"
+		"  s=TCP_ELCN   set TCP_ELCN on test socket\n"
+		"  s=TCP_ICMP   set TCP_ICMP on test socket\n"
 		"  x=ROUTE_RECORD\n"
 		"               set ROUTE_RECORD on test socket\n\n"
 
@@ -198,6 +213,7 @@ void init_flows_defaults(void)
 			flow[id].endpoint_options[i].receive_buffer_size = 0;
 			flow[id].endpoint_options[i].flow_delay = 0;
 			flow[id].endpoint_options[i].block_size = 8192;
+			flow[id].endpoint_options[i].route_record = 0;
 		}
 		flow[id].endpoint_options[0].flow_duration = 1.0;
 		flow[id].endpoint_options[1].flow_duration = 0.0;
@@ -1406,7 +1422,7 @@ void prepare_flow(int id)
 			flow[id].endpoint_options[1].block_size,
 			flow[id].pushy,
 			flow[id].shutdown,
-			flow[id].route_record
+			flow[id].endpoint_options[1].route_record
 			);
 	DEBUG_MSG(1, "proposal: %s", buf);
 	write_proposal(flow[id].sock_control, buf, to_write);
@@ -1485,7 +1501,7 @@ void prepare_flow(int id)
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].route_record && set_route_record(flow[id].sock) == -1)
+	if (flow[id].endpoint_options[0].route_record && set_route_record(flow[id].sock) == -1)
 		error(ERR_FATAL, "Unable to set route record "
 				"option for flow id = %i: %s",
 				id, strerror(errno));
@@ -1566,6 +1582,23 @@ void prepare_flows(void)
 			TCP_REPORT_HDR_STRING_MBIT);
 }
 
+#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
+			if (current_flow_ids[0] == -1) { \
+				int id; \
+				for (id = 0; id < MAX_FLOWS; id++) { \
+					flow[id].PROPERTY_NAME = \
+					(PROPERTY_VALUE); \
+				} \
+			} else { \
+				int id; \
+				for (id = 0; id < MAX_FLOWS; id++) { \
+					if (current_flow_ids[id] == -1) \
+						break; \
+					flow[current_flow_ids[id]].PROPERTY_NAME = \
+					(PROPERTY_VALUE); \
+				} \
+			}
+
 static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 	char* token;
 	char* arg;
@@ -1620,6 +1653,32 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					usage();
 				}
 				ASSIGN_ENDPOINT_FLOW_OPTION(send_buffer_size, optunsigned)
+				break;
+			case 'O':
+				if (!*arg) {
+					fprintf(stderr, "-O requires a value for each given endpoint\n");
+					usage_sockopt();
+				}
+
+				if (!strcmp(arg, "TCP_CORK") && type == 's') {
+					ASSIGN_FLOW_OPTION(cork, 1);
+				}
+				else if (!strcmp(arg, "TCP_ELCN") && type == 's') {
+					ASSIGN_FLOW_OPTION(elcn, 1);
+				}
+				else if (!strcmp(arg, "TCP_ICMP") && type == 's') {
+					ASSIGN_FLOW_OPTION(icmp, 1);
+				}
+				else if (!strcmp(arg, "ROUTE_RECORD")) {
+					ASSIGN_ENDPOINT_FLOW_OPTION(route_record, 1);
+				}
+				else if (!memcmp(arg, "TCP_CONG_MODULE=", 16) && type == 's')
+					ASSIGN_FLOW_OPTION(cc_alg, arg + 16)
+				else {
+					fprintf(stderr, "Unknown socket option or socket option not implemented for endpoint\n");
+					usage_sockopt();
+				}
+
 				break;
 			case 'R':
 				if (!*arg) {
@@ -1696,26 +1755,9 @@ static void parse_cmdline(int argc, char **argv) {
 	char *subopts;
 	char *value;
 
-	#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
-			if (current_flow_ids[0] == -1) { \
-				int id; \
-				for (id = 0; id < MAX_FLOWS; id++) { \
-					flow[id].PROPERTY_NAME = \
-					(PROPERTY_VALUE); \
-				} \
-			} else { \
-				int id; \
-				for (id = 0; id < MAX_FLOWS; id++) { \
-					if (current_flow_ids[id] == -1) \
-						break; \
-					flow[current_flow_ids[id]].PROPERTY_NAME = \
-					(PROPERTY_VALUE); \
-				} \
-			}
-
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvwB:PQS:T:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvwB:CD:ELNO:PQR:S:T:W:Y:")) != -1)
 		switch (ch) {
 
 		case 'a':
@@ -1793,6 +1835,32 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.dont_log_logfile = 0;
 			break;
 
+		case 'C':
+			ASSIGN_FLOW_OPTION(flow_control, 1);
+			break;
+
+		case 'D':
+			rc = sscanf(optarg, "%x", &optint);
+			if (rc != 1 || (optint & ~0x3f)) {
+				fprintf(stderr, "malformed differentiated "
+						"service code point.\n");
+				usage();
+			}
+			ASSIGN_FLOW_OPTION(dscp, optint);
+			break;
+
+		case 'E':
+			ASSIGN_FLOW_OPTION(byte_counting, 1)
+			break;
+
+		case 'L':
+			ASSIGN_FLOW_OPTION(late_connect, 1)
+			break;
+
+		case 'N':
+			ASSIGN_FLOW_OPTION(shutdown, 1);
+			break;
+
 		case 'P':
 			ASSIGN_FLOW_OPTION(pushy, 1)
 			break;
@@ -1800,6 +1868,8 @@ static void parse_cmdline(int argc, char **argv) {
 			ASSIGN_FLOW_OPTION(summarize_only, 1)
 			break;
 		case 'B':
+		case 'O':
+		case 'R':
 		case 'S':
 		case 'T':
 		case 'W':

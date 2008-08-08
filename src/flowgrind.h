@@ -75,6 +75,8 @@ struct _flow_endpoint {
 	char *rate_str;
 	unsigned rate;
 	char poisson_distributed;
+
+	char route_record;
 };
 
 struct _flow {
@@ -100,7 +102,6 @@ struct _flow {
 	char so_debug;
 	uint8_t dscp;
 	char pushy;
-	char route_record;
 	char late_connect;
 	char connect_called;
 	char shutdown;
