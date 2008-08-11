@@ -214,8 +214,8 @@ void init_flows_defaults(void)
 			flow[id].endpoint_options[i].block_size = 8192;
 			flow[id].endpoint_options[i].route_record = 0;
 		}
-		flow[id].endpoint_options[0].flow_duration = 1.0;
-		flow[id].endpoint_options[1].flow_duration = 0.0;
+		flow[id].endpoint_options[SOURCE].flow_duration = 1.0;
+		flow[id].endpoint_options[DESTINATION].flow_duration = 0.0;
 
 		flow[id].sock = 0;
 		flow[id].sock_control = 0;
@@ -393,27 +393,27 @@ void timer_start(void)
 	time_add(&timer.next, opt.reporting_interval);
 
 	for (id=0; id<opt.num_flows; id++) {
-		flow[id].endpoint_options[0].flow_start_timestamp = timer.start;
-		time_add(&flow[id].endpoint_options[0].flow_start_timestamp,
-				flow[id].endpoint_options[0].flow_delay);
-		if (flow[id].endpoint_options[0].flow_duration >= 0) {
-			flow[id].endpoint_options[0].flow_stop_timestamp =
-				flow[id].endpoint_options[0].flow_start_timestamp;
-			time_add(&flow[id].endpoint_options[0].flow_stop_timestamp,
-					flow[id].endpoint_options[0].flow_duration);
+		flow[id].endpoint_options[SOURCE].flow_start_timestamp = timer.start;
+		time_add(&flow[id].endpoint_options[SOURCE].flow_start_timestamp,
+				flow[id].endpoint_options[SOURCE].flow_delay);
+		if (flow[id].endpoint_options[SOURCE].flow_duration >= 0) {
+			flow[id].endpoint_options[SOURCE].flow_stop_timestamp =
+				flow[id].endpoint_options[SOURCE].flow_start_timestamp;
+			time_add(&flow[id].endpoint_options[SOURCE].flow_stop_timestamp,
+					flow[id].endpoint_options[SOURCE].flow_duration);
 		}
-		if (flow[id].endpoint_options[0].rate)
+		if (flow[id].endpoint_options[SOURCE].rate)
 			flow[id].next_write_block_timestamp =
-				flow[id].endpoint_options[0].flow_start_timestamp;
+				flow[id].endpoint_options[SOURCE].flow_start_timestamp;
 
-		flow[id].endpoint_options[1].flow_start_timestamp = timer.start;
-		time_add(&flow[id].endpoint_options[1].flow_start_timestamp,
-				flow[id].endpoint_options[1].flow_delay);
-		if (flow[id].endpoint_options[1].flow_duration >= 0) {
-			flow[id].endpoint_options[1].flow_stop_timestamp =
-				flow[id].endpoint_options[1].flow_start_timestamp;
-			time_add(&flow[id].endpoint_options[1].flow_stop_timestamp,
-					flow[id].endpoint_options[1].flow_duration);
+		flow[id].endpoint_options[DESTINATION].flow_start_timestamp = timer.start;
+		time_add(&flow[id].endpoint_options[DESTINATION].flow_start_timestamp,
+				flow[id].endpoint_options[DESTINATION].flow_delay);
+		if (flow[id].endpoint_options[DESTINATION].flow_duration >= 0) {
+			flow[id].endpoint_options[DESTINATION].flow_stop_timestamp =
+				flow[id].endpoint_options[DESTINATION].flow_start_timestamp;
+			time_add(&flow[id].endpoint_options[DESTINATION].flow_stop_timestamp,
+					flow[id].endpoint_options[DESTINATION].flow_duration);
 		}
 	}
 }
@@ -446,13 +446,13 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 	if (flow[id].stopped)
 		COMMENT_CAT("stopped")
 	else {
-		blocks_written = bytes_written / flow[id].endpoint_options[0].block_size;
+		blocks_written = bytes_written / flow[id].endpoint_options[SOURCE].block_size;
 		if (blocks_written == 0) {
 			if (client_flow_in_delay(id))
 				COMMENT_CAT("d")
 			else if (client_flow_sending(id))
 				COMMENT_CAT("l")
-			else if (flow[id].endpoint_options[0].flow_duration == 0)
+			else if (flow[id].endpoint_options[SOURCE].flow_duration == 0)
 				COMMENT_CAT("o")
 			else
 				COMMENT_CAT("f")
@@ -472,7 +472,7 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 				COMMENT_CAT("d")
 			else if (server_flow_sending(id))
 				COMMENT_CAT("l")
-			else if (flow[id].endpoint_options[1].flow_duration == 0)
+			else if (flow[id].endpoint_options[DESTINATION].flow_duration == 0)
 				COMMENT_CAT("o")
 			else
 				COMMENT_CAT("f")
@@ -536,35 +536,35 @@ void report_final(void)
 					guess_topology(flow[id].mss, flow[id].mtu));
 		if (flow[id].stopped)
 			thruput = flow[id].bytes_written_since_first
-				/ time_diff(&flow[id].endpoint_options[0].flow_start_timestamp,
+				/ time_diff(&flow[id].endpoint_options[SOURCE].flow_start_timestamp,
 						&flow[id].stopped_timestamp);
 		else
 			thruput = flow[id].bytes_written_since_first /
-				flow[id].endpoint_options[0].flow_duration;
+				flow[id].endpoint_options[SOURCE].flow_duration;
 		thruput = scale_thruput(thruput);
 		CATC("sb = %u/%u%s (%u/%u), rb = %u/%u%s (%u/%u), bs = %u/%u, delay = %.2fs/%.2fs, "
 				"duration = %.2fs/%.2fs, thruput = %.6fM%c/s "
 				"(%llu blocks)",
-				flow[id].endpoint_options[0].send_buffer_size_real,
-				flow[id].endpoint_options[1].send_buffer_size_real,
-				(flow[id].endpoint_options[1].send_buffer_size ? "" : "(?)"),
-				flow[id].endpoint_options[0].send_buffer_size,
-				flow[id].endpoint_options[1].send_buffer_size,
-				flow[id].endpoint_options[0].receive_buffer_size_real,
-				flow[id].endpoint_options[1].receive_buffer_size_real,
-				(flow[id].endpoint_options[1].receive_buffer_size ? "" : "(?)"),
-				flow[id].endpoint_options[0].receive_buffer_size,
-				flow[id].endpoint_options[1].receive_buffer_size,
-				flow[id].endpoint_options[0].block_size,
-				flow[id].endpoint_options[1].block_size,
-				flow[id].endpoint_options[0].flow_delay,
-				flow[id].endpoint_options[1].flow_delay,
-				flow[id].endpoint_options[0].flow_duration,
-				flow[id].endpoint_options[1].flow_duration,
+				flow[id].endpoint_options[SOURCE].send_buffer_size_real,
+				flow[id].endpoint_options[DESTINATION].send_buffer_size_real,
+				(flow[id].endpoint_options[DESTINATION].send_buffer_size ? "" : "(?)"),
+				flow[id].endpoint_options[SOURCE].send_buffer_size,
+				flow[id].endpoint_options[DESTINATION].send_buffer_size,
+				flow[id].endpoint_options[SOURCE].receive_buffer_size_real,
+				flow[id].endpoint_options[DESTINATION].receive_buffer_size_real,
+				(flow[id].endpoint_options[DESTINATION].receive_buffer_size ? "" : "(?)"),
+				flow[id].endpoint_options[SOURCE].receive_buffer_size,
+				flow[id].endpoint_options[DESTINATION].receive_buffer_size,
+				flow[id].endpoint_options[SOURCE].block_size,
+				flow[id].endpoint_options[DESTINATION].block_size,
+				flow[id].endpoint_options[SOURCE].flow_delay,
+				flow[id].endpoint_options[DESTINATION].flow_delay,
+				flow[id].endpoint_options[SOURCE].flow_duration,
+				flow[id].endpoint_options[DESTINATION].flow_duration,
 				thruput, (opt.mbyte ? 'B' : 'b'),
 				flow[id].write_block_count);
-		if (flow[id].endpoint_options[0].rate_str)
-			CATC("rate = %s", flow[id].endpoint_options[0].rate_str);
+		if (flow[id].endpoint_options[SOURCE].rate_str)
+			CATC("rate = %s", flow[id].endpoint_options[SOURCE].rate_str);
 		if (flow[id].elcn)
 			CATC("ELCN %s", flow[id].elcn==1 ? "enabled" : "disabled");
 		if (flow[id].cork)
@@ -605,9 +605,9 @@ void report_final(void)
 #endif
 		if (flow[id].bytes_written_since_first == 0) {
 			print_tcp_report_line(
-				1, id, flow[id].endpoint_options[0].flow_delay,
-				flow[id].endpoint_options[0].flow_duration +
-				flow[id].endpoint_options[0].flow_delay, 0, 0,
+				1, id, flow[id].endpoint_options[SOURCE].flow_delay,
+				flow[id].endpoint_options[SOURCE].flow_duration +
+				flow[id].endpoint_options[SOURCE].flow_delay, 0, 0,
 				INFINITY, INFINITY, INFINITY,
 				INFINITY, INFINITY, INFINITY
 #ifdef __LINUX__
@@ -623,7 +623,7 @@ void report_final(void)
 		}
 
 		print_tcp_report_line(
-			1, id, flow[id].endpoint_options[0].flow_delay,
+			1, id, flow[id].endpoint_options[SOURCE].flow_delay,
 			time_diff(&timer.start, &flow[id].last_block_written),
 			flow[id].bytes_written_since_first,
 			flow[id].bytes_read_since_first,
@@ -837,12 +837,12 @@ double flow_interpacket_delay(int id)
 	double delay = 0;
 
 	DEBUG_MSG(5, "flow %d has rate %u", id, flow[id].rate);
-	if (flow[id].endpoint_options[0].poisson_distributed) {
+	if (flow[id].endpoint_options[SOURCE].poisson_distributed) {
 		double urand = (double)((random()+1.0)/(RANDOM_MAX+1.0));
-		double erand = -log(urand) * 1/(double)flow[id].endpoint_options[0].rate;
+		double erand = -log(urand) * 1/(double)flow[id].endpoint_options[SOURCE].rate;
 		delay = erand;
 	} else {
-		delay = (double)1/flow[id].endpoint_options[0].rate;
+		delay = (double)1/flow[id].endpoint_options[SOURCE].rate;
 	}
 
 	DEBUG_MSG(5, "new interpacket delay %.6f for flow %d.", delay, id);
@@ -864,7 +864,7 @@ void read_test_data(int id)
 
 		iov.iov_base = flow[id].read_block +
 			flow[id].read_block_bytes_read;
-		iov.iov_len = flow[id].endpoint_options[1].block_size -
+		iov.iov_len = flow[id].endpoint_options[DESTINATION].block_size -
 			flow[id].read_block_bytes_read;
 		msg.msg_iov = &iov;
 		msg.msg_iovlen = 1;
@@ -885,12 +885,12 @@ void read_test_data(int id)
 		if (rc == 0) {
 			DEBUG_MSG(1, "server shut down test socket "
 					"of flow %d", id);
-			if (!flow[id].endpoint_options[1].flow_finished ||
+			if (!flow[id].endpoint_options[DESTINATION].flow_finished ||
 					!flow[id].shutdown)
 				error(ERR_WARNING, "Premature shutdown of "
 						"server flow");
-			flow[id].endpoint_options[1].flow_finished = 1;
-			if (flow[id].endpoint_options[0].flow_finished) {
+			flow[id].endpoint_options[DESTINATION].flow_finished = 1;
+			if (flow[id].endpoint_options[SOURCE].flow_finished) {
 				DEBUG_MSG(4, "flow %u finished", id);
 				stop_flow(id);
 			}
@@ -900,7 +900,7 @@ void read_test_data(int id)
 		DEBUG_MSG(4, "flow %d received %u bytes", id, rc);
 
 #if 0
-		if (flow[id].endpoint_options[1].flow_duration == 0)
+		if (flow[id].endpoint_options[DESTINATION].flow_duration == 0)
 			error(ERR_WARNING, "flow %d got unexpected data "
 					"from server (no two-way)", id);
 		else if (server_flow_in_delay(id))
@@ -915,9 +915,9 @@ void read_test_data(int id)
 		flow[id].bytes_read_since_first += rc;
 		flow[id].read_block_bytes_read += rc;
 		if (flow[id].read_block_bytes_read >=
-				flow[id].endpoint_options[1].block_size) {
+				flow[id].endpoint_options[DESTINATION].block_size) {
 			assert(flow[id].read_block_bytes_read
-					== flow[id].endpoint_options[1].block_size);
+					== flow[id].endpoint_options[DESTINATION].block_size);
 			flow[id].read_block_bytes_read = 0;
 			tsc_gettimeofday(&flow[id].last_block_read);
 			flow[id].read_block_count++;
@@ -1003,7 +1003,7 @@ void write_test_data(int id)
 		rc = write(flow[id].sock,
 				flow[id].write_block +
 				flow[id].write_block_bytes_written,
-				flow[id].endpoint_options[0].block_size -
+				flow[id].endpoint_options[SOURCE].block_size -
 				flow[id].write_block_bytes_written);
 
 		if (rc == -1) {
@@ -1026,18 +1026,18 @@ void write_test_data(int id)
 		}
 
 		DEBUG_MSG(4, "flow %d sent %d bytes of %u (already = %u)", id, rc,
-				flow[id].endpoint_options[0].block_size,
+				flow[id].endpoint_options[SOURCE].block_size,
 				flow[id].write_block_bytes_written);
 		flow[id].bytes_written_since_first += rc;
 		flow[id].bytes_written_since_last += rc;
 		flow[id].write_block_bytes_written += rc;
 		if (flow[id].write_block_bytes_written >=
-				flow[id].endpoint_options[0].block_size) {
+				flow[id].endpoint_options[SOURCE].block_size) {
 			flow[id].write_block_bytes_written = 0;
 			tsc_gettimeofday(&flow[id].last_block_written);
 			flow[id].write_block_count++;
 
-			if (flow[id].endpoint_options[0].rate) {
+			if (flow[id].endpoint_options[SOURCE].rate) {
 				time_add(&flow[id].next_write_block_timestamp,
 						flow_interpacket_delay(id));
 				if (time_is_after(&now, &flow[id].next_write_block_timestamp)) {
@@ -1098,15 +1098,15 @@ void prepare_wfds (int id)
 	}
 
 	if (client_flow_sending(id)) {
-		assert(!flow[id].endpoint_options[0].flow_finished);
+		assert(!flow[id].endpoint_options[SOURCE].flow_finished);
 		if (client_flow_block_scheduled(id)) {
 			DEBUG_MSG(4, "adding sock of flow %d to wfds", id);
 			FD_SET(flow[id].sock, &wfds);
 		} else {
 			DEBUG_MSG(4, "no block for flow %d scheduled yet", id);
 		}
-	} else if (!flow[id].endpoint_options[0].flow_finished) {
-		flow[id].endpoint_options[0].flow_finished = 1;
+	} else if (!flow[id].endpoint_options[SOURCE].flow_finished) {
+		flow[id].endpoint_options[SOURCE].flow_finished = 1;
 		if (flow[id].shutdown) {
 			DEBUG_MSG(4, "shutting down flow %d (WR)", id);
 			rc = shutdown(flow[id].sock, SHUT_WR);
@@ -1127,21 +1127,21 @@ void prepare_rfds (int id)
 	FD_SET(flow[id].sock_control, &rfds);
 
 	if (!server_flow_in_delay(id) && !server_flow_sending(id)) {
-		if (!flow[id].endpoint_options[1].flow_finished && flow[id].shutdown) {
+		if (!flow[id].endpoint_options[DESTINATION].flow_finished && flow[id].shutdown) {
 			error(ERR_WARNING, "server flow %u missed to shutdown", id);
 			rc = shutdown(flow[id].sock, SHUT_RD);
 			if (rc == -1) {
 				error(ERR_WARNING, "shutdown SHUT_RD "
 						"failed: %s", strerror(errno));
 			}
-			flow[id].endpoint_options[1].flow_finished = 1;
+			flow[id].endpoint_options[DESTINATION].flow_finished = 1;
 		}
 	}
 
 	if (flow[id].late_connect && !flow[id].connect_called ) {
 		DEBUG_MSG(1, "late connecting test socket "
 				"for flow %d after %.3fs delay",
-				id, flow[id].endpoint_options[0].flow_delay);
+				id, flow[id].endpoint_options[SOURCE].flow_delay);
 		rc = connect(flow[id].sock, flow[id].saddr,
 				flow[id].saddr_len);
 		if (rc == -1 && errno != EINPROGRESS) {
@@ -1156,7 +1156,7 @@ void prepare_rfds (int id)
 
 	/* Altough the server flow might be finished we keep the socket in
 	 * rfd in order to check for buggy servers */
-	if (flow[id].connect_called && !flow[id].endpoint_options[1].flow_finished) {
+	if (flow[id].connect_called && !flow[id].endpoint_options[DESTINATION].flow_finished) {
 		DEBUG_MSG(4, "adding sock of flow %d to rfds", id);
 		FD_SET(flow[id].sock, &rfds);
 	}
@@ -1175,10 +1175,10 @@ void prepare_fds (void)
 		if (flow[id].stopped)
 			continue;
 
-		if ((!flow[id].endpoint_options[1].flow_duration ||
+		if ((!flow[id].endpoint_options[DESTINATION].flow_duration ||
 					(!server_flow_in_delay(id) &&
 					 !server_flow_sending(id))) &&
-				(!flow[id].endpoint_options[0].flow_duration ||
+				(!flow[id].endpoint_options[SOURCE].flow_duration ||
 				 (!client_flow_in_delay(id) &&
 				  !client_flow_sending(id)))) {
 			close_flow(id);
@@ -1413,65 +1413,65 @@ void prepare_flow(int id)
 			flow[id].server_name,
 			(opt.base_port ? opt.base_port++ : 0),
 			opt.advstats, flow[id].so_debug,
-			flow[id].endpoint_options[1].send_buffer_size,
-   			flow[id].endpoint_options[1].receive_buffer_size,
-			flow[id].endpoint_options[1].flow_delay,
-			flow[id].endpoint_options[1].flow_duration,
-			flow[id].endpoint_options[0].block_size,
-			flow[id].endpoint_options[1].block_size,
+			flow[id].endpoint_options[DESTINATION].send_buffer_size,
+   			flow[id].endpoint_options[DESTINATION].receive_buffer_size,
+			flow[id].endpoint_options[DESTINATION].flow_delay,
+			flow[id].endpoint_options[DESTINATION].flow_duration,
+			flow[id].endpoint_options[SOURCE].block_size,
+			flow[id].endpoint_options[DESTINATION].block_size,
 			flow[id].pushy,
 			flow[id].shutdown,
-			flow[id].endpoint_options[1].route_record
+			flow[id].endpoint_options[DESTINATION].route_record
 			);
 	DEBUG_MSG(1, "proposal: %s", buf);
 	write_proposal(flow[id].sock_control, buf, to_write);
 	read_until_plus(flow[id].sock_control, buf, sizeof(buf));
 	DEBUG_MSG(1, "proposal reply: %s", buf);
 	rc = sscanf(buf, "%u,%u,%u+", &flow[id].server_data_port,
-			&flow[id].endpoint_options[1].send_buffer_size_real,
-			&flow[id].endpoint_options[1].receive_buffer_size_real);
+			&flow[id].endpoint_options[DESTINATION].send_buffer_size_real,
+			&flow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
 	if (rc != 3)
 		error(ERR_FATAL, "malformed session response from server");
 
-	if (flow[id].endpoint_options[1].send_buffer_size != 0 &&
-			flow[id].endpoint_options[1].send_buffer_size_real !=
-			flow[id].endpoint_options[1].send_buffer_size) {
+	if (flow[id].endpoint_options[DESTINATION].send_buffer_size != 0 &&
+			flow[id].endpoint_options[DESTINATION].send_buffer_size_real !=
+			flow[id].endpoint_options[DESTINATION].send_buffer_size) {
 		fprintf(stderr, "warning: server failed to set requested "
 				"send buffer size %u, actual = %u\n",
-				flow[id].endpoint_options[1].send_buffer_size,
-				flow[id].endpoint_options[1].send_buffer_size_real);
+				flow[id].endpoint_options[DESTINATION].send_buffer_size,
+				flow[id].endpoint_options[DESTINATION].send_buffer_size_real);
 	}
-	if (flow[id].endpoint_options[1].receive_buffer_size != 0 &&
-			flow[id].endpoint_options[1].receive_buffer_size_real !=
-			flow[id].endpoint_options[1].receive_buffer_size) {
+	if (flow[id].endpoint_options[DESTINATION].receive_buffer_size != 0 &&
+			flow[id].endpoint_options[DESTINATION].receive_buffer_size_real !=
+			flow[id].endpoint_options[DESTINATION].receive_buffer_size) {
 		fprintf(stderr, "warning: server failed to set requested "
 				"receive buffer size (advertised window) %u, actual = %u\n",
-				flow[id].endpoint_options[1].receive_buffer_size,
-				flow[id].endpoint_options[1].receive_buffer_size_real);
+				flow[id].endpoint_options[DESTINATION].receive_buffer_size,
+				flow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
 	}
 	flow[id].sock = name2socket(flow[id].server_name,
 			flow[id].server_data_port,
 			&flow[id].saddr, &flow[id].saddr_len, 0);
 
-	flow[id].endpoint_options[0].send_buffer_size_real =
-		set_window_size_directed(flow[id].sock, flow[id].endpoint_options[0].send_buffer_size, SO_SNDBUF);
-	flow[id].endpoint_options[0].receive_buffer_size_real =
-		set_window_size_directed(flow[id].sock, flow[id].endpoint_options[0].receive_buffer_size, SO_RCVBUF);
-	if (flow[id].endpoint_options[0].send_buffer_size != 0 &&
-			flow[id].endpoint_options[0].send_buffer_size_real !=
-			flow[id].endpoint_options[0].send_buffer_size) {
+	flow[id].endpoint_options[SOURCE].send_buffer_size_real =
+		set_window_size_directed(flow[id].sock, flow[id].endpoint_options[SOURCE].send_buffer_size, SO_SNDBUF);
+	flow[id].endpoint_options[SOURCE].receive_buffer_size_real =
+		set_window_size_directed(flow[id].sock, flow[id].endpoint_options[SOURCE].receive_buffer_size, SO_RCVBUF);
+	if (flow[id].endpoint_options[SOURCE].send_buffer_size != 0 &&
+			flow[id].endpoint_options[SOURCE].send_buffer_size_real !=
+			flow[id].endpoint_options[SOURCE].send_buffer_size) {
 		fprintf(stderr, "warning: failed to set requested client "
 				"send buffer size %u, actual = %u\n",
-				flow[id].endpoint_options[0].send_buffer_size,
-				flow[id].endpoint_options[0].send_buffer_size_real);
+				flow[id].endpoint_options[SOURCE].send_buffer_size,
+				flow[id].endpoint_options[SOURCE].send_buffer_size_real);
 	}
-	if (flow[id].endpoint_options[0].receive_buffer_size != 0 &&
-			flow[id].endpoint_options[0].receive_buffer_size_real !=
-			flow[id].endpoint_options[0].receive_buffer_size) {
+	if (flow[id].endpoint_options[SOURCE].receive_buffer_size != 0 &&
+			flow[id].endpoint_options[SOURCE].receive_buffer_size_real !=
+			flow[id].endpoint_options[SOURCE].receive_buffer_size) {
 		fprintf(stderr, "warning: failed to set requested client "
 				"receive buffer size (advertised window) %u, actual = %u\n",
-				flow[id].endpoint_options[0].receive_buffer_size,
-				flow[id].endpoint_options[0].receive_buffer_size_real);
+				flow[id].endpoint_options[SOURCE].receive_buffer_size,
+				flow[id].endpoint_options[SOURCE].receive_buffer_size_real);
 	}
 
 	if (flow[id].cc_alg && set_congestion_control(
@@ -1500,7 +1500,7 @@ void prepare_flow(int id)
 				"for flow id = %i: %s",
 				id, strerror(errno));
 
-	if (flow[id].endpoint_options[0].route_record && set_route_record(flow[id].sock) == -1)
+	if (flow[id].endpoint_options[SOURCE].route_record && set_route_record(flow[id].sock) == -1)
 		error(ERR_FATAL, "Unable to set route record "
 				"option for flow id = %i: %s",
 				id, strerror(errno));
@@ -1550,13 +1550,13 @@ void prepare_flows(void)
 
 		/* Allocate memory for writing and reading blocks. */
 		/* XXX: Maybe use single malloc for less memory fragmentation? */
-		flow[id].write_block = calloc(1, (size_t)flow[id].endpoint_options[0].block_size);
-		flow[id].read_block = calloc(1, (size_t)flow[id].endpoint_options[1].block_size);
+		flow[id].write_block = calloc(1, (size_t)flow[id].endpoint_options[SOURCE].block_size);
+		flow[id].read_block = calloc(1, (size_t)flow[id].endpoint_options[DESTINATION].block_size);
 		if (flow[id].read_block == NULL || flow[id].write_block == NULL) {
 			error(ERR_FATAL, "malloc(): failed");
 		}
 		if (flow[id].byte_counting)
-			for (byte_idx = 0; byte_idx < flow[id].endpoint_options[0].block_size;
+			for (byte_idx = 0; byte_idx < flow[id].endpoint_options[SOURCE].block_size;
 					byte_idx++)
 				*(flow[id].write_block+byte_idx) =
 					(unsigned char)(byte_idx & 0xff);
@@ -1611,10 +1611,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				int id; \
 				for (id = 0; id < MAX_FLOWS; id++) { \
 					if (type != 'd') \
-						flow[id].endpoint_options[0].PROPERTY_NAME = \
+						flow[id].endpoint_options[SOURCE].PROPERTY_NAME = \
 						(PROPERTY_VALUE); \
 					if (type != 's') \
-						flow[id].endpoint_options[1].PROPERTY_NAME = \
+						flow[id].endpoint_options[DESTINATION].PROPERTY_NAME = \
 						(PROPERTY_VALUE); \
 				} \
 			} else { \
@@ -1623,10 +1623,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					if (current_flow_ids[id] == -1) \
 						break; \
 					if (type != 'd') \
-						flow[current_flow_ids[id]].endpoint_options[0].PROPERTY_NAME = \
+						flow[current_flow_ids[id]].endpoint_options[SOURCE].PROPERTY_NAME = \
 						(PROPERTY_VALUE); \
 					if (type != 's') \
-						flow[current_flow_ids[id]].endpoint_options[1].PROPERTY_NAME = \
+						flow[current_flow_ids[id]].endpoint_options[DESTINATION].PROPERTY_NAME = \
 						(PROPERTY_VALUE); \
 				} \
 			}
@@ -1741,10 +1741,6 @@ static void parse_cmdline(int argc, char **argv) {
 	int optint = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
-	enum {
-		SOURCE = 0,
-		DESTINATION
-	};
 
 	current_flow_ids[0] = -1;
 
@@ -1932,49 +1928,49 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 	for (id = 0; id<opt.num_flows; id++) {
 		DEBUG_MSG(4, "sanity checking parameter set of flow %d.", id);
-		if (flow[id].endpoint_options[1].flow_duration > 0 && flow[id].late_connect &&
-				flow[id].endpoint_options[1].flow_delay <
-				flow[id].endpoint_options[0].flow_delay) {
+		if (flow[id].endpoint_options[DESTINATION].flow_duration > 0 && flow[id].late_connect &&
+				flow[id].endpoint_options[DESTINATION].flow_delay <
+				flow[id].endpoint_options[SOURCE].flow_delay) {
 			fprintf(stderr, "Server flow %d starts earlier than client "
 					"flow while late connecting.\n", id);
 			error = 1;
 		}
-		if (flow[id].endpoint_options[0].flow_delay > 0 &&
-				flow[id].endpoint_options[0].flow_duration == 0) {
+		if (flow[id].endpoint_options[SOURCE].flow_delay > 0 &&
+				flow[id].endpoint_options[SOURCE].flow_duration == 0) {
 			fprintf(stderr, "Client flow %d has a delay but "
 					"no runtime.\n", id);
 			error = 1;
 		}
-		if (flow[id].endpoint_options[1].flow_delay > 0 &&
-				flow[id].endpoint_options[1].flow_duration == 0) {
+		if (flow[id].endpoint_options[DESTINATION].flow_delay > 0 &&
+				flow[id].endpoint_options[DESTINATION].flow_duration == 0) {
 			fprintf(stderr, "Server flow %d has a delay but "
 					"no runtime.\n", id);
 			error = 1;
 		}
-		if (!flow[id].endpoint_options[1].flow_duration &&
-				!flow[id].endpoint_options[0].flow_duration) {
+		if (!flow[id].endpoint_options[DESTINATION].flow_duration &&
+				!flow[id].endpoint_options[SOURCE].flow_duration) {
 			fprintf(stderr, "Server and client flow have both "
 					"zero runtime for flow %d.\n", id);
 			error = 1;
 		}
 		if (flow[id].two_way) {
-			if (flow[id].endpoint_options[1].flow_duration != 0 &&
-					flow[id].endpoint_options[0].flow_duration !=
-					flow[id].endpoint_options[1].flow_duration) {
+			if (flow[id].endpoint_options[DESTINATION].flow_duration != 0 &&
+					flow[id].endpoint_options[SOURCE].flow_duration !=
+					flow[id].endpoint_options[DESTINATION].flow_duration) {
 				fprintf(stderr, "Server flow duration "
 						"specified albeit -2.\n");
 				error = 1;
 			}
-			flow[id].endpoint_options[1].flow_duration =
-				flow[id].endpoint_options[0].flow_duration;
-			if (flow[id].endpoint_options[1].flow_delay != 0 &&
-					flow[id].endpoint_options[1].flow_delay !=
-					flow[id].endpoint_options[0].flow_delay) {
+			flow[id].endpoint_options[DESTINATION].flow_duration =
+				flow[id].endpoint_options[SOURCE].flow_duration;
+			if (flow[id].endpoint_options[DESTINATION].flow_delay != 0 &&
+					flow[id].endpoint_options[DESTINATION].flow_delay !=
+					flow[id].endpoint_options[SOURCE].flow_delay) {
 				fprintf(stderr, "Server flow delay specified "
 						"albeit -2.\n");
 				error = 1;
 			}
-			flow[id].endpoint_options[1].flow_delay = flow[id].endpoint_options[0].flow_delay;
+			flow[id].endpoint_options[DESTINATION].flow_delay = flow[id].endpoint_options[SOURCE].flow_delay;
 		}
 
 		for (unsigned i = 0; i < 2; i++) {
@@ -2020,7 +2016,7 @@ static void parse_cmdline(int argc, char **argv) {
 				switch (type) {
 				case 0:
 				case 'b':
-					optdouble /= flow[id].endpoint_options[0].block_size;
+					optdouble /= flow[id].endpoint_options[SOURCE].block_size;
 					if (optdouble < 1) {
 						fprintf(stderr, "client block size "
 								"for flow %u is too "

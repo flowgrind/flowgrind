@@ -48,6 +48,11 @@ enum protocol {
 	PROTO_UDP
 };
 
+enum endpoint {
+	SOURCE = 0,
+	DESTINATION
+};
+
 struct _flow_endpoint {
 	/* Flow options only affecting source or destination*/
 
