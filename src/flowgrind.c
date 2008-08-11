@@ -92,10 +92,9 @@ static void usage(void)
 		"               Useful in combination with -n to set specific options\n"
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
-		"  -H x=HOST[/HOST][:PORT]\n"
+		"  -H HOST[/HOST][:PORT]\n"
 		"               Test against host. Optional control host may be specified to\n"
 		"               handle connection setup via another interface/route\n"
-		"               (default: s=localhost,d=unset)\n"
 		"  -L x         connect() socket immediately before sending (late)\n"
 		"  -N x         shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
@@ -124,11 +123,11 @@ static void usage(void)
 		"respectively. For instance -O s=SO_DEBUG,s=TCP_CORK,d=TCP_CONG_MODULE=reno.\n\n"
 
 		"Examples:\n"
-		"  flowgrind -H d=testhost\n"
+		"  flowgrind -H testhost\n"
 		"               start bulk TCP transfer from this host to testhost\n"
-		"  flowgrind -H d=192.168.0.69 -T s=0,d=5\n"
+		"  flowgrind -H 192.168.0.69 -T s=0,d=5\n"
 		"               start bulk TCP transfer from 192.168.0.69 to this host\n"
-		"  flowgrind -n 2 -H d=192.168.0.69 -F 1 -H d=10.0.0.1\n"
+		"  flowgrind -n 2 -H 192.168.0.69 -F 1 -H 10.0.0.1\n"
 		"               start two TCP transfers one to 192.168.0.69 and another in\n"
 		"               parallel to 10.0.0.1\n",
 		opt.log_filename_prefix
@@ -1742,22 +1741,14 @@ static void parse_cmdline(int argc, char **argv) {
 	int optint = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
-	int argread = 0;
 	enum {
 		SOURCE = 0,
 		DESTINATION
 	};
-	char *const token[] = {
-		[SOURCE] = "s",
-		[DESTINATION] = "d",
-		NULL
-	};
-	char *subopts;
-	char *value;
 
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvwB:CD:ELNO:PQR:S:T:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvwB:CD:EF:H:LNO:PQR:S:T:W:Y:")) != -1)
 		switch (ch) {
 
 		case 'a':
@@ -1851,6 +1842,50 @@ static void parse_cmdline(int argc, char **argv) {
 
 		case 'E':
 			ASSIGN_FLOW_OPTION(byte_counting, 1)
+			break;
+
+		case 'F':
+			tok = strtok(optarg, ",");
+			id = 0;
+			while (tok) {
+				rc = sscanf(tok, "%d", &optint);
+				if (rc != 1) {
+					fprintf(stderr, "malformed flow specifier\n");
+					usage();
+				}
+				if (optint == -1) {
+					id = 0;
+					break;
+				}
+				current_flow_ids[id++] = optint;
+				ASSIGN_MAX(max_flow_specifier, optint);
+				tok = strtok(NULL, ",");
+			}
+			current_flow_ids[id] = -1;
+			break;
+
+		case 'H':
+			ASSIGN_FLOW_OPTION(server_name, optarg)
+			sepptr = strchr(optarg, '/');
+			if (sepptr == NULL) {
+				ASSIGN_FLOW_OPTION(server_name_control, optarg)
+			} else {
+				*sepptr = '\0';
+				ASSIGN_FLOW_OPTION(server_name_control, sepptr + 1)
+			}
+			sepptr = strchr(optarg, ',');
+			if (sepptr == NULL) {
+				ASSIGN_FLOW_OPTION(server_control_port,
+						DEFAULT_LISTEN_PORT)
+			} else {
+				optint = atoi(optarg);
+				if (optint < 1) {
+					fprintf(stderr, "invalid port\n");
+					usage();
+				}
+				*sepptr = '\0';
+				ASSIGN_FLOW_OPTION(server_control_port, optint)
+			}
 			break;
 
 		case 'L':
