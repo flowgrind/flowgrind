@@ -25,6 +25,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "adt.h"
 
 #include "common.h"
 #include "fg_socket.h"
@@ -40,16 +41,311 @@
 #define RANDOM_MAX		RAND_MAX	/* Linux, FreeBSD */
 #endif
 
-#ifdef __LINUX__
-#define TCP_REPORT_HDR_STRING_MBIT "# ID   begin     end   c/s Mb/s   s/c Mb/s RTT, ms: min        avg        max IAT, ms: min        avg        max    cwnd  ssth #uack #sack #lost #retr #fack #reor     rtt  rttvar      rto\n"
-#define TCP_REPORT_HDR_STRING_MBYTE "# ID   begin     end   c/s MB/s   s/c MB/s RTT, ms: min        avg        max IAT, ms: min        avg        max    cwnd  ssth #uack #sack #lost #retr #fack #reor     rtt  rttvar      rto\n"
-#define TCP_REPORT_FMT_STRING "%c%3d %7.3f %7.3f %10.6f %10.6f   %10.3f %10.3f %10.3f   %10.3f %10.3f %10.3f   %5u %5u %5u %5u %5u %5u %5u %5u %7.3f %7.3f %8.3f %s\n"
-#else
-#define TCP_REPORT_HDR_STRING_MBIT "# ID   begin     end   c/s Mb/s   s/c Mb/s RTT, ms: min        avg        max IAT, ms: min        avg        max\n"
-#define TCP_REPORT_HDR_STRING_MBYTE "# ID   begin     end   c/s MB/s   s/c MB/s RTT, ms: min        avg        max IAT, ms: min        avg        max\n"
-#define TCP_REPORT_FMT_STRING "%c%3d %7.3f %7.3f %10.6f %10.6f   %10.3f %10.3f %10.3f   %10.3f %10.3f %10.3f %s\n"
-#endif
+void parse_visible_param(char *to_parse) {
+	// {begin, end, throughput, RTT, IAT, Kernel}
+	if (strstr(to_parse, "+begin"))
+		visible_columns[0] = 1;
+	if (strstr(to_parse, "-begin"))
+		visible_columns[0] = 0;
+	if (strstr(to_parse, "+end"))
+		visible_columns[1] = 1;
+	if (strstr(to_parse, "-end"))
+		visible_columns[1] = 0;
+	if (strstr(to_parse, "+thrpt"))
+		visible_columns[2] = 1;
+	if (strstr(to_parse, "-thrpt"))
+		visible_columns[2] = 0;
+	if (strstr(to_parse, "+rtt"))
+		visible_columns[3] = 1;
+	if (strstr(to_parse, "-rtt"))
+		visible_columns[3] = 0;
+	if (strstr(to_parse, "+iat"))
+		visible_columns[4] = 1;
+	if (strstr(to_parse, "-iat"))
+		visible_columns[4] = 0;
+	if (strstr(to_parse, "+kernel"))
+		visible_columns[5] = 1;
+	if (strstr(to_parse, "-kernel"))
+		visible_columns[5] = 0;
+}
 
+/* New output
+   determines the number of digits before the comma
+*/
+int det_output_column_size(long value) {
+	int i = 1;
+	double dez = 10.0;
+
+	if (value < 0)
+		i++;
+	while ((abs(value) / (dez - 1)) > 1) {
+		i++;
+		dez *= 10;
+	}
+	return i;
+}
+
+// produces the string command for printf for the right number of digits and decimal part
+char *outStringPart(int digits, int decimalPart) {
+	static char outstr[30] = {0};
+
+	sprintf(outstr, "%%%d.%df", digits, decimalPart);
+
+	return outstr;
+}
+
+int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strData1Row, char *strData2Row,
+	char *strHead1, char *strHead2, double value1, double value2, unsigned int *control0,
+	unsigned int *control1, int numDigitsDecimalPart, int showColumn, int *columnWidthChanged) {
+
+	unsigned int maxTooLongColumns = 2; // Maximum number of rows with non-optimal column width
+	int lengthData = 0; // #digits of values
+	int lengthHead = 0; // Length of header string
+	unsigned int columnSize = 0;
+	char tempBuffer[50];
+	unsigned int a;
+
+	char* number_formatstring;
+
+	if (!showColumn)
+		return 0;
+
+	// get max columnsize
+	lengthData = MAX(det_output_column_size(value1), det_output_column_size(value2)) + 2 + numDigitsDecimalPart;
+	lengthHead = MAX(strlen(strHead1), strlen(strHead2));
+	columnSize = MAX(lengthData, lengthHead);
+
+	// check if columnsize has changed
+	if (*control1 < columnSize) {
+		*columnWidthChanged = 1;
+		*control1 = columnSize;
+		*control0 = 0;
+	}
+	else if (*control1 > 1 + columnSize) {
+		if (*control0 >= maxTooLongColumns) {
+			*columnWidthChanged = 1;
+			*control1 = columnSize;
+			*control0 = 0;
+		}
+		else
+			(*control0)++;
+	}
+
+	number_formatstring = outStringPart(*control1, numDigitsDecimalPart);
+
+	// create columns
+	// Data Sender -> Reciver
+	sprintf(tempBuffer, number_formatstring, value1);
+	strcat(strData1Row, tempBuffer);
+
+	// Data Reciver -> Sender
+	sprintf(tempBuffer, number_formatstring, value2);
+	strcat(strData2Row, tempBuffer);
+
+	// 1. Header row
+	for (a = *control1; a > strlen(strHead1); a--)
+		strcat(strHead1Row, " ");
+	strcat(strHead1Row, strHead1);
+
+	// 2. Header Row
+	for (a = *control1; a > strlen(strHead2); a--)
+		strcat(strHead2Row, " ");
+	strcat(strHead2Row, strHead2);
+
+	return 0;
+}
+
+char *createOutput(char hash, int id, double begin, double end,
+		double cs, double sc,
+		double rttmin, double rttavg, double rttmax,
+		double iatmin, double iatavg, double iatmax,
+		int cwnd, int ssth, int uack, int sack, int lost,int reor,
+		int retr, int fack,double linrtt,double linrttvar,
+		double linrto, int mss, int mtu, char* comnt, int unit_byte) {
+
+	static char * const str_id = "#  ID";
+	static char * const str_begin[] = {" begin", " [s]"};
+	static char * const str_end[] = {" end", " [s]"};
+	static char *str_cs[] = {" through", " [Mbit]"};
+	if (unit_byte == 1)
+		str_cs[1] = " [Mbyte]";
+	static char * const str_rttmin[] = {" RTT", " min"};
+	static char * const str_rttavg[] = {" RTT", " avg"};
+	static char * const str_rttmax[] = {" RTT", " max"};
+	static char * const str_iatmin[] = {" IAT", " min"};
+	static char * const str_iatavg[] = {" IAT", " avg"};
+	static char * const str_iatmax[] = {" IAT", " max"};
+	static char * const str_cwnd[] = {" cwnd", " "};
+	static char * const str_ssth[] = {" ssth", " "};
+	static char * const str_uack[] = {" uack", " #"};
+	static char * const str_sack[] = {" sack", " #"};
+	static char * const str_lost[] = {" lost", " #"};
+	static char * const str_retr[] = {" retr", " #"};
+	static char * const str_fack[] = {" fack", " #"};
+	static char * const str_reor[] = {" reor", " #"};
+	static char * const str_linrtt[] = {" rtt", " "};
+	static char * const str_linrttvar[] = {" rttvar", " "};
+	static char * const str_linrto[] = {" rto", " "};
+	static char * const str_mss[] = {" mss", " "};
+	static char * const str_mtu[] = {" mtu", " "};
+	static char * const str_coment[] = {" ;-)", " "};
+
+	int columnWidthChanged = 0; //Flag: 0: column width has not changed
+
+	/*
+	ControlArray [i][x]
+	i: Number of Parameter
+	x=0: Number of rows with too much space
+	x=1: last column width
+	*/
+	static unsigned int control[24][2];
+	int i = 0;
+	static int counter = 0;
+
+	//Create Row + Header
+	char dataSenderString[1000];
+	char dataReciverString[1000];
+	char headerString1[1000];
+	char headerString2[1000];
+	static char outputString[4000];
+
+	//output string
+	//param # + flow_id
+	sprintf(dataSenderString, "%cS%3d", hash, id);
+	sprintf(dataReciverString, "%cR%3d", hash, id);
+	strcpy(headerString1, str_id);
+	strcpy(headerString2, "#    ");
+	i++;
+
+	//param begin
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_begin[0], str_begin[1], begin, begin, &control[i][0], &control[i][1], 3, visible_columns[0], &columnWidthChanged);
+	i++;
+
+	//param end
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_end[0], str_end[1], end, end, &control[i][0], &control[i][1], 3, visible_columns[1], &columnWidthChanged);
+	i++;
+
+	//param c/s s/c throughput
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_cs[0], str_cs[1], cs, sc, &control[i][0], &control[i][1], 6, visible_columns[2], &columnWidthChanged);
+	i++;
+
+	//param str_rttmin
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_rttmin[0], str_rttmin[1], rttmin, 0, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
+	i++;
+
+	//param str_rttavg
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_rttavg[0], str_rttavg[1], rttavg, 0, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
+	i++;
+
+	//param str_rttmax
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_rttmax[0], str_rttmax[1], rttmax, 0, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
+	i++;
+
+	//param str_iatmin
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_iatmin[0], str_iatmin[1], iatmin, 0, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
+	i++;
+
+	//param str_iatavg
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_iatavg[0], str_iatavg[1], iatavg, 0, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
+	i++;
+
+	//param str_iatmax
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_iatmax[0], str_iatmax[1], iatmax, 0, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
+	i++;
+
+	//linux kernel output
+	//param str_cwnd
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_cwnd[0], str_cwnd[1], cwnd, 0, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_ssth
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_ssth[0], str_ssth[1], ssth, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_uack
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_uack[0], str_uack[1], uack, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_sack
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_sack[0], str_sack[1], sack, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_lost
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_lost[0], str_lost[1], lost, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_retr
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_retr[0], str_retr[1], retr, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_fack
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_fack[0], str_fack[1], fack, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_reor
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_reor[0], str_reor[1], reor, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_linrtt
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_linrtt[0], str_linrtt[1], linrtt, 0, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_linrttvar
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_linrttvar[0], str_linrttvar[1], linrttvar, 0, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param str_linrto
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_linrto[0], str_linrto[1], linrto, 0, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_mss[0], str_mss[1], mss, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_mtu[0], str_mtu[1], mtu, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	strcat(headerString1, str_coment[0]);
+	strcat(headerString2, str_coment[1]);
+	strcat(dataSenderString, comnt);
+	strcat(dataReciverString, comnt);
+
+	//newline at the end of the string
+	strcat(headerString1, "\n");
+	strcat(headerString2, "\n");
+	strcat(dataSenderString, "\n");
+	strcat(dataReciverString, "\n");
+	//output string end
+	if (columnWidthChanged > 0 || (counter % 25) == 0) {
+		strcpy(outputString, headerString1);
+		strcat(outputString, headerString2);
+		strcat(outputString, dataSenderString);
+		strcat(outputString, dataReciverString);
+	}
+	else {
+		strcpy(outputString, dataSenderString);
+		strcat(outputString, dataReciverString);
+	}
+	counter++;
+
+	// now do the anderson darlington stuff
+	if (doAnderson > 0) {
+
+		if (array_size < MAXANDERSONSIZE) {
+			t_array_s[array_size] = cs ;
+			r_array_s[array_size] = rttavg ;
+			i_array_s[array_size] = iatavg ;
+			t_array_r[array_size] = sc ;
+			r_array_r[array_size] = 0 ; //dummy since nothing is available yet
+			i_array_r[array_size] = 0 ; //dummy since nothing is available yet
+			array_size++;
+		}
+		else
+			anderson_outbound =1;
+	}
+
+	return outputString;
+}
+/*New output end*/
 
 static void usage(void)
 {
@@ -67,9 +363,16 @@ static void usage(void)
 #ifdef HAVE_LIBPCAP
 		"  -a           advanced statistics (pcap)\n"
 #endif
+		"  -b mean|lower_bound,upper_bound\n"
+		"               mean for computing Anderson-Darling Test for exponential\n"
+		"               distribution OR\n"
+		"               lower_boud,upper_bound for computing the test for uniform\n"
+		"               distribution with the given bounds\n"
+		"  -o +begin,+end,+thrpt,+rtt,+iat,+kernel\n"
+		"               comma separated list of parameters to investigate +: show -: hide\n"
 #ifdef DEBUG
 		"  -d           increase debugging verbosity. Add option multiple times to\n"
-						"be even more verbose.\n"
+		"               be even more verbose.\n"
 #endif
 		"  -e PRE       prepend prefix PRE to log filename (default: \"%s\")\n"
 		"  -i #.#       reporting interval in seconds (default: 0.05s)\n"
@@ -131,7 +434,7 @@ static void usage(void)
 		"               start two TCP transfers one to 192.168.0.69 and another in\n"
 		"               parallel to 10.0.0.1\n",
 		opt.log_filename_prefix
-		);
+	);
 	exit(1);
 }
 
@@ -160,6 +463,9 @@ static void usage_sockopt(void)
 		"  s=TCP_CORK   set TCP_CORK on test socket\n"
 		"  s=TCP_ELCN   set TCP_ELCN on test socket\n"
 		"  s=TCP_ICMP   set TCP_ICMP on test socket\n"
+		"  s=IP_MTU_DISCOVER\n"
+		"               set IP_MTU_DISCOVER on test socket if not already enabled by\n"
+		"               system default\n"
 		"  x=ROUTE_RECORD\n"
 		"               set ROUTE_RECORD on test socket\n\n"
 
@@ -199,7 +505,7 @@ void init_flows_defaults(void)
 {
 	int id = 1;
 
-	for (id = 0; id<MAX_FLOWS; id++) {
+	for (id = 0; id < MAX_FLOWS; id++) {
 		flow[id].server_name = "localhost";
 		flow[id].server_name_control = "localhost";
 		flow[id].server_control_port = DEFAULT_LISTEN_PORT;
@@ -214,7 +520,7 @@ void init_flows_defaults(void)
 			flow[id].endpoint_options[i].block_size = 8192;
 			flow[id].endpoint_options[i].route_record = 0;
 		}
-		flow[id].endpoint_options[SOURCE].flow_duration = 1.0;
+		flow[id].endpoint_options[SOURCE].flow_duration = 5.0;
 		flow[id].endpoint_options[DESTINATION].flow_duration = 0.0;
 
 		flow[id].sock = 0;
@@ -374,7 +680,7 @@ void timer_check(void)
 	tsc_gettimeofday(&now);
 	if (time_is_after(&now, &timer.next)) {
 		for (id = 0; id < opt.num_flows; id++)
-			report_flow(id);
+			 report_flow(id);
 		timer.last = now;
 		while (time_is_after(&now, &timer.next))
 			time_add(&timer.next, opt.reporting_interval);
@@ -392,7 +698,7 @@ void timer_start(void)
 	timer.last = timer.next = timer.start;
 	time_add(&timer.next, opt.reporting_interval);
 
-	for (id=0; id<opt.num_flows; id++) {
+	for (id = 0; id < opt.num_flows; id++) {
 		flow[id].endpoint_options[SOURCE].flow_start_timestamp = timer.start;
 		time_add(&flow[id].endpoint_options[SOURCE].flow_start_timestamp,
 				flow[id].endpoint_options[SOURCE].flow_delay);
@@ -428,7 +734,7 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 		,unsigned cwnd, unsigned ssth, unsigned uack,
 		unsigned sack, unsigned lost, unsigned retr,
 		unsigned fack, unsigned reor, double rtt,
-		double rttvar, double rto
+		double rttvar, double rto, int mss, int mtu
 #endif
 )
 {
@@ -436,7 +742,7 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 	double avg_iat = INFINITY;
 	unsigned blocks_written = 0;
 	char comment_buffer[100] = "(";
-	char report_buffer[300] = "";
+	char report_buffer[4000] = "";
 	double thruput = 0.0;
 
 #define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 1) \
@@ -488,22 +794,38 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 		comment_buffer[0] = '\0';
 
 	thruput = scale_thruput((double)bytes_written / (time2 - time1));
-	snprintf(report_buffer, sizeof(report_buffer), TCP_REPORT_FMT_STRING,
-		(hash ? '#' : ' '), id,
+
+	//wrong
+	if (!hash) {
+		mss = get_mss(flow[id].sock);
+		mtu = get_mtu(flow[id].sock);
+		flow[id].current_mss = mss;
+		flow[id].current_mtu = mtu;
+	}
+
+	char rep_string[4000];
+#ifndef __LINUX__
+	// dont show linux kernel output if there is no linux OS
+	visible_columns[5] = 0;
+#endif
+	strcpy(rep_string, createOutput((hash ? '#' : ' '), id,
 		time1, time2, thruput,
 		scale_thruput((double)bytes_read / (time2 - time1)),
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
-		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3
+		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
-		,
-		cwnd, ssth, uack, sack, lost, retr, fack, reor,
-		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3
+		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)retr, (double)fack, (double)reor,
+		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3,
+#else
+		0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0,
 #endif
-		,
-		comment_buffer
-	);
+		mss, mtu, comment_buffer, opt.mbyte
+	));
+	snprintf(report_buffer, sizeof(report_buffer), rep_string);
 	log_output(report_buffer);
 }
+
 
 
 void report_final(void)
@@ -519,7 +841,7 @@ void report_final(void)
 	for (id = 0; id < opt.num_flows; id++) {
 
 		snprintf(header_buffer, sizeof(header_buffer),
-			"# #%d: %s", id, flow[id].server_name);
+			"\n# #%d: %s", id, flow[id].server_name);
 
 #define CAT(fmt, args...) do {\
 	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
@@ -531,9 +853,12 @@ void report_final(void)
 		if (flow[id].server_control_port != DEFAULT_LISTEN_PORT)
 			CAT(",%d", flow[id].server_control_port);
 		CATC("MSS = %d", flow[id].mss);
-		if (flow[id].mtu != -1)
-			CATC("MTU = %d (%s)", flow[id].mtu,
-					guess_topology(flow[id].mss, flow[id].mtu));
+//		if (flow[id].mtu != -1)
+			CATC("MTU = %d (%s)", flow[id].current_mtu,
+				guess_topology(flow[id].current_mss, flow[id].current_mtu)
+	//possible correction
+	//		guess_topology(get_mss(flow[id].sock), get_mtu(flow[id].sock))
+			);
 		if (flow[id].stopped)
 			thruput = flow[id].bytes_written_since_first
 				/ time_diff(&flow[id].endpoint_options[SOURCE].flow_start_timestamp,
@@ -542,7 +867,7 @@ void report_final(void)
 			thruput = flow[id].bytes_written_since_first /
 				flow[id].endpoint_options[SOURCE].flow_duration;
 		thruput = scale_thruput(thruput);
-		CATC("sb = %u/%u%s (%u/%u), rb = %u/%u%s (%u/%u), bs = %u/%u, delay = %.2fs/%.2fs, "
+		CATC("sb = %u/%u%s (%u/%u), rb = %u/%u%s (%u/%u), bs = %u/%u\n#delay = %.2fs/%.2fs, "
 				"duration = %.2fs/%.2fs, thruput = %.6fM%c/s "
 				"(%llu blocks)",
 				flow[id].endpoint_options[SOURCE].send_buffer_size_real,
@@ -609,15 +934,15 @@ void report_final(void)
 				flow[id].endpoint_options[SOURCE].flow_duration +
 				flow[id].endpoint_options[SOURCE].flow_delay, 0, 0,
 				INFINITY, INFINITY, INFINITY,
-				INFINITY, INFINITY, INFINITY
+				INFINITY, INFINITY, INFINITY,
 #ifdef __LINUX__
-				,
 				info->tcpi_snd_cwnd, info->tcpi_snd_ssthresh,
 				info->tcpi_unacked, info->tcpi_sacked,
 				info->tcpi_lost, info->tcpi_retrans,
 				info->tcpi_fackets, info->tcpi_reordering,
-				info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto
+				info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto,
 #endif
+				flow[id].mss, flow[id].mtu
 			);
 			continue;
 		}
@@ -632,19 +957,203 @@ void report_final(void)
 			flow[id].max_rtt_since_first,
 			flow[id].min_iat_since_first,
 			flow[id].tot_iat_since_first,
-			flow[id].max_iat_since_first
+			flow[id].max_iat_since_first,
 #ifdef __LINUX__
-			,
 			info->tcpi_snd_cwnd, info->tcpi_snd_ssthresh,
 			info->tcpi_unacked, info->tcpi_sacked,
 			info->tcpi_lost, info->tcpi_retrans,
 			info->tcpi_fackets, info->tcpi_reordering,
-			info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto
+			info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto,
 #endif
+			flow[id].mss, flow[id].mtu
 		);
 	}
-}
 
+//now we can add the output for the anderson-darling test
+double t_result_s, r_result_s, i_result_s, t_result_r, r_result_r, i_result_r;
+
+/*
+Notes on Anderson Darlington Test
+
+	Both routines return a significance level, as described earlier. This
+   is a value between 0 and 1.  The correct use of the routines is to
+   pick in advance the threshold for the significance level to test;
+   generally, this will be 0.05, corresponding to 5%, as also described
+   above.  Subsequently, if the routines return a value strictly less
+   than this threshold, then the data are deemed to be inconsistent with
+   the presumed distribution, *subject to an error corresponding to the
+   significance level*.  That is, for a significance level of 5%, 5% of
+   the time data that is indeed drawn from the presumed distribution
+   will be erroneously deemed inconsistent.
+
+	Thus, it is important to bear in mind that if these routines are used
+   frequently, then one will indeed encounter occasional failures, even
+   if the data is unblemished.
+
+
+	We note, however, that the process of computing Y above might yield
+   values of Y outside the range (0..1).  Such values should not occur
+   if X is indeed distributed according to G(x), but easily can occur if
+   it is not.  In the latter case, we need to avoid computing the
+   central A2 statistic, since floating-point exceptions may occur if
+   any of the values lie outside (0..1).  Accordingly, the routines
+   check for this possibility, and if encountered, return a raw A2
+   statistic of -1.  The routine that converts the raw A2 statistic to a
+   significance level likewise propagates this value, returning a
+   significance level of -1.  So, any use of these routines must be
+   prepared for a possible negative significance level.
+
+   The last important point regarding use of A2 statistic concerns n,
+   the number of values being tested.  If n < 5 then the test is not
+   meaningful, and in this case a significance level of -1 is returned.
+
+   On the other hand, for "real" data the test *gains* power as n
+   becomes larger.  It is well known in the statistics community that
+   real data almost never exactly matches a theoretical distribution,
+   even in cases such as rolling dice a great many times (see [Pa94] for
+   a brief discussion and references).  The A2 test is sensitive enough
+   that, for sufficiently large sets of real data, the test will almost
+   always fail, because it will manage to detect slight imperfections in
+   the fit of the data to the distribution.
+
+
+*/
+
+	//now depending on which test the user wanted we make the function calls
+	if (doAnderson == 1) {
+
+		t_result_s = exp_A2_known_mean(t_array_s, array_size, ADT1);
+		r_result_s = exp_A2_known_mean(r_array_s, array_size, ADT1);
+		i_result_s = exp_A2_known_mean(i_array_s, array_size, ADT1);
+		t_result_r = exp_A2_known_mean(t_array_r, array_size, ADT1);
+		r_result_r = exp_A2_known_mean(r_array_r, array_size, ADT1);
+		i_result_r = exp_A2_known_mean(i_array_r, array_size, ADT1);
+
+		char report_buffer[4000] = "";
+
+		char report_string[4000];
+		/* strings for sender */
+		char string_t_result_s[100]; /* string_throughput_result_server */
+		char string_r_result_s[100]; /* string_rtt_result_server */
+		char string_i_result_s[100]; /* string_iat_result_server */
+		/* strings for receiver */
+		char string_t_result_r[100]; /* string_throughput_result_receiver */
+		char string_r_result_r[100]; /* string_rtt_result_receiver */
+		char string_i_result_r[100]; /* string_iat_result_receiver */
+
+		/*convert double to string*/
+		sprintf(string_t_result_s, "%.6f", t_result_s);
+		sprintf(string_r_result_s, "%.6f", r_result_s);
+		sprintf(string_i_result_s, "%.6f", i_result_s);
+
+		sprintf(string_t_result_r, "%.6f", t_result_r);
+		sprintf(string_r_result_r, "%.6f", r_result_r);
+		sprintf(string_i_result_r, "%.6f", i_result_r);
+
+		/* create the output to the logfile */
+		strcpy(report_string, "\n#Anderson-Darling test statistic (A2) for Exponential Distribution with mean=");
+
+		char buf[100];
+		sprintf(buf, "%.6f", ADT1);
+		strcat(report_string, buf);
+		strcat(report_string, " :\n");
+
+		strcat(report_string, "#A2 Throughput of sender = ");
+		strcat(report_string, string_t_result_s);
+		strcat(report_string, "; ");
+
+		strcat(report_string, "A2 Throughput of receiver = ");
+		strcat(report_string, string_t_result_r);
+		strcat(report_string, " \n");
+
+		strcat(report_string, "#A2 RTT of sender = ");
+		strcat(report_string, string_r_result_s);
+		strcat(report_string, "; ");
+
+		strcat(report_string, "A2 RTT of receiver = ");
+		strcat(report_string, string_r_result_r);
+		strcat(report_string, " \n");
+
+		strcat(report_string, "#A2 IAT of sender = ");
+		strcat(report_string, string_i_result_s);
+		strcat(report_string, "; ");
+
+		strcat(report_string, "A2 RTT of receiver = ");
+		strcat(report_string, string_i_result_r);
+		strcat(report_string, " \n");
+
+		if (anderson_outbound == 1) {
+			strcat(report_string, "\n#Note: The Darlington test was done only on the first 1000 samples. The reason for this is that the test gives poor results for a larger sample size (as specified in literature)\n");
+		}
+
+		snprintf(report_buffer, sizeof(report_buffer), report_string);
+		log_output(report_buffer);
+	}
+	else if (doAnderson == 2) {
+
+		t_result_s = unif_A2_known_range(t_array_s, array_size, ADT1, ADT2);
+		r_result_s = unif_A2_known_range(r_array_s, array_size, ADT1, ADT2);
+		i_result_s = unif_A2_known_range(i_array_s, array_size, ADT1, ADT2);
+		t_result_r = unif_A2_known_range(t_array_r, array_size, ADT1, ADT2);
+		r_result_r = unif_A2_known_range(r_array_r, array_size, ADT1, ADT2);
+		i_result_r = unif_A2_known_range(i_array_r, array_size, ADT1, ADT2);
+
+		char report_buffer[4000] = "";
+
+		char report_string[4000];
+		/* strings for sender */
+		char string_t_result_s[100]; /* string_throughput_result_server */
+		char string_r_result_s[100]; /* string_rtt_result_server */
+		char string_i_result_s[100]; /* string_iat_result_server */
+		/* strings for receiver */
+		char string_t_result_r[100]; /* string_throughput_result_receiver */
+		char string_r_result_r[100]; /* string_rtt_result_receiver */
+		char string_i_result_r[100]; /* string_iat_result_receiver */
+
+		/*convert double to string*/
+		sprintf(string_t_result_s, "%.6f", t_result_s);
+		sprintf(string_r_result_s, "%.6f", r_result_s);
+		sprintf(string_i_result_s, "%.6f", i_result_s);
+
+		sprintf(string_t_result_r, "%.6f", t_result_r);
+		sprintf(string_r_result_r, "%.6f", r_result_r);
+		sprintf(string_i_result_r, "%.6f", i_result_r);
+
+		/* create the output to the logfile */
+		strcpy(report_string, "\n#Anderson-Darling test statistic (A2) for Uniform Distribution with lower bound ");
+
+		char buf[100];
+		sprintf(buf, "%.6f and upper bound %.6f", ADT1, ADT2);
+		strcat(report_string, buf);
+
+		strcat(report_string, ":\n#A2 Throughput of sender = ");
+		strcat(report_string, string_t_result_s);
+		strcat(report_string, "; ");
+
+		strcat(report_string, "A2 Throughput of receiver = ");
+		strcat(report_string, string_t_result_r);
+		strcat(report_string, " \n");
+
+		strcat(report_string, "#A2 RTT of sender = ");
+		strcat(report_string, string_r_result_s);
+		strcat(report_string, "; ");
+
+		strcat(report_string, "A2 RTT of receiver = ");
+		strcat(report_string, string_r_result_r);
+		strcat(report_string, " \n");
+
+		strcat(report_string, "#A2 IAT of sender = ");
+		strcat(report_string, string_i_result_s);
+		strcat(report_string, "; ");
+
+		strcat(report_string, "A2 RTT of receiver = ");
+		strcat(report_string, string_i_result_r);
+		strcat(report_string, " \n");
+
+		snprintf(report_buffer, sizeof(report_buffer), report_string);
+		log_output(report_buffer);
+	}
+}
 
 void report_flow(int id)
 {
@@ -684,9 +1193,8 @@ void report_flow(int id)
 			flow[id].max_rtt_since_last,
 			flow[id].min_iat_since_last,
 			flow[id].tot_iat_since_last,
-			flow[id].max_iat_since_last
+			flow[id].max_iat_since_last,
 #ifdef __LINUX__
-			,
 			info.tcpi_snd_cwnd,
 			info.tcpi_snd_ssthresh,
 			info.tcpi_last_data_sent, info.tcpi_last_ack_recv,
@@ -696,9 +1204,11 @@ void report_flow(int id)
 			info.tcpi_reordering,
 			info.tcpi_rtt,
 			info.tcpi_rttvar,
-			info.tcpi_rto
+			info.tcpi_rto,
 #endif
-				);
+			flow[id].mss,
+			flow[id].mtu
+		);
 
 	flow[id].bytes_written_since_last = 0;
 	flow[id].bytes_read_since_last = 0;
@@ -714,11 +1224,13 @@ void report_flow(int id)
 }
 
 
-int name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
+int name2socket(char **server_name, unsigned port, struct sockaddr **saptr,
 		socklen_t *lenp, char do_connect)
 {
 	int fd, n;
 	struct addrinfo hints, *res, *ressave;
+	struct sockaddr_in *tempv4;
+	struct sockaddr_in6 *tempv6;
 	char service[7];
 
 	bzero(&hints, sizeof(struct addrinfo));
@@ -727,9 +1239,10 @@ int name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
 
 	snprintf(service, sizeof(service), "%u", port);
 
-	if ((n = getaddrinfo(server_name, service, &hints, &res)) != 0)
+	if ((n = getaddrinfo(*server_name, service, &hints, &res)) != 0) {
 		error(ERR_FATAL, "getaddrinfo() failed: %s",
 				gai_strerror(n));
+	}
 	ressave = res;
 
 	do {
@@ -740,17 +1253,26 @@ int name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
 		if (!do_connect)
 			break;
 
-		if (connect(fd, res->ai_addr, res->ai_addrlen) == 0)
+		if (connect(fd, res->ai_addr, res->ai_addrlen) == 0) {
+			if (res->ai_family == PF_INET) {
+				tempv4 = (struct sockaddr_in *) res->ai_addr;
+				*server_name = inet_ntoa(tempv4->sin_addr);
+			}
+			else if (res->ai_family == PF_INET6){
+				tempv6 = (struct sockaddr_in6 *) res->ai_addr;
+				inet_ntop(AF_INET6, &tempv6->sin6_addr, *server_name, 128);
+			}
 			break;
+		}
 
 		error(ERR_WARNING, "Failed to connect to \"%s\": %s",
-				server_name, strerror(errno));
+				*server_name, strerror(errno));
 		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL)
 		error(ERR_FATAL, "Could not establish connection to "
-				"\"%s\": %s", server_name, strerror(errno));
+				"\"%s\": %s", *server_name, strerror(errno));
 
 	if (saptr && lenp) {
 		*saptr = malloc(res->ai_addrlen);
@@ -1152,6 +1674,7 @@ void prepare_rfds (int id)
 		}
 		flow[id].connect_called = 1;
 		flow[id].mtu = get_mtu(flow[id].sock);
+		flow[id].mss = get_mss(flow[id].sock);
 	}
 
 	/* Altough the server flow might be finished we keep the socket in
@@ -1346,7 +1869,7 @@ void close_flows(void)
 
 
 struct _mtu_info {
-	unsigned mtu;
+	int mtu;
 	char *topology;
 } mtu_list[] = {
 	{ 65535,	"Hyperchannel" },		/* RFC1374 */
@@ -1362,10 +1885,10 @@ struct _mtu_info {
 	{ 576,		"X.25 & ISDN" },		/* RFC1356 */
 	{ 296,		"PPP (low delay)" },
 };
-#define MTU_LIST_NUM	11
+#define MTU_LIST_NUM	12
 
 
-char *guess_topology (unsigned mss, unsigned mtu)
+char *guess_topology (int mss, int mtu)
 {
 	int i;
 
@@ -1377,6 +1900,7 @@ char *guess_topology (unsigned mss, unsigned mtu)
 			}
 		}
 	}
+
 	return "unknown";
 #endif
 
@@ -1385,6 +1909,7 @@ char *guess_topology (unsigned mss, unsigned mtu)
 		/* Both, IP and TCP headers may vary in size from 20 to 60 */
 		if (((mss + 40) <= mtu_list[i].mtu)
 				&& (mtu_list[i].mtu <= (mss + 120))) {
+
 			return (mtu_list[i].topology);
 		}
 	}
@@ -1402,15 +1927,16 @@ void prepare_flow(int id)
 	DEBUG_MSG(2, "init flow %d", id);
 
 	DEBUG_MSG(3, "connect()");
+
 	flow[id].sock_control =
-		name2socket(flow[id].server_name_control,
+		name2socket((&flow[id].server_name_control),
 				flow[id].server_control_port, NULL, NULL, 1);
 	read_greeting(flow[id].sock_control);
 
 	to_write = snprintf(buf, sizeof(buf),
 			"%s,t,%s,%hu,%hhd,%hhd,%u,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+",
 			FLOWGRIND_PROT_CALLSIGN FLOWGRIND_PROT_SEPERATOR FLOWGRIND_PROT_VERSION,
-			flow[id].server_name,
+			flow[id].server_name_control,
 			(opt.base_port ? opt.base_port++ : 0),
 			opt.advstats, flow[id].so_debug,
 			flow[id].endpoint_options[DESTINATION].send_buffer_size,
@@ -1449,7 +1975,7 @@ void prepare_flow(int id)
 				flow[id].endpoint_options[DESTINATION].receive_buffer_size,
 				flow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
 	}
-	flow[id].sock = name2socket(flow[id].server_name,
+	flow[id].sock = name2socket(&flow[id].server_name,
 			flow[id].server_data_port,
 			&flow[id].saddr, &flow[id].saddr_len, 0);
 
@@ -1509,13 +2035,17 @@ void prepare_flow(int id)
 		error(ERR_FATAL, "Unable to set DSCP value"
 				"for flow %d: %s", id, strerror(errno));
 
-	flow[id].mss = get_mss(flow[id].sock);
+	if (flow[id].ipmtudiscover && set_ip_mtu_discover(flow[id].sock) == -1)
+		error(ERR_FATAL, "Unable to set IP_MTU_DISCOVER value"
+				"for flow %d: %s", id, strerror(errno));
+
 
 	if (!flow[id].late_connect) {
 		DEBUG_MSG(4, "(early) connecting test socket");
 		connect(flow[id].sock, flow[id].saddr, flow[id].saddr_len);
 		flow[id].connect_called = 1;
 		flow[id].mtu = get_mtu(flow[id].sock);
+		flow[id].mss = get_mss(flow[id].sock);
 	}
 
 	set_non_blocking(flow[id].sock);
@@ -1577,8 +2107,42 @@ void prepare_flows(void)
 			(opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
 			FLOWGRIND_VERSION);
 	log_output(headline);
-	log_output(opt.mbyte ? TCP_REPORT_HDR_STRING_MBYTE :
-			TCP_REPORT_HDR_STRING_MBIT);
+}
+
+int parse_Anderson_Test(char *params) {
+
+
+	//int rc=-9999;
+	int i=0;
+	//printf("add args: %s\n",params);
+
+	char field [ 32 ];
+	int n;
+	char c[1];
+	strncpy (c, params, 1);
+
+	//printf("c:%s:\n",c);
+	//rc=strcmp(c[0],"-");
+	//printf("rc:%d",rc);
+	//  if (strcmp(c,"-")==5)  //TODO: Bug to figure out why there is an offset of 5 here!!
+	//		return 0;
+
+	while ( sscanf(params, "%31[^,]%n", field, &n) == 1 ){
+		if ( i==0)  {ADT1 = atof (field); doAnderson=1;}
+		if (i==1) {ADT2 = atof (field); doAnderson=2;}
+
+		i++;
+		params += n; /* advance the pointer by the number of characters read */
+		if ( *params != ',' ){
+			break; /* didn't find an expected delimiter, done? */
+		}
+		++params; /* skip the delimiter */
+	}
+
+	if (i==0) return 0;
+
+	printf("\n values for adt params :::_  adt1 %f,adt2 %f \n", ADT1, ADT2);
+	return 1;
 }
 
 #define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
@@ -1671,8 +2235,12 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				else if (!strcmp(arg, "ROUTE_RECORD")) {
 					ASSIGN_ENDPOINT_FLOW_OPTION(route_record, 1);
 				}
-				else if (!memcmp(arg, "TCP_CONG_MODULE=", 16) && type == 's')
-					ASSIGN_FLOW_OPTION(cc_alg, arg + 16)
+				else if (!memcmp(arg, "TCP_CONG_MODULE=", 16) && type == 's') {
+					ASSIGN_FLOW_OPTION(cc_alg, arg + 16);
+				}
+				else if (!memcmp(arg, "IP_MTU_DISCOVER", 15) && type == 's') {
+					ASSIGN_FLOW_OPTION(ipmtudiscover, 1);
+				}
 				else {
 					fprintf(stderr, "Unknown socket option or socket option not implemented for endpoint\n");
 					usage_sockopt();
@@ -1744,11 +2312,19 @@ static void parse_cmdline(int argc, char **argv) {
 
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "ade:h:i:l:mn:op:qvwB:CD:EF:H:LNO:PQR:S:T:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "ab:c:de:h:i:l:mn:op:qvwB:CD:EF:H:LNO:PQR:S:T:W:Y:")) != -1)
 		switch (ch) {
 
 		case 'a':
 			opt.advstats = 1;
+			break;
+
+		case 'b':
+			parse_Anderson_Test(optarg);
+			break;
+
+		case 'c':
+			parse_visible_param(optarg);
 			break;
 
 		case 'd':

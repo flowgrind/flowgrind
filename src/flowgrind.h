@@ -29,6 +29,36 @@ uint64_t npackets;
 struct sockaddr *server = NULL;
 socklen_t server_len;
 
+//Array for the dynamical output
+//default show every parameter
+//[0] := begin
+//[1] := end
+//[2] := throughput
+//[3] := rtt
+//[4] := iat
+//[5] := linux kernel output
+int visible_columns[6] = {1, 1, 1, 1, 1, 1};
+
+
+//now we define the arrays to be used for anderson-darlington test
+//naming convention: add _s or _r for sender and receiver respectively.
+//use	t_ for throughput
+//	r_ for average rtt
+//	i_ for average IAT
+// array_size will be the counter for the number of values inside the arrays
+int array_size = 0;
+#define MAXANDERSONSIZE 1000
+double t_array_s[MAXANDERSONSIZE], r_array_s[MAXANDERSONSIZE], i_array_s[MAXANDERSONSIZE]
+	, t_array_r[MAXANDERSONSIZE], r_array_r[MAXANDERSONSIZE], i_array_r[MAXANDERSONSIZE];
+
+// these are the 2 parameters for the ADT test. If the user wants to test for
+// Exponential only ADT1 will be used and will represent the mean if the user
+// wants to test for the uniform then ADT1 is the lower bound and ADT2 the
+// upper bound
+double ADT1 = 0.05;
+double ADT2 = 0.05;
+int anderson_outbound = 0 ; // will become one if array_size> MAXANDERSONSIZE
+int doAnderson = 0; // it will be 1 if we do the exponential test; it will be 2 if we do the uniform test
 
 struct {
 	unsigned short num_flows;
@@ -97,12 +127,21 @@ struct _flow {
 
 	enum protocol proto;
 
-	unsigned mss;
+	int mss;
 	int mtu;
+
+	/* here we use current_mss and current_mtu to store the most current
+	   values of get_mss and get_mtu. The problem encountered was that at the
+	   very end when guess_topology was called get_mss and get_mtu returned
+	   some bogus value because the call to getsockopt failed.
+	*/
+	int current_mss;
+	int current_mtu;
 
 	char *cc_alg;
 	int elcn;
 	int icmp;
+	int ipmtudiscover; //1 - set, 0 - option not set
 	char cork;
 	char so_debug;
 	uint8_t dscp;
@@ -177,7 +216,7 @@ struct {
 } timer;
 
 void report_flow(int id);
-char *guess_topology (unsigned mss, unsigned mtu);
+char *guess_topology (int mss, int mtu);
 void close_flow(int id);
 void stop_flow(int id);
 

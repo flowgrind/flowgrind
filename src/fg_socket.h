@@ -31,6 +31,7 @@ int toggle_tcp_cork(int fd);
 int set_window_size(int, int);
 int set_window_size_directed(int, int, int);
 
+int set_ip_mtu_discover(int fd);
 int get_mtu(int fd);
 int get_mss(int fd);
 
