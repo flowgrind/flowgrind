@@ -796,6 +796,9 @@ void read_test_data(int id)
 			flow[id].read_block_bytes_read;
 		iov.iov_len = flow[id].read_block_size -
 			flow[id].read_block_bytes_read;
+		// no name required
+		msg.msg_name = NULL;
+		msg.msg_name_len = 0;
 		msg.msg_iov = &iov;
 		msg.msg_iovlen = 1;
 		msg.msg_control = cbuf;
