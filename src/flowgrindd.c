@@ -699,11 +699,12 @@ main(int argc, char *argv[])
 				usage();
 			}
 			break;
-
+#ifdef DEBUG
 		case 'D':
 			log_type = LOGTYPE_STDERR;
 			increase_debuglevel(1);
 			break;
+#endif DEBUG
 
 		case 'p':
 			rc = sscanf(optarg, "%u", &port);

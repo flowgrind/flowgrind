@@ -1,10 +1,9 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
+#ifdef DEBUG
 inline void decrease_debuglevel();
 inline void increase_debuglevel();
-
-#ifdef DEBUG
 
 #include <sys/types.h>
 #include <unistd.h>

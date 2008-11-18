@@ -1565,10 +1565,11 @@ void parse_cmdline(int argc, char **argv)
 		case 'C':
 			opt.clobber = 1;
 			break;
-
+#ifdef DEBUG
 		case 'D':
 			increase_debuglevel(1);
 			break;
+#endif
 
 		case 'd':
 			rc = sscanf(optarg, "%x", &optint);
