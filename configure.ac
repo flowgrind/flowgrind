@@ -66,7 +66,7 @@ AC_CHECK_LIB([fasttime], [fasttime_init_context])
 AC_CHECK_LIB([tsci2], [tsci2_init])
 
 AC_ARG_WITH(pcap,
-[  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=yes]]],
+[  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=no]]],
 [
 	if test $withval = no
 	then
@@ -88,6 +88,17 @@ else
 	AC_MSG_RESULT(yes)
 	AC_PCAP_CHECK
 fi
+
+AC_MSG_CHECKING(if we're including debugging code)
+AC_ARG_ENABLE(debugging,
+ AS_HELP_STRING([--enable-debugging],[include debugging code (default is no)])], 
+ [debug_enabled=yes],
+ [debug_enabled=no])
+
+if test "x$debug_enabled" = "xyes" ; then 
+    AC_DEFINE(DEBUG, 1, [Enable debugging?])
+fi
+AC_MSG_RESULT($debug)
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
