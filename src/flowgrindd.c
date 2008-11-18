@@ -704,7 +704,7 @@ main(int argc, char *argv[])
 			log_type = LOGTYPE_STDERR;
 			increase_debuglevel(1);
 			break;
-#endif DEBUG
+#endif 
 
 		case 'p':
 			rc = sscanf(optarg, "%u", &port);

@@ -1,16 +1,19 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
+#include "config.h"
+
+void decrease_debuglevel();
+void increase_debuglevel();
+
 #ifdef DEBUG
-inline void decrease_debuglevel();
-inline void increase_debuglevel();
 
 #include <sys/types.h>
 #include <unistd.h>
 
 unsigned debug_level;
 
-inline const char *debug_timestamp(void);
+const char *debug_timestamp(void);
 
 #define DEBUG_MSG(message_level, msg, args...) \
         do { \
