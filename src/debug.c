@@ -51,7 +51,7 @@ const char *debug_timestamp()
 
 #else
 
-inline void decrease_debuglevel() { }
-inline void increase_debuglevel() { }
+void decrease_debuglevel() { }
+void increase_debuglevel() { }
 
 #endif

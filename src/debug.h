@@ -1,8 +1,8 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
-inline void decrease_debuglevel();
-inline void increase_debuglevel();
+void decrease_debuglevel();
+void increase_debuglevel();
 
 #ifdef DEBUG
 
