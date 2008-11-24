@@ -1,6 +1,7 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
+#define DEBUG
 void decrease_debuglevel();
 void increase_debuglevel();
 

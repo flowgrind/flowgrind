@@ -35,7 +35,7 @@ int set_ip_mtu_discover(int fd);
 int get_mtu(int fd);
 int get_mss(int fd);
 
-const char *fg_nameinfo(const struct sockaddr *sa);
+const char *fg_nameinfo(const struct sockaddr *sa, socklen_t salen);
 char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b);
 
 #endif

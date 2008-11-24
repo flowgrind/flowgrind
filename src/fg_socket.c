@@ -329,11 +329,11 @@ int set_so_debug(int fd)
 	return setsockopt(fd, SOL_SOCKET, SO_DEBUG, &opt, sizeof(opt));
 }
 
-const char *fg_nameinfo(const struct sockaddr *sa)
+const char *fg_nameinfo(const struct sockaddr *sa, socklen_t salen)
 {
 	static char host[NI_MAXHOST];
 
-	if (getnameinfo(sa, sizeof(*sa), host, sizeof(host),
+	if (getnameinfo(sa, salen, host, sizeof(host),
 				NULL, 0, NI_NUMERICHOST) != 0) {
 		*host = '\0';
 	}

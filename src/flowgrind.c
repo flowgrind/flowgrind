@@ -621,11 +621,11 @@ void shutdown_logfile()
 void log_output(const char *msg)
 {
 	if (!opt.dont_log_stdout) {
-		printf(msg);
+		printf("%s", msg);
 		fflush(stdout);
 	}
 	if (!opt.dont_log_logfile) {
-		fprintf(log_stream, msg);
+		fprintf(log_stream, "%s", msg);
 		fflush(log_stream);
 	}
 }
@@ -1358,7 +1358,7 @@ double flow_interpacket_delay(int id)
 {
 	double delay = 0;
 
-	DEBUG_MSG(5, "flow %d has rate %u", id, flow[id].rate);
+	DEBUG_MSG(5, "flow %d has rate %u", id, flow[id].endpoint_options[SOURCE].rate);
 	if (flow[id].endpoint_options[SOURCE].poisson_distributed) {
 		double urand = (double)((random()+1.0)/(RANDOM_MAX+1.0));
 		double erand = -log(urand) * 1/(double)flow[id].endpoint_options[SOURCE].rate;
@@ -1937,7 +1937,7 @@ void prepare_flow(int id)
 	read_greeting(flow[id].sock_control);
 
 	to_write = snprintf(buf, sizeof(buf),
-			"%s,t,%s,%hu,%hhd,%hhd,%u,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+",
+			"%s,t,%s,%hu,%hhd,%hhd,%u,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd,%hdd+",
 			FLOWGRIND_PROT_CALLSIGN FLOWGRIND_PROT_SEPERATOR FLOWGRIND_PROT_VERSION,
 			flow[id].server_name_control,
 			(opt.base_port ? opt.base_port++ : 0),
@@ -1950,7 +1950,8 @@ void prepare_flow(int id)
 			flow[id].endpoint_options[DESTINATION].block_size,
 			flow[id].pushy,
 			flow[id].shutdown,
-			flow[id].endpoint_options[DESTINATION].route_record
+			flow[id].endpoint_options[DESTINATION].route_record,
+			(char)sizeof(flow[id].reply_block)
 			);
 	DEBUG_MSG(1, "proposal: %s", buf);
 	write_proposal(flow[id].sock_control, buf, to_write);

@@ -37,8 +37,74 @@
 #include <float.h>
 #endif
 
-struct timeval start;
-struct timeval end;
+#define	MAX_FLOWS	256
+
+enum flow_state
+{
+	WRITE_GREETING,
+	READ_PROPOSAL,
+	WRITE_REPLY,
+	GRIND_WAIT_ACCEPT,
+	GRIND
+};
+
+struct _flow
+{
+	enum flow_state state;
+
+	int fd_control;
+	int listenfd;
+	int fd;
+
+	struct timeval start;
+	struct timeval end;
+	struct timeval start_timestamp;
+	struct timeval stop_timestamp;
+	struct timeval last_block_read;
+
+	double delay;
+	double duration;
+
+	void* control_send_buffer;
+	unsigned int control_send_buffer_len;
+	unsigned int control_send_buffer_pos;
+
+	char control_read_buffer[1024];
+	unsigned int control_read_buffer_pos;
+
+	char *read_block;
+	unsigned read_block_size;
+	unsigned read_block_bytes_read;
+
+	char *write_block;
+	unsigned write_block_size;
+	unsigned write_block_bytes_written;
+
+	unsigned short requested_server_test_port;
+
+	unsigned requested_send_buffer_size;
+	unsigned requested_receive_buffer_size;
+	unsigned real_listen_send_buffer_size;
+	unsigned real_listen_receive_buffer_size;
+
+	char advstats;
+	char so_debug;
+	char route_record;
+	char pushy;
+	char server_shutdown;
+
+	char reply_block_length;
+
+	char got_eof;
+
+	socklen_t addrlen;
+} flows[MAX_FLOWS];
+
+unsigned int num_flows = 0;
+
+fd_set rfds, wfds, efds;
+
+int listenfd, maxfd;
 
 #define ACL_ALLOW	1
 #define ACL_DENY	0
@@ -238,88 +304,221 @@ sighandler(int sig)
 	}
 }
 
-void
-log_client_address(const struct sockaddr *sa)
-{
-	logging_log(LOG_NOTICE, "connection from %s", fg_nameinfo(sa));
+void prepare_fds() {
+	FD_ZERO(&rfds);
+	FD_ZERO(&wfds);
+
+	FD_SET(listenfd, &rfds);
+	maxfd = listenfd;
+
+	for (unsigned int i = 0; i < num_flows; i++) {
+		struct _flow *flow = &flows[i];
+
+		FD_SET(flow->fd_control, &rfds);
+		FD_SET(flow->fd_control, &efds);
+		if (flow->state == WRITE_GREETING || flow->state == WRITE_REPLY || (flow->state == GRIND && flow->control_send_buffer))
+			FD_SET(flow->fd_control, &wfds);
+		if (flow->state == GRIND_WAIT_ACCEPT && flow->listenfd != -1) {
+			FD_SET(flow->listenfd, &rfds);
+			maxfd = MAX(maxfd, flow->listenfd);
+		}
+		if (flow->fd != -1) {
+			if (!flow->got_eof)
+				FD_SET(flow->fd, &rfds);
+			if (flow->duration != 0)
+				FD_SET(flow->fd, &wfds);
+			FD_SET(flow->fd, &efds);
+			maxfd = MAX(maxfd, flow->fd);
+		}
+		maxfd = MAX(maxfd, flow->fd_control);
+	}
 }
 
-void tcp_test(int fd_control, char *proposal)
+void log_client_address(const struct sockaddr *sa, socklen_t salen)
 {
+	logging_log(LOG_NOTICE, "connection from %s", fg_nameinfo(sa, salen));
+}
+
+void init_flow(unsigned int i, int fd_control)
+{
+	flows[i].state = WRITE_GREETING;
+	flows[i].fd_control = fd_control;
+	flows[i].listenfd = -1;
+	flows[i].control_send_buffer = malloc(sizeof(FLOWGRIND_PROT_GREETING) - 1);
+	memcpy(flows[i].control_send_buffer, FLOWGRIND_PROT_GREETING, sizeof(FLOWGRIND_PROT_GREETING) - 1);
+	flows[i].control_send_buffer_pos = 0;
+	flows[i].control_send_buffer_len = sizeof(FLOWGRIND_PROT_GREETING) - 1;
+	flows[i].fd = -1;
+
+	flows[i].read_block = 0;
+	flows[i].read_block_bytes_read = 0;
+	flows[i].write_block = 0;
+	flows[i].write_block_bytes_written = 0;
+
+	flows[i].last_block_read.tv_sec = 0;
+	flows[i].last_block_read.tv_usec = 0;
+
+	flows[i].got_eof = 0;
+}
+
+void uninit_flow(struct _flow *flow)
+{
+	if (flow->fd_control != -1)
+		close(flow->fd_control);
+	if (flow->listenfd != -1)
+		close(flow->listenfd);
+	if (flow->fd != -1)
+		close(flow->fd);
+	if (flow->control_send_buffer)
+		free(flow->control_send_buffer);
+	if (flow->read_block)
+		free(flow->read_block);
+	if (flow->write_block)
+		free(flow->write_block);
+}
+
+void accept_control()
+{
+	int fd_control;
+
+	struct sockaddr_storage caddr;
+	socklen_t addrlen = sizeof(caddr);
+
+	fd_control = accept(listenfd, (struct sockaddr *)&caddr, &addrlen);
+	if (fd_control == -1) {
+		if (errno != EINTR) {
+			logging_log(LOG_WARNING, "accept(): failed, "
+				"continuing");
+		}
+		return;
+	}
+
+	set_non_blocking(fd_control);
+	set_nodelay(fd_control);
+
+	if (num_flows >= MAX_FLOWS) {
+		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
+		close(fd_control);
+		return;
+	}
+
+	if (acl_check((struct sockaddr *)&caddr) == ACL_DENY) {
+		logging_log(LOG_WARNING, "Access denied for host %s",
+				fg_nameinfo((struct sockaddr *)&caddr, addrlen));
+		close(fd_control);
+		return;
+	}
+
+	log_client_address((struct sockaddr *)&caddr, addrlen);
+
+	init_flow(num_flows++, fd_control);
+}
+
+int write_control_data(struct _flow *flow)
+{
+	if (!flow->control_send_buffer || flow->control_send_buffer_len <= flow->control_send_buffer_pos) {
+		logging_log(LOG_WARNING, "write_control_data called with nothing to send");
+		return -1;
+	}
+
+	int rc = write(flow->fd_control, flow->control_send_buffer + flow->control_send_buffer_pos,
+			flow->control_send_buffer_len - flow->control_send_buffer_pos);
+
+	if (rc < 0) {
+		if (errno == EAGAIN)
+			return 0;
+		logging_log(LOG_WARNING, "sending control data failed: %s", strerror(errno));
+		return -1;
+	}
+	else if (!rc) {
+		logging_log(LOG_WARNING, "control connection closed");
+		return -1;
+	}
+
+	flow->control_send_buffer_pos += rc;
+	if (flow->control_send_buffer_len == flow->control_send_buffer_pos) {
+		free(flow->control_send_buffer);
+		flow->control_send_buffer = 0;
+		if (flow->state == WRITE_GREETING)
+			flow->state = READ_PROPOSAL;
+		else if (flow->state == WRITE_REPLY)
+			flow->state = GRIND_WAIT_ACCEPT;
+	}
+	return 0;
+}
+
+int process_proposal(struct _flow *flow) {
+
+	DEBUG_MSG(1, "proposal: %s", flow->control_read_buffer);
+
+	int rc;
+	char *buf_ptr;
 	char *server_name;
 	char server_service[7];
+
 	unsigned short server_test_port;
-	unsigned short requested_server_test_port;
-	unsigned requested_send_buffer_size;
-	unsigned real_listen_send_buffer_size;
-	unsigned real_send_buffer_size;
-	unsigned requested_receive_buffer_size;
-	unsigned real_listen_receive_buffer_size;
-	unsigned real_receive_buffer_size;
-
-	char *read_block = NULL;
-	unsigned read_block_size;
-	unsigned read_block_bytes_read = 0;
-
-	char *write_block = NULL;
-	unsigned write_block_size;
-	unsigned write_block_bytes_written = 0;
-
-	char reply_block[sizeof(struct timeval) + sizeof(double)];
-
-	int to_write;
-	char buffer[1024];
-
-	struct timeval now;
-	struct timeval last_block_read = {.tv_sec = 0, .tv_usec = 0};
-	struct timeval flow_start_timestamp;
-	struct timeval flow_stop_timestamp;
-	double flow_delay;
-	double flow_duration;
-	char pushy = 0;
-	char route_record = 0;
-	char server_shutdown = 0;
-	char advstats = 0;
-	char so_debug = 0;
 
 	struct addrinfo hints, *res, *ressave;
 	int on = 1;
-	struct sockaddr_storage caddr;
-	socklen_t addrlen;
 
-	int rc;
-	struct timeval timeout;
-	int listenfd, fd;
-	int maxfd;
-	fd_set rfds, wfds, efds;
-	fd_set rfds_orig, wfds_orig, efds_orig;
-
-	server_name = proposal;
-	if ((proposal = strchr(proposal, ',')) == NULL) {
-		logging_log(LOG_WARNING, "malformed server name in proposal");
-		goto out;
+	buf_ptr = flow->control_read_buffer;
+	rc = memcmp(buf_ptr, FLOWGRIND_PROT_CALLSIGN, sizeof(FLOWGRIND_PROT_CALLSIGN) - 1);
+	if (rc != 0) {
+		logging_log(LOG_WARNING, "malformed callsign, not "
+				"flowgrind connecting?");
+		return -1;
 	}
-	*proposal++ = '\0';
+	buf_ptr += sizeof(FLOWGRIND_PROT_CALLSIGN) - 1;
+	if (*buf_ptr != ',') {
+		logging_log(LOG_WARNING, "callsign not followed by "
+				"seperator");
+		return -1;
+	}
+	buf_ptr++;
+	rc = memcmp(buf_ptr, FLOWGRIND_PROT_VERSION, sizeof(FLOWGRIND_PROT_VERSION) - 1);
+	if (rc != 0) {
+		logging_log(LOG_WARNING, "malformed protocol version");
+		return -1;
+	}
+	buf_ptr += sizeof(FLOWGRIND_PROT_VERSION) - 1;
+	if (*buf_ptr != ',') {
+		logging_log(LOG_WARNING, "protocol version not followed by "
+				"','");
+		return -1;
+	}
+	buf_ptr++;
+	if ((buf_ptr[0] != 't') || (buf_ptr[1] != ',')) {
+		logging_log(LOG_WARNING, "unknown test proposal type");
+		return -1;
+	}
+	buf_ptr += 2;
 
-	rc = sscanf(proposal, "%hu,%hhd,%hhd,%u,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd+",
-			&requested_server_test_port, &advstats, &so_debug,
-			&requested_send_buffer_size, &requested_receive_buffer_size,
-   			&flow_delay, &flow_duration,
-			&read_block_size, &write_block_size, &pushy,
-			&server_shutdown, &route_record);
-	if (rc != 12) {
+	server_name = buf_ptr;
+	if ((buf_ptr = strchr(buf_ptr, ',')) == NULL) {
+		logging_log(LOG_WARNING, "malformed server name in proposal");
+		return -1;
+	}
+	*buf_ptr++ = '\0';
+
+	rc = sscanf(buf_ptr, "%hu,%hhd,%hhd,%u,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd, %hhdz+",
+			&flow->requested_server_test_port, &flow->advstats, &flow->so_debug,
+			&flow->requested_send_buffer_size, &flow->requested_receive_buffer_size,
+			&flow->delay, &flow->duration,
+			&flow->read_block_size, &flow->write_block_size, &flow->pushy,
+			&flow->server_shutdown, &flow->route_record, &flow->reply_block_length);
+	if (rc != 13) {
 		logging_log(LOG_WARNING, "malformed TCP session "
 			"proposal from client");
-		goto out;
+		return -1;
 	}
 	snprintf(server_service, sizeof(server_service), "%hu",
-			requested_server_test_port);
+			flow->requested_server_test_port);
 
-	write_block = calloc(1, write_block_size);
-	read_block = calloc(1, read_block_size);
-	if (write_block == NULL || read_block == NULL) {
+	flow->write_block = calloc(1, flow->write_block_size);
+	flow->read_block = calloc(1, flow->read_block_size);
+	if (flow->write_block == NULL || flow->read_block == NULL) {
 		logging_log(LOG_ALERT, "could not allocate memory");
-		goto out;
+		return -1;
 	}
 
 	/* Create socket for client to send test data to. */
@@ -333,47 +532,50 @@ void tcp_test(int fd_control, char *proposal)
 		logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n",
 			gai_strerror(rc));
 		/* XXX: Be nice and tell client. */
-		goto out_free;
+		return -1;
 	}
 
 	ressave = res;
 
 	do {
-		listenfd = socket(res->ai_family, res->ai_socktype,
+		flow->listenfd = socket(res->ai_family, res->ai_socktype,
 			res->ai_protocol);
-		if (listenfd < 0)
+		if (flow->listenfd < 0)
 			continue;
 
 		/* XXX: Do we need this? */
-		if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
+		if (setsockopt(flow->listenfd, SOL_SOCKET, SO_REUSEADDR,
 					(char *)&on, sizeof(on)) == -1) {
 			logging_log(LOG_ALERT, "setsockopt(SO_REUSEADDR): "
 					"failed, continuing: %s",
 					strerror(errno));
 		}
 
-		if (bind(listenfd, res->ai_addr, res->ai_addrlen) == 0)
+		if (bind(flow->listenfd, res->ai_addr, res->ai_addrlen) == 0)
 			break;
 
-		close(listenfd);
+		close(flow->listenfd);
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
+		freeaddrinfo(ressave);
 		logging_log(LOG_ALERT, "failed to create listen socket");
-		goto out_free;
+		return -1;
 	}
 
-	if (listen(listenfd, 0) < 0) {
+	if (listen(flow->listenfd, 0) < 0) {
+		freeaddrinfo(ressave);
 		logging_log(LOG_ALERT, "listen failed: %s",
 				strerror(errno));
-		goto out_free;
+		return -1;
 	}
 
-	rc = getsockname(listenfd, res->ai_addr, &(res->ai_addrlen));
+	rc = getsockname(flow->listenfd, res->ai_addr, &(res->ai_addrlen));
 	if (rc == -1) {
+		freeaddrinfo(ressave);
 		logging_log(LOG_ALERT, "getsockname() failed: %s",
 				strerror(errno));
-		goto out_free;
+		return -1;
 	}
 	switch (res->ai_addr->sa_family) {
 	case AF_INET:
@@ -387,306 +589,316 @@ void tcp_test(int fd_control, char *proposal)
 		break;
 
 	default:
+		freeaddrinfo(ressave);
 		logging_log(LOG_ALERT, "Unknown address family.");
-		goto out_free;
+		return -1;
 
 	}
 
-	addrlen = res->ai_addrlen;
+	flow->addrlen = res->ai_addrlen;
 	freeaddrinfo(ressave);
 
-	real_listen_send_buffer_size = set_window_size_directed(listenfd, requested_send_buffer_size, SO_SNDBUF);
-	real_listen_receive_buffer_size = set_window_size_directed(listenfd, requested_receive_buffer_size, SO_RCVBUF);
+	flow->real_listen_send_buffer_size = set_window_size_directed(flow->listenfd, flow->requested_send_buffer_size, SO_SNDBUF);
+	flow->real_listen_receive_buffer_size = set_window_size_directed(flow->listenfd, flow->requested_receive_buffer_size, SO_RCVBUF);
 	/* XXX: It might be too brave to report the window size of the listen
 	 * socket to the client as the window size of test socket might differ
 	 * from the reported one. Close the socket in that case. */
-	to_write = snprintf(buffer, sizeof(buffer), "%u,%u,%u+", server_test_port,
-			real_listen_send_buffer_size, real_listen_receive_buffer_size);
-	DEBUG_MSG(1, "proposal reply: %s", buffer);
-	rc = write_exactly(fd_control, buffer, (size_t) to_write);
 
-	/* Wait for client to connect. */
-	alarm(10);
-	fd = accept(listenfd, (struct sockaddr *)&caddr, &addrlen);
-	alarm(0);
-	if (fd == -1) {
-		if (errno == EINTR)
-			logging_log(LOG_ALERT, "client did not connect().");
-		else
-			logging_log(LOG_ALERT, "accept() failed.");
-		goto out_free;
+	flow->control_send_buffer = malloc(1024);
+	flow->control_send_buffer_len = snprintf(flow->control_send_buffer, 1024, "%u,%u,%u+", server_test_port,
+			flow->real_listen_send_buffer_size, flow->real_listen_receive_buffer_size);
+	DEBUG_MSG(1, "proposal reply: %s", (char*)flow->control_send_buffer);
+	flow->control_send_buffer_pos = 0;
+
+	flow->state = WRITE_REPLY;
+
+	return 0;
+}
+
+int read_control_data(struct _flow *flow)
+{
+	int rc = recv(flow->fd_control, flow->control_read_buffer + flow->control_read_buffer_pos,
+			sizeof(flow->control_read_buffer) - flow->control_read_buffer_pos, 0);
+
+	if (rc < 0) {
+		if (errno == EAGAIN)
+			return 0;
+		logging_log(LOG_WARNING, "sending control data failed: %s", strerror(errno));
+		return -1;
+	}
+	else if (!rc) {
+		logging_log(LOG_WARNING, "control connection closed");
+		return -1;
+	}
+
+	switch (flow->state) {
+	case READ_PROPOSAL:
+		flow->control_read_buffer_pos += rc;
+		if (flow->control_read_buffer[flow->control_read_buffer_pos - 1] == '+') {
+			// We've got the proposal
+			rc = process_proposal(flow);
+
+			flow->control_read_buffer_pos = 0;
+			return rc;
+		}
+		else if (flow->control_read_buffer_pos == sizeof(flow->control_read_buffer)) {
+			logging_log(LOG_WARNING, "too much incoming data on control connection");
+			return -1;
+		}
+	default:
+		logging_log(LOG_WARNING, "client sent unexpected data on control connection, discarding");
+		break;
+	}
+
+	return 0;
+}
+
+int accept_data(struct _flow *flow)
+{
+	struct sockaddr_storage caddr;
+
+	unsigned real_send_buffer_size;
+	unsigned real_receive_buffer_size;
+
+	flow->fd = accept(flow->listenfd, (struct sockaddr *)&caddr, &flow->addrlen);
+	if (flow->fd == -1) {
+		if (errno == EINTR || errno == EAGAIN)
+		{
+			// TODO: Accept timeout
+			// logging_log(LOG_ALERT, "client did not connect().");
+			return 0;
+		}
+		
+		logging_log(LOG_ALERT, "accept() failed: %s", strerror(errno));
+		return -1;
 	}
 	/* XXX: Check if this is the same client. */
-	if (close(listenfd) == -1)
+	if (close(flow->listenfd) == -1)
 		logging_log(LOG_WARNING, "close(): failed");
+	flow->listenfd = -1;
 
 	logging_log(LOG_NOTICE, "client %s connected for testing.",
-			fg_nameinfo((struct sockaddr *)&caddr));
-	real_send_buffer_size = set_window_size_directed(fd, requested_send_buffer_size, SO_SNDBUF);
-	if (requested_server_test_port &&
-			real_listen_send_buffer_size != real_send_buffer_size) {
+			fg_nameinfo((struct sockaddr *)&caddr, flow->addrlen));
+	real_send_buffer_size = set_window_size_directed(flow->fd, flow->requested_send_buffer_size, SO_SNDBUF);
+	if (flow->requested_server_test_port &&
+			flow->real_listen_send_buffer_size != real_send_buffer_size) {
 		logging_log(LOG_WARNING, "Failed to set send buffer size of test "
 				"socket to send buffer size size of listen socket "
 				"(listen = %u, test = %u).",
-				real_listen_send_buffer_size, real_send_buffer_size);
-		goto out_free;
+				flow->real_listen_send_buffer_size, real_send_buffer_size);
+		return -1;
 	}
-	real_receive_buffer_size = set_window_size_directed(fd, requested_receive_buffer_size, SO_RCVBUF);
-	if (requested_server_test_port &&
-			real_listen_receive_buffer_size != real_receive_buffer_size) {
+	real_receive_buffer_size = set_window_size_directed(flow->fd, flow->requested_receive_buffer_size, SO_RCVBUF);
+	if (flow->requested_server_test_port &&
+			flow->real_listen_receive_buffer_size != real_receive_buffer_size) {
 		logging_log(LOG_WARNING, "Failed to set receive buffer size (advertised window) of test "
 				"socket to receive buffer size of listen socket "
 				"(listen = %u, test = %u).",
-				real_listen_receive_buffer_size, real_receive_buffer_size);
-		goto out_free;
+				flow->real_listen_receive_buffer_size, real_receive_buffer_size);
+		return -1;
 	}
-	if (route_record)
-		set_route_record(fd);
-	if (advstats)
-		fg_pcap_go(fd);
-	if (so_debug && set_so_debug(fd)) {
+	if (flow->route_record)
+		set_route_record(flow->fd);
+	if (flow->advstats)
+		fg_pcap_go(flow->fd);
+	if (flow->so_debug && set_so_debug(flow->fd)) {
 		logging_log(LOG_WARNING, "Unable to set SO_DEBUG on test socket: %s",
 				  strerror(errno));
 	}
 
-	set_non_blocking(fd);
-	set_non_blocking(fd_control);
-	set_nodelay(fd_control);
+	set_non_blocking(flow->fd);
 
-	tsc_gettimeofday(&start);
-	flow_start_timestamp = start;
-	time_add(&flow_start_timestamp, flow_delay);
-	if (flow_duration >= 0) {
-		flow_stop_timestamp = flow_start_timestamp;
-		time_add(&flow_stop_timestamp, flow_duration);
+	tsc_gettimeofday(&flow->start);
+	flow->start_timestamp = flow->start;
+	time_add(&flow->start_timestamp, flow->delay);
+	if (flow->duration >= 0) {
+		flow->stop_timestamp = flow->start_timestamp;
+		time_add(&flow->stop_timestamp, flow->duration);
 	}
 
-	FD_ZERO(&rfds_orig);
-	FD_ZERO(&wfds_orig);
-	FD_ZERO(&efds_orig);
+	DEBUG_MSG(1, "The grind can begin");
+	flow->state = GRIND;
 
-	FD_SET(fd_control, &rfds_orig);
-	FD_SET(fd_control, &efds_orig);
-	FD_SET(fd, &rfds_orig);
-	if (flow_duration != 0)
-		FD_SET(fd, &wfds_orig);
-	FD_SET(fd, &efds_orig);
-	maxfd = MAX(fd_control, fd);
+	return 0;
+}
 
+int write_data(struct _flow *flow)
+{
+	struct timeval now;
+	int rc;
+
+	DEBUG_MSG(5, "test sock in wfds");
+
+	tsc_gettimeofday(&now);
+
+	if (!time_is_after(&now, &flow->start_timestamp) ||
+			(flow->duration >= 0 && !time_is_after(&flow->stop_timestamp, &now)))
+		return 0;
+
+	/* Read comment in write_test_data in flowgrind.c why this loop is needed */
 	for (;;) {
-		rfds = rfds_orig;
-		wfds = wfds_orig;
-		efds = efds_orig;
+		if (flow->write_block_bytes_written == 0)
+			tsc_gettimeofday((struct timeval *)flow->write_block);
+		rc = send(flow->fd, flow->write_block +
+				flow->write_block_bytes_written,
+				flow->write_block_size -
+				flow->write_block_bytes_written, 0);
+		if (rc == -1) {
+			if (errno == EAGAIN)
+				break;
+			logging_log(LOG_WARNING, "Premature end of test: %s",
+				strerror(errno));
+			return -1;
+		} else if (rc == 0)
+			break;
+		DEBUG_MSG(4, "sent %u bytes", rc);
+		flow->write_block_bytes_written += rc;
+		if (flow->write_block_bytes_written >=
+				flow->write_block_size) {
+			assert(flow->write_block_bytes_written =
+					flow->write_block_size);
+			flow->write_block_bytes_written = 0;
+		}
+		if (!flow->pushy)
+			break;
+	}
+
+	return 0;
+}
+
+int read_data(struct _flow *flow)
+{
+	struct timeval now;
+	int rc;
+
+	tsc_gettimeofday(&now);
+
+	DEBUG_MSG(5, "test sock in rfds");
+	for (;;) {
+		rc = recv(flow->fd, flow->read_block+flow->read_block_bytes_read,
+			flow->read_block_size -
+				flow->read_block_bytes_read, 0);
+		if (rc == -1) {
+			if (errno == EAGAIN)
+				break;
+			logging_log(LOG_WARNING, "Premature "
+				"end of test: %s",
+				strerror(errno));
+			return -1;
+		} else if (rc == 0) {
+			DEBUG_MSG(1, "client shut down flow");
+			flow->got_eof = 1;
+			return 0;
+		}
+		DEBUG_MSG(4, "received %d bytes "
+			"(in flow->read_block already = %u)",
+			rc, flow->read_block_bytes_read);
+		flow->read_block_bytes_read += rc;
+		if (flow->read_block_bytes_read >= flow->read_block_size) {
+			double *iat_ptr = (double *)(flow->read_block
+				+ flow->reply_block_length - sizeof(double));
+			assert(flow->read_block_bytes_read ==
+				flow->read_block_size);
+			flow->read_block_bytes_read = 0;
+			if (flow->read_block_size <
+					flow->reply_block_length)
+				continue;
+			if (flow->last_block_read.tv_sec == 0 &&
+				flow->last_block_read.tv_usec == 0) {
+				*iat_ptr = NAN;
+				DEBUG_MSG(5, "isnan = %d",
+					isnan(*iat_ptr));
+			} else
+				*iat_ptr = time_diff_now(
+					&flow->last_block_read);
+			tsc_gettimeofday(&flow->last_block_read);
+			rc = write(flow->fd_control, flow->read_block,
+					flow->reply_block_length);
+			if (rc == -1) {
+				if (errno == EAGAIN) {
+					logging_log(LOG_WARNING,
+						"congestion on "
+						"control connection, "
+						"dropping reply block");
+					continue;
+				}
+				logging_log(LOG_WARNING,
+					"Premature end of test: %s",
+					strerror(errno));
+				return -1;
+			}
+			DEBUG_MSG(4, "sent reply block (IAT = "
+				"%.3lf)", (isnan(*iat_ptr) ?
+					NAN : (*iat_ptr) * 1e3));
+			}
+		if (!flow->pushy)
+			break;
+	}
+
+	return 0;
+}
+
+void grind_flows()
+{
+	struct timeval timeout;
+	for (;;) {
+		prepare_fds();
 
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100000;
 
-		rc = select(maxfd + 1, &rfds, &wfds, &efds, &timeout);
-		DEBUG_MSG(4, "select() returned (rc = %d)", rc);
-
+		int rc = select(maxfd + 1, &rfds, &wfds, &efds, &timeout);
 		if (rc < 0) {
+			if (errno == EINTR)
+				continue;
 			error(ERR_FATAL, "select() failed: %s",
 					strerror(errno));
+			exit(1);
 		}
+		if (FD_ISSET(listenfd, &rfds))
+			accept_control();
 
-		tsc_gettimeofday(&now);
+		unsigned int i = 0;
+		while (i < num_flows) {
+			struct _flow *flow = &flows[i];
 
-		if (FD_ISSET(fd, &rfds)) {
-			DEBUG_MSG(5, "test sock in rfds");
-			for (;;) {
-				rc = recv(fd, read_block+read_block_bytes_read,
-					read_block_size -
-						read_block_bytes_read, 0);
-				if (rc == -1) {
-					if (errno == EAGAIN)
-						break;
-					logging_log(LOG_WARNING, "Premature "
-						"end of test: %s",
-						strerror(errno));
-					goto out_free;
-				} else if (rc == 0) {
-					DEBUG_MSG(1, "client shut down flow");
-					FD_CLR(fd, &rfds_orig);
-					break;
-				}
-				DEBUG_MSG(4, "received %d bytes "
-					"(in read_block already = %u)",
-					rc, read_block_bytes_read);
-				read_block_bytes_read += rc;
-				if (read_block_bytes_read >= read_block_size) {
-					double *iat_ptr = (double *)(read_block
-						+ sizeof(struct timeval));
-					assert(read_block_bytes_read ==
-						read_block_size);
-					read_block_bytes_read = 0;
-					if (read_block_size <
-							sizeof(reply_block))
-						continue;
-					if (last_block_read.tv_sec == 0 &&
-						last_block_read.tv_usec == 0) {
-						*iat_ptr = NAN;
-						DEBUG_MSG(5, "isnan = %d",
-							isnan(*iat_ptr));
-					} else
-						*iat_ptr = time_diff_now(
-							&last_block_read);
-					tsc_gettimeofday(&last_block_read);
-					rc = write(fd_control, read_block,
-							sizeof(reply_block));
-					if (rc == -1) {
-						if (errno == EAGAIN) {
-							logging_log(LOG_WARNING,
-								"congestion on "
-								"control connection, "
-								"dropping reply block");
-							continue;
-						}
-						logging_log(LOG_WARNING,
-							"Premature end of test: %s",
-							strerror(errno));
-						goto out_free;
-					}
-					DEBUG_MSG(4, "sent reply block (IAT = "
-						"%.3lf)", (isnan(*iat_ptr) ?
-							NAN : (*iat_ptr) * 1e3));
-				}
-				if (!pushy)
-					break;
-			}
-		}
+			if (FD_ISSET(flow->fd_control, &wfds))
+				rc = write_control_data(flow);
+			if (rc >= 0 && FD_ISSET(flow->fd_control, &rfds))
+				rc = read_control_data(flow);
+			if (rc >= 0 && flow->listenfd != -1 && FD_ISSET(flow->listenfd, &rfds))
+				rc = accept_data(flow);
+			if (rc >= 0 && flow->fd != -1 && FD_ISSET(flow->fd, &wfds))
+				rc = write_data(flow);
+			if (rc >= 0 && flow->fd != -1 && FD_ISSET(flow->fd, &rfds))
+				rc = read_data(flow);
 
-		if (FD_ISSET(fd_control, &rfds)) {
-			char buffer[1024];
-			DEBUG_MSG(5, "control sock in rfds");
-			rc = recv(fd_control, buffer, sizeof(buffer), 0);
-			if (rc == -1 && errno != EAGAIN) {
-				logging_log(LOG_WARNING, "premature end of "
-						"test: %s", strerror(errno));
-				goto out_free;
-			} else if (rc == 0) {
-				DEBUG_MSG(1, "client shut down control connection");
-				FD_CLR(fd_control, &rfds_orig);
-				goto out_free;
-			} else
-				logging_log(LOG_WARNING, "client send unexpected data on control connection");
-		}
+			if (rc >= 0) {
+				struct timeval now;
+				tsc_gettimeofday(&now);
 
-		if (FD_ISSET(fd, &wfds)) {
-			DEBUG_MSG(5, "test sock in wfds");
-			if (time_is_after(&now, &flow_start_timestamp) &&
-					(flow_duration < 0 || time_is_after(&flow_stop_timestamp, &now))) {
-				for (;;) {
-					if (write_block_bytes_written == 0)
-						tsc_gettimeofday((struct timeval *)write_block);
-					rc = send(fd, write_block +
-							write_block_bytes_written,
-							write_block_size -
-							write_block_bytes_written, 0);
-					if (rc == -1 && errno != EAGAIN) {
-						logging_log(LOG_WARNING, "Premature end of test: %s",
-								strerror(errno));
-						goto out_free;
-					} else if (rc == 0)
-						break;
-					DEBUG_MSG(4, "sent %u bytes", rc);
-					write_block_bytes_written += rc;
-					if (write_block_bytes_written >=
-							write_block_size) {
-						assert(write_block_bytes_written =
-								write_block_size);
-						write_block_bytes_written = 0;
-					}
-					if (!pushy)
-						break;
-				}
-			}
-		}
-
-		if (server_shutdown &&
-				time_is_after(&now, &flow_stop_timestamp)) {
-			DEBUG_MSG(4, "shutting down data connection.");
-			rc = shutdown(fd, SHUT_WR);
-			if (rc == -1) {
-				logging_log(LOG_WARNING, "shutdown "
+				if (flow->server_shutdown &&
+					time_is_after(&now, &flow->stop_timestamp)) {
+					DEBUG_MSG(4, "shutting down data connection.");
+					if (shutdown(flow->fd, SHUT_WR) == -1) {
+						logging_log(LOG_WARNING, "shutdown "
 						"failed: %s", strerror(errno));
+					}
+				fg_pcap_dispatch();
 			}
+
+			}
+			if (rc < 0) {
+				// Flow has ended
+				uninit_flow(flow);
+				for (unsigned int j = i; j < num_flows - 1; j++)
+					flows[j] = flows[j + 1];
+				num_flows--;
+			}
+			else
+				i++;
 		}
-		fg_pcap_dispatch();
 	}
-
-out_free:
-	free(read_block);
-	free(write_block);
-out:
-	return;
-}
-
-
-void
-serve_client(int fd_control)
-{
-	int rc;
-	char buffer[1024];
-	char *buf_ptr;
-
-	rc = write_exactly(fd_control, FLOWGRIND_PROT_GREETING,
-			sizeof(FLOWGRIND_PROT_GREETING) - 1);
-	if (rc == -1) {
-		logging_log(LOG_WARNING, "write(greeting) failed");
-		goto log;
-	}
-
-	rc = read_until_plus(fd_control, buffer, sizeof(buffer));
-	if (rc == -1) {
-		logging_log(LOG_NOTICE, "could not read session proposal");
-		goto log;
-	}
-	DEBUG_MSG(1, "proposal: %s", buffer);
-
-	buf_ptr = buffer;
-	rc = memcmp(buf_ptr, FLOWGRIND_PROT_CALLSIGN, sizeof(FLOWGRIND_PROT_CALLSIGN) - 1);
-	if (rc != 0) {
-		logging_log(LOG_WARNING, "malformed callsign, not "
-				"flowgrind connecting?");
-		goto log;
-	}
-	buf_ptr += sizeof(FLOWGRIND_PROT_CALLSIGN) - 1;
-	if (*buf_ptr != ',') {
-		logging_log(LOG_WARNING, "callsign not followed by "
-				"seperator");
-		goto log;
-	}
-	buf_ptr++;
-	rc = memcmp(buf_ptr, FLOWGRIND_PROT_VERSION, sizeof(FLOWGRIND_PROT_VERSION) - 1);
-	if (rc != 0) {
-		logging_log(LOG_WARNING, "malformed protocol version");
-		goto log;
-	}
-	buf_ptr += sizeof(FLOWGRIND_PROT_VERSION) - 1;
-	if (*buf_ptr != ',') {
-		logging_log(LOG_WARNING, "protocol version not followed by "
-				"','");
-		goto log;
-	}
-	buf_ptr++;
-	if ((buf_ptr[0] == 't') && (buf_ptr[1] == ',')) {
-		buf_ptr += 2;
-		tcp_test(fd_control, buf_ptr);
-		return;
-	}
-	else {
-		logging_log(LOG_WARNING, "unknown test proposal type");
-		goto log;
-	}
-
- log:
-	if (start.tv_sec == 0 && start.tv_usec == 0) {
-		logging_log(LOG_NOTICE, "nothing transfered");
-		return;
-	}
-
-	if (close(fd_control) == -1)
-		logging_log(LOG_WARNING, "close(): failed");
 }
 
 int
@@ -695,10 +907,9 @@ main(int argc, char *argv[])
 	unsigned port = DEFAULT_LISTEN_PORT;
 	char service[7];
 	int on = 1;
-	int listenfd, rc;
+	int rc;
 	struct addrinfo hints, *res, *ressave;
-	socklen_t addrlen, len;
-	struct sockaddr_storage caddr;
+	socklen_t addrlen;
 	int ch;
 	int argcorig = argc;
 	struct sigaction sa;
@@ -823,48 +1034,6 @@ main(int argc, char *argv[])
 	logging_log(LOG_NOTICE, "flowgrind daemonized, listening on port %u",
 			port);
 
-	for (;;) {
-		int fd_control, pid;
-		len = addrlen;
-
-		fd_control = accept(listenfd, (struct sockaddr *)&caddr, &len);
-		if (fd_control == -1) {
-			if (errno != EINTR) {
-				logging_log(LOG_WARNING, "accept(): failed, "
-					"continuing");
-			}
-			continue;
-		}
-
-		if (acl_check((struct sockaddr *)&caddr) == ACL_DENY) {
-			logging_log(LOG_WARNING, "Access denied for host %s",
-					fg_nameinfo((struct sockaddr *)&caddr));
-			close(fd_control);
-			continue;
-		}
-
-		pid = fork();
-		switch (pid) {
-		case 0:
-			close(listenfd);
-			/* FIXME if caddr is overwritten by accept in parent
-                           is this change visible in child? */
-			log_client_address((struct sockaddr *)&caddr);
-			serve_client(fd_control);
-			fg_pcap_shutdown();
-			logging_exit();
-			_exit(0);
-			/* NOTREACHED */
-
-		case -1:
-			logging_log(LOG_ERR, "fork(): failed, closing "
-						"connection");
-			close(fd_control);
-			break;
-
-		default:
-			close(fd_control);
-			break;
-		}
-	}
+	// Enter the main select loop
+	grind_flows();
 }
