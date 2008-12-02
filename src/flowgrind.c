@@ -842,7 +842,8 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 void report_final(void)
 {
 	int id = 0;
-	double thruput = 0.0;
+	double thruput_read = 0.0;
+	double thruput_written = 0.0;
 	char header_buffer[300] = "";
 	char header_nibble[300] = "";
 #ifdef __LINUX__
@@ -870,17 +871,25 @@ void report_final(void)
 	//possible correction
 	//		guess_topology(get_mss(flow[id].sock), get_mtu(flow[id].sock))
 			);
-		if (flow[id].stopped)
-			thruput = flow[id].bytes_written_since_first
+		if (flow[id].stopped) {
+			thruput_read = flow[id].bytes_read_since_first
 				/ time_diff(&flow[id].endpoint_options[SOURCE].flow_start_timestamp,
 						&flow[id].stopped_timestamp);
-		else
-			thruput = flow[id].bytes_written_since_first /
+			thruput_written = flow[id].bytes_written_since_first
+				/ time_diff(&flow[id].endpoint_options[SOURCE].flow_start_timestamp,
+						&flow[id].stopped_timestamp);
+		}
+		else {
+			thruput_read = flow[id].bytes_read_since_first /
 				flow[id].endpoint_options[SOURCE].flow_duration;
-		thruput = scale_thruput(thruput);
+			thruput_written = flow[id].bytes_written_since_first /
+				flow[id].endpoint_options[SOURCE].flow_duration;
+		}
+		thruput_read = scale_thruput(thruput_read);
+		thruput_written = scale_thruput(thruput_written);
 		CATC("sb = %u/%u%s (%u/%u), rb = %u/%u%s (%u/%u), bs = %u/%u\n#delay = %.2fs/%.2fs, "
-				"duration = %.2fs/%.2fs, thruput = %.6fM%c/s "
-				"(%llu blocks)",
+				"duration = %.2fs/%.2fs, thruput = %.6f/%.6fM%c/s "
+				"(%llu/%llu blocks)",
 				flow[id].endpoint_options[SOURCE].send_buffer_size_real,
 				flow[id].endpoint_options[DESTINATION].send_buffer_size_real,
 				(flow[id].endpoint_options[DESTINATION].send_buffer_size ? "" : "(?)"),
@@ -897,8 +906,8 @@ void report_final(void)
 				flow[id].endpoint_options[DESTINATION].flow_delay,
 				flow[id].endpoint_options[SOURCE].flow_duration,
 				flow[id].endpoint_options[DESTINATION].flow_duration,
-				thruput, (opt.mbyte ? 'B' : 'b'),
-				flow[id].write_block_count);
+				thruput_written, thruput_read, (opt.mbyte ? 'B' : 'b'),
+				flow[id].write_block_count, flow[id].read_block_count);
 		if (flow[id].endpoint_options[SOURCE].rate_str)
 			CATC("rate = %s", flow[id].endpoint_options[SOURCE].rate_str);
 		if (flow[id].elcn)
