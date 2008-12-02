@@ -189,6 +189,9 @@ struct _flow {
 	long bytes_written_since_first;
 	long bytes_written_since_last;
 
+	long read_reply_blocks_since_last;
+	long read_reply_blocks_since_first;
+
 	double min_rtt_since_first;
 	double min_rtt_since_last;
 	double max_rtt_since_first;

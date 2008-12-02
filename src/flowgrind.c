@@ -546,6 +546,9 @@ void init_flows_defaults(void)
 		flow[id].bytes_written_since_first = 0;
 		flow[id].bytes_written_since_last = 0;
 
+		flow[id].read_reply_blocks_since_first = 0;
+		flow[id].read_reply_blocks_since_last = 0;
+
 		/* Round trip time */
 		flow[id].min_rtt_since_first = +INFINITY;
 		flow[id].min_rtt_since_last = +INFINITY;
@@ -650,6 +653,8 @@ void process_reply(int id, char *buffer)
 	}
 
 	/* Update statistics for flow. */
+	flow[id].read_reply_blocks_since_last++;
+	flow[id].read_reply_blocks_since_first++;
 
 	/* Round trip times */
 	ASSIGN_MIN(flow[id].min_rtt_since_first, current_rtt);
@@ -727,7 +732,8 @@ void timer_start(void)
 
 void
 print_tcp_report_line(char hash, int id, double time1, double time2,
-		long bytes_written, long bytes_read, double min_rtt,
+		long bytes_written, long bytes_read,
+		long read_reply_blocks,  double min_rtt,
 		double tot_rtt, double max_rtt, double min_iat,
 		double tot_iat, double max_iat
 #ifdef __LINUX__
@@ -738,8 +744,8 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 #endif
 )
 {
-	double avg_rtt = INFINITY;
-	double avg_iat = INFINITY;
+	double avg_rtt;
+	double avg_iat;
 	unsigned blocks_written = 0;
 	char comment_buffer[100] = "(";
 	char report_buffer[4000] = "";
@@ -748,6 +754,15 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 #define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 1) \
 		strncat(comment_buffer, "/", sizeof(comment_buffer)); \
 		strncat(comment_buffer, (s), sizeof(comment_buffer)); }while(0);
+
+	if (read_reply_blocks) {
+		avg_rtt = tot_rtt / (double)(read_reply_blocks);
+		avg_iat = tot_iat / (double)(read_reply_blocks);
+	}
+	else {
+		min_rtt = max_rtt = avg_rtt = INFINITY;
+		min_iat = max_iat = avg_iat = INFINITY;
+	}
 
 	if (flow[id].stopped)
 		COMMENT_CAT("stopped")
@@ -762,15 +777,11 @@ print_tcp_report_line(char hash, int id, double time1, double time2,
 				COMMENT_CAT("o")
 			else
 				COMMENT_CAT("f")
-			min_rtt = max_rtt = avg_rtt = INFINITY;
-			min_iat = max_iat = avg_iat = INFINITY;
 		} else {
 			if (!client_flow_sending(id) && active_flows > 0)
 				COMMENT_CAT("c")
 			else
 				COMMENT_CAT("n")
-			avg_rtt = tot_rtt / (double)(blocks_written);
-			avg_iat = tot_iat / (double)(blocks_written);
 		}
 
 		if (bytes_read == 0) {
@@ -933,6 +944,7 @@ void report_final(void)
 				1, id, flow[id].endpoint_options[SOURCE].flow_delay,
 				flow[id].endpoint_options[SOURCE].flow_duration +
 				flow[id].endpoint_options[SOURCE].flow_delay, 0, 0,
+				0,
 				INFINITY, INFINITY, INFINITY,
 				INFINITY, INFINITY, INFINITY,
 #ifdef __LINUX__
@@ -952,6 +964,7 @@ void report_final(void)
 			time_diff(&timer.start, &flow[id].last_block_written),
 			flow[id].bytes_written_since_first,
 			flow[id].bytes_read_since_first,
+			flow[id].read_reply_blocks_since_first,
 			flow[id].min_rtt_since_first,
 			flow[id].tot_rtt_since_first,
 			flow[id].max_rtt_since_first,
@@ -1188,6 +1201,7 @@ void report_flow(int id)
 			0, id, diff_first_last, diff_first_now,
 			flow[id].bytes_written_since_last,
 			flow[id].bytes_read_since_last,
+			flow[id].read_reply_blocks_since_last,
 			flow[id].min_rtt_since_last,
 			flow[id].tot_rtt_since_last,
 			flow[id].max_rtt_since_last,
@@ -1210,6 +1224,7 @@ void report_flow(int id)
 			flow[id].mtu
 		);
 
+	flow[id].read_reply_blocks_since_last = 0;
 	flow[id].bytes_written_since_last = 0;
 	flow[id].bytes_read_since_last = 0;
 	flow[id].min_rtt_since_last = +INFINITY;
