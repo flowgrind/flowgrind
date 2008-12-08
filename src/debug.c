@@ -18,7 +18,7 @@ inline void decrease_debuglevel()
 inline void increase_debuglevel()
 {
 	debug_level++;
-	printf("DEBUG_LEVEL=%d", debug_level);
+	printf("DEBUG_LEVEL=%d\n", debug_level);
 }
 
 static double time_diff(struct timeval *tv1, struct timeval *tv2)

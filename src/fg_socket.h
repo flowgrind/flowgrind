@@ -38,4 +38,6 @@ int get_mss(int fd);
 const char *fg_nameinfo(const struct sockaddr *sa, socklen_t salen);
 char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b);
 
+int get_port(int fd);
+
 #endif

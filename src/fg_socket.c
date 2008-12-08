@@ -396,3 +396,18 @@ char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 	return 0;
 }
 
+int get_port(int fd)
+{
+	struct sockaddr_storage addr;
+	socklen_t addrlen = sizeof(addr);
+	static char service[NI_MAXSERV];
+
+	if (getsockname(fd, (struct sockaddr*)&addr, &addrlen) != 0)
+		return -1;
+
+	if (getnameinfo((struct sockaddr*)&addr, addrlen, NULL, 0,
+				service, sizeof(service), NI_NUMERICSERV) != 0)
+		return -1;
+
+	return atoi(service);
+}

@@ -5,6 +5,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
 
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
 
@@ -111,5 +112,22 @@ AC_CONFIG_FILES([ \
 	Makefile
 	src/Makefile \
 ])
+
+AC_CHECK_PROG(xmlrpcconfig, xmlrpc-c-config, yes, no)
+
+echo $xmlrpcconfig
+if test "x$xmlrpcconfig" = "xno"; then
+  AC_MSG_ERROR(xmlrpc-c-config not found in path.)
+fi
+
+XMLRPC_C_CLIENT_CFLAGS=`xmlrpc-c-config client --cflags`
+XMLRPC_C_CLIENT_LDADD=`xmlrpc-c-config client --ldadd`
+XMLRPC_C_SERVER_CFLAGS=`xmlrpc-c-config abyss-server --cflags`
+XMLRPC_C_SERVER_LDADD=`xmlrpc-c-config abyss-server --ldadd`
+
+AC_SUBST(XMLRPC_C_CLIENT_CFLAGS)
+AC_SUBST(XMLRPC_C_CLIENT_LDADD)
+AC_SUBST(XMLRPC_C_SERVER_CFLAGS)
+AC_SUBST(XMLRPC_C_SERVER_LDADD)
 
 AC_OUTPUT

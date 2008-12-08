@@ -89,30 +89,21 @@ struct _flow_endpoint {
 	/* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
 
 	/* SO_SNDBUF */
-	unsigned send_buffer_size;
 	unsigned send_buffer_size_real;
 
 	/* SO_RCVBUF */
-	unsigned receive_buffer_size;
 	unsigned receive_buffer_size_real;
 
-	double flow_duration;
-	double flow_delay;
 	struct timeval flow_start_timestamp;
 	struct timeval flow_stop_timestamp;
 	char flow_finished;
 
-	// For one endpoint this is the write block size.
-	// The corresponding read block size is the other endpoint's
-	// block size
-	unsigned block_size;
-
 	char *rate_str;
-	unsigned rate;
-	char poisson_distributed;
 
 	char route_record;
 };
+
+#include "daemon.h"
 
 struct _flow {
 	char *server_name;
@@ -151,7 +142,6 @@ struct _flow {
 	char shutdown;
 	char summarize_only;
 	char two_way;
-	char flow_control;
 	char byte_counting;
 
 	unsigned write_errors;
@@ -209,6 +199,7 @@ struct _flow {
 	// 0 for source
 	// 1 for destination
 	struct _flow_endpoint endpoint_options[2];
+	struct _flow_settings settings[2];
 };
 struct _flow flow[MAX_FLOWS];
 
@@ -236,20 +227,21 @@ static int client_flow_in_delay(int id)
 static int server_flow_sending(int id)
 {
 	return !server_flow_in_delay(id) &&
-		(flow[id].endpoint_options[1].flow_duration < 0 ||
-		 time_diff(&flow[id].endpoint_options[1].flow_stop_timestamp, &now) < 0.0);
+		(flow[id].settings[DESTINATION].duration[WRITE] < 0 ||
+		 time_diff(&flow[id].endpoint_options[DESTINATION].flow_stop_timestamp, &now) < 0.0);
 
 }
 
 static int client_flow_sending(int id)
 {
-	return !client_flow_in_delay(id) && (flow[id].endpoint_options[0].flow_duration < 0
-		 || time_diff(&flow[id].endpoint_options[0].flow_stop_timestamp, &now) < 0);
+	return !client_flow_in_delay(id) &&
+		(flow[id].settings[SOURCE].duration[WRITE] < 0 ||
+		 time_diff(&flow[id].endpoint_options[SOURCE].flow_stop_timestamp, &now) < 0);
 }
 
 static int client_flow_block_scheduled(int id)
 {
-	return !flow[id].endpoint_options[0].rate ||
+	return !flow[id].settings[SOURCE].write_rate ||
 		time_is_after(&now, &flow[id].next_write_block_timestamp);
 }
 

@@ -12,7 +12,7 @@ void increase_debuglevel();
 
 unsigned debug_level;
 
-inline const char *debug_timestamp(void);
+const char *debug_timestamp(void);
 
 #define DEBUG_MSG(message_level, msg, args...) \
         do { \
