@@ -11,6 +11,7 @@
 #include <syslog.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
@@ -91,6 +92,8 @@ static int dispatch_request(struct _request *request, int type)
 		requests_last->next = request;
 		requests_last = request;
 	}
+
+	write(daemon_pipe[1], &type, 1); /* Doesn't matter what we write */
 
 	/* Wait until the daemon thread has processed the request */
 	pthread_cond_wait(&cond, &mutex);
@@ -185,8 +188,9 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	}
 
 	/* Return our result. */
-	ret = xmlrpc_build_value(env, "{s:i}",
-		"flow_id", request->flow_id);
+	ret = xmlrpc_build_value(env, "{s:i,s:s}",
+		"flow_id", request->flow_id,
+		"cc_alg", request->cc_alg);
 
 cleanup:
 	if (request)
@@ -330,10 +334,16 @@ cleanup:
 
 void create_daemon_thread()
 {
-/*	if (pipe(daemon_pipe) == -1) {
+	int flags;
+
+	if (pipe(daemon_pipe) == -1) {
 		fprintf(stderr, "Could not create pipe: %d", errno);
 		exit(1);
-	}*/
+	}
+
+	if ((flags = fcntl(daemon_pipe[0], F_GETFL, 0)) == -1)
+		flags = 0;
+	fcntl(daemon_pipe[0], F_SETFL, flags | O_NONBLOCK);
 
 	pthread_mutex_init(&mutex, NULL);
 

@@ -76,7 +76,7 @@ struct _flow
 	unsigned real_listen_send_buffer_size;
 	unsigned real_listen_receive_buffer_size;
 
-	char got_eof;
+	char finished[2];
 
 	socklen_t addrlen;
 };
@@ -95,10 +95,68 @@ static struct timeval now;
 
 static char started = 0;
 
-void destination_prepare_fds(fd_set *rfds, fd_set *wfds, fd_set *efds, int *maxfd)
+static int flow_in_delay(struct _flow *flow, int direction)
 {
-	for (unsigned int i = 0; i < num_flows; i++) {
-		struct _flow *flow = &flows[i];
+	return time_is_after(&flow->start_timestamp[direction], &now);
+}
+
+static int flow_sending(struct _flow *flow, int direction)
+{
+	return !flow_in_delay(flow, direction) &&
+		(flow->settings.duration[direction] < 0 ||
+		 time_diff(&flow->stop_timestamp[direction], &now) < 0.0);
+}
+
+/*
+static int flow_block_scheduled(struct _flow *flow)
+{
+	return !flow->settings.write_rate ||
+		time_is_after(&now, &flow->next_write_block_timestamp);
+}*/
+
+static void remove_flow(unsigned int i)
+{
+	for (unsigned int j = i; j < num_flows - 1; j++)
+		flows[j] = flows[j + 1];
+	num_flows--;
+	if (!num_flows)
+		started = 0;
+}
+
+static void uninit_flow(struct _flow *flow)
+{
+	if (flow->fd_reply != -1)
+		close(flow->fd_reply);
+	if (flow->listenfd_reply != -1)
+		close(flow->listenfd_reply);
+	if (flow->listenfd_data != -1)
+		close(flow->listenfd_data);
+	if (flow->fd != -1)
+		close(flow->fd);
+	if (flow->read_block)
+		free(flow->read_block);
+	if (flow->write_block)
+		free(flow->write_block);
+}
+
+int destination_prepare_fds(fd_set *rfds, fd_set *wfds, fd_set *efds, int *maxfd)
+{
+	unsigned int i = 0;
+
+	while (i < num_flows) {
+		struct _flow *flow = &flows[i++];
+
+		if (started) {
+			if ((flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(flow, READ) && !flow_sending(flow, READ))) &&
+				(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(flow, WRITE) && !flow_sending(flow, WRITE)))) {
+
+				/* Nothing left to read, nothing left to send */
+				/*get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);*/
+				uninit_flow(flow);
+				remove_flow(--i);
+				continue;
+			}
+		}
 
 		if (flow->fd_reply != -1) {
 			FD_SET(flow->fd_reply, rfds);
@@ -114,14 +172,18 @@ void destination_prepare_fds(fd_set *rfds, fd_set *wfds, fd_set *efds, int *maxf
 			*maxfd = MAX(*maxfd, flow->listenfd_data);
 		}
 		if (flow->fd != -1) {
-			if (!flow->got_eof)
+			if (!flow->finished[READ])
 				FD_SET(flow->fd, rfds);
 			if (flow->settings.duration[WRITE] != 0)
 				FD_SET(flow->fd, wfds);
+			else
+				flow->finished[WRITE] = 1;
 			FD_SET(flow->fd, efds);
 			*maxfd = MAX(*maxfd, flow->fd);
 		}
 	}
+
+	return num_flows;
 }
 
 static void log_client_address(const struct sockaddr *sa, socklen_t salen)
@@ -145,23 +207,7 @@ static void init_flow(struct _flow* flow)
 	flow->last_block_read.tv_sec = 0;
 	flow->last_block_read.tv_usec = 0;
 
-	flow->got_eof = 0;
-}
-
-static void uninit_flow(struct _flow *flow)
-{
-	if (flow->fd_reply != -1)
-		close(flow->fd_reply);
-	if (flow->listenfd_reply != -1)
-		close(flow->listenfd_reply);
-	if (flow->listenfd_data != -1)
-		close(flow->listenfd_data);
-	if (flow->fd != -1)
-		close(flow->fd);
-	if (flow->read_block)
-		free(flow->read_block);
-	if (flow->write_block)
-		free(flow->write_block);
+	flow->finished[READ] = flow->finished[WRITE] = 0;
 }
 
 static int accept_reply(struct _flow *flow)
@@ -448,7 +494,7 @@ static int read_data(struct _flow *flow)
 			return -1;
 		} else if (rc == 0) {
 			DEBUG_MSG(1, "client shut down flow");
-			flow->got_eof = 1;
+			flow->finished[READ] = 1;
 			return 0;
 		}
 		DEBUG_MSG(4, "received %d bytes "
@@ -546,9 +592,7 @@ void destination_process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 remove:
 		// Flow has ended
 		uninit_flow(flow);
-		for (unsigned int j = i; j < num_flows - 1; j++)
-			flows[j] = flows[j + 1];
-		num_flows--;
+		remove_flow(i);
 	}
 }
 

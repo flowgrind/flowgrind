@@ -3,7 +3,7 @@ void *daemon_main(void* ptr);
 pthread_t daemon_thread;
 
 /* Through this pipe we wakeup the thread from select */
-//int daemon_pipe[2];
+extern int daemon_pipe[2];
 
 extern pthread_mutex_t mutex;
 
@@ -96,6 +96,7 @@ struct _request_add_flow_source
 	struct _flow_source_settings source_settings;
 
 	/* The request reply */
+	char cc_alg[256];
 	int flow_id;
 };
 

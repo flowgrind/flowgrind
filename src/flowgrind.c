@@ -639,51 +639,6 @@ void log_output(const char *msg)
 	}
 }
 
-
-void process_reply(int id, char *buffer)
-{
-	/* XXX: There is actually a conversion from
-		network to host byte order needed here!! */
-	struct timeval *sent = (struct timeval *)buffer;
-	double current_rtt;
-	double *current_iat_ptr = (double *)(buffer + sizeof(struct timeval));
-
-	tsc_gettimeofday(&now);
-	current_rtt = time_diff(sent, &now);
-
-
-	if ((!isnan(*current_iat_ptr) && *current_iat_ptr <= 0) || current_rtt <= 0) {
-		DEBUG_MSG(5, "illegal reply_block: isnan = %d, iat = %e, rtt = %e", isnan(*current_iat_ptr), *current_iat_ptr, current_rtt);
-		error(ERR_WARNING, "Found block with illegal round trip time or illegal inter arrival time, ignoring block.");
-		return ;
-	}
-
-	/* Update statistics for flow. */
-	flow[id].read_reply_blocks_since_last++;
-	flow[id].read_reply_blocks_since_first++;
-
-	/* Round trip times */
-	ASSIGN_MIN(flow[id].min_rtt_since_first, current_rtt);
-	ASSIGN_MIN(flow[id].min_rtt_since_last, current_rtt);
-	ASSIGN_MAX(flow[id].max_rtt_since_first, current_rtt);
-	ASSIGN_MAX(flow[id].max_rtt_since_last, current_rtt);
-	flow[id].tot_rtt_since_first += current_rtt;
-	flow[id].tot_rtt_since_last += current_rtt;
-
-	/* Inter arrival times */
-	if (!isnan(*current_iat_ptr)) {
-		ASSIGN_MIN(flow[id].min_iat_since_first, *current_iat_ptr);
-		ASSIGN_MIN(flow[id].min_iat_since_last, *current_iat_ptr);
-		ASSIGN_MAX(flow[id].max_iat_since_first, *current_iat_ptr);
-		ASSIGN_MAX(flow[id].max_iat_since_last, *current_iat_ptr);
-		flow[id].tot_iat_since_first += *current_iat_ptr;
-		flow[id].tot_iat_since_last += *current_iat_ptr;
-	}
-	// XXX: else: check that this only happens once!
-	DEBUG_MSG(4, "processed reply_block of flow %d, (RTT = %.3lfms, IAT = %.3lfms)", id, current_rtt * 1e3, isnan(*current_iat_ptr) ? NAN : *current_iat_ptr * 1e3);
-}
-
-
 void timer_check(void)
 {
 	int id = 0;
@@ -1490,47 +1445,6 @@ void read_test_data(int id)
 	return;
 }
 
-void read_control_data(int id)
-{
-	int rc = 0;
-
-	for (;;) {
-		rc = recv(flow[id].sock_control,
-				flow[id].reply_block +
-				flow[id].reply_block_bytes_read,
-				sizeof(flow[id].reply_block) -
-				flow[id].reply_block_bytes_read, 0);
-		if (rc == -1) {
-			if (errno == EAGAIN)
-				break;
-			error(ERR_WARNING, "Premature end of test: %s",
-					strerror(errno));
-			flow[id].read_errors++;
-			stop_flow(id);
-			return;
-		}
-
-		if (rc == 0) {
-			error(ERR_WARNING, "Premature end of test: server "
-					"shut down control of flow %d.", id);
-			stop_flow(id);
-			return;
-		}
-
-		flow[id].reply_block_bytes_read += rc;
-		if (flow[id].reply_block_bytes_read >=
-				sizeof(flow[id].reply_block)) {
-			process_reply(id, flow[id].reply_block);
-			flow[id].reply_block_bytes_read = 0;
-		} else {
-			DEBUG_MSG(4, "got partial reply_block for flow %d", id);
-		}
-
-	}
-	return;
-}
-
-
 void write_test_data(int id)
 {
 	int rc = 0;
@@ -1879,7 +1793,7 @@ void close_flow(int id)
 	if (getsockopt(flow[id].sock, IPPROTO_TCP, TCP_CONG_MODULE,
 				flow[id].final_cc_alg, &opt_len) == -1) {
 		error(ERR_WARNING, "failed to determine congestion control "
-				"algorihhm for flow %d: %s: ", id,
+				"algorithm for flow %d: %s: ", id,
 				strerror(errno));
 		flow[id].final_cc_alg[0] = '\0';
 	}

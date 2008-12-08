@@ -88,7 +88,7 @@ struct _flow
 	uint64_t write_block_count;
 
 	char reply_block[sizeof(struct timeval) + sizeof(double) + 1];
-	int reply_block_bytes_read;
+	unsigned int reply_block_bytes_read;
 
 	unsigned short requested_server_test_port;
 
@@ -122,6 +122,11 @@ struct _flow
 
 		double rtt_min, rtt_max, rtt_sum;
 		double iat_min, iat_max, iat_sum;
+
+#ifdef __LINUX__
+		struct tcp_info tcp_info;
+#endif
+
 	} statistics[2];
 };
 
@@ -157,7 +162,34 @@ static int flow_block_scheduled(struct _flow *flow)
 		time_is_after(&now, &flow->next_write_block_timestamp);
 }
 
-static void prepare_wfds(struct _flow *flow, fd_set *wfds, int *maxfd)
+static void remove_flow(unsigned int i)
+{
+	for (unsigned int j = i; j < num_flows - 1; j++)
+		flows[j] = flows[j + 1];
+	num_flows--;
+	if (!num_flows)
+		started = 0;
+}
+
+#ifdef __LINUX__
+static int get_tcp_info(struct _flow *flow, struct tcp_info *info) {
+	struct tcp_info tmp_info;
+	socklen_t info_len = sizeof(tmp_info);
+	int rc;
+
+	rc = getsockopt(flow->fd, IPPROTO_TCP, TCP_INFO, &tmp_info, &info_len);
+	if (rc == -1) {
+		error(ERR_WARNING, "getsockopt() failed: %s",
+				strerror(errno));
+		return -1;
+	}
+	*info = tmp_info;
+
+	return 0;
+}
+#endif
+
+static void prepare_wfds(struct _flow *flow, fd_set *wfds)
 {
 	int rc = 0;
 
@@ -171,7 +203,6 @@ static void prepare_wfds(struct _flow *flow, fd_set *wfds, int *maxfd)
 		if (flow_block_scheduled(flow)) {
 			DEBUG_MSG(4, "adding sock of flow %d to wfds", flow->id);
 			FD_SET(flow->fd, wfds);
-			*maxfd = MAX(*maxfd, flow->fd);
 		} else {
 			DEBUG_MSG(4, "no block for flow %d scheduled yet", flow->id);
 		}
@@ -190,7 +221,7 @@ static void prepare_wfds(struct _flow *flow, fd_set *wfds, int *maxfd)
 	return;
 }
 
-static int prepare_rfds(struct _flow *flow, fd_set *rfds, int *maxfd)
+static int prepare_rfds(struct _flow *flow, fd_set *rfds)
 {
 	int rc = 0;
 
@@ -228,38 +259,59 @@ static int prepare_rfds(struct _flow *flow, fd_set *rfds, int *maxfd)
 	if (flow->connect_called && !flow->finished[READ]) {
 		DEBUG_MSG(4, "adding sock of flow %d to rfds", flow->id);
 		FD_SET(flow->fd, rfds);
-		*maxfd = MAX(*maxfd, flow->fd);
 	}
 
 	return 0;
 }
 
-void source_prepare_fds(fd_set *rfds, fd_set *wfds, fd_set *efds, int *maxfd)
+static void uninit_flow(struct _flow *flow)
 {
+	if (flow->fd_reply != -1)
+		close(flow->fd_reply);
+	if (flow->fd != -1)
+		close(flow->fd);
+	if (flow->read_block)
+		free(flow->read_block);
+	if (flow->write_block)
+		free(flow->write_block);
+	if (flow->addr)
+		free(flow->addr);
+}
+
+int source_prepare_fds(fd_set *rfds, fd_set *wfds, fd_set *efds, int *maxfd)
+{
+	unsigned int i = 0;
 	if (!started)
-		return;
+		return num_flows;
 
-	for (unsigned int i = 0; i < num_flows; i++) {
-		struct _flow *flow = &flows[i];
+	while (i < num_flows) {
+		struct _flow *flow = &flows[i++];
 
-/*		if ((!flow->settings[DESTINATION].duration[SELF] ||
-					(!server_flow_in_delay(id) &&
-					 !server_flow_sending(id))) &&
-				(!flow[id].settings[SOURCE].duration[SELF] ||
-				 (!client_flow_in_delay(id) &&
-				  !client_flow_sending(id)))) {
-			close_flow(id);
+		if ((flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(flow, READ) && !flow_sending(flow, READ))) &&
+			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(flow, WRITE) && !flow_sending(flow, WRITE)))) {
+
+			/* Nothing left to read, nothing left to send */
+			get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);
+			uninit_flow(flow);
+			remove_flow(--i);
 			continue;
-		}*/
+		}
+
+		if (flow->fd != -1) {
+			FD_SET(flow->fd, efds);
+			*maxfd = MAX(*maxfd, flow->fd);
+		}
 
 		if (flow->fd_reply != -1) {
 			FD_SET(flow->fd_reply, rfds);
 			*maxfd = MAX(*maxfd, flow->fd_reply);
 		}
 
-		prepare_wfds(&flows[i], wfds, maxfd);
-		prepare_rfds(&flows[i], rfds, maxfd);
+		prepare_wfds(flow, wfds);
+		prepare_rfds(flow, rfds);
 	}
+
+	return num_flows;
 }
 
 static void init_flow(struct _flow *flow)
@@ -303,20 +355,6 @@ static void init_flow(struct _flow *flow)
 	flow->congestion_counter = 0;	
 }
 
-static void uninit_flow(struct _flow *flow)
-{
-	if (flow->fd_reply != -1)
-		close(flow->fd_reply);
-	if (flow->fd != -1)
-		close(flow->fd);
-	if (flow->read_block)
-		free(flow->read_block);
-	if (flow->write_block)
-		free(flow->write_block);
-	if (flow->addr)
-		free(flow->addr);
-}
-
 static int name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
 		socklen_t *lenp, char do_connect)
 {
@@ -340,6 +378,8 @@ static int name2socket(char *server_name, unsigned port, struct sockaddr **saptr
 	ressave = res;
 
 	do {
+		int rc;
+
 		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		if (fd < 0)
 			continue;
@@ -347,7 +387,8 @@ static int name2socket(char *server_name, unsigned port, struct sockaddr **saptr
 		if (!do_connect)
 			break;
 
-		if (connect(fd, res->ai_addr, res->ai_addrlen) == 0) {
+		rc = connect(fd, res->ai_addr, res->ai_addrlen);
+		if (rc == 0) {
 			if (res->ai_family == PF_INET) {
 				tempv4 = (struct sockaddr_in *) res->ai_addr;
 				strncpy(server_name, inet_ntoa(tempv4->sin_addr), 256);
@@ -361,13 +402,13 @@ static int name2socket(char *server_name, unsigned port, struct sockaddr **saptr
 		}
 
 		error(ERR_WARNING, "Failed to connect to \"%s\": %s",
-				*server_name, strerror(errno));
+				server_name, strerror(errno));
 		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
 		error(ERR_FATAL, "Could not establish connection to "
-				"\"%s\": %s", *server_name, strerror(errno));
+				"\"%s\": %s", server_name, strerror(errno));
 		return -1;
 	}
 
@@ -388,6 +429,9 @@ static int name2socket(char *server_name, unsigned port, struct sockaddr **saptr
 
 int add_flow_source(struct _request_add_flow_source *request)
 {
+#ifdef __LINUX__
+	socklen_t opt_len = 0;
+#endif
 	struct _flow *flow;
 
 	if (num_flows >= MAX_FLOWS) {
@@ -445,6 +489,17 @@ int add_flow_source(struct _request_add_flow_source *request)
 		error(ERR_FATAL, "Unable to set congestion control "
 				"algorithm for flow id = %i: %s",
 				flow->id, strerror(errno));
+
+#ifdef __LINUX__
+	opt_len = sizeof(request->cc_alg);
+	if (getsockopt(flow->fd, IPPROTO_TCP, TCP_CONG_MODULE,
+				request->cc_alg, &opt_len) == -1) {
+		error(ERR_WARNING, "failed to determine actual congestion control "
+				"algorithm for flow %d: %s: ", flow->id,
+				strerror(errno));
+		request->cc_alg[0] = '\0';
+	}
+#endif
 
 	if (flow->source_settings.elcn && set_so_elcn(flow->fd, flow->source_settings.elcn) == -1)
 		error(ERR_FATAL, "Unable to set TCP_ELCN "
@@ -768,8 +823,8 @@ static int read_reply(struct _flow *flow)
 void source_process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 {
 	unsigned int i = 0;
+	tsc_gettimeofday(&now);
 	while (i < num_flows) {
-		struct timeval now;
 		struct _flow *flow = &flows[i];
 
 		if (flow->fd_reply != -1 && FD_ISSET(flow->fd_reply, rfds))
@@ -777,6 +832,28 @@ void source_process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 				goto remove;
 
 		if (flow->fd != -1) {
+
+			if (FD_ISSET(flow->fd, efds)) {
+				int error_number, rc;
+				socklen_t error_number_size = sizeof(error_number);
+				DEBUG_MSG(5, "sock of flow %d in efds", flow->id);
+				rc = getsockopt(flow->fd, SOL_SOCKET,
+						SO_ERROR,
+						(void *)&error_number,
+						&error_number_size);
+				if (rc == -1) {
+					error(ERR_WARNING, "failed to get "
+							"errno for non-blocking "
+							"connect: %s",
+							strerror(errno));
+					goto remove;
+				}
+				if (error_number != 0) {
+					fprintf(stderr, "connect: %s\n",
+							strerror(error_number));
+					goto remove;
+				}
+			}
 			if (FD_ISSET(flow->fd, wfds))
 				if (write_data(flow) == -1)
 					goto remove;
@@ -801,10 +878,9 @@ void source_process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 		continue;
 remove:
 		// Flow has ended
+		get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);
 		uninit_flow(flow);
-		for (unsigned int j = i; j < num_flows - 1; j++)
-			flows[j] = flows[j + 1];
-		num_flows--;
+		remove_flow(i);
 	}
 }
 
@@ -820,7 +896,7 @@ void source_start_flows(int start_timestamp)
 	timer.last = timer.next = timer.start;
 	time_add(&timer.next, reporting_interval);
 
-	for (int i = 0; i < num_flows; i++) {
+	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
 
 		/* READ and WRITE */
@@ -840,7 +916,8 @@ void source_start_flows(int start_timestamp)
 	started = 1;
 }
 
-static void report_flow(struct _flow* flow) {
+static void report_flow(struct _flow* flow)
+{
 	printf("TODO: report_flow\n");
 }
 
@@ -851,8 +928,14 @@ void source_timer_check()
 
 	tsc_gettimeofday(&now);
 	if (time_is_after(&now, &timer.next)) {
-		for (int i = 0; i < num_flows; i++)
-			 report_flow(&flows[i]);
+		for (unsigned int i = 0; i < num_flows; i++) {
+			struct _flow *flow = &flows[i];
+
+#ifdef __LINUX__
+			get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info);
+#endif
+			report_flow(flow);
+		}
 		timer.last = now;
 		while (time_is_after(&now, &timer.next))
 			time_add(&timer.next, reporting_interval);

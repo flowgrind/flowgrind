@@ -42,6 +42,8 @@
 #include <float.h>
 #endif
 
+int daemon_pipe[2];
+
 double reporting_interval = 0.05;
 
 pthread_mutex_t mutex;
@@ -50,15 +52,21 @@ struct _request *requests = 0, *requests_last = 0;
 fd_set rfds, wfds, efds;
 int maxfd;
 
-void prepare_fds() {
+int prepare_fds() {
+
+	int need_timeout = 0;
+
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
 	FD_ZERO(&efds);
 
-	maxfd = 0;
+	FD_SET(daemon_pipe[0], &rfds);
+	maxfd = daemon_pipe[0];
 
-	source_prepare_fds(&rfds, &wfds, &efds, &maxfd);
-	destination_prepare_fds(&rfds, &wfds, &efds, &maxfd);
+	need_timeout += source_prepare_fds(&rfds, &wfds, &efds, &maxfd);
+	need_timeout += destination_prepare_fds(&rfds, &wfds, &efds, &maxfd);
+
+	return need_timeout;
 }
 
 static void start_flows(struct _request_start_flows *request)
@@ -71,6 +79,13 @@ static void process_requests()
 {
 	int rc;
 	pthread_mutex_lock(&mutex);
+
+	char tmp[100];
+	for (;;) {
+		int rc = read(daemon_pipe[0], tmp, 100);
+		if (rc != 100)
+			break;
+	}
 
 	while (requests)
 	{
@@ -109,12 +124,12 @@ void* daemon_main(void* ptr __attribute__((unused)))
 {
 	struct timeval timeout;
 	for (;;) {
-		prepare_fds();
+		int need_timeout = prepare_fds();
 
 		timeout.tv_sec = 0;
-		timeout.tv_usec = 100000;
+		timeout.tv_usec = 10000;
 
-		int rc = select(maxfd + 1, &rfds, &wfds, &efds, &timeout);
+		int rc = select(maxfd + 1, &rfds, &wfds, &efds, need_timeout ? &timeout : 0);
 		if (rc < 0) {
 			if (errno == EINTR)
 				continue;
@@ -123,9 +138,11 @@ void* daemon_main(void* ptr __attribute__((unused)))
 			exit(1);
 		}
 
+		if (FD_ISSET(daemon_pipe[0], &rfds))
+			process_requests();
+
 		timer_check();
 
-		process_requests();
 		source_process_select(&rfds, &wfds, &efds);
 		destination_process_select(&rfds, &wfds, &efds);
 	}
