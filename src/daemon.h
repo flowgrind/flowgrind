@@ -1,3 +1,9 @@
+#ifndef __DAEMON_H__
+#define __DAEMON_H__
+
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+
 void *daemon_main(void* ptr);
 
 pthread_t daemon_thread;
@@ -9,6 +15,9 @@ extern pthread_mutex_t mutex;
 
 #define WRITE 0
 #define READ 1
+
+#define INTERVAL 0
+#define TOTAL 1
 
 /* Common to both endpoints */
 struct _flow_settings
@@ -108,3 +117,33 @@ struct _request_start_flows
 };
 
 extern double reporting_interval;
+
+struct _report
+{
+	int id;
+	int type; /* INTERVAL or TOTAL */
+	struct timeval tv;
+
+	int bytes_read;
+	int bytes_written;
+	int reply_blocks_read;
+
+	double rtt_min, rtt_max, rtt_sum;
+	double iat_min, iat_max, iat_sum;
+
+#ifdef __LINUX__
+	struct tcp_info tcp_info;
+#endif
+	int mss;
+	int mtu;
+
+	struct _report* next;
+};
+extern struct _report* reports;
+extern struct _report* reports_last;
+extern int pending_reports;
+
+void add_report(struct _report* report);
+struct _report* get_reports();
+
+#endif //__DAEMON_H__

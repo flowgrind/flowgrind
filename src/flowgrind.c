@@ -639,60 +639,7 @@ void log_output(const char *msg)
 	}
 }
 
-void timer_check(void)
-{
-	int id = 0;
-
-	tsc_gettimeofday(&now);
-	if (time_is_after(&now, &timer.next)) {
-		for (id = 0; id < opt.num_flows; id++)
-			 report_flow(id);
-		timer.last = now;
-		while (time_is_after(&now, &timer.next))
-			time_add(&timer.next, opt.reporting_interval);
-	}
-}
-
-
-void timer_start(void)
-{
-	int id = 0;
-
-	DEBUG_MSG(4, "starting timers");
-
-	tsc_gettimeofday(&timer.start);
-	timer.last = timer.next = timer.start;
-	time_add(&timer.next, opt.reporting_interval);
-
-	for (id = 0; id < opt.num_flows; id++) {
-		flow[id].endpoint_options[SOURCE].flow_start_timestamp = timer.start;
-		time_add(&flow[id].endpoint_options[SOURCE].flow_start_timestamp,
-				flow[id].settings[SOURCE].delay[WRITE]);
-		if (flow[id].settings[SOURCE].duration[WRITE] >= 0) {
-			flow[id].endpoint_options[SOURCE].flow_stop_timestamp =
-				flow[id].endpoint_options[SOURCE].flow_start_timestamp;
-			time_add(&flow[id].endpoint_options[SOURCE].flow_stop_timestamp,
-					flow[id].settings[SOURCE].duration[WRITE]);
-		}
-		if (flow[id].settings[SOURCE].write_rate)
-			flow[id].next_write_block_timestamp =
-				flow[id].endpoint_options[SOURCE].flow_start_timestamp;
-
-		flow[id].endpoint_options[DESTINATION].flow_start_timestamp = timer.start;
-		time_add(&flow[id].endpoint_options[DESTINATION].flow_start_timestamp,
-				flow[id].settings[DESTINATION].delay[WRITE]);
-		if (flow[id].settings[DESTINATION].duration[WRITE] >= 0) {
-			flow[id].endpoint_options[DESTINATION].flow_stop_timestamp =
-				flow[id].endpoint_options[DESTINATION].flow_start_timestamp;
-			time_add(&flow[id].endpoint_options[DESTINATION].flow_stop_timestamp,
-					flow[id].settings[DESTINATION].duration[WRITE]);
-		}
-	}
-}
-
-
-void
-print_tcp_report_line(char hash, int id, double time1, double time2,
+void print_tcp_report_line(char hash, int id, double time1, double time2,
 		long bytes_written, long bytes_read,
 		long read_reply_blocks,  double min_rtt,
 		double tot_rtt, double max_rtt, double min_iat,
@@ -1138,7 +1085,40 @@ Notes on Anderson Darlington Test
 	}
 }
 
-void report_flow(int id)
+void report_flow(struct _report* report)
+{
+	double diff_first_last = 0.0;
+	double diff_first_now = 0.0;
+
+	print_tcp_report_line(
+		0, report->id, diff_first_last, diff_first_now,
+		report->bytes_written,
+		report->bytes_read,
+		report->reply_blocks_read,
+		report->rtt_min,
+		report->rtt_sum,
+		report->rtt_max,
+		report->iat_min,
+		report->iat_sum,
+		report->iat_max,
+#ifdef __LINUX__
+		report->tcp_info.tcpi_snd_cwnd,
+		report->tcp_info.tcpi_snd_ssthresh,
+		report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,
+		report->tcp_info.tcpi_lost,
+		0,//TODOflow[id].last_tcp_report->tcp_info.tcpi_retrans - report->tcp_info.tcpi_retrans,
+		report->tcp_info.tcpi_fackets,
+		report->tcp_info.tcpi_reordering,
+		report->tcp_info.tcpi_rtt,
+		report->tcp_info.tcpi_rttvar,
+		report->tcp_info.tcpi_rto,
+#endif
+		report->mss,
+		report->mtu
+	);
+}
+
+/*void report_flow(int id)
 {
 	double diff_first_last = 0.0;
 	double diff_first_now = 0.0;
@@ -1206,7 +1186,7 @@ void report_flow(int id)
 #ifdef __LINUX__
 	flow[id].last_tcp_info = info;
 #endif
-}
+}*/
 
 
 int name2socket(char **server_name, unsigned port, struct sockaddr **saptr,
@@ -1356,190 +1336,6 @@ double flow_interpacket_delay(int id)
 	return delay;
 }
 
-void read_test_data(int id)
-{
-	int rc;
-	struct iovec iov;
-	struct msghdr msg;
-	char cbuf[512];
-	struct cmsghdr *cmsg;
-
-	for (;;) {
-		if (flow[id].read_block_bytes_read == 0)
-			DEBUG_MSG(5, "new read block %llu on flow %d",
-					flow[id].read_block_count, id);
-
-		iov.iov_base = flow[id].read_block +
-			flow[id].read_block_bytes_read;
-		iov.iov_len = flow[id].settings[DESTINATION].write_block_size -
-			flow[id].read_block_bytes_read;
-		// no name required
-		msg.msg_name = NULL;
-		msg.msg_namelen = 0;
-		msg.msg_iov = &iov;
-		msg.msg_iovlen = 1;
-		msg.msg_control = cbuf;
-		msg.msg_controllen = sizeof(cbuf);
-		rc = recvmsg(flow[id].sock, &msg, 0);
-
-		if (rc == -1) {
-			if (errno == EAGAIN)
-				break;
-			error(ERR_WARNING, "Premature end of test: %s",
-					strerror(errno));
-			flow[id].read_errors++;
-			stop_flow(id);
-			return;
-		}
-
-		if (rc == 0) {
-			DEBUG_MSG(1, "server shut down test socket "
-					"of flow %d", id);
-			if (!flow[id].endpoint_options[DESTINATION].flow_finished ||
-					!flow[id].shutdown)
-				error(ERR_WARNING, "Premature shutdown of "
-						"server flow");
-			flow[id].endpoint_options[DESTINATION].flow_finished = 1;
-			if (flow[id].endpoint_options[SOURCE].flow_finished) {
-				DEBUG_MSG(4, "flow %u finished", id);
-				stop_flow(id);
-			}
-			return;
-		}
-
-		DEBUG_MSG(4, "flow %d received %u bytes", id, rc);
-
-#if 0
-		if (flow[id].settings[DESTINATION].duration[WRITE] == 0)
-			error(ERR_WARNING, "flow %d got unexpected data "
-					"from server (no two-way)", id);
-		else if (server_flow_in_delay(id))
-			error(ERR_WARNING, "flow %d got unexpected data "
-					"from server (too early)", id);
-		else if (!server_flow_sending(id))
-			error(ERR_WARNING, "flow %d got unexpected data "
-					"from server (too late)", id);
-#endif
-
-		flow[id].bytes_read_since_last += rc;
-		flow[id].bytes_read_since_first += rc;
-		flow[id].read_block_bytes_read += rc;
-		if (flow[id].read_block_bytes_read >=
-				flow[id].settings[DESTINATION].write_block_size) {
-			assert(flow[id].read_block_bytes_read
-					== flow[id].settings[DESTINATION].write_block_size);
-			flow[id].read_block_bytes_read = 0;
-			tsc_gettimeofday(&flow[id].last_block_read);
-			flow[id].read_block_count++;
-		}
-
-		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg;
-				cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %u",
-					id, cmsg->cmsg_type, cmsg->cmsg_len);
-		}
-
-		if (!flow[id].pushy)
-			break;
-	}
-	return;
-}
-
-void write_test_data(int id)
-{
-	int rc = 0;
-
-	if (flow[id].stopped)
-		return;
-
-	/* Please note: you could argue that the following loop
-	   is not necessary as not filling the socket send queue completely
-	   would make the next select call return this very socket in wfds
-	   and thus sending more blocks would immediately happen. However,
-	   calling select with a non-full send queue might make the kernel
-	   think we don't have more data to send. As a result, the kernel
-	   might trigger some scheduling or whatever heuristics which would
-	   not take place if we had written immediately. On the other hand,
-	   in case the network is not a bottleneck the loop may take forever. */
-	/* XXX: Detect this! */
-	for (;;) {
-		if (flow[id].write_block_bytes_written == 0) {
-			DEBUG_MSG(5, "new write block %llu on flow %d",
-					flow[id].write_block_count, id);
-			tsc_gettimeofday((struct timeval *)flow[id].write_block);
-		}
-
-		rc = write(flow[id].sock,
-				flow[id].write_block +
-				flow[id].write_block_bytes_written,
-				flow[id].settings[SOURCE].write_block_size -
-				flow[id].write_block_bytes_written);
-
-		if (rc == -1) {
-			if (errno == EAGAIN) {
-				DEBUG_MSG(5, "write queue limit hit "
-						"for flow %d", id);
-				break;
-			}
-			error(ERR_WARNING, "Premature end of test: %s",
-					strerror(errno));
-			flow[id].write_errors++;
-			stop_flow(id);
-			return;
-		}
-
-		if (rc == 0) {
-			DEBUG_MSG(5, "flow %d sent zero bytes. what does "
-					"that mean?", id);
-			break;
-		}
-
-		DEBUG_MSG(4, "flow %d sent %d bytes of %u (already = %u)", id, rc,
-				flow[id].settings[SOURCE].write_block_size,
-				flow[id].write_block_bytes_written);
-		flow[id].bytes_written_since_first += rc;
-		flow[id].bytes_written_since_last += rc;
-		flow[id].write_block_bytes_written += rc;
-		if (flow[id].write_block_bytes_written >=
-				flow[id].settings[SOURCE].write_block_size) {
-			flow[id].write_block_bytes_written = 0;
-			tsc_gettimeofday(&flow[id].last_block_written);
-			flow[id].write_block_count++;
-
-			if (flow[id].settings[SOURCE].write_rate) {
-				time_add(&flow[id].next_write_block_timestamp,
-						flow_interpacket_delay(id));
-				if (time_is_after(&now, &flow[id].next_write_block_timestamp)) {
-					/* TODO: log time_diff and check if
-					 * it's growing (queue build up) */
-					DEBUG_MSG(3, "incipient congestion on "
-							"flow %u (block %llu): "
-							"new block scheduled "
-							"for %s, %.6lfs before now.",
-							id,
-							flow[id].write_block_count,
-							ctime_us(&flow[id].next_write_block_timestamp),
-							time_diff(&flow[id].next_write_block_timestamp, &now));
-					flow[id].congestion_counter++;
-					if (flow[id].congestion_counter >
-							CONGESTION_LIMIT &&
-							flow[id].settings[SOURCE].flow_control)
-						stop_flow(id);
-				}
-			}
-			if (flow[id].cork && toggle_tcp_cork(flow[id].sock) == -1)
-				DEBUG_MSG(4, "failed to recork test socket "
-						"for flow %d: %s",
-						id, strerror(errno));
-		}
-
-		if (!flow[id].pushy)
-			break;
-	}
-	return;
-}
-
-
 void sigint_handler(int sig)
 {
 	UNUSED_ARGUMENT(sig);
@@ -1555,112 +1351,6 @@ void sigint_handler(int sig)
 	FD_ZERO(&wfds);
 
 	sigint_caught = 1;
-}
-
-void prepare_wfds (int id)
-{
-	int rc = 0;
-
-	if (client_flow_in_delay(id)) {
-		DEBUG_MSG(4, "flow %i not started yet (delayed)", id);
-		return;
-	}
-
-	if (client_flow_sending(id)) {
-		assert(!flow[id].endpoint_options[SOURCE].flow_finished);
-		if (client_flow_block_scheduled(id)) {
-			DEBUG_MSG(4, "adding sock of flow %d to wfds", id);
-			FD_SET(flow[id].sock, &wfds);
-		} else {
-			DEBUG_MSG(4, "no block for flow %d scheduled yet", id);
-		}
-	} else if (!flow[id].endpoint_options[SOURCE].flow_finished) {
-		flow[id].endpoint_options[SOURCE].flow_finished = 1;
-		if (flow[id].shutdown) {
-			DEBUG_MSG(4, "shutting down flow %d (WR)", id);
-			rc = shutdown(flow[id].sock, SHUT_WR);
-			if (rc == -1) {
-				error(ERR_WARNING, "shutdown() SHUT_WR failed: %s",
-						strerror(errno));
-			}
-		}
-	}
-
-	return;
-}
-
-void prepare_rfds (int id)
-{
-	int rc = 0;
-
-	FD_SET(flow[id].sock_control, &rfds);
-
-	if (!server_flow_in_delay(id) && !server_flow_sending(id)) {
-		if (!flow[id].endpoint_options[DESTINATION].flow_finished && flow[id].shutdown) {
-			error(ERR_WARNING, "server flow %u missed to shutdown", id);
-			rc = shutdown(flow[id].sock, SHUT_RD);
-			if (rc == -1) {
-				error(ERR_WARNING, "shutdown SHUT_RD "
-						"failed: %s", strerror(errno));
-			}
-			flow[id].endpoint_options[DESTINATION].flow_finished = 1;
-		}
-	}
-
-	if (flow[id].late_connect && !flow[id].connect_called ) {
-		DEBUG_MSG(1, "late connecting test socket "
-				"for flow %d after %.3fs delay",
-				id, flow[id].settings[SOURCE].delay[WRITE]);
-		rc = connect(flow[id].sock, flow[id].saddr,
-				flow[id].saddr_len);
-		if (rc == -1 && errno != EINPROGRESS) {
-			error(ERR_WARNING, "Connect failed: %s",
-					strerror(errno));
-			stop_flow(id);
-			return;
-		}
-		flow[id].connect_called = 1;
-		flow[id].mtu = get_mtu(flow[id].sock);
-		flow[id].mss = get_mss(flow[id].sock);
-	}
-
-	/* Altough the server flow might be finished we keep the socket in
-	 * rfd in order to check for buggy servers */
-	if (flow[id].connect_called && !flow[id].endpoint_options[DESTINATION].flow_finished) {
-		DEBUG_MSG(4, "adding sock of flow %d to rfds", id);
-		FD_SET(flow[id].sock, &rfds);
-	}
-}
-
-void prepare_fds (void)
-{
-	int id = 0;
-
-	DEBUG_MSG(3, "preparing fds");
-
-	FD_ZERO(&rfds);
-	FD_ZERO(&wfds);
-
-	for (id = 0; id < opt.num_flows; id++) {
-		if (flow[id].stopped)
-			continue;
-
-		if ((!flow[id].settings[DESTINATION].duration[WRITE] ||
-					(!server_flow_in_delay(id) &&
-					 !server_flow_sending(id))) &&
-				(!flow[id].settings[SOURCE].duration[WRITE] ||
-				 (!client_flow_in_delay(id) &&
-				  !client_flow_sending(id)))) {
-			close_flow(id);
-			continue;
-		}
-
-		prepare_wfds(id);
-		prepare_rfds(id);
-
-	}
-
-	efds = efds_orig;
 }
 
 static void die_if_fault_occurred (xmlrpc_env *env)
@@ -1683,99 +1373,64 @@ static void grind_flows(xmlrpc_client *rpc_client)
 		"({s:i})",
 		"start_timestamp", now.tv_sec + 2);
 	die_if_fault_occurred(&rpc_env);
-	
-	
-exit(0);
-/*	int rc = 0;
-	int id = 0;
-	struct timeval timeout = {0, 0};
+	if (resultP)
+		xmlrpc_DECREF(resultP);
 
-	timer_start();
+	for (;;) {
 
-	DEBUG_MSG(1, "starting TCP test...");
+		usleep(1000000 * opt.reporting_interval);
 
-	if (signal(SIGINT, sigint_handler) == SIG_ERR)
-		error(ERR_FATAL, "could not ignore SIGINT: %s", strerror(errno));
-
-	tsc_gettimeofday(&now);
-
-	while (active_flows > 0) {
-
-		timer_check();
-
-		prepare_fds();
-		if (!active_flows)
-			break;
-
-		timeout.tv_sec = 0;
-		timeout.tv_usec = select_timeout;
-
-		DEBUG_MSG(3, "calling select() (timeout = %u)", select_timeout);
-		rc = select(maxfd + 1, &rfds, &wfds, &efds, &timeout);
-		DEBUG_MSG(3, "select() returned (rc = %d, active_flows = %d)",
-				rc, active_flows);
-		tsc_gettimeofday(&now);
-
-		if (rc < 0) {
-			if (sigint_caught)
-				break;
-			if (errno == EINTR)
-				continue;
-			error(ERR_FATAL, "select(): failed: %s",
-					strerror(errno));
+		xmlrpc_client_call2f(&rpc_env, rpc_client, "http://127.0.0.1:5999/RPC2", "get_reports", &resultP, "()");
+	    if (rpc_env.fault_occurred) {
+    	    fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+                rpc_env.fault_string, rpc_env.fault_code);
+			continue;
 		}
 
-		if (rc == 0)
+		if (!resultP)
 			continue;
 
-		for (id = 0; id < opt.num_flows; id++) {
+		for (int i = 0; i < xmlrpc_array_size(&rpc_env, resultP); i++) {
+			xmlrpc_value *rv = 0;
 
-			DEBUG_MSG(6, "checking socks of flow %d.", id);
+			xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
+			if (rv) {
+				struct _report report;
+				int sec, usec;
+				xmlrpc_decompose_value(&rpc_env, rv, "{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:d,s:d,s:d,s:d,s:d,s:d,s:i,s:i,*}",
+		
+					"id", &report.id,
+					"type", &report.type,
+					"tv_sec", &sec,
+					"tv_usec", &usec,
 
-			if (FD_ISSET(flow[id].sock, &efds)) {
-				int error_number;
-				socklen_t error_number_size =
-					sizeof(error_number);
-				DEBUG_MSG(5, "sock of flow %d in efds", id);
-				rc = getsockopt(flow[id].sock, SOL_SOCKET,
-						SO_ERROR,
-						(void *)&error_number,
-						&error_number_size);
-				if (rc == -1) {
-					error(ERR_WARNING, "failed to get "
-							"errno for non-blocking "
-							"connect: %s",
-							strerror(errno));
-					stop_flow(id);
-					continue;
-				}
-				if (error_number != 0) {
-					fprintf(stderr, "connect: %s\n",
-							strerror(error_number));
-					stop_flow(id);
-				}
+					"bytes_read", &report.bytes_read,
+					"bytes_written", &report.bytes_written,
+					"reply_blocks_read", &report.reply_blocks_read,
+
+					"rtt_min", &report.rtt_min,
+					"rtt_max", &report.rtt_max,
+					"rtt_sum", &report.rtt_sum,
+					"iat_min", &report.iat_min,
+					"iat_max", &report.iat_max,
+ 					"iat_sum", &report.iat_sum,
+
+					"mss", &report.mss,
+					"mtu", &report.mtu
+				);
+				xmlrpc_DECREF(rv);
+
+				report.tv.tv_sec = sec;
+				report.tv.tv_usec = usec;
+
+				report_flow(&report);
 			}
-
-			if (FD_ISSET(flow[id].sock, &rfds)) {
-				DEBUG_MSG(5, "sock of flow %d in rfds", id);
-				read_test_data(id);
-			}
-
-			if (FD_ISSET(flow[id].sock_control, &rfds)) {
-				DEBUG_MSG(5, "sock_control of flow %d "
-						"in rfds", id);
-				read_control_data(id);
-			}
-
-			if (FD_ISSET(flow[id].sock, &wfds)) {
-				DEBUG_MSG(5, "sock of flow %d in wfds", id);
-				write_test_data(id);
-			}
-			DEBUG_MSG(6, "done checking socks of flow %d.", id);
 		}
-	}*/
+		xmlrpc_DECREF(resultP);
+	}
+	
+	exit(0);
 }
-
 
 void close_flow(int id)
 {
@@ -1885,144 +1540,6 @@ char *guess_topology (int mss, int mtu)
 	return "unknown";
 }
 
-/*
-void prepare_flow(int id)
-{
-	char buf[1024];
-	int rc;
-	unsigned to_write;
-
-	DEBUG_MSG(2, "init flow %d", id);
-
-	DEBUG_MSG(3, "connect()");
-
-	flow[id].sock_control =
-		name2socket((&flow[id].server_name_control),
-				flow[id].server_control_port, NULL, NULL, 1);
-	read_greeting(flow[id].sock_control);
-
-	to_write = snprintf(buf, sizeof(buf),
-			"%s,t,%s,%hu,%hhd,%hhd,%u,%u,%lf,%lf,%u,%u,%hhd,%hhd,%hhd,%hdd+",
-			FLOWGRIND_PROT_CALLSIGN FLOWGRIND_PROT_SEPERATOR FLOWGRIND_PROT_VERSION,
-			flow[id].server_name_control,
-			(opt.base_port ? opt.base_port++ : 0),
-			opt.advstats, flow[id].so_debug,
-			flow[id].settings[DESTINATION].requested_send_buffer_size,
-   			flow[id].settings[DESTINATION].requested_read_buffer_size,
-			flow[id].settings[DESTINATION].delay[WRITE],
-			flow[id].settings[DESTINATION].duration[WRITE],
-			flow[id].settings[SOURCE].write_block_size,
-			flow[id].settings[DESTINATION].write_block_size,
-			flow[id].pushy,
-			flow[id].shutdown,
-			flow[id].endpoint_options[DESTINATION].route_record,
-			(char)sizeof(flow[id].reply_block)
-			);
-	DEBUG_MSG(1, "proposal: %s", buf);
-	write_proposal(flow[id].sock_control, buf, to_write);
-	read_until_plus(flow[id].sock_control, buf, sizeof(buf));
-	DEBUG_MSG(1, "proposal reply: %s", buf);
-	rc = sscanf(buf, "%u,%u,%u+", &flow[id].server_data_port,
-			&flow[id].endpoint_options[DESTINATION].send_buffer_size_real,
-			&flow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
-	if (rc != 3)
-		error(ERR_FATAL, "malformed session response from server");
-
-	if (flow[id].settings[DESTINATION].requested_send_buffer_size != 0 &&
-			flow[id].endpoint_options[DESTINATION].send_buffer_size_real !=
-			flow[id].settings[DESTINATION].requested_send_buffer_size) {
-		fprintf(stderr, "warning: server failed to set requested "
-				"send buffer size %u, actual = %u\n",
-				flow[id].settings[DESTINATION].requested_send_buffer_size,
-				flow[id].endpoint_options[DESTINATION].send_buffer_size_real);
-	}
-	if (flow[id].settings[DESTINATION].requested_read_buffer_size != 0 &&
-			flow[id].endpoint_options[DESTINATION].receive_buffer_size_real !=
-			flow[id].settings[DESTINATION].requested_read_buffer_size) {
-		fprintf(stderr, "warning: server failed to set requested "
-				"receive buffer size (advertised window) %u, actual = %u\n",
-				flow[id].settings[DESTINATION].requested_read_buffer_size,
-				flow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
-	}
-	flow[id].sock = name2socket(&flow[id].server_name,
-			flow[id].server_data_port,
-			&flow[id].saddr, &flow[id].saddr_len, 0);
-
-	flow[id].endpoint_options[SOURCE].send_buffer_size_real =
-		set_window_size_directed(flow[id].sock, flow[id].settings[SOURCE].requested_send_buffer_size, SO_SNDBUF);
-	flow[id].endpoint_options[SOURCE].receive_buffer_size_real =
-		set_window_size_directed(flow[id].sock, flow[id].settings[SOURCE].requested_read_buffer_size, SO_RCVBUF);
-	if (flow[id].settings[SOURCE].requested_send_buffer_size != 0 &&
-			flow[id].endpoint_options[SOURCE].send_buffer_size_real !=
-			flow[id].settings[SOURCE].requested_send_buffer_size) {
-		fprintf(stderr, "warning: failed to set requested client "
-				"send buffer size %u, actual = %u\n",
-				flow[id].settings[SOURCE].requested_send_buffer_size,
-				flow[id].endpoint_options[SOURCE].send_buffer_size_real);
-	}
-	if (flow[id].settings[SOURCE].requested_read_buffer_size != 0 &&
-			flow[id].endpoint_options[SOURCE].receive_buffer_size_real !=
-			flow[id].settings[SOURCE].requested_read_buffer_size) {
-		fprintf(stderr, "warning: failed to set requested client "
-				"receive buffer size (advertised window) %u, actual = %u\n",
-				flow[id].settings[SOURCE].requested_read_buffer_size,
-				flow[id].endpoint_options[SOURCE].receive_buffer_size_real);
-	}
-
-	if (flow[id].cc_alg && set_congestion_control(
-				flow[id].sock, flow[id].cc_alg) == -1)
-		error(ERR_FATAL, "Unable to set congestion control "
-				"algorithm for flow id = %i: %s",
-				id, strerror(errno));
-
-	if (flow[id].elcn && set_so_elcn(flow[id].sock, flow[id].elcn) == -1)
-		error(ERR_FATAL, "Unable to set TCP_ELCN "
-				"for flow id = %i: %s",
-				id, strerror(errno));
-
-	if (flow[id].icmp && set_so_icmp(flow[id].sock) == -1)
-		error(ERR_FATAL, "Unable to set TCP_ICMP "
-				"for flow id = %i: %s",
-				id, strerror(errno));
-
-	if (flow[id].cork && set_tcp_cork(flow[id].sock) == -1)
-		error(ERR_FATAL, "Unable to set TCP_CORK "
-				"for flow id = %i: %s",
-				id, strerror(errno));
-
-	if (flow[id].so_debug && set_so_debug(flow[id].sock) == -1)
-		error(ERR_FATAL, "Unable to set SO_DEBUG "
-				"for flow id = %i: %s",
-				id, strerror(errno));
-
-	if (flow[id].endpoint_options[SOURCE].route_record && set_route_record(flow[id].sock) == -1)
-		error(ERR_FATAL, "Unable to set route record "
-				"option for flow id = %i: %s",
-				id, strerror(errno));
-
-	if (flow[id].dscp && set_dscp(flow[id].sock, flow[id].dscp) == -1)
-		error(ERR_FATAL, "Unable to set DSCP value"
-				"for flow %d: %s", id, strerror(errno));
-
-	if (flow[id].ipmtudiscover && set_ip_mtu_discover(flow[id].sock) == -1)
-		error(ERR_FATAL, "Unable to set IP_MTU_DISCOVER value"
-				"for flow %d: %s", id, strerror(errno));
-
-
-	if (!flow[id].late_connect) {
-		DEBUG_MSG(4, "(early) connecting test socket");
-		connect(flow[id].sock, flow[id].saddr, flow[id].saddr_len);
-		flow[id].connect_called = 1;
-		flow[id].mtu = get_mtu(flow[id].sock);
-		flow[id].mss = get_mss(flow[id].sock);
-	}
-
-	set_non_blocking(flow[id].sock);
-	set_non_blocking(flow[id].sock_control);
-
-	active_flows++;
-}*/
-
 void prepare_flow(int id, xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP;
@@ -2099,19 +1616,18 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"late_connect", (int)flow[id].late_connect,
 		"byte_counting", flow[id].byte_counting);
 	die_if_fault_occurred(&rpc_env);
+
+	if (resultP)
+		xmlrpc_DECREF(resultP);
 }
 
-void prepare_flows(void)
+void prepare_flows(xmlrpc_client *rpc_client)
 {
-	xmlrpc_client *rpc_client = 0;
-	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", "todo: version", NULL, 0, &rpc_client);
-
 	for (int id = 0; id < opt.num_flows; id++) {
 		prepare_flow(id, rpc_client);
 	}
 
 	{
-		int id;
 		char headline[200];
 		int rc;
 		struct utsname me;
@@ -2132,8 +1648,6 @@ void prepare_flows(void)
 				FLOWGRIND_VERSION);
 		log_output(headline);
 	}
-
-	grind_flows(rpc_client);
 }
 
 int parse_Anderson_Test(char *params) {
@@ -2712,9 +2226,10 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 }
 
-
 int main(int argc, char *argv[])
 {
+	xmlrpc_client *rpc_client = 0;
+
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
@@ -2722,10 +2237,13 @@ int main(int argc, char *argv[])
 	init_flows_defaults();
 	parse_cmdline(argc, argv);
 	init_logfile();
-	prepare_flows();
-/*	grind_flows();
+
+	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", "todo: version", NULL, 0, &rpc_client);
+
+	prepare_flows(rpc_client);
+	grind_flows(rpc_client);
 	report_final();
-	close_flows();*/
+	//close_flows();
 	shutdown_logfile();
 	exit(0);
 }

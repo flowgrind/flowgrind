@@ -52,6 +52,10 @@ struct _request *requests = 0, *requests_last = 0;
 fd_set rfds, wfds, efds;
 int maxfd;
 
+struct _report* reports = 0;
+struct _report* reports_last = 0;
+int pending_reports = 0;
+
 int prepare_fds() {
 
 	int need_timeout = 0;
@@ -146,4 +150,44 @@ void* daemon_main(void* ptr __attribute__((unused)))
 		source_process_select(&rfds, &wfds, &efds);
 		destination_process_select(&rfds, &wfds, &efds);
 	}
+}
+
+void add_report(struct _report* report)
+{
+	pthread_mutex_lock(&mutex);
+
+	// Do not keep too much data
+	if (pending_reports >= 100) {
+		free(report);
+		pthread_mutex_unlock(&mutex);
+		return;
+	}
+
+	report->next = 0;
+
+	if (reports_last)
+		reports_last->next = report;
+	else
+		reports = report;
+	reports_last = report;
+
+	pending_reports++;
+
+	pthread_mutex_unlock(&mutex);
+}
+
+struct _report* get_reports()
+{
+	struct _report* ret;
+
+	pthread_mutex_lock(&mutex);
+
+	ret = reports;
+	pending_reports = 0;
+	reports = NULL;
+	reports_last = 0;
+
+	pthread_mutex_unlock(&mutex);
+
+	return ret;
 }

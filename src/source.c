@@ -58,8 +58,6 @@ enum flow_state
 	GRIND
 };
 
-#define INTERVAL 0
-#define TOTAL 1
 struct _flow
 {
 	int id;
@@ -338,7 +336,7 @@ static void init_flow(struct _flow *flow)
 	flow->addr = 0;
 
 	/* INTERVAL and TOTAL */
-	for (int i = 0; i< 2; i++) {
+	for (int i = 0; i < 2; i++) {
 		flow->statistics[i].bytes_read = 0;
 		flow->statistics[i].bytes_written = 0;
 		flow->statistics[i].reply_blocks_read = 0;
@@ -918,7 +916,40 @@ void source_start_flows(int start_timestamp)
 
 static void report_flow(struct _flow* flow)
 {
-	printf("TODO: report_flow\n");
+	struct _report* report = (struct _report*)malloc(sizeof(struct _report));
+	
+	report->id = flow->id;
+	tsc_gettimeofday(&report->tv);
+	report->bytes_read = flow->statistics[INTERVAL].bytes_read;
+	report->bytes_written = flow->statistics[INTERVAL].bytes_written;
+	report->reply_blocks_read = flow->statistics[INTERVAL].reply_blocks_read;
+
+	report->rtt_min = flow->statistics[INTERVAL].rtt_min;
+	report->rtt_max = flow->statistics[INTERVAL].rtt_max;
+	report->rtt_sum = flow->statistics[INTERVAL].rtt_sum;
+	report->iat_min = flow->statistics[INTERVAL].iat_min;
+	report->iat_max = flow->statistics[INTERVAL].iat_max;
+	report->iat_sum = flow->statistics[INTERVAL].iat_sum;
+
+#ifdef __LINUX__
+	report->tcp_info = flow->statistics[INTERVAL].tcp_info;
+#endif
+	report->mss = flow->mss;
+	report->mtu = flow->mtu;
+
+	/* New report interval, reset old data */
+	flow->statistics[INTERVAL].bytes_read = 0;
+	flow->statistics[INTERVAL].bytes_written = 0;
+	flow->statistics[INTERVAL].reply_blocks_read = 0;
+
+	flow->statistics[INTERVAL].rtt_min = +INFINITY;
+	flow->statistics[INTERVAL].rtt_max = -INFINITY;
+	flow->statistics[INTERVAL].rtt_sum = 0;
+	flow->statistics[INTERVAL].iat_min = +INFINITY;
+	flow->statistics[INTERVAL].iat_max = -INFINITY;
+	flow->statistics[INTERVAL].iat_sum = 0;
+
+	add_report(report);
 }
 
 void source_timer_check()
@@ -928,6 +959,7 @@ void source_timer_check()
 
 	tsc_gettimeofday(&now);
 	if (time_is_after(&now, &timer.next)) {
+
 		for (unsigned int i = 0; i < num_flows; i++) {
 			struct _flow *flow = &flows[i];
 

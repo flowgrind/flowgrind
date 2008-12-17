@@ -209,7 +209,6 @@ struct {
 	struct timeval last;
 } timer;
 
-void report_flow(int id);
 char *guess_topology (int mss, int mtu);
 void close_flow(int id);
 void stop_flow(int id);
@@ -229,7 +228,6 @@ static int server_flow_sending(int id)
 	return !server_flow_in_delay(id) &&
 		(flow[id].settings[DESTINATION].duration[WRITE] < 0 ||
 		 time_diff(&flow[id].endpoint_options[DESTINATION].flow_stop_timestamp, &now) < 0.0);
-
 }
 
 static int client_flow_sending(int id)
@@ -238,13 +236,6 @@ static int client_flow_sending(int id)
 		(flow[id].settings[SOURCE].duration[WRITE] < 0 ||
 		 time_diff(&flow[id].endpoint_options[SOURCE].flow_stop_timestamp, &now) < 0);
 }
-
-static int client_flow_block_scheduled(int id)
-{
-	return !flow[id].settings[SOURCE].write_rate ||
-		time_is_after(&now, &flow[id].next_write_block_timestamp);
-}
-
 
 inline static double scale_thruput(double thruput)
 {
