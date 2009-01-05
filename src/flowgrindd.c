@@ -269,7 +269,6 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
 
-printf("00000000 %s 00000\n", bind_address);
 	strcpy(settings.bind_address, bind_address);
 	request = malloc(sizeof(struct _request_add_flow_destination));
 	request->settings = settings;
@@ -353,7 +352,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 {
 	int rc;
 	xmlrpc_value *ret = 0;
-	DEBUG_MSG(1, "Method get_reports called");
+	DEBUG_MSG(2, "Method get_reports called");
 
 	struct _report *report = get_reports();
 	
@@ -428,7 +427,7 @@ cleanup:
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_reports failed: %s", env->fault_string);
 	else {
-		DEBUG_MSG(1, "Method get_reports successful");
+		DEBUG_MSG(2, "Method get_reports successful");
 	}
 
 	return ret;

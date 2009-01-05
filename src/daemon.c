@@ -80,9 +80,134 @@ unsigned int num_flows = 0;
 
 char started = 0;
 
-int prepare_fds() {
+static int flow_in_delay(struct timeval *now, struct _flow *flow, int direction)
+{
+	return time_is_after(&flow->start_timestamp[direction], now);
+}
 
-	int need_timeout = 0;
+static int flow_sending(struct timeval *now, struct _flow *flow, int direction)
+{
+	return !flow_in_delay(now, flow, direction) &&
+		(flow->settings.duration[direction] < 0 ||
+		 time_diff(&flow->stop_timestamp[direction], now) < 0.0);
+}
+
+static int flow_block_scheduled(struct timeval *now, struct _flow *flow)
+{
+	return !flow->settings.write_rate ||
+		time_is_after(now, &flow->next_write_block_timestamp);
+}
+
+void uninit_flow(struct _flow *flow)
+{
+	if (flow->fd_reply != -1)
+		close(flow->fd_reply);
+	if (flow->fd != -1)
+		close(flow->fd);
+	if (flow->listenfd_reply != -1)
+		close(flow->listenfd_reply);
+	if (flow->listenfd_data != -1)
+		close(flow->listenfd_data);
+	if (flow->read_block)
+		free(flow->read_block);
+	if (flow->write_block)
+		free(flow->write_block);
+	if (flow->addr)
+		free(flow->addr);
+}
+
+void remove_flow(unsigned int i)
+{
+	for (unsigned int j = i; j < num_flows - 1; j++)
+		flows[j] = flows[j + 1];
+	num_flows--;
+	if (!num_flows)
+		started = 0;
+}
+
+static void prepare_wfds(struct timeval *now, struct _flow *flow, fd_set *wfds)
+{
+	int rc = 0;
+
+	if (flow_in_delay(now, flow, WRITE)) {
+		DEBUG_MSG(4, "flow %i not started yet (delayed)", flow->id);
+		return;
+	}
+
+	if (flow_sending(now, flow, WRITE)) {
+		assert(!flow->finished[WRITE]);
+		if (flow_block_scheduled(now, flow)) {
+			DEBUG_MSG(4, "adding sock of flow %d to wfds", flow->id);
+			FD_SET(flow->fd, wfds);
+		} else {
+			DEBUG_MSG(4, "no block for flow %d scheduled yet", flow->id);
+		}
+	} else if (!flow->finished[WRITE]) {
+		flow->finished[WRITE] = 1;
+		if (flow->settings.shutdown) {
+			DEBUG_MSG(4, "shutting down flow %d (WR)", flow->id);
+			rc = shutdown(flow->fd, SHUT_WR);
+			if (rc == -1) {
+				error(ERR_WARNING, "shutdown() SHUT_WR failed: %s",
+						strerror(errno));
+			}
+			fg_pcap_dispatch();
+		}
+	}
+
+	return;
+}
+
+static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
+{
+	int rc = 0;
+
+	if (!flow_in_delay(now, flow, READ) && !flow_sending(now, flow, READ)) {
+		if (!flow->finished[READ] && flow->settings.shutdown) {
+			error(ERR_WARNING, "server flow %u missed to shutdown", flow->id);
+			rc = shutdown(flow->fd, SHUT_RD);
+			if (rc == -1) {
+				error(ERR_WARNING, "shutdown SHUT_RD "
+						"failed: %s", strerror(errno));
+			}
+			flow->finished[READ] = 1;
+		}
+	}
+
+	if (flow->source_settings.late_connect && !flow->connect_called ) {
+		DEBUG_MSG(1, "late connecting test socket "
+				"for flow %d after %.3fs delay",
+				flow->id, flow->settings.delay[WRITE]);
+		rc = connect(flow->fd, flow->addr,
+				flow->addr_len);
+		if (rc == -1 && errno != EINPROGRESS) {
+			error(ERR_WARNING, "Connect failed: %s",
+					strerror(errno));
+//xx_stop
+			return -1;
+		}
+		flow->connect_called = 1;
+		flow->mtu = get_mtu(flow->fd);
+		flow->mss = get_mss(flow->fd);
+	}
+
+	/* Altough the server flow might be finished we keep the socket in
+	 * rfd in order to check for buggy servers */
+	if (flow->connect_called && !flow->finished[READ]) {
+		DEBUG_MSG(4, "adding sock of flow %d to rfds", flow->id);
+		FD_SET(flow->fd, rfds);
+	}
+
+	return 0;
+}
+
+#ifdef __LINUX__
+int get_tcp_info(struct _flow *flow, struct tcp_info *info);
+#endif
+
+static int prepare_fds() {
+
+	unsigned int i = 0;
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
@@ -91,10 +216,51 @@ int prepare_fds() {
 	FD_SET(daemon_pipe[0], &rfds);
 	maxfd = daemon_pipe[0];
 
-	need_timeout += source_prepare_fds(&rfds, &wfds, &efds, &maxfd);
-	need_timeout += destination_prepare_fds(&rfds, &wfds, &efds, &maxfd);
+	struct timeval now;
+	tsc_gettimeofday(&now);
 
-	return need_timeout;
+	while (i < num_flows) {
+		struct _flow *flow = &flows[i++];
+
+		if (flow->state == WAIT_ACCEPT_REPLY && flow->listenfd_reply != -1) {
+			FD_SET(flow->listenfd_reply, &rfds);
+			maxfd = MAX(maxfd, flow->listenfd_reply);
+		}
+
+		if (flow->state == GRIND_WAIT_ACCEPT && flow->listenfd_data != -1) {
+			FD_SET(flow->listenfd_data, &rfds);
+			maxfd = MAX(maxfd, flow->listenfd_data);
+		}
+
+		if (!started)
+			continue;
+
+		if ((flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(&now, flow, READ) && !flow_sending(&now, flow, READ))) &&
+			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))) {
+
+			/* Nothing left to read, nothing left to send */
+			if (flow->fd != -1)
+				get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);
+			uninit_flow(flow);
+			remove_flow(--i);
+			continue;
+		}
+
+		if (flow->fd_reply != -1) {
+			FD_SET(flow->fd_reply, &rfds);
+			maxfd = MAX(maxfd, flow->fd_reply);
+		}
+
+		if (flow->fd != -1) {
+			FD_SET(flow->fd, &efds);
+			maxfd = MAX(maxfd, flow->fd);
+
+			prepare_wfds(&now, flow, &wfds);
+			prepare_rfds(&now, flow, &rfds);
+		}
+	}
+
+	return num_flows;
 }
 
 static void start_flows(struct _request_start_flows *request)
@@ -102,12 +268,12 @@ static void start_flows(struct _request_start_flows *request)
 	int start_timestamp = request->start_timestamp;
 
 	tsc_gettimeofday(&timer.start);
-	if (timer.start.tv_sec < start_timestamp) {
+/*	if (timer.start.tv_sec < start_timestamp) {
 		/* If the clock is syncrhonized between nodes, all nodes will start 
-		   at the same time regardless of any RPC delays */
+		   at the same time regardless of any RPC delays *//*
 		timer.start.tv_sec = start_timestamp;
 		timer.start.tv_usec = 0;
-	}
+	}*/
 	timer.last = timer.next = timer.start;
 	time_add(&timer.next, reporting_interval);
 
@@ -245,13 +411,86 @@ static void timer_check()
 			struct _flow *flow = &flows[i];
 
 #ifdef __LINUX__
-			get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info);
+			if (flow->fd != -1)
+				get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info);
 #endif
 			report_flow(flow);
 		}
 		timer.last = now;
 		while (time_is_after(&now, &timer.next))
 			time_add(&timer.next, reporting_interval);
+	}
+}
+
+static int write_data(struct _flow *flow);
+static int read_data(struct _flow *flow);
+static int read_reply(struct _flow *flow);
+
+static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
+{
+	unsigned int i = 0;
+	while (i < num_flows) {
+		struct _flow *flow = &flows[i];
+
+		/* If any function fails, the flow has ended. */
+		if (flow->listenfd_reply != -1 && FD_ISSET(flow->listenfd_reply, rfds)) {
+			if (flow->state == WAIT_ACCEPT_REPLY) {
+				if (accept_reply(flow) == -1)
+					goto remove;
+			}
+		}
+		if (flow->listenfd_data != -1 && FD_ISSET(flow->listenfd_data, rfds)) {
+			if (flow->state == GRIND_WAIT_ACCEPT) {
+				if (accept_data(flow) == -1)
+					goto remove;
+			}
+		}
+
+		if (flow->fd_reply != -1 && FD_ISSET(flow->fd_reply, rfds))
+			if (read_reply(flow) == -1)
+				goto remove;
+
+		if (flow->fd != -1) {
+
+			if (FD_ISSET(flow->fd, efds)) {
+				int error_number, rc;
+				socklen_t error_number_size = sizeof(error_number);
+				DEBUG_MSG(5, "sock of flow %d in efds", flow->id);
+				rc = getsockopt(flow->fd, SOL_SOCKET,
+						SO_ERROR,
+						(void *)&error_number,
+						&error_number_size);
+				if (rc == -1) {
+					error(ERR_WARNING, "failed to get "
+							"errno for non-blocking "
+							"connect: %s",
+							strerror(errno));
+					goto remove;
+				}
+				if (error_number != 0) {
+					fprintf(stderr, "connect: %s\n",
+							strerror(error_number));
+					goto remove;
+				}
+			}
+			if (FD_ISSET(flow->fd, wfds))
+				if (write_data(flow) == -1)
+					goto remove;
+			if (FD_ISSET(flow->fd, rfds))
+				if (read_data(flow) == -1)
+					goto remove;
+		}
+
+		i++;
+		continue;
+remove:
+		// Flow has ended
+#ifdef __LINUX__
+		if (flow->id != -1)
+			get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);
+#endif
+		uninit_flow(flow);
+		remove_flow(i);
 	}
 }
 
@@ -278,8 +517,7 @@ void* daemon_main(void* ptr __attribute__((unused)))
 
 		timer_check();
 
-		source_process_select(&rfds, &wfds, &efds);
-		destination_process_select(&rfds, &wfds, &efds);
+		process_select(&rfds, &wfds, &efds);
 	}
 }
 
@@ -367,33 +605,6 @@ void init_flow(struct _flow* flow, int is_source)
 	flow->congestion_counter = 0;
 }
 
-void uninit_flow(struct _flow *flow)
-{
-	if (flow->fd_reply != -1)
-		close(flow->fd_reply);
-	if (flow->fd != -1)
-		close(flow->fd);
-	if (flow->listenfd_reply != -1)
-		close(flow->listenfd_reply);
-	if (flow->listenfd_data != -1)
-		close(flow->listenfd_data);
-	if (flow->read_block)
-		free(flow->read_block);
-	if (flow->write_block)
-		free(flow->write_block);
-	if (flow->addr)
-		free(flow->addr);
-}
-
-void remove_flow(unsigned int i)
-{
-	for (unsigned int j = i; j < num_flows - 1; j++)
-		flows[j] = flows[j + 1];
-	num_flows--;
-	if (!num_flows)
-		started = 0;
-}
-
 static double flow_interpacket_delay(struct _flow *flow)
 {
 	double delay = 0;
@@ -411,7 +622,7 @@ static double flow_interpacket_delay(struct _flow *flow)
 	return delay;
 }
 
-int write_data(struct _flow *flow)
+static int write_data(struct _flow *flow)
 {
 	int rc = 0;
 
@@ -505,7 +716,7 @@ int write_data(struct _flow *flow)
 	return 0;
 }
 
-int read_data(struct _flow *flow)
+static int read_data(struct _flow *flow)
 {
 	int rc;
 	struct iovec iov;
@@ -667,7 +878,7 @@ static void process_reply(struct _flow* flow)
 	DEBUG_MSG(4, "processed reply_block of flow %d, (RTT = %.3lfms, IAT = %.3lfms)", flow->id, current_rtt * 1e3, isnan(*current_iat_ptr) ? NAN : *current_iat_ptr * 1e3);
 }
 
-int read_reply(struct _flow *flow)
+static int read_reply(struct _flow *flow)
 {
 	int rc = 0;
 

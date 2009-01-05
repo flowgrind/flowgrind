@@ -2,7 +2,7 @@
 #define __DESTINATION_H__
 
 void add_flow_destination(struct _request_add_flow_destination *request);
-int destination_prepare_fds(fd_set *rfds, fd_set *wfds, fd_set *efds, int *maxfd);
-void destination_process_select(fd_set *rfds, fd_set *wfds, fd_set *efds);
+int accept_reply(struct _flow *flow);
+int accept_data(struct _flow *flow);
 
 #endif //__DESTINATION_H__

@@ -122,7 +122,7 @@ static void log_client_address(const struct sockaddr *sa, socklen_t salen)
 	logging_log(LOG_NOTICE, "connection from %s", fg_nameinfo(sa, salen));
 }
 
-static int accept_reply(struct _flow *flow)
+int accept_reply(struct _flow *flow)
 {
 	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof(addr);
@@ -280,7 +280,7 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	return;
 }
 
-static int accept_data(struct _flow *flow)
+int accept_data(struct _flow *flow)
 {
 	struct sockaddr_storage caddr;
 	socklen_t addrlen = sizeof(caddr);
@@ -342,89 +342,7 @@ static int accept_data(struct _flow *flow)
 
 	DEBUG_MSG(2, "data socket accepted");
 	flow->state = GRIND;
+	flow->connect_called = 1;
 
 	return 0;
-}
-
-int write_data(struct _flow *flow);
-int read_data(struct _flow *flow);
-int read_reply(struct _flow *flow);
-
-void destination_process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
-{
-	unsigned int i = 0;
-	while (i < num_flows) {
-		struct timeval now;
-		struct _flow *flow = &flows[i];
-
-		/* If any function fails, the flow has ended. */
-		if (flow->listenfd_reply != -1 && FD_ISSET(flow->listenfd_reply, rfds)) {
-			if (flow->state == WAIT_ACCEPT_REPLY) {
-				if (accept_reply(flow) == -1)
-					goto remove;
-			}
-		}
-		if (flow->listenfd_data != -1 && FD_ISSET(flow->listenfd_data, rfds)) {
-			if (flow->state == GRIND_WAIT_ACCEPT) {
-				if (accept_data(flow) == -1)
-					goto remove;
-			}
-		}
-
-		if (flow->fd_reply != -1 && FD_ISSET(flow->fd_reply, rfds))
-			if (read_reply(flow) == -1)
-				goto remove;
-
-		if (flow->fd != -1) {
-			if (FD_ISSET(flow->fd, efds)) {
-				int error_number, rc;
-				socklen_t error_number_size = sizeof(error_number);
-				DEBUG_MSG(5, "sock of flow %d in efds", flow->id);
-				rc = getsockopt(flow->fd, SOL_SOCKET,
-						SO_ERROR,
-						(void *)&error_number,
-						&error_number_size);
-				if (rc == -1) {
-					error(ERR_WARNING, "failed to get "
-							"errno for non-blocking "
-							"connect: %s",
-							strerror(errno));
-					goto remove;
-				}
-				if (error_number != 0) {
-					fprintf(stderr, "connect: %s\n",
-							strerror(error_number));
-					goto remove;
-				}
-			}
-			if (FD_ISSET(flow->fd, wfds))
-				if (write_data(flow) == -1)
-					goto remove;
-			if (FD_ISSET(flow->fd, rfds))
-				if (read_data(flow) == -1)
-					goto remove;
-		}
-
-		tsc_gettimeofday(&now);
-
-		if (flow->settings.shutdown &&
-			time_is_after(&now, &flow->stop_timestamp[WRITE])) {
-			DEBUG_MSG(4, "shutting down data connection.");
-			if (shutdown(flow->fd, SHUT_WR) == -1) {
-				logging_log(LOG_WARNING, "shutdown "
-					"failed: %s", strerror(errno));
-			}
-			fg_pcap_dispatch();
-		}
-
-		i++;
-		continue;
-remove:
-		// Flow has ended
-#ifdef __LINUX__
-		get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);
-#endif
-		uninit_flow(flow);
-		remove_flow(i);
-	}
 }

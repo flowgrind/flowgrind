@@ -167,9 +167,9 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		double throughput,
 		double rttmin, double rttavg, double rttmax,
 		double iatmin, double iatavg, double iatmax,
-		int cwnd, int ssth, int uack, int sack, int lost,int reor,
-		int retr, int fack,double linrtt,double linrttvar,
-		double linrto, int mss, int mtu, char* comnt, int unit_byte) {
+		int cwnd, int ssth, int uack, int sack, int lost, int reor,
+		int retr, int fack, double linrtt, double linrttvar,
+		double linrto, int mss, int mtu, char* comment, int unit_byte) {
 
 	static char * const str_id = "#  ID";
 	static char * const str_begin[] = {" begin", " [s]"};
@@ -196,7 +196,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	static char * const str_linrto[] = {" rto", " "};
 	static char * const str_mss[] = {" mss", " "};
 	static char * const str_mtu[] = {" mtu", " "};
-	static char * const str_coment[] = {" ;-)", " "};
+	static char * const str_comment[] = {" ;-)", " "};
 
 	int columnWidthChanged = 0; //Flag: 0: column width has not changed
 
@@ -313,9 +313,9 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	createOutputColumn(headerString1, headerString2, dataString, str_mtu[0], str_mtu[1], mtu, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
-	strcat(headerString1, str_coment[0]);
-	strcat(headerString2, str_coment[1]);
-	strcat(dataString, comnt);
+	strcat(headerString1, str_comment[0]);
+	strcat(headerString2, str_comment[1]);
+	strcat(dataString, comment);
 
 	//newline at the end of the string
 	strcat(headerString1, "\n");
@@ -693,14 +693,6 @@ void print_tcp_report_line(char hash, int id,
 		comment_buffer[0] = '\0';
 
 	thruput = scale_thruput((double)bytes_written / (time2 - time1));
-
-	//wrong
-	if (!hash) {
-/*		mss = get_mss(flow[id].sock);
-		mtu = get_mtu(flow[id].sock);
-		flow[id].current_mss = mss;
-		flow[id].current_mtu = mtu;*/
-	}
 
 	char rep_string[4000];
 #ifndef __LINUX__
