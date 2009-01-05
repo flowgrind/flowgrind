@@ -105,7 +105,7 @@ struct _flow_endpoint {
 
 #include "daemon.h"
 
-struct _flow {
+struct _flow_dummy {
 	char *server_name;
 	char *server_name_control;
 	unsigned server_control_port;
@@ -169,8 +169,6 @@ struct _flow {
 
 #ifdef __LINUX__
 	char final_cc_alg[30];
-	struct tcp_info last_tcp_info;
-	struct tcp_info final_tcp_info;
 #endif
 
 	long bytes_read_since_first;
@@ -182,26 +180,21 @@ struct _flow {
 	long read_reply_blocks_since_last;
 	long read_reply_blocks_since_first;
 
-	double min_rtt_since_first;
-	double min_rtt_since_last;
-	double max_rtt_since_first;
-	double max_rtt_since_last;
-	double tot_rtt_since_first;
-	double tot_rtt_since_last;
+	int source_id;
+	int destination_id;
 
-	double min_iat_since_first;
-	double min_iat_since_last;
-	double max_iat_since_first;
-	double max_iat_since_last;
-	double tot_iat_since_first;
-	double tot_iat_since_last;
+	struct timeval start_timestamp[2];
+
+#ifdef __LINUX__
+	int last_retrans[2];
+#endif
 
 	// 0 for source
 	// 1 for destination
 	struct _flow_endpoint endpoint_options[2];
 	struct _flow_settings settings[2];
 };
-struct _flow flow[MAX_FLOWS];
+struct _flow_dummy flow[MAX_FLOWS];
 
 struct {
 	struct timeval start;

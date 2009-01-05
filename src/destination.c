@@ -40,60 +40,7 @@
 #include <float.h>
 #endif
 
-#define	MAX_FLOWS	256
-
-enum flow_state
-{
-	WAIT_ACCEPT_REPLY,
-	GRIND_WAIT_ACCEPT,
-	GRIND
-};
-
-struct _flow
-{
-	enum flow_state state;
-
-	int fd_reply;
-	int listenfd_reply;
-	int listenfd_data;
-	int fd;
-
-	struct _flow_settings settings;
-	struct _flow_destination_settings destination_settings;
-
-	struct timeval start_timestamp[2];
-	struct timeval stop_timestamp[2];
-	struct timeval last_block_read;
-
-	char *read_block;
-	unsigned read_block_bytes_read;
-
-	char *write_block;
-	unsigned write_block_bytes_written;
-
-	unsigned short requested_server_test_port;
-
-	unsigned real_listen_send_buffer_size;
-	unsigned real_listen_receive_buffer_size;
-
-	char finished[2];
-
-	socklen_t addrlen;
-};
-
-static struct _flow flows[MAX_FLOWS];
-
-static unsigned int num_flows = 0;
-
-struct _timer {
-	struct timeval start;
-	struct timeval next;
-	struct timeval last;
-};
-static struct _timer timer;
 static struct timeval now;
-
-static char started = 0;
 
 static int flow_in_delay(struct _flow *flow, int direction)
 {
@@ -114,30 +61,14 @@ static int flow_block_scheduled(struct _flow *flow)
 		time_is_after(&now, &flow->next_write_block_timestamp);
 }*/
 
-static void remove_flow(unsigned int i)
-{
-	for (unsigned int j = i; j < num_flows - 1; j++)
-		flows[j] = flows[j + 1];
-	num_flows--;
-	if (!num_flows)
-		started = 0;
-}
+void remove_flow(unsigned int i);
 
-static void uninit_flow(struct _flow *flow)
-{
-	if (flow->fd_reply != -1)
-		close(flow->fd_reply);
-	if (flow->listenfd_reply != -1)
-		close(flow->listenfd_reply);
-	if (flow->listenfd_data != -1)
-		close(flow->listenfd_data);
-	if (flow->fd != -1)
-		close(flow->fd);
-	if (flow->read_block)
-		free(flow->read_block);
-	if (flow->write_block)
-		free(flow->write_block);
-}
+#ifdef __LINUX__
+int get_tcp_info(struct _flow *flow, struct tcp_info *info);
+#endif
+
+void init_flow(struct _flow* flow, int is_source);
+void uninit_flow(struct _flow *flow);
 
 int destination_prepare_fds(fd_set *rfds, fd_set *wfds, fd_set *efds, int *maxfd)
 {
@@ -189,25 +120,6 @@ int destination_prepare_fds(fd_set *rfds, fd_set *wfds, fd_set *efds, int *maxfd
 static void log_client_address(const struct sockaddr *sa, socklen_t salen)
 {
 	logging_log(LOG_NOTICE, "connection from %s", fg_nameinfo(sa, salen));
-}
-
-static void init_flow(struct _flow* flow)
-{
-	flow->state = WAIT_ACCEPT_REPLY;
-	flow->fd_reply = -1;
-	flow->listenfd_reply = -1;
-	flow->listenfd_data = -1;
-	flow->fd = -1;
-
-	flow->read_block = 0;
-	flow->read_block_bytes_read = 0;
-	flow->write_block = 0;
-	flow->write_block_bytes_written = 0;
-
-	flow->last_block_read.tv_sec = 0;
-	flow->last_block_read.tv_usec = 0;
-
-	flow->finished[READ] = flow->finished[WRITE] = 0;
 }
 
 static int accept_reply(struct _flow *flow)
@@ -320,10 +232,9 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	}
 
 	flow = &flows[num_flows++];
-	init_flow(flow);
+	init_flow(flow, 0);
 
 	flow->settings = request->settings;
-	flow->destination_settings = request->destination_settings;
 
 	flow->write_block = calloc(1, flow->settings.write_block_size);
 	flow->read_block = calloc(1, flow->settings.read_block_size);
@@ -363,6 +274,8 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	request->listen_data_port = (int)server_data_port;
 	request->real_listen_send_buffer_size = flow->real_listen_send_buffer_size;
 	request->real_listen_read_buffer_size = flow->real_listen_receive_buffer_size;
+
+	request->flow_id = flow->id;
 
 	return;
 }
@@ -420,6 +333,10 @@ static int accept_data(struct _flow *flow)
 		logging_log(LOG_WARNING, "Unable to set SO_DEBUG on test socket: %s",
 				  strerror(errno));
 	}
+	if (flow->settings.cork && set_tcp_cork(flow->fd) == -1)
+		error(ERR_FATAL, "Unable to set TCP_CORK "
+				"for flow id = %i: %s",
+				flow->id, strerror(errno));
 
 	set_non_blocking(flow->fd);
 
@@ -429,122 +346,9 @@ static int accept_data(struct _flow *flow)
 	return 0;
 }
 
-static int write_data(struct _flow *flow)
-{
-	struct timeval now;
-	int rc;
-
-	DEBUG_MSG(5, "test sock in wfds");
-
-	tsc_gettimeofday(&now);
-
-	if (!time_is_after(&now, &flow->start_timestamp[WRITE]) ||
-			(flow->settings.duration[WRITE] >= 0 && !time_is_after(&flow->stop_timestamp[WRITE], &now)))
-		return 0;
-
-	/* Read comment in write_test_data in flowgrind.c why this loop is needed */
-	for (;;) {
-		if (flow->write_block_bytes_written == 0)
-			tsc_gettimeofday((struct timeval *)flow->write_block);
-		rc = send(flow->fd, flow->write_block +
-				flow->write_block_bytes_written,
-				flow->settings.write_block_size -
-				flow->write_block_bytes_written, 0);
-		if (rc == -1) {
-			if (errno == EAGAIN)
-				break;
-			logging_log(LOG_WARNING, "Premature end of test: %s",
-				strerror(errno));
-			return -1;
-		} else if (rc == 0)
-			break;
-		DEBUG_MSG(4, "sent %u bytes", rc);
-		flow->write_block_bytes_written += rc;
-		if (flow->write_block_bytes_written >=
-				flow->settings.write_block_size) {
-			assert(flow->write_block_bytes_written =
-					flow->settings.write_block_size);
-			flow->write_block_bytes_written = 0;
-		}
-		if (!flow->settings.pushy)
-			break;
-	}
-
-	return 0;
-}
-
-static int read_data(struct _flow *flow)
-{
-	struct timeval now;
-	int rc;
-
-	tsc_gettimeofday(&now);
-
-	DEBUG_MSG(5, "test sock in rfds");
-	for (;;) {
-		rc = recv(flow->fd, flow->read_block+flow->read_block_bytes_read,
-			flow->settings.read_block_size -
-				flow->read_block_bytes_read, 0);
-		if (rc == -1) {
-			if (errno == EAGAIN)
-				break;
-			logging_log(LOG_WARNING, "Premature "
-				"end of test: %s",
-				strerror(errno));
-			return -1;
-		} else if (rc == 0) {
-			DEBUG_MSG(1, "client shut down flow");
-			flow->finished[READ] = 1;
-			return 0;
-		}
-		DEBUG_MSG(4, "received %d bytes "
-			"(in flow->read_block already = %u)",
-			rc, flow->read_block_bytes_read);
-		flow->read_block_bytes_read += rc;
-		if (flow->read_block_bytes_read >= flow->settings.read_block_size) {
-			int reply_block_length = flow->read_block[0] + sizeof(double);
-			double *iat_ptr = (double *)(flow->read_block
-				+ flow->read_block[0]);
-			assert(flow->read_block_bytes_read ==
-				flow->settings.read_block_size);
-			flow->read_block_bytes_read = 0;
-			if (flow->settings.read_block_size <
-					reply_block_length)
-				continue;
-			if (flow->last_block_read.tv_sec == 0 &&
-				flow->last_block_read.tv_usec == 0) {
-				*iat_ptr = NAN;
-				DEBUG_MSG(5, "isnan = %d",
-					isnan(*iat_ptr));
-			} else
-				*iat_ptr = time_diff_now(
-					&flow->last_block_read);
-			tsc_gettimeofday(&flow->last_block_read);
-			rc = write(flow->fd_reply, flow->read_block,
-					reply_block_length);
-			if (rc == -1) {
-				if (errno == EAGAIN) {
-					logging_log(LOG_WARNING,
-						"congestion on "
-						"control connection, "
-						"dropping reply block");
-					continue;
-				}
-				logging_log(LOG_WARNING,
-					"Premature end of test: %s",
-					strerror(errno));
-				return -1;
-			}
-			DEBUG_MSG(4, "sent reply block (IAT = "
-				"%.3lf)", (isnan(*iat_ptr) ?
-					NAN : (*iat_ptr) * 1e3));
-			}
-		if (!flow->settings.pushy)
-			break;
-	}
-
-	return 0;
-}
+int write_data(struct _flow *flow);
+int read_data(struct _flow *flow);
+int read_reply(struct _flow *flow);
 
 void destination_process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 {
@@ -566,7 +370,33 @@ void destination_process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 					goto remove;
 			}
 		}
+
+		if (flow->fd_reply != -1 && FD_ISSET(flow->fd_reply, rfds))
+			if (read_reply(flow) == -1)
+				goto remove;
+
 		if (flow->fd != -1) {
+			if (FD_ISSET(flow->fd, efds)) {
+				int error_number, rc;
+				socklen_t error_number_size = sizeof(error_number);
+				DEBUG_MSG(5, "sock of flow %d in efds", flow->id);
+				rc = getsockopt(flow->fd, SOL_SOCKET,
+						SO_ERROR,
+						(void *)&error_number,
+						&error_number_size);
+				if (rc == -1) {
+					error(ERR_WARNING, "failed to get "
+							"errno for non-blocking "
+							"connect: %s",
+							strerror(errno));
+					goto remove;
+				}
+				if (error_number != 0) {
+					fprintf(stderr, "connect: %s\n",
+							strerror(error_number));
+					goto remove;
+				}
+			}
 			if (FD_ISSET(flow->fd, wfds))
 				if (write_data(flow) == -1)
 					goto remove;
@@ -591,55 +421,10 @@ void destination_process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 		continue;
 remove:
 		// Flow has ended
+#ifdef __LINUX__
+		get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);
+#endif
 		uninit_flow(flow);
 		remove_flow(i);
-	}
-}
-
-void destination_start_flows(int start_timestamp)
-{
-	tsc_gettimeofday(&timer.start);
-	if (timer.start.tv_sec < start_timestamp) {
-		/* If the clock is syncrhonized between nodes, all nodes will start 
-		   at the same time regardless of any RPC delays */
-		timer.start.tv_sec = start_timestamp;
-		timer.start.tv_usec = 0;
-	}
-	timer.last = timer.next = timer.start;
-	time_add(&timer.next, reporting_interval);
-
-	for (int i = 0; i < num_flows; i++) {
-		struct _flow *flow = &flows[i];
-
-		/* READ and WRITE */
-		for (int j = 0; j < 2; j++) {
-			flow->start_timestamp[j] = timer.start;
-			time_add(&flow->start_timestamp[j], flow->settings.delay[j]);
-			if (flow->settings.duration[j] >= 0) {
-				flow->stop_timestamp[j] = flow->start_timestamp[j];
-				time_add(&flow->stop_timestamp[j], flow->settings.duration[j]);
-			}
-		}
-	}
-
-	started = 1;
-}
-
-static void report_flow(struct _flow* flow) {
-	printf("TODO: report_flow\n");
-}
-
-void destination_timer_check()
-{
-	if (!started)
-		return;
-
-	tsc_gettimeofday(&now);
-	if (time_is_after(&now, &timer.next)) {
-		for (int i = 0; i < num_flows; i++)
-			 report_flow(&flows[i]);
-		timer.last = now;
-		while (time_is_after(&now, &timer.next))
-			time_add(&timer.next, reporting_interval);
 	}
 }

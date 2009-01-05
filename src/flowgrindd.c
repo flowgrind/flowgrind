@@ -16,6 +16,7 @@
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
+#include <xmlrpc-c/util.h>
 
 #include "config.h"  /* information about this build environment */
 #include "common.h"
@@ -112,9 +113,9 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 {
 	int rc;
 	xmlrpc_value *ret = 0;
-	const char* destination_host = 0;
-	const char* destination_host_reply = 0;
-	const char* cc_alg = 0;
+	char* destination_host = 0;
+	char* destination_host_reply = 0;
+	char* cc_alg = 0;
 
 	struct _flow_settings settings;
 	struct _flow_source_settings source_settings;
@@ -124,7 +125,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	DEBUG_MSG(1, "Method add_flow_source called");
 
 	/* Parse our argument array. */
-	xmlrpc_decompose_value(env, param_array, "({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,*}{s:s,s:s,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i,s:i,*})",
+	xmlrpc_decompose_value(env, param_array, "({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,*}{s:s,s:s,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i,*})",
 
 		/* general settings */
 		"write_delay", &settings.delay[WRITE],
@@ -143,6 +144,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"write_rate", &settings.write_rate,
 		"poisson_distributed", &settings.poisson_distributed,
 		"flow_control", &settings.flow_control,
+		"cork", &settings.cork,
 
 		/* source settings */
 		"destination_host", &destination_host,
@@ -152,7 +154,6 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"cc_alg", &cc_alg,
 		"elcn", &source_settings.elcn,
 		"icmp", &source_settings.icmp,
-		"cork", &source_settings.cork,
 		"dscp", &source_settings.dscp,
 		"ipmtudiscover", &source_settings.ipmtudiscover,
 		"late_connect", &source_settings.late_connect,
@@ -196,11 +197,11 @@ cleanup:
 	if (request)
 		free(request);
 	if (destination_host)
-		xmlrpc_strfree(destination_host);
+		free(destination_host);
 	if (destination_host_reply)
-		xmlrpc_strfree(destination_host_reply);
+		free(destination_host_reply);
 	if (cc_alg)
-		xmlrpc_strfree(cc_alg);
+		free(cc_alg);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_source failed: %s", env->fault_string);
@@ -226,7 +227,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	DEBUG_MSG(1, "Method add_flow_destination called");
 
 	/* Parse our argument array. */
-	xmlrpc_decompose_value(env, param_array, "({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,*})",
+	xmlrpc_decompose_value(env, param_array, "({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,*})",
 
 		/* general settings */
 		"write_delay", &settings.delay[WRITE],
@@ -244,7 +245,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"shutdown", &settings.shutdown,
 		"write_rate", &settings.write_rate,
 		"poisson_distributed", &settings.poisson_distributed,
-		"flow_control", &settings.flow_control);
+		"flow_control", &settings.flow_control,
+		"cork", &settings.cork);
 
 	if (env->fault_occurred)
 		goto cleanup;
@@ -338,7 +340,6 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 {
 	int rc;
 	xmlrpc_value *ret = 0;
-	int start_timestamp;
 	DEBUG_MSG(1, "Method get_reports called");
 
 	struct _report *report = get_reports();
@@ -346,13 +347,17 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	ret = xmlrpc_array_new(env);
 	
 	while (report) {
-
-		xmlrpc_value *rv = xmlrpc_build_value(env, "{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:d,s:d,s:d,s:d,s:d,s:d,s:i,s:i}",
+		xmlrpc_value *rv = xmlrpc_build_value(env, "{"
+			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
+			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}", /* TCP info */
 		
 			"id", report->id,
 			"type", report->type,
-			"tv_sec", (int)report->tv.tv_sec,
-			"tv_usec", (int)report->tv.tv_usec,
+			"begin_tv_sec", (int)report->begin.tv_sec,
+			"begin_tv_usec", (int)report->begin.tv_usec,
+			"end_tv_sec", (int)report->end.tv_sec,
+			"end_tv_usec", (int)report->end.tv_usec,
+
 			"bytes_read", report->bytes_read,
 			"bytes_written", report->bytes_written,
 			"reply_blocks_read", report->reply_blocks_read,
@@ -365,7 +370,36 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
  			"iat_sum", report->iat_sum,
 
 			"mss", report->mss,
-			"mtu", report->mtu
+			"mtu", report->mtu,
+#ifdef __LINUX__
+			"tcpi_snd_cwnd", (int)report->tcp_info.tcpi_snd_cwnd,
+			"tcpi_snd_ssthresh", (int)report->tcp_info.tcpi_snd_ssthresh,
+			"tcpi_unacked", (int)report->tcp_info.tcpi_unacked,
+			"tcpi_sacked", (int)report->tcp_info.tcpi_sacked,
+			"tcpi_lost", (int)report->tcp_info.tcpi_lost,
+			"tcpi_retrans", (int)report->tcp_info.tcpi_retrans,
+			"tcpi_fackets", (int)report->tcp_info.tcpi_fackets,
+			"tcpi_reordering", (int)report->tcp_info.tcpi_reordering,
+			"tcpi_rtt", (int)report->tcp_info.tcpi_rtt,
+			"tcpi_rttvar", (int)report->tcp_info.tcpi_rttvar,
+			"tcpi_rto", (int)report->tcp_info.tcpi_rto,
+			"tcpi_last_data_sent", (int)report->tcp_info.tcpi_last_data_sent,
+			"tcpi_last_ack_recv", (int)report->tcp_info.tcpi_last_ack_recv
+#else
+			"tcpi_snd_cwnd", 0,
+			"tcpi_snd_ssthresh", 0,
+			"tcpi_unacked", 0,
+			"tcpi_sacked", 0,
+			"tcpi_lost", 0,
+			"tcpi_retrans", 0,
+			"tcpi_fackets", 0,
+			"tcpi_reordering", 0,
+			"tcpi_rtt", 0,
+			"tcpi_rttvar", 0,
+			"tcpi_rto", 0,
+			"tcpi_last_data_sent", 0,
+			"tcpi_last_ack_recv", 0
+#endif
 		);
 		
 		xmlrpc_array_append_item(env, ret, rv);

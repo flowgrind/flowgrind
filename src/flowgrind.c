@@ -99,8 +99,8 @@ char *outStringPart(int digits, int decimalPart) {
 	return outstr;
 }
 
-int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strData1Row, char *strData2Row,
-	char *strHead1, char *strHead2, double value1, double value2, unsigned int *control0,
+int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
+	char *strHead1, char *strHead2, double value, unsigned int *control0,
 	unsigned int *control1, int numDigitsDecimalPart, int showColumn, int *columnWidthChanged) {
 
 	unsigned int maxTooLongColumns = 2; // Maximum number of rows with non-optimal column width
@@ -116,7 +116,7 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strData1Row, 
 		return 0;
 
 	// get max columnsize
-	lengthData = MAX(det_output_column_size(value1), det_output_column_size(value2)) + 2 + numDigitsDecimalPart;
+	lengthData = det_output_column_size(value) + 2 + numDigitsDecimalPart;
 	lengthHead = MAX(strlen(strHead1), strlen(strHead2));
 	columnSize = MAX(lengthData, lengthHead);
 
@@ -139,13 +139,8 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strData1Row, 
 	number_formatstring = outStringPart(*control1, numDigitsDecimalPart);
 
 	// create columns
-	// Data Sender -> Reciver
-	sprintf(tempBuffer, number_formatstring, value1);
-	strcat(strData1Row, tempBuffer);
-
-	// Data Reciver -> Sender
-	sprintf(tempBuffer, number_formatstring, value2);
-	strcat(strData2Row, tempBuffer);
+	sprintf(tempBuffer, number_formatstring, value);
+	strcat(strDataRow, tempBuffer);
 
 	// 1. Header row
 	for (a = *control1; a > strlen(strHead1); a--)
@@ -160,8 +155,8 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strData1Row, 
 	return 0;
 }
 
-char *createOutput(char hash, int id, double begin, double end,
-		double cs, double sc,
+char *createOutput(char hash, int id, int type, double begin, double end,
+		double throughput,
 		double rttmin, double rttavg, double rttmax,
 		double iatmin, double iatavg, double iatmax,
 		int cwnd, int ssth, int uack, int sack, int lost,int reor,
@@ -208,133 +203,130 @@ char *createOutput(char hash, int id, double begin, double end,
 	static int counter = 0;
 
 	//Create Row + Header
-	char dataSenderString[1000];
-	char dataReciverString[1000];
+	char dataString[1000];
 	char headerString1[1000];
 	char headerString2[1000];
 	static char outputString[4000];
 
 	//output string
 	//param # + flow_id
-	sprintf(dataSenderString, "%cS%3d", hash, id);
-	sprintf(dataReciverString, "%cR%3d", hash, id);
+	if (type == 0)
+		sprintf(dataString, "%cS%3d", hash, id);
+	else
+		sprintf(dataString, "%cR%3d", hash, id);
 	strcpy(headerString1, str_id);
 	strcpy(headerString2, "#    ");
 	i++;
 
 	//param begin
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_begin[0], str_begin[1], begin, begin, &control[i][0], &control[i][1], 3, visible_columns[0], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_begin[0], str_begin[1], begin, &control[i][0], &control[i][1], 3, visible_columns[0], &columnWidthChanged);
 	i++;
 
 	//param end
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_end[0], str_end[1], end, end, &control[i][0], &control[i][1], 3, visible_columns[1], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,  str_end[0], str_end[1], end, &control[i][0], &control[i][1], 3, visible_columns[1], &columnWidthChanged);
 	i++;
 
-	//param c/s s/c throughput
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_cs[0], str_cs[1], cs, sc, &control[i][0], &control[i][1], 6, visible_columns[2], &columnWidthChanged);
+	//param throughput
+	createOutputColumn(headerString1, headerString2, dataString, str_cs[0], str_cs[1], throughput, &control[i][0], &control[i][1], 6, visible_columns[2], &columnWidthChanged);
 	i++;
 
 	//param str_rttmin
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_rttmin[0], str_rttmin[1], rttmin, 0, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_rttmin[0], str_rttmin[1], rttmin, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
 	i++;
 
 	//param str_rttavg
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_rttavg[0], str_rttavg[1], rttavg, 0, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_rttavg[0], str_rttavg[1], rttavg, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
 	i++;
 
 	//param str_rttmax
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_rttmax[0], str_rttmax[1], rttmax, 0, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_rttmax[0], str_rttmax[1], rttmax, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
 	i++;
 
 	//param str_iatmin
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_iatmin[0], str_iatmin[1], iatmin, 0, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_iatmin[0], str_iatmin[1], iatmin, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
 	i++;
 
 	//param str_iatavg
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_iatavg[0], str_iatavg[1], iatavg, 0, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_iatavg[0], str_iatavg[1], iatavg, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
 	i++;
 
 	//param str_iatmax
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_iatmax[0], str_iatmax[1], iatmax, 0, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_iatmax[0], str_iatmax[1], iatmax, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
 	i++;
 
 	//linux kernel output
 	//param str_cwnd
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_cwnd[0], str_cwnd[1], cwnd, 0, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_cwnd[0], str_cwnd[1], cwnd, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_ssth
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_ssth[0], str_ssth[1], ssth, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_ssth[0], str_ssth[1], ssth, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_uack
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_uack[0], str_uack[1], uack, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_uack[0], str_uack[1], uack, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_sack
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_sack[0], str_sack[1], sack, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_sack[0], str_sack[1], sack, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_lost
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_lost[0], str_lost[1], lost, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_lost[0], str_lost[1], lost, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_retr
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_retr[0], str_retr[1], retr, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_retr[0], str_retr[1], retr, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_fack
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_fack[0], str_fack[1], fack, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_fack[0], str_fack[1], fack, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_reor
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_reor[0], str_reor[1], reor, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_reor[0], str_reor[1], reor, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_linrtt
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_linrtt[0], str_linrtt[1], linrtt, 0, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_linrtt[0], str_linrtt[1], linrtt, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_linrttvar
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_linrttvar[0], str_linrttvar[1], linrttvar, 0, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_linrttvar[0], str_linrttvar[1], linrttvar, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	//param str_linrto
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_linrto[0], str_linrto[1], linrto, 0, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_linrto[0], str_linrto[1], linrto, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
 	i++;
 
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_mss[0], str_mss[1], mss, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_mss[0], str_mss[1], mss, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
-	createOutputColumn(headerString1, headerString2, dataSenderString, dataReciverString, str_mtu[0], str_mtu[1], mtu, 0, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, str_mtu[0], str_mtu[1], mtu, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
 	i++;
 
 	strcat(headerString1, str_coment[0]);
 	strcat(headerString2, str_coment[1]);
-	strcat(dataSenderString, comnt);
-	strcat(dataReciverString, comnt);
+	strcat(dataString, comnt);
 
 	//newline at the end of the string
 	strcat(headerString1, "\n");
 	strcat(headerString2, "\n");
-	strcat(dataSenderString, "\n");
-	strcat(dataReciverString, "\n");
+	strcat(dataString, "\n");
 	//output string end
 	if (columnWidthChanged > 0 || (counter % 25) == 0) {
 		strcpy(outputString, headerString1);
 		strcat(outputString, headerString2);
-		strcat(outputString, dataSenderString);
-		strcat(outputString, dataReciverString);
+		strcat(outputString, dataString);
 	}
 	else {
-		strcpy(outputString, dataSenderString);
-		strcat(outputString, dataReciverString);
+		strcpy(outputString, dataString);
 	}
 	counter++;
 
 	// now do the anderson darlington stuff
 	if (doAnderson > 0) {
-
+/* TODO, this one needs to be reworked
 		if (array_size < MAXANDERSONSIZE) {
 			t_array_s[array_size] = cs ;
 			r_array_s[array_size] = rttavg ;
@@ -346,6 +338,7 @@ char *createOutput(char hash, int id, double begin, double end,
 		}
 		else
 			anderson_outbound =1;
+*/
 	}
 
 	return outputString;
@@ -555,21 +548,16 @@ void init_flows_defaults(void)
 		flow[id].read_reply_blocks_since_first = 0;
 		flow[id].read_reply_blocks_since_last = 0;
 
-		/* Round trip time */
-		flow[id].min_rtt_since_first = +INFINITY;
-		flow[id].min_rtt_since_last = +INFINITY;
-		flow[id].max_rtt_since_first = -INFINITY;
-		flow[id].max_rtt_since_last = -INFINITY;
-		flow[id].tot_rtt_since_first = 0.0;
-		flow[id].tot_rtt_since_last = 0.0;
+		flow[id].source_id = flow[id].destination_id = -1;
+		flow[id].start_timestamp[0].tv_sec = 0;
+		flow[id].start_timestamp[0].tv_usec = 0;
+		flow[id].start_timestamp[1].tv_sec = 0;
+		flow[id].start_timestamp[1].tv_usec = 0;
 
-		/* Inter arrival times */
-		flow[id].min_iat_since_first = +INFINITY;
-		flow[id].min_iat_since_last = +INFINITY;
-		flow[id].max_iat_since_first = -INFINITY;
-		flow[id].max_iat_since_last = -INFINITY;
-		flow[id].tot_iat_since_first = 0.0;
-		flow[id].tot_iat_since_last = 0.0;
+#ifdef __LINUX__
+		flow[id].last_retrans[0] = 0;
+		flow[id].last_retrans[1] = 0;
+#endif
 	}
 }
 
@@ -639,7 +627,9 @@ void log_output(const char *msg)
 	}
 }
 
-void print_tcp_report_line(char hash, int id, double time1, double time2,
+void print_tcp_report_line(char hash, int id,
+		int type, /* 0 source 1 destination */
+		double time1, double time2,
 		long bytes_written, long bytes_read,
 		long read_reply_blocks,  double min_rtt,
 		double tot_rtt, double max_rtt, double min_iat,
@@ -648,7 +638,8 @@ void print_tcp_report_line(char hash, int id, double time1, double time2,
 		,unsigned cwnd, unsigned ssth, unsigned uack,
 		unsigned sack, unsigned lost, unsigned retr,
 		unsigned fack, unsigned reor, double rtt,
-		double rttvar, double rto, int mss, int mtu
+		double rttvar, double rto,
+		int mss, int mtu
 #endif
 )
 {
@@ -675,13 +666,13 @@ void print_tcp_report_line(char hash, int id, double time1, double time2,
 	if (flow[id].stopped)
 		COMMENT_CAT("stopped")
 	else {
-		blocks_written = bytes_written / flow[id].settings[SOURCE].write_block_size;
+		blocks_written = bytes_written / flow[id].settings[type].write_block_size;
 		if (blocks_written == 0) {
 			if (client_flow_in_delay(id))
 				COMMENT_CAT("d")
 			else if (client_flow_sending(id))
 				COMMENT_CAT("l")
-			else if (flow[id].settings[SOURCE].duration[WRITE] == 0)
+			else if (flow[id].settings[type].duration[WRITE] == 0)
 				COMMENT_CAT("o")
 			else
 				COMMENT_CAT("f")
@@ -697,7 +688,7 @@ void print_tcp_report_line(char hash, int id, double time1, double time2,
 				COMMENT_CAT("d")
 			else if (server_flow_sending(id))
 				COMMENT_CAT("l")
-			else if (flow[id].settings[DESTINATION].duration[WRITE] == 0)
+			else if (flow[id].settings[1 - type].duration[WRITE] == 0)
 				COMMENT_CAT("o")
 			else
 				COMMENT_CAT("f")
@@ -727,16 +718,15 @@ void print_tcp_report_line(char hash, int id, double time1, double time2,
 	// dont show linux kernel output if there is no linux OS
 	visible_columns[5] = 0;
 #endif
-	strcpy(rep_string, createOutput((hash ? '#' : ' '), id,
+	strcpy(rep_string, createOutput((hash ? '#' : ' '), id, type,
 		time1, time2, thruput,
-		scale_thruput((double)bytes_read / (time2 - time1)),
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
 		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)retr, (double)fack, (double)reor,
 		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3,
 #else
-		0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0,
 #endif
 		mss, mtu, comment_buffer, opt.mbyte
@@ -851,14 +841,14 @@ void report_final(void)
 		log_output(header_buffer);
 
 #ifdef __LINUX__
-		if (flow[id].stopped)
+/*		if (flow[id].stopped)
 			info = &flow[id].last_tcp_info;
 		else
-			info = &flow[id].final_tcp_info;
+			info = &flow[id].final_tcp_info;*/
 #endif
 		if (flow[id].bytes_written_since_first == 0) {
 			print_tcp_report_line(
-				1, id, flow[id].settings[SOURCE].delay[WRITE],
+				1, id, 0, flow[id].settings[SOURCE].delay[WRITE],
 				flow[id].settings[SOURCE].duration[WRITE] +
 				flow[id].settings[SOURCE].delay[WRITE], 0, 0,
 				0,
@@ -869,15 +859,16 @@ void report_final(void)
 				info->tcpi_unacked, info->tcpi_sacked,
 				info->tcpi_lost, info->tcpi_retrans,
 				info->tcpi_fackets, info->tcpi_reordering,
-				info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto,
+				info->tcpi_rtt, info->tcpi_rttvar,
+				info->tcpi_rto,
 #endif
 				flow[id].mss, flow[id].mtu
 			);
 			continue;
 		}
-
+/*
 		print_tcp_report_line(
-			1, id, flow[id].settings[SOURCE].delay[WRITE],
+			1, id, 0, flow[id].settings[SOURCE].delay[WRITE],
 			time_diff(&timer.start, &flow[id].last_block_written),
 			flow[id].bytes_written_since_first,
 			flow[id].bytes_read_since_first,
@@ -896,7 +887,7 @@ void report_final(void)
 			info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto,
 #endif
 			flow[id].mss, flow[id].mtu
-		);
+		);*/
 	}
 
 //now we can add the output for the anderson-darling test
@@ -1087,11 +1078,38 @@ Notes on Anderson Darlington Test
 
 void report_flow(struct _report* report)
 {
-	double diff_first_last = 0.0;
-	double diff_first_now = 0.0;
+	double diff_first_last;
+	double diff_first_now;
+	int type;
+	int id;
+	struct _flow_dummy *f;
+
+	/* Get matching flow for report */
+	for (id = 0; id < opt.num_flows; id++) {
+ 		f = &flow[id];
+		if (f->source_id == report->id) {
+			type = 0;
+			break;
+		}
+		if (f->destination_id == report->id) {
+			type = 1;
+			break;
+		}
+	}
+
+	if (id == opt.num_flows) {
+		DEBUG_MSG(1, "Got report from nonexistant flow, ignoring");
+		return;
+	}
+
+	if (f->start_timestamp[type].tv_sec == 0) {
+		f->start_timestamp[type] = report->begin;
+	}
+	diff_first_last = time_diff(&f->start_timestamp[type], &report->begin);
+	diff_first_now = time_diff(&f->start_timestamp[type], &report->end);
 
 	print_tcp_report_line(
-		0, report->id, diff_first_last, diff_first_now,
+		0, id, type, diff_first_last, diff_first_now,
 		report->bytes_written,
 		report->bytes_read,
 		report->reply_blocks_read,
@@ -1104,9 +1122,10 @@ void report_flow(struct _report* report)
 #ifdef __LINUX__
 		report->tcp_info.tcpi_snd_cwnd,
 		report->tcp_info.tcpi_snd_ssthresh,
+		/*report->tcp_info.tcpi_uacked, report->tcp_info.tcpi_sacked,*/
 		report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,
 		report->tcp_info.tcpi_lost,
-		0,//TODOflow[id].last_tcp_report->tcp_info.tcpi_retrans - report->tcp_info.tcpi_retrans,
+		f->last_retrans[type] - report->tcp_info.tcpi_retrans,
 		report->tcp_info.tcpi_fackets,
 		report->tcp_info.tcpi_reordering,
 		report->tcp_info.tcpi_rtt,
@@ -1116,190 +1135,9 @@ void report_flow(struct _report* report)
 		report->mss,
 		report->mtu
 	);
-}
-
-/*void report_flow(int id)
-{
-	double diff_first_last = 0.0;
-	double diff_first_now = 0.0;
-
 #ifdef __LINUX__
-	int rc = 0;
-	struct tcp_info info;
+	f->last_retrans[type] = report->tcp_info.tcpi_retrans;
 #endif
-
-	if (flow[id].stopped || flow[id].summarize_only)
-		return;
-
-#ifdef __LINUX__
-	socklen_t info_len = sizeof(struct tcp_info);
-
-	rc = getsockopt(flow[id].sock, IPPROTO_TCP, TCP_INFO, &info, &info_len);
-	if (rc == -1) {
-		error(ERR_WARNING, "getsockopt() failed: %s",
-				strerror(errno));
-		stop_flow(id);
-		return;
-	}
-#endif
-
-	tsc_gettimeofday(&now);
-	diff_first_last = time_diff(&timer.start, &timer.last);
-	diff_first_now = time_diff(&timer.start, &now);
-
-	print_tcp_report_line(
-			0, id, diff_first_last, diff_first_now,
-			flow[id].bytes_written_since_last,
-			flow[id].bytes_read_since_last,
-			flow[id].read_reply_blocks_since_last,
-			flow[id].min_rtt_since_last,
-			flow[id].tot_rtt_since_last,
-			flow[id].max_rtt_since_last,
-			flow[id].min_iat_since_last,
-			flow[id].tot_iat_since_last,
-			flow[id].max_iat_since_last,
-#ifdef __LINUX__
-			info.tcpi_snd_cwnd,
-			info.tcpi_snd_ssthresh,
-			info.tcpi_last_data_sent, info.tcpi_last_ack_recv,
-			info.tcpi_lost,
-			flow[id].last_tcp_info.tcpi_retrans - info.tcpi_retrans,
-			info.tcpi_fackets,
-			info.tcpi_reordering,
-			info.tcpi_rtt,
-			info.tcpi_rttvar,
-			info.tcpi_rto,
-#endif
-			flow[id].mss,
-			flow[id].mtu
-		);
-
-	flow[id].read_reply_blocks_since_last = 0;
-	flow[id].bytes_written_since_last = 0;
-	flow[id].bytes_read_since_last = 0;
-	flow[id].min_rtt_since_last = +INFINITY;
-	flow[id].max_rtt_since_last = -INFINITY;
-	flow[id].tot_rtt_since_last = 0.0;
-	flow[id].min_iat_since_last = +INFINITY;
-	flow[id].max_iat_since_last = -INFINITY;
-	flow[id].tot_iat_since_last = 0.0;
-#ifdef __LINUX__
-	flow[id].last_tcp_info = info;
-#endif
-}*/
-
-
-int name2socket(char **server_name, unsigned port, struct sockaddr **saptr,
-		socklen_t *lenp, char do_connect)
-{
-	int fd, n;
-	struct addrinfo hints, *res, *ressave;
-	struct sockaddr_in *tempv4;
-	struct sockaddr_in6 *tempv6;
-	char service[7];
-
-	bzero(&hints, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-
-	snprintf(service, sizeof(service), "%u", port);
-
-	if ((n = getaddrinfo(*server_name, service, &hints, &res)) != 0) {
-		error(ERR_FATAL, "getaddrinfo() failed: %s",
-				gai_strerror(n));
-	}
-	ressave = res;
-
-	do {
-		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-		if (fd < 0)
-			continue;
-
-		if (!do_connect)
-			break;
-
-		if (connect(fd, res->ai_addr, res->ai_addrlen) == 0) {
-			if (res->ai_family == PF_INET) {
-				tempv4 = (struct sockaddr_in *) res->ai_addr;
-				*server_name = inet_ntoa(tempv4->sin_addr);
-			}
-			else if (res->ai_family == PF_INET6){
-				tempv6 = (struct sockaddr_in6 *) res->ai_addr;
-				inet_ntop(AF_INET6, &tempv6->sin6_addr, *server_name, 128);
-			}
-			break;
-		}
-
-		error(ERR_WARNING, "Failed to connect to \"%s\": %s",
-				*server_name, strerror(errno));
-		close(fd);
-	} while ((res = res->ai_next) != NULL);
-
-	if (res == NULL)
-		error(ERR_FATAL, "Could not establish connection to "
-				"\"%s\": %s", *server_name, strerror(errno));
-
-	if (saptr && lenp) {
-		*saptr = malloc(res->ai_addrlen);
-		if (*saptr == NULL) {
-			error(ERR_FATAL, "malloc(): failed: %s",
-					strerror(errno));
-		}
-		memcpy(*saptr, res->ai_addr, res->ai_addrlen);
-		*lenp = res->ai_addrlen;
-	}
-
-	freeaddrinfo(ressave);
-
-	return fd;
-}
-
-
-void read_greeting(int s)
-{
-	char buf[1024];
-	int rc;
-	size_t greetlen = strlen(FLOWGRIND_PROT_GREETING);
-
-	rc = read_exactly(s, buf, greetlen);
-	if (rc != (int) greetlen) {
-		if (rc == -1)
-			error(ERR_FATAL, "read: %s", strerror(errno));
-		error(ERR_FATAL, "Server greeting is wrong in length. "
-				"Not flowgrind?");
-	}
-	rc = strncmp(buf + strlen(FLOWGRIND_PROT_CALLSIGN FLOWGRIND_PROT_SEPERATOR),
-			FLOWGRIND_PROT_VERSION, strlen(FLOWGRIND_PROT_VERSION));
-	if (rc < 0)
-		error(ERR_FATAL, "flowgrind client outdated for this server.");
-	if (rc > 0)
-		error(ERR_FATAL, "flowgrind server outdated for this client.");
-
-	if (strncmp(&buf[greetlen - 1], FLOWGRIND_PROT_EOL, strlen(FLOWGRIND_PROT_EOL))) {
-		error(ERR_WARNING, "connection rejected");
-		rc = read(s, buf, sizeof(buf) - 1);
-		if (rc == -1)
-			error(ERR_FATAL, "Could not read rejection reason: %s",
-					strerror(errno));
-		buf[sizeof(buf) - 1] = '\0';
-		buf[rc - 1] = '\0';
-		error(ERR_FATAL, "Server said: %s", buf);
-	}
-}
-
-
-void write_proposal(int s, char *proposal, int proposal_size)
-{
-	int rc;
-
-	rc = write_exactly(s, proposal, (size_t) proposal_size);
-	assert(rc <= proposal_size);
-	if (rc < proposal_size) {
-		if (rc == -1)
-			error(ERR_FATAL, "write: %s", strerror(errno));
-		error(ERR_FATAL, "Could not write session proposal."
-				"Server died?");
-	}
 }
 
 void stop_flow(int id)
@@ -1317,23 +1155,6 @@ void stop_flow(int id)
 
 	flow[id].stopped = 1;
 	tsc_gettimeofday(&flow[id].stopped_timestamp);
-}
-
-double flow_interpacket_delay(int id)
-{
-	double delay = 0;
-
-	DEBUG_MSG(5, "flow %d has rate %u", id, flow[id].settings[SOURCE].write_rate);
-	if (flow[id].settings[SOURCE].poisson_distributed) {
-		double urand = (double)((random()+1.0)/(RANDOM_MAX+1.0));
-		double erand = -log(urand) * 1/(double)flow[id].settings[SOURCE].write_rate;
-		delay = erand;
-	} else {
-		delay = (double)1/flow[id].settings[SOURCE].write_rate;
-	}
-
-	DEBUG_MSG(5, "new interpacket delay %.6f for flow %d.", delay, id);
-	return delay;
 }
 
 void sigint_handler(int sig)
@@ -1381,9 +1202,9 @@ static void grind_flows(xmlrpc_client *rpc_client)
 		usleep(1000000 * opt.reporting_interval);
 
 		xmlrpc_client_call2f(&rpc_env, rpc_client, "http://127.0.0.1:5999/RPC2", "get_reports", &resultP, "()");
-	    if (rpc_env.fault_occurred) {
-    	    fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-                rpc_env.fault_string, rpc_env.fault_code);
+		if (rpc_env.fault_occurred) {
+			fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+			rpc_env.fault_string, rpc_env.fault_code);
 			continue;
 		}
 
@@ -1396,13 +1217,33 @@ static void grind_flows(xmlrpc_client *rpc_client)
 			xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
 			if (rv) {
 				struct _report report;
-				int sec, usec;
-				xmlrpc_decompose_value(&rpc_env, rv, "{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:d,s:d,s:d,s:d,s:d,s:d,s:i,s:i,*}",
+				int begin_sec, begin_usec, end_sec, end_usec;
+
+				int tcpi_snd_cwnd;
+				int tcpi_snd_ssthresh;
+				int tcpi_unacked;
+				int tcpi_sacked;
+				int tcpi_lost;
+				int tcpi_retrans;
+				int tcpi_fackets;
+				int tcpi_reordering;
+				int tcpi_rtt;
+				int tcpi_rttvar;
+				int tcpi_rto;
+				int tcpi_last_data_sent;
+				int tcpi_last_ack_recv;
+
+				xmlrpc_decompose_value(&rpc_env, rv, "{"
+				"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
+				"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i" /* TCP info */
+				"*}",
 		
 					"id", &report.id,
 					"type", &report.type,
-					"tv_sec", &sec,
-					"tv_usec", &usec,
+					"begin_tv_sec", &begin_sec,
+					"begin_tv_usec", &begin_usec,
+					"end_tv_sec", &end_sec,
+					"end_tv_usec", &end_usec,
 
 					"bytes_read", &report.bytes_read,
 					"bytes_written", &report.bytes_written,
@@ -1416,12 +1257,43 @@ static void grind_flows(xmlrpc_client *rpc_client)
  					"iat_sum", &report.iat_sum,
 
 					"mss", &report.mss,
-					"mtu", &report.mtu
+					"mtu", &report.mtu,
+
+					"tcpi_snd_cwnd", &tcpi_snd_cwnd,
+					"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
+					"tcpi_unacked", &tcpi_unacked,
+					"tcpi_sacked", &tcpi_sacked,
+					"tcpi_lost", &tcpi_lost,
+					"tcpi_retrans", &tcpi_retrans,
+					"tcpi_fackets", &tcpi_fackets,
+					"tcpi_reordering", &tcpi_reordering,
+					"tcpi_rtt", &tcpi_rtt,
+					"tcpi_rttvar", &tcpi_rttvar,
+					"tcpi_rto", &tcpi_rto,
+					"tcpi_last_data_sent", &tcpi_last_data_sent,
+					"tcpi_last_ack_recv", &tcpi_last_ack_recv
 				);
 				xmlrpc_DECREF(rv);
 
-				report.tv.tv_sec = sec;
-				report.tv.tv_usec = usec;
+#ifdef __LINUX__
+				report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
+				report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
+				report.tcp_info.tcpi_unacked = tcpi_unacked;
+				report.tcp_info.tcpi_sacked = tcpi_sacked;
+				report.tcp_info.tcpi_lost = tcpi_lost;
+				report.tcp_info.tcpi_retrans = tcpi_retrans;
+				report.tcp_info.tcpi_fackets = tcpi_fackets;
+				report.tcp_info.tcpi_reordering = tcpi_reordering;
+				report.tcp_info.tcpi_rtt = tcpi_rtt;
+				report.tcp_info.tcpi_rttvar = tcpi_rttvar;
+				report.tcp_info.tcpi_rto = tcpi_rto;
+				report.tcp_info.tcpi_last_data_sent = tcpi_last_data_sent;
+				report.tcp_info.tcpi_last_ack_recv = tcpi_last_ack_recv;
+#endif
+				report.begin.tv_sec = begin_sec;
+				report.begin.tv_usec = begin_usec;
+				report.end.tv_sec = end_sec;
+				report.end.tv_usec = end_usec;
 
 				report_flow(&report);
 			}
@@ -1453,13 +1325,13 @@ void close_flow(int id)
 		flow[id].final_cc_alg[0] = '\0';
 	}
 
-	opt_len = sizeof(flow[id].final_tcp_info);
+/*	opt_len = sizeof(flow[id].final_tcp_info);
 	if (getsockopt(flow[id].sock, IPPROTO_TCP, TCP_INFO,
 				&flow[id].final_tcp_info, &opt_len) == -1) {
 		error(ERR_WARNING, "failed to get last tcp_info: %s",
 				strerror(errno));
 		flow[id].stopped = 1;
-	}
+	}*/
 #endif
 
 	if (close(flow[id].sock) == -1)
@@ -1544,14 +1416,13 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP;
 
-	int flow_id;
 	int listen_data_port;
 	int listen_reply_port;
 	int real_listen_send_buffer_size;
 	int real_listen_read_buffer_size;
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client, "http://127.0.0.1:5999/RPC2", "add_flow_destination", &resultP,
-		"({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b})",
+		"({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i})",
 
 		/* general flow settings */
 		"write_delay", flow[id].settings[DESTINATION].delay[WRITE],
@@ -1569,20 +1440,23 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"shutdown", (int)flow[id].shutdown,
 		"write_rate", flow[id].settings[DESTINATION].write_rate,
 		"poisson_distributed", flow[id].settings[DESTINATION].poisson_distributed,
-		"flow_control", flow[id].settings[DESTINATION].flow_control);
+		"flow_control", flow[id].settings[DESTINATION].flow_control,
+		"cork", (int)flow[id].cork);
 	die_if_fault_occurred(&rpc_env);
 
-
 	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,s:i,s:i,*}",
-		"flow_id", &flow_id,
+		"flow_id", &flow[id].destination_id,
 		"listen_data_port", &listen_data_port,
 		"listen_reply_port", &listen_reply_port,
 		"real_listen_send_buffer_size", &real_listen_send_buffer_size,
 		"real_listen_read_buffer_size", &real_listen_read_buffer_size);
 	die_if_fault_occurred(&rpc_env);
 
+	if (resultP)
+		xmlrpc_DECREF(resultP);
+
 	xmlrpc_client_call2f(&rpc_env, rpc_client, "http://127.0.0.1:5999/RPC2", "add_flow_source", &resultP,
-		"({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b}{s:s,s:s,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i,s:i})",
+		"({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i}{s:s,s:s,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i})",
 
 		/* general flow settings */
 		"write_delay", flow[id].settings[SOURCE].delay[WRITE],
@@ -1601,6 +1475,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"write_rate", flow[id].settings[SOURCE].write_rate,
 		"poisson_distributed", flow[id].settings[SOURCE].poisson_distributed,
 		"flow_control", flow[id].settings[SOURCE].flow_control,
+		"cork", (int)flow[id].cork,
 
 		/* source settings */
 		"destination_host", flow[id].server_name,
@@ -1610,11 +1485,14 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"cc_alg", flow[id].cc_alg ? flow[id].cc_alg : "",
 		"elcn", flow[id].elcn,
 		"icmp", flow[id].icmp,
-		"cork", (int)flow[id].cork,
 		"dscp", (int)flow[id].dscp,
 		"ipmtudiscover", flow[id].ipmtudiscover,
 		"late_connect", (int)flow[id].late_connect,
 		"byte_counting", flow[id].byte_counting);
+	die_if_fault_occurred(&rpc_env);
+
+	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,*}",
+		"flow_id", &flow[id].source_id);
 	die_if_fault_occurred(&rpc_env);
 
 	if (resultP)
