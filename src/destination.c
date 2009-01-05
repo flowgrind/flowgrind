@@ -158,7 +158,7 @@ static int accept_reply(struct _flow *flow)
 }
 
 /* listen_port will receive the port of the created socket */
-static int create_listen_socket(unsigned short *listen_port)
+static int create_listen_socket(char *bind_addr, unsigned short *listen_port)
 {
 	int port;
 	int rc;
@@ -166,12 +166,12 @@ static int create_listen_socket(unsigned short *listen_port)
 	struct addrinfo hints, *res, *ressave;
 
 	bzero(&hints, sizeof(struct addrinfo));
-	hints.ai_flags = AI_PASSIVE;
+	hints.ai_flags = bind_addr ? 0 : AI_PASSIVE;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
 	/* Any port will be fine */
-	if ((rc = getaddrinfo(0, "0",
+	if ((rc = getaddrinfo(bind_addr, "0",
 			&hints, &res)) != 0) {
 		logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n",
 			gai_strerror(rc));
@@ -247,7 +247,7 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	}
 
 	/* Create listen socket for reply connection */
-	if ((flow->listenfd_reply = create_listen_socket(&server_reply_port)) == -1) {
+	if ((flow->listenfd_reply = create_listen_socket(0, &server_reply_port)) == -1) {
 		logging_log(LOG_ALERT, "could not create listen socket");
 		request->r.error = "could not create listen socket";
 		uninit_flow(flow);
@@ -256,7 +256,7 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	}
 
 	/* Create listen socket for data connection */
-	if ((flow->listenfd_data = create_listen_socket(&server_data_port)) == -1) {
+	if ((flow->listenfd_data = create_listen_socket(flow->settings.bind_address[0] ? flow->settings.bind_address : 0, &server_data_port)) == -1) {
 		logging_log(LOG_ALERT, "could not create listen socket");
 		request->r.error = "could not create listen socket";
 		uninit_flow(flow);

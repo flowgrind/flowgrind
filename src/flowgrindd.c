@@ -116,6 +116,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	char* destination_host = 0;
 	char* destination_host_reply = 0;
 	char* cc_alg = 0;
+	char* bind_address = 0;
 
 	struct _flow_settings settings;
 	struct _flow_source_settings source_settings;
@@ -125,9 +126,10 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	DEBUG_MSG(1, "Method add_flow_source called");
 
 	/* Parse our argument array. */
-	xmlrpc_decompose_value(env, param_array, "({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,*}{s:s,s:s,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i,*})",
+	xmlrpc_decompose_value(env, param_array, "({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,*}{s:s,s:s,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i,*})",
 
 		/* general settings */
+		"bind_address", &bind_address,
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
 		"read_delay", &settings.delay[READ],
@@ -147,8 +149,8 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"cork", &settings.cork,
 
 		/* source settings */
-		"destination_host", &destination_host,
-		"destination_host_reply", &destination_host_reply,
+		"destination_address", &destination_host,
+		"destination_address_reply", &destination_host_reply,
 		"destination_port", &source_settings.destination_port,
 		"destination_port_reply", &source_settings.destination_port_reply,
 		"cc_alg", &cc_alg,
@@ -163,11 +165,12 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		goto cleanup;
 
 	/* Check for sanity */
-	if (settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
+	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
+		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
 		settings.write_block_size <= 0 || settings.read_block_size <= 0 ||
-		strlen(destination_host) >= sizeof(source_settings.destination_host) - 1 ||
+		strlen(destination_host) >= sizeof(source_settings.destination_host) - 1||
 		strlen(destination_host_reply) >= sizeof(source_settings.destination_host_reply) - 1 ||
 		source_settings.destination_port <= 0 || source_settings.destination_port > 65535 ||
 		strlen(cc_alg) > 255 ||
@@ -178,6 +181,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	strcpy(source_settings.destination_host, destination_host);
 	strcpy(source_settings.destination_host_reply, destination_host_reply);
 	strcpy(source_settings.cc_alg, cc_alg);
+	strcpy(settings.bind_address, bind_address);
 
 	request = malloc(sizeof(struct _request_add_flow_source));
 	request->settings = settings;
@@ -202,6 +206,8 @@ cleanup:
 		free(destination_host_reply);
 	if (cc_alg)
 		free(cc_alg);
+	if (bind_address)
+		free(bind_address);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_source failed: %s", env->fault_string);
@@ -218,6 +224,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 {
 	int rc;
 	xmlrpc_value *ret = 0;
+	char* bind_address = 0;
 
 	struct _flow_settings settings;
 	struct _flow_destination_settings destination_settings;
@@ -227,9 +234,10 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	DEBUG_MSG(1, "Method add_flow_destination called");
 
 	/* Parse our argument array. */
-	xmlrpc_decompose_value(env, param_array, "({s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,*})",
+	xmlrpc_decompose_value(env, param_array, "({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,*})",
 
 		/* general settings */
+		"bind_address", &bind_address,
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
 		"read_delay", &settings.delay[READ],
@@ -252,7 +260,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		goto cleanup;
 
 	/* Check for sanity */
-	if (settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
+	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
+		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
 		settings.write_block_size <= 0 || settings.read_block_size <= 0 ||
@@ -260,6 +269,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
 
+printf("00000000 %s 00000\n", bind_address);
+	strcpy(settings.bind_address, bind_address);
 	request = malloc(sizeof(struct _request_add_flow_destination));
 	request->settings = settings;
 	request->destination_settings = destination_settings;
@@ -280,6 +291,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 cleanup:
 	if (request)
 		free(request);
+	if (bind_address)
+		free(bind_address);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_destination failed: %s", env->fault_string);

@@ -101,18 +101,16 @@ struct _flow_endpoint {
 	char *rate_str;
 
 	char route_record;
+
+	char server_url[1000];
+	char test_address[1000];
+	char bind_address[1000];
 };
 
 #include "daemon.h"
 
 struct _flow_dummy {
-	char *server_name;
-	char *server_name_control;
-	unsigned server_control_port;
-	unsigned server_data_port;
 
-	int sock;
-	int sock_control;
 	struct sockaddr *saddr;
 	socklen_t saddr_len;
 
@@ -144,41 +142,13 @@ struct _flow_dummy {
 	char two_way;
 	char byte_counting;
 
-	unsigned write_errors;
-	unsigned read_errors;
-
-	char *read_block;
-	unsigned read_block_bytes_read;
-	uint64_t read_block_count;
-	struct timeval last_block_read;
-
-	char *write_block;
-	unsigned write_block_bytes_written;
-	uint64_t write_block_count;
-	struct timeval last_block_written;
-	struct timeval next_write_block_timestamp;
-	unsigned congestion_counter;
-	char reply_block[sizeof(struct timeval) + sizeof(double)];
-	unsigned reply_block_bytes_read;
-
 	char stopped;
 	char closed;
 	struct timeval stopped_timestamp;
 
-	struct timeval initial_server_clock;
-
 #ifdef __LINUX__
 	char final_cc_alg[30];
 #endif
-
-	long bytes_read_since_first;
-	long bytes_read_since_last;
-
-	long bytes_written_since_first;
-	long bytes_written_since_last;
-
-	long read_reply_blocks_since_last;
-	long read_reply_blocks_since_first;
 
 	int source_id;
 	int destination_id;

@@ -193,7 +193,6 @@ static void report_flow(struct _flow* flow)
 
 #ifdef __LINUX__
 	report->tcp_info = flow->statistics[INTERVAL].tcp_info;
-printf("\n====== %d ====\n", report->tcp_info.tcpi_snd_ssthresh);
 #endif
 	report->mss = flow->mss;
 	report->mtu = flow->mtu;

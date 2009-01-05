@@ -22,6 +22,8 @@ extern pthread_mutex_t mutex;
 /* Common to both endpoints */
 struct _flow_settings
 {
+	char bind_address[1000];
+
 	double delay[2];
 	double duration[2];
 
