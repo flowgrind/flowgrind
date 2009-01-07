@@ -1103,8 +1103,8 @@ void report_flow(struct _report* report)
 #ifdef __LINUX__
 		report->tcp_info.tcpi_snd_cwnd,
 		report->tcp_info.tcpi_snd_ssthresh,
-		/*report->tcp_info.tcpi_uacked, report->tcp_info.tcpi_sacked,*/
-		report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,
+		report->tcp_info.tcpi_unacked, report->tcp_info.tcpi_sacked,
+		/*report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,*/
 		report->tcp_info.tcpi_lost,
 		f->last_retrans[type] - report->tcp_info.tcpi_retrans,
 		report->tcp_info.tcpi_fackets,
