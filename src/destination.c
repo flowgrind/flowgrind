@@ -158,7 +158,7 @@ int accept_reply(struct _flow *flow)
 }
 
 /* listen_port will receive the port of the created socket */
-static int create_listen_socket(char *bind_addr, unsigned short *listen_port)
+static int create_listen_socket(struct _flow *flow, char *bind_addr, unsigned short *listen_port)
 {
 	int port;
 	int rc;
@@ -175,7 +175,8 @@ static int create_listen_socket(char *bind_addr, unsigned short *listen_port)
 			&hints, &res)) != 0) {
 		logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n",
 			gai_strerror(rc));
-		/* XXX: Be nice and tell client. */
+		flow_error(flow, "getaddrinfo() failed: %s",
+			gai_strerror(rc));
 		return -1;
 	}
 
@@ -193,16 +194,20 @@ static int create_listen_socket(char *bind_addr, unsigned short *listen_port)
 		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
-	freeaddrinfo(ressave);
-
+	
 	if (res == NULL) {
 		logging_log(LOG_ALERT, "failed to create listen socket");
+		flow_error(flow, "Failed to create listen socket: %s", strerror(errno));
+		freeaddrinfo(ressave);
 		return -1;
 	}
+
+	freeaddrinfo(ressave);
 
 	if (listen(fd, 0) < 0) {
 		logging_log(LOG_ALERT, "listen failed: %s",
 				strerror(errno));
+		flow_error(flow, "Listen failed: %s", strerror(errno));
 		return -1;
 	}
 
@@ -210,6 +215,7 @@ static int create_listen_socket(char *bind_addr, unsigned short *listen_port)
 
 	port = get_port(fd);
 	if (port < 0) {
+		flow_error(flow, "Could not get port: %s", strerror(errno));
 		close(fd);
 		return -1;
 	}
@@ -227,7 +233,7 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 
 	if (num_flows >= MAX_FLOWS) {
 		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
-		request->r.error = "Can not accept another flow, already handling MAX_FLOW flows.";
+		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
 		return;
 	}
 
@@ -239,26 +245,26 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	flow->write_block = calloc(1, flow->settings.write_block_size);
 	flow->read_block = calloc(1, flow->settings.read_block_size);
 	if (flow->write_block == NULL || flow->read_block == NULL) {
-		logging_log(LOG_ALERT, "could not allocate memory");
-		request->r.error = "could not allocate memory";
+		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
+		request_error(&request->r, "could not allocate memory for read/write blocks");
 		uninit_flow(flow);
 		num_flows--;
 		return;
 	}
 
 	/* Create listen socket for reply connection */
-	if ((flow->listenfd_reply = create_listen_socket(0, &server_reply_port)) == -1) {
-		logging_log(LOG_ALERT, "could not create listen socket");
-		request->r.error = "could not create listen socket";
+	if ((flow->listenfd_reply = create_listen_socket(flow, 0, &server_reply_port)) == -1) {
+		logging_log(LOG_ALERT, "could not create listen socket for reply connection: %s", flow->error);
+		request_error(&request->r, "could not create listen socket for reply connection: %s", flow->error);
 		uninit_flow(flow);
 		num_flows--;
 		return;
 	}
 
 	/* Create listen socket for data connection */
-	if ((flow->listenfd_data = create_listen_socket(flow->settings.bind_address[0] ? flow->settings.bind_address : 0, &server_data_port)) == -1) {
-		logging_log(LOG_ALERT, "could not create listen socket");
-		request->r.error = "could not create listen socket";
+	if ((flow->listenfd_data = create_listen_socket(flow, flow->settings.bind_address[0] ? flow->settings.bind_address : 0, &server_data_port)) == -1) {
+		logging_log(LOG_ALERT, "could not create listen socket for data connection: %s", flow->error);
+		request_error(&request->r, "could not create listen socket for data connection: %s", flow->error);
 		uninit_flow(flow);
 		num_flows--;
 		return;
@@ -333,10 +339,10 @@ int accept_data(struct _flow *flow)
 		logging_log(LOG_WARNING, "Unable to set SO_DEBUG on test socket: %s",
 				  strerror(errno));
 	}
-	if (flow->settings.cork && set_tcp_cork(flow->fd) == -1)
-		error(ERR_FATAL, "Unable to set TCP_CORK "
-				"for flow id = %i: %s",
-				flow->id, strerror(errno));
+	if (flow->settings.cork && set_tcp_cork(flow->fd) == -1) {
+		flow_error(flow, "Unable to set TCP_CORK: %s", strerror(errno));
+		return -1;
+	}
 
 	set_non_blocking(flow->fd);
 

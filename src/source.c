@@ -49,7 +49,7 @@ int get_tcp_info(struct _flow *flow, struct tcp_info *info);
 void init_flow(struct _flow* flow, int is_source);
 void uninit_flow(struct _flow *flow);
 
-static int name2socket(char *server_name, unsigned port, struct sockaddr **saptr,
+static int name2socket(struct _flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
 		socklen_t *lenp, char do_connect)
 {
 	int fd, n;
@@ -65,7 +65,7 @@ static int name2socket(char *server_name, unsigned port, struct sockaddr **saptr
 	snprintf(service, sizeof(service), "%u", port);
 
 	if ((n = getaddrinfo(server_name, service, &hints, &res)) != 0) {
-		error(ERR_FATAL, "getaddrinfo() failed: %s",
+		flow_error(flow, "getaddrinfo() failed: %s",
 				gai_strerror(n));
 		return -1;
 	}
@@ -101,8 +101,9 @@ static int name2socket(char *server_name, unsigned port, struct sockaddr **saptr
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
-		error(ERR_FATAL, "Could not establish connection to "
+		flow_error(flow, "Could not establish connection to "
 				"\"%s:%d\": %s", server_name, port, strerror(errno));
+		freeaddrinfo(ressave);
 		return -1;
 	}
 
@@ -130,7 +131,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 
 	if (num_flows >= MAX_FLOWS) {
 		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
-		request->r.error = "Can not accept another flow, already handling MAX_FLOW flows.";
+		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
 		return -1;
 	}
 
@@ -143,8 +144,8 @@ int add_flow_source(struct _request_add_flow_source *request)
 	flow->write_block = calloc(1, flow->settings.write_block_size);
 	flow->read_block = calloc(1, flow->settings.read_block_size);
 	if (flow->write_block == NULL || flow->read_block == NULL) {
-		logging_log(LOG_ALERT, "could not allocate memory");
-		request->r.error = "could not allocate memory";
+		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
+		request_error(&request->r, "could not allocate memory for read/write blocks");
 		uninit_flow(flow);
 		num_flows--;
 		return -1;
@@ -155,22 +156,22 @@ int add_flow_source(struct _request_add_flow_source *request)
 			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
 	}
 
-	flow->fd_reply = name2socket(flow->source_settings.destination_host_reply,
+	flow->fd_reply = name2socket(flow, flow->source_settings.destination_host_reply,
 				flow->source_settings.destination_port_reply, NULL, NULL, 1);
 	if (flow->fd_reply == -1) {
-		logging_log(LOG_ALERT, "could not connect reply socket");
-		request->r.error = "could not connect reply socket";
+		logging_log(LOG_ALERT, "Could not connect reply socket: %s", flow->error);
+		request_error(&request->r, "Could not connect reply socket: %s", flow->error);
 		uninit_flow(flow);
 		num_flows--;
 		return -1;
 	}
 	flow->state = GRIND_WAIT_CONNECT;
-	flow->fd = name2socket(flow->source_settings.destination_host,
+	flow->fd = name2socket(flow, flow->source_settings.destination_host,
 			flow->source_settings.destination_port,
 			&flow->addr, &flow->addr_len, 0);
 	if (flow->fd == -1) {
-		logging_log(LOG_ALERT, "could not create data socket");
-		request->r.error = "could not create data socket";
+		logging_log(LOG_ALERT, "Could not create data socket: %s", flow->error);
+		request_error(&request->r, "Could not create data socket: %s", flow->error);
 		uninit_flow(flow);
 		num_flows--;
 		return -1;
@@ -180,55 +181,80 @@ int add_flow_source(struct _request_add_flow_source *request)
 	set_non_blocking(flow->fd_reply);
 
 	if (*flow->source_settings.cc_alg && set_congestion_control(
-				flow->fd, flow->source_settings.cc_alg) == -1)
-		error(ERR_FATAL, "Unable to set congestion control "
-				"algorithm for flow id = %i: %s",
-				flow->id, strerror(errno));
+				flow->fd, flow->source_settings.cc_alg) == -1) {
+		request_error(&request->r, "Unable to set congestion control algorithm: %s",
+				strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
+	}
 
 #ifdef __LINUX__
 	opt_len = sizeof(request->cc_alg);
 	if (getsockopt(flow->fd, IPPROTO_TCP, TCP_CONG_MODULE,
 				request->cc_alg, &opt_len) == -1) {
-		error(ERR_WARNING, "failed to determine actual congestion control "
-				"algorithm for flow %d: %s: ", flow->id,
-				strerror(errno));
-		request->cc_alg[0] = '\0';
+		request_error(&request->r, "failed to determine actual congestion control algorithm: %s",
+			strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
 	}
 #endif
 
-	if (flow->source_settings.elcn && set_so_elcn(flow->fd, flow->source_settings.elcn) == -1)
-		error(ERR_FATAL, "Unable to set TCP_ELCN "
-				"for flow id = %i: %s",
-				flow->id, strerror(errno));
+	if (flow->source_settings.elcn && set_so_elcn(flow->fd, flow->source_settings.elcn) == -1) {
+		request_error(&request->r, "Unable to set TCP_ELCN: %s", strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
+	}
 
-	if (flow->source_settings.icmp && set_so_icmp(flow->fd) == -1)
-		error(ERR_FATAL, "Unable to set TCP_ICMP "
-				"for flow id = %i: %s",
-				flow->id, strerror(errno));
+	if (flow->source_settings.icmp && set_so_icmp(flow->fd) == -1) {
+		request_error(&request->r, "Unable to set TCP_ICMP: %s",
+			strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
+	}
 
-	if (flow->settings.cork && set_tcp_cork(flow->fd) == -1)
-		error(ERR_FATAL, "Unable to set TCP_CORK "
-				"for flow id = %i: %s",
-				flow->id, strerror(errno));
+	if (flow->settings.cork && set_tcp_cork(flow->fd) == -1) {
+		request_error(&request->r, "Unable to set TCP_CORK: %s",
+			strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
+	}
 
-	if (flow->settings.so_debug && set_so_debug(flow->fd) == -1)
-		error(ERR_FATAL, "Unable to set SO_DEBUG "
-				"for flow id = %i: %s",
-				flow->id, strerror(errno));
+	if (flow->settings.so_debug && set_so_debug(flow->fd) == -1) {
+		request_error(&request->r, "Unable to set SO_DEBUG: %s",
+			strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
+	}
 
-	if (flow->settings.route_record && set_route_record(flow->fd) == -1)
-		error(ERR_FATAL, "Unable to set route record "
-				"option for flow id = %i: %s",
-				flow->id, strerror(errno));
+	if (flow->settings.route_record && set_route_record(flow->fd) == -1) {
+		request_error(&request->r, "Unable to set route record option: %s",
+			strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
+	}
 
-	if (flow->source_settings.dscp && set_dscp(flow->fd, flow->source_settings.dscp) == -1)
-		error(ERR_FATAL, "Unable to set DSCP value"
-				"for flow %d: %s", flow->id, strerror(errno));
+	if (flow->source_settings.dscp && set_dscp(flow->fd, flow->source_settings.dscp) == -1) {
+		request_error(&request->r, "Unable to set DSCP value: %s",
+			strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
+	}
 
-	if (flow->source_settings.ipmtudiscover && set_ip_mtu_discover(flow->fd) == -1)
-		error(ERR_FATAL, "Unable to set IP_MTU_DISCOVER value"
-				"for flow %d: %s", flow->id, strerror(errno));
-
+	if (flow->source_settings.ipmtudiscover && set_ip_mtu_discover(flow->fd) == -1) {
+		request_error(&request->r, "Unable to set IP_MTU_DISCOVER value: %s",
+			strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
+	}
 
 	if (!flow->source_settings.late_connect) {
 		DEBUG_MSG(4, "(early) connecting test socket");

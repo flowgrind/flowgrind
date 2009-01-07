@@ -80,6 +80,36 @@ unsigned int num_flows = 0;
 
 char started = 0;
 
+void flow_error(struct _flow *flow, const char *fmt, ...)
+{
+	char str[1000];
+
+	int n;
+	va_list ap;
+
+	va_start(ap, fmt);
+	n = vsnprintf(str, 1000, fmt, ap);
+	va_end(ap);
+	str[sizeof(str) - 1] = 0;
+	flow->error = malloc(strlen(str) + 1);
+	strcpy(flow->error, str);
+}
+
+void request_error(struct _request *request, const char *fmt, ...)
+{
+	char str[1000];
+
+	int n;
+	va_list ap;
+
+	va_start(ap, fmt);
+	n = vsnprintf(str, 1000, fmt, ap);
+	va_end(ap);
+	str[sizeof(str) - 1] = 0;
+	request->error = malloc(strlen(str) + 1);
+	strcpy(request->error, str);
+}
+
 static int flow_in_delay(struct timeval *now, struct _flow *flow, int direction)
 {
 	return time_is_after(&flow->start_timestamp[direction], now);
@@ -111,6 +141,7 @@ void uninit_flow(struct _flow *flow)
 	free(flow->read_block);
 	free(flow->write_block);
 	free(flow->addr);
+	free(flow->error);
 }
 
 void remove_flow(unsigned int i)
@@ -266,7 +297,7 @@ static void start_flows(struct _request_start_flows *request)
 
 	tsc_gettimeofday(&timer.start);
 /*	if (timer.start.tv_sec < start_timestamp) {
-		/* If the clock is syncrhonized between nodes, all nodes will start 
+		/* If the clock is synchronized between nodes, all nodes will start 
 		   at the same time regardless of any RPC delays *//*
 		timer.start.tv_sec = start_timestamp;
 		timer.start.tv_usec = 0;
@@ -308,7 +339,7 @@ static void stop_flow(struct _request_stop_flow *request)
 		return;
 	}
 
-	request->r.error = "Unknown flow id";
+	request_error(&request->r, "Unknown flow id");
 }
 
 static void process_requests()
@@ -343,7 +374,7 @@ static void process_requests()
 			stop_flow((struct _request_stop_flow *)request);
 			break;
 		default:
-			request->error = "Unknown request type";
+			request_error(request, "Unknown request type");
 			break;
 		}
 		if (rc != 1)
@@ -618,6 +649,8 @@ void init_flow(struct _flow* flow, int is_source)
 	}
 
 	flow->congestion_counter = 0;
+
+	flow->error = 0;
 }
 
 static double flow_interpacket_delay(struct _flow *flow)

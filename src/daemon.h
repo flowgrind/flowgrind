@@ -155,6 +155,8 @@ struct _flow
 #endif
 
 	} statistics[2];
+
+	char* error;
 };
 
 #define	MAX_FLOWS	256
@@ -253,5 +255,8 @@ void add_report(struct _report* report);
 struct _report* get_reports();
 
 extern char started;
+
+void flow_error(struct _flow *flow, const char *fmt, ...);
+void request_error(struct _request *request, const char *fmt, ...);
 
 #endif //__DAEMON_H__

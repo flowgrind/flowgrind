@@ -78,7 +78,7 @@ static int dispatch_request(struct _request *request, int type)
 
 	/* Create synchronization mutex */
 	if (pthread_cond_init(&cond, NULL)) {
-		request->error = "Could not create synchonization mutex";
+		request_error(request, "Could not create synchonization mutex");
 		return -1;
 	}
 	request->condition = &cond;
@@ -198,16 +198,14 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"cc_alg", request->cc_alg);
 
 cleanup:
-	if (request)
+	if (request) {
+		free(request->r.error);
 		free(request);
-	if (destination_host)
-		free(destination_host);
-	if (destination_host_reply)
-		free(destination_host_reply);
-	if (cc_alg)
-		free(cc_alg);
-	if (bind_address)
-		free(bind_address);
+	}
+	free(destination_host);
+	free(destination_host_reply);
+	free(cc_alg);
+	free(bind_address);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_source failed: %s", env->fault_string);
@@ -288,10 +286,11 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"real_listen_read_buffer_size", request->real_listen_read_buffer_size);
 
 cleanup:
-	if (request)
+	if (request) {
+		free(request->r.error);
 		free(request);
-	if (bind_address)
-		free(bind_address);
+	}
+	free(bind_address);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_destination failed: %s", env->fault_string);
@@ -334,8 +333,10 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	ret = xmlrpc_build_value(env, "i", 0);
 
 cleanup:
-	if (request)
+	if (request) {
+		free(request->r.error);
 		free(request);
+	}
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method start_flows failed: %s", env->fault_string);
@@ -465,8 +466,10 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	ret = xmlrpc_build_value(env, "()");
 
 cleanup:
-	if (request)
+	if (request) {
+		free(request->r.error);
 		free(request);
+	}
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method stop_flow failed: %s", env->fault_string);
