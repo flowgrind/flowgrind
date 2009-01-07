@@ -12,10 +12,6 @@
 #define TCP_CONG_MODULE 13
 #endif
 
-ssize_t read_exactly(int, void *, size_t);
-size_t read_until_plus(int d, char *buf, size_t nbytes);
-ssize_t write_exactly(int, const void *, size_t);
-
 int set_congestion_control(int fd, const char *cc_alg);
 int set_so_debug(int fd);
 int set_keepalive(int fd, int how);

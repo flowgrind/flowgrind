@@ -39,58 +39,6 @@
 #define IP_MTU 14
 #endif
 
-ssize_t
-read_exactly(int d, void *buf, size_t nbytes)
-{
-	ssize_t rc = 0;
-	size_t bytes_read = 0;
-
-	DEBUG_MSG(5, "d=%d, nbytes=%u", d, (unsigned)nbytes);
-	while (bytes_read < nbytes &&
-			(rc = read(d, (char *)buf + bytes_read,
-				   nbytes - bytes_read)) > 0) {
-		bytes_read += rc;
-		DEBUG_MSG(5, "read=%u", (unsigned)bytes_read);
-	}
-
-	return rc == -1 ? rc : (ssize_t) bytes_read;
-}
-
-ssize_t
-write_exactly(int d, const void *buf, size_t nbytes)
-{
-	ssize_t rc = 0;
-	size_t bytes_written = 0;
-
-	DEBUG_MSG(5, "d=%d, nbytes=%u", d, (unsigned)nbytes);
-	while (bytes_written < nbytes &&
-			(rc = write(d, (const char *)buf+bytes_written,
-				    nbytes-bytes_written)) > 0) {
-		bytes_written += rc;
-		DEBUG_MSG(5, "written=%u", (unsigned)bytes_written);
-	}
-	return rc == -1 ? rc : (ssize_t) bytes_written;
-}
-
-size_t
-read_until_plus(int d, char *buf, size_t nbytes)
-{
-	ssize_t rc = 0;
-	size_t bytes_read = 0;
-	buf[0] = '\0';
-
-	do {
-		rc = read(d, buf+bytes_read, nbytes-bytes_read);
-		if (rc == -1 || rc == 0)
-			return -1;
-		DEBUG_MSG(6, "read %u bytes", (unsigned int)rc);
-		bytes_read += rc;
-		buf[bytes_read] = '\0';
-	} while (!strchr(buf, '+'));
-
-	return bytes_read;
-}
-
 int set_window_size_directed(int fd, int window, int direction)
 {
 	int rc, try, w;
