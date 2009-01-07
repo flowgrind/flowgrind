@@ -433,6 +433,50 @@ cleanup:
 	return ret;
 }
 
+static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
+		   xmlrpc_value * const param_array,
+		   void * const user_data)
+{
+	int rc;
+	xmlrpc_value *ret = 0;
+	int flow_id;
+	struct _request_stop_flow *request = 0;
+
+	DEBUG_MSG(2, "Method stop_flow called");
+
+	/* Parse our argument array. */
+	xmlrpc_decompose_value(env, param_array, "({s:i,*})",
+
+		/* flow id */
+		"flow_id", &flow_id);
+
+	if (env->fault_occurred)
+		goto cleanup;
+
+	request = malloc(sizeof(struct _request_stop_flow));
+	request->flow_id = flow_id;
+	rc = dispatch_request((struct _request*)request, REQUEST_STOP_FLOW);
+
+	if (rc == -1) {
+		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
+	}
+
+	/* Return our result. */
+	ret = xmlrpc_build_value(env, "()");
+
+cleanup:
+	if (request)
+		free(request);
+
+	if (env->fault_occurred)
+		logging_log(LOG_WARNING, "Method stop_flow failed: %s", env->fault_string);
+	else {
+		DEBUG_MSG(2, "Method stop_flow successful");
+	}
+
+	return ret;
+}
+
 void create_daemon_thread()
 {
 	int flags;
@@ -466,6 +510,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	xmlrpc_registry_add_method(env, registryP, NULL, "add_flow_source", &add_flow_source, NULL);
 	xmlrpc_registry_add_method(env, registryP, NULL, "start_flows", &start_flows, NULL);
 	xmlrpc_registry_add_method(env, registryP, NULL, "get_reports", &method_get_reports, NULL);
+	xmlrpc_registry_add_method(env, registryP, NULL, "stop_flow", &method_stop_flow, NULL);
 
 	/* In the modern form of the Abyss API, we supply parameters in memory
 	   like a normal API.  We select the modern form by setting
@@ -474,7 +519,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	serverparm.config_file_name = NULL;
 	serverparm.registryP		= registryP;
 	serverparm.port_number	  = port;
-	serverparm.log_file_name	= "/tmp/xmlrpc_log";
+	serverparm.log_file_name	= NULL; /*"/tmp/xmlrpc_log";*/
 
 	logging_log(LOG_NOTICE, "Running XML-RPC server on port %u", port);
 	printf("Running XML-RPC server...\n");

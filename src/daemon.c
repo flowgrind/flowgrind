@@ -108,12 +108,9 @@ void uninit_flow(struct _flow *flow)
 		close(flow->listenfd_reply);
 	if (flow->listenfd_data != -1)
 		close(flow->listenfd_data);
-	if (flow->read_block)
-		free(flow->read_block);
-	if (flow->write_block)
-		free(flow->write_block);
-	if (flow->addr)
-		free(flow->addr);
+	free(flow->read_block);
+	free(flow->write_block);
+	free(flow->addr);
 }
 
 void remove_flow(unsigned int i)
@@ -298,6 +295,21 @@ static void start_flows(struct _request_start_flows *request)
 	started = 1;
 }
 
+static void stop_flow(struct _request_stop_flow *request)
+{
+	for (unsigned int i = 0; i < num_flows; i++) {
+		struct _flow *flow = &flows[i];
+
+		if (flow->id != request->flow_id)
+			continue;
+
+		uninit_flow(flow);
+		remove_flow(i);
+		return;
+	}
+
+	request->r.error = "Unknown flow id";
+}
 
 static void process_requests()
 {
@@ -326,6 +338,9 @@ static void process_requests()
 			break;
 		case REQUEST_START_FLOWS:
 			start_flows((struct _request_start_flows *)request);
+			break;
+		case REQUEST_STOP_FLOW:
+			stop_flow((struct _request_stop_flow *)request);
 			break;
 		default:
 			request->error = "Unknown request type";
@@ -854,7 +869,7 @@ static void process_reply(struct _flow* flow)
 	if ((!isnan(*current_iat_ptr) && *current_iat_ptr <= 0) || current_rtt <= 0) {
 		DEBUG_MSG(5, "illegal reply_block: isnan = %d, iat = %e, rtt = %e", isnan(*current_iat_ptr), *current_iat_ptr, current_rtt);
 		error(ERR_WARNING, "Found block with illegal round trip time or illegal inter arrival time, ignoring block.");
-		return ;
+		return;
 	}
 
 	/* Update statistics for flow, both INTERVAL and TOTAL. */
@@ -874,7 +889,7 @@ static void process_reply(struct _flow* flow)
 		}
 
 	}
-	// XXX: else: check that this only happens once!
+	
 	DEBUG_MSG(4, "processed reply_block of flow %d, (RTT = %.3lfms, IAT = %.3lfms)", flow->id, current_rtt * 1e3, isnan(*current_iat_ptr) ? NAN : *current_iat_ptr * 1e3);
 }
 

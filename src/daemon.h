@@ -165,6 +165,7 @@ extern unsigned int num_flows;
 #define REQUEST_ADD_DESTINATION 0
 #define REQUEST_ADD_SOURCE 1
 #define REQUEST_START_FLOWS 2
+#define REQUEST_STOP_FLOW 3
 struct _request
 {
 	char type;
@@ -211,6 +212,13 @@ struct _request_start_flows
 	struct _request r;
 
 	int start_timestamp;
+};
+
+struct _request_stop_flow
+{
+	struct _request r;
+
+	int flow_id;
 };
 
 extern double reporting_interval;
