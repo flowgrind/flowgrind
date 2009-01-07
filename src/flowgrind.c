@@ -1057,7 +1057,7 @@ Notes on Anderson Darlington Test
 	}
 }
 
-void report_flow(struct _report* report)
+void report_flow(const char* server_url, struct _report* report)
 {
 	double diff_first_last;
 	double diff_first_now;
@@ -1068,11 +1068,11 @@ void report_flow(struct _report* report)
 	/* Get matching flow for report */
 	for (id = 0; id < opt.num_flows; id++) {
  		f = &flow[id];
-		if (f->source_id == report->id) {
+		if (f->source_id == report->id && !strcmp(server_url, f->endpoint_options[SOURCE].server_url)) {
 			type = 0;
 			break;
 		}
-		if (f->destination_id == report->id) {
+		if (f->destination_id == report->id && !strcmp(server_url, f->endpoint_options[DESTINATION].server_url)) {
 			type = 1;
 			break;
 		}
@@ -1278,7 +1278,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 					report.end.tv_sec = end_sec;
 					report.end.tv_usec = end_usec;
 
-					report_flow(&report);
+					report_flow(unique_servers[j], &report);
 				}
 			}
 			xmlrpc_DECREF(resultP);
