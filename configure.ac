@@ -115,10 +115,22 @@ AC_CONFIG_FILES([ \
 
 AC_CHECK_PROG(xmlrpcconfig, xmlrpc-c-config, yes, no)
 
-echo $xmlrpcconfig
 if test "x$xmlrpcconfig" = "xno"; then
   AC_MSG_ERROR(xmlrpc-c-config not found in path.)
 fi
+
+if ! xmlrpc-c-config --features | grep "curl-client" > /dev/null; then
+  AC_MSG_ERROR([xmlrpc-c needs to be compiled with curl-client enabled.])
+fi
+if ! xmlrpc-c-config --features | grep "abyss-server" > /dev/null; then
+  AC_MSG_ERROR([xmlrpc-c needs to be compiled with abyss-server enabled.])
+fi
+
+AC_CHECK_LIB(curl, curl_version,
+  [],
+  [
+    AC_MSG_ERROR([libcurl not found.])
+  ])
 
 XMLRPC_C_CLIENT_CFLAGS=`xmlrpc-c-config client --cflags`
 XMLRPC_C_CLIENT_LDADD=`xmlrpc-c-config client --ldadd`
