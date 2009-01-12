@@ -43,7 +43,14 @@ struct _flow_settings
 	int poisson_distributed;
 	int flow_control;
 
+	int byte_counting;
+
 	int cork;
+	char cc_alg[256];
+	int elcn;
+	int icmp;
+	int dscp;
+	int ipmtudiscover;
 };
 
 struct _flow_source_settings
@@ -53,13 +60,7 @@ struct _flow_source_settings
 	int destination_port;
 	int destination_port_reply;
 
-	char cc_alg[256];
-	int elcn;
-	int icmp;
-	int dscp;
-	int ipmtudiscover;
 	int late_connect;
-	int byte_counting;
 
 	pthread_cond_t* add_source_condition;
 };
@@ -178,7 +179,7 @@ struct _request
 	 * has processed the request */
 	pthread_cond_t* condition;
 
-	const char* error;
+	char* error;
 
 	struct _request *next;
 };
@@ -260,5 +261,6 @@ extern char started;
 
 void flow_error(struct _flow *flow, const char *fmt, ...);
 void request_error(struct _request *request, const char *fmt, ...);
+int set_flow_tcp_options(struct _flow *flow);
 
 #endif //__DAEMON_H__

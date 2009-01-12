@@ -993,3 +993,62 @@ static int read_reply(struct _flow *flow)
 	}
 	return 0;
 }
+
+/* Set the TCP options on the data socket */
+int set_flow_tcp_options(struct _flow *flow)
+{
+	set_non_blocking(flow->fd);
+
+	if (*flow->settings.cc_alg && set_congestion_control(
+				flow->fd, flow->settings.cc_alg) == -1) {
+		flow_error(flow, "Unable to set congestion control algorithm: %s",
+				strerror(errno));
+		return -1;
+	}
+
+	if (flow->settings.elcn && set_so_elcn(flow->fd, flow->settings.elcn) == -1) {
+		flow_error(flow, "Unable to set TCP_ELCN: %s", strerror(errno));
+		return -1;
+	}
+
+	if (flow->settings.icmp && set_so_icmp(flow->fd) == -1) {
+		flow_error(flow, "Unable to set TCP_ICMP: %s",
+			strerror(errno));
+		return -1;
+	}
+
+	if (flow->settings.cork && set_tcp_cork(flow->fd) == -1) {
+		flow_error(flow, "Unable to set TCP_CORK: %s",
+			strerror(errno));
+		return -1;
+	}
+
+	if (flow->settings.advstats)
+		fg_pcap_go(flow->fd);
+
+	if (flow->settings.so_debug && set_so_debug(flow->fd) == -1) {
+		flow_error(flow, "Unable to set SO_DEBUG: %s",
+			strerror(errno));
+		return -1;
+	}
+
+	if (flow->settings.route_record && set_route_record(flow->fd) == -1) {
+		flow_error(flow, "Unable to set route record option: %s",
+			strerror(errno));
+		return -1;
+	}
+
+	if (flow->settings.dscp && set_dscp(flow->fd, flow->settings.dscp) == -1) {
+		flow_error(flow, "Unable to set DSCP value: %s",
+			strerror(errno));
+		return -1;
+	}
+
+	if (flow->settings.ipmtudiscover && set_ip_mtu_discover(flow->fd) == -1) {
+		flow_error(flow, "Unable to set IP_MTU_DISCOVER value: %s",
+			strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}

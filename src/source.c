@@ -150,7 +150,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 		num_flows--;
 		return -1;
 	}
-	if (flow->source_settings.byte_counting) {
+	if (flow->settings.byte_counting) {
 		int byte_idx;
 		for (byte_idx = 0; byte_idx < flow->settings.write_block_size; byte_idx++)
 			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
@@ -177,16 +177,13 @@ int add_flow_source(struct _request_add_flow_source *request)
 		return -1;
 	}
 
-	set_non_blocking(flow->fd);
 	set_non_blocking(flow->fd_reply);
 
-	if (*flow->source_settings.cc_alg && set_congestion_control(
-				flow->fd, flow->source_settings.cc_alg) == -1) {
-		request_error(&request->r, "Unable to set congestion control algorithm: %s",
-				strerror(errno));
+	if (set_flow_tcp_options(flow) == -1) {
+		request->r.error = flow->error;
+		flow->error = NULL;
 		uninit_flow(flow);
 		num_flows--;
-		return -1;
 	}
 
 #ifdef __LINUX__
@@ -200,61 +197,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		return -1;
 	}
 #endif
-
-	if (flow->source_settings.elcn && set_so_elcn(flow->fd, flow->source_settings.elcn) == -1) {
-		request_error(&request->r, "Unable to set TCP_ELCN: %s", strerror(errno));
-		uninit_flow(flow);
-		num_flows--;
-		return -1;
-	}
-
-	if (flow->source_settings.icmp && set_so_icmp(flow->fd) == -1) {
-		request_error(&request->r, "Unable to set TCP_ICMP: %s",
-			strerror(errno));
-		uninit_flow(flow);
-		num_flows--;
-		return -1;
-	}
-
-	if (flow->settings.cork && set_tcp_cork(flow->fd) == -1) {
-		request_error(&request->r, "Unable to set TCP_CORK: %s",
-			strerror(errno));
-		uninit_flow(flow);
-		num_flows--;
-		return -1;
-	}
-
-	if (flow->settings.so_debug && set_so_debug(flow->fd) == -1) {
-		request_error(&request->r, "Unable to set SO_DEBUG: %s",
-			strerror(errno));
-		uninit_flow(flow);
-		num_flows--;
-		return -1;
-	}
-
-	if (flow->settings.route_record && set_route_record(flow->fd) == -1) {
-		request_error(&request->r, "Unable to set route record option: %s",
-			strerror(errno));
-		uninit_flow(flow);
-		num_flows--;
-		return -1;
-	}
-
-	if (flow->source_settings.dscp && set_dscp(flow->fd, flow->source_settings.dscp) == -1) {
-		request_error(&request->r, "Unable to set DSCP value: %s",
-			strerror(errno));
-		uninit_flow(flow);
-		num_flows--;
-		return -1;
-	}
-
-	if (flow->source_settings.ipmtudiscover && set_ip_mtu_discover(flow->fd) == -1) {
-		request_error(&request->r, "Unable to set IP_MTU_DISCOVER value: %s",
-			strerror(errno));
-		uninit_flow(flow);
-		num_flows--;
-		return -1;
-	}
 
 	if (!flow->source_settings.late_connect) {
 		DEBUG_MSG(4, "(early) connecting test socket");

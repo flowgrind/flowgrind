@@ -126,7 +126,10 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	DEBUG_MSG(1, "Method add_flow_source called");
 
 	/* Parse our argument array. */
-	xmlrpc_decompose_value(env, param_array, "({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,*}{s:s,s:s,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i,*})",
+	xmlrpc_decompose_value(env, param_array, "("
+			"{s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,*}"
+			"{s:s,s:s,s:i,s:i,s:i,*}"
+			")",
 
 		/* general settings */
 		"bind_address", &bind_address,
@@ -146,20 +149,20 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"write_rate", &settings.write_rate,
 		"poisson_distributed", &settings.poisson_distributed,
 		"flow_control", &settings.flow_control,
+		"byte_counting", &settings.byte_counting,
 		"cork", &settings.cork,
+		"cc_alg", &cc_alg,
+		"elcn", &settings.elcn,
+		"icmp", &settings.icmp,
+		"dscp", &settings.dscp,
+		"ipmtudiscover", &settings.ipmtudiscover,
 
 		/* source settings */
 		"destination_address", &destination_host,
 		"destination_address_reply", &destination_host_reply,
 		"destination_port", &source_settings.destination_port,
 		"destination_port_reply", &source_settings.destination_port_reply,
-		"cc_alg", &cc_alg,
-		"elcn", &source_settings.elcn,
-		"icmp", &source_settings.icmp,
-		"dscp", &source_settings.dscp,
-		"ipmtudiscover", &source_settings.ipmtudiscover,
-		"late_connect", &source_settings.late_connect,
-		"byte_counting", &source_settings.byte_counting);
+		"late_connect", &source_settings.late_connect);
 
 	if (env->fault_occurred)
 		goto cleanup;
@@ -174,13 +177,13 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		strlen(destination_host_reply) >= sizeof(source_settings.destination_host_reply) - 1 ||
 		source_settings.destination_port <= 0 || source_settings.destination_port > 65535 ||
 		strlen(cc_alg) > 255 ||
-		source_settings.dscp < 0 || source_settings.dscp > 255 ||
+		settings.dscp < 0 || settings.dscp > 255 ||
 		settings.write_rate < 0) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
 	strcpy(source_settings.destination_host, destination_host);
 	strcpy(source_settings.destination_host_reply, destination_host_reply);
-	strcpy(source_settings.cc_alg, cc_alg);
+	strcpy(settings.cc_alg, cc_alg);
 	strcpy(settings.bind_address, bind_address);
 
 	request = malloc(sizeof(struct _request_add_flow_source));
@@ -222,6 +225,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 {
 	int rc;
 	xmlrpc_value *ret = 0;
+	char* cc_alg = 0;
 	char* bind_address = 0;
 
 	struct _flow_settings settings;
@@ -232,7 +236,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	DEBUG_MSG(1, "Method add_flow_destination called");
 
 	/* Parse our argument array. */
-	xmlrpc_decompose_value(env, param_array, "({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,*})",
+	xmlrpc_decompose_value(env, param_array,
+		"({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,*})",
 
 		/* general settings */
 		"bind_address", &bind_address,
@@ -252,7 +257,13 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"write_rate", &settings.write_rate,
 		"poisson_distributed", &settings.poisson_distributed,
 		"flow_control", &settings.flow_control,
-		"cork", &settings.cork);
+		"byte_counting", &settings.byte_counting,
+		"cork", &settings.cork,
+		"cc_alg", &cc_alg,
+		"elcn", &settings.elcn,
+		"icmp", &settings.icmp,
+		"dscp", &settings.dscp,
+		"ipmtudiscover", &settings.ipmtudiscover);
 
 	if (env->fault_occurred)
 		goto cleanup;
@@ -263,10 +274,12 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
 		settings.write_block_size <= 0 || settings.read_block_size <= 0 ||
-		settings.write_rate < 0) {
+		settings.write_rate < 0 ||
+		strlen(cc_alg) > 255) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
 
+	strcpy(settings.cc_alg, cc_alg);
 	strcpy(settings.bind_address, bind_address);
 	request = malloc(sizeof(struct _request_add_flow_destination));
 	request->settings = settings;
@@ -290,6 +303,7 @@ cleanup:
 		free(request->r.error);
 		free(request);
 	}
+	free(cc_alg);
 	free(bind_address);
 
 	if (env->fault_occurred)

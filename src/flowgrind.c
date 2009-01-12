@@ -395,7 +395,7 @@ static void usage(void)
 		"Flow options:\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
-		"  -D DSCP      DSCP value for TOS byte\n"
+		"  -D x=DSCP      DSCP value for TOS byte\n"
 		"  -E x         Enumerate bytes in payload (default: don't)\n"
 		"  -F #{,#}     Flow options following this option apply only to flow #{,#}.\n"
 		"               Useful in combination with -n to set specific options\n"
@@ -409,7 +409,7 @@ static void usage(void)
 		"  -N x         shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
 		"               type \"flowgrind -h sockopt\" to see the specific values for OPT\n"
-		"  -P           Do not iterate through select() to continue sending in case\n"
+		"  -P x         Do not iterate through select() to continue sending in case\n"
 		"               block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q           Summarize only, skip interval reports (quite)\n"
 		"  -R x=#.#[z|k|M|G][b|B][p|P]\n"
@@ -467,10 +467,10 @@ static void usage_sockopt(void)
 		}
 
 	fprintf(stderr,
-		"  s=TCP_CORK   set TCP_CORK on test socket\n"
-		"  s=TCP_ELCN   set TCP_ELCN on test socket\n"
-		"  s=TCP_ICMP   set TCP_ICMP on test socket\n"
-		"  s=IP_MTU_DISCOVER\n"
+		"  x=TCP_CORK   set TCP_CORK on test socket\n"
+		"  x=TCP_ELCN   set TCP_ELCN on test socket\n"
+		"  x=TCP_ICMP   set TCP_ICMP on test socket\n"
+		"  x=IP_MTU_DISCOVER\n"
 		"               set IP_MTU_DISCOVER on test socket if not already enabled by\n"
 		"               system default\n"
 		"  x=ROUTE_RECORD\n"
@@ -523,21 +523,24 @@ void init_flows_defaults(void)
 			flow[id].settings[i].delay[WRITE] = 0;
 			flow[id].settings[i].write_block_size = 8192;
 			flow[id].settings[i].read_block_size = 8192;
-			flow[id].endpoint_options[i].route_record = 0;
+			flow[id].settings[i].route_record = 0;
 			strcpy(flow[id].endpoint_options[i].server_url, "http://localhost:5999/RPC2");
 			strcpy(flow[id].endpoint_options[i].server_address, "localhost");
 			flow[id].endpoint_options[i].server_port = DEFAULT_LISTEN_PORT;
 			strcpy(flow[id].endpoint_options[i].test_address, "localhost");
 			strcpy(flow[id].endpoint_options[i].bind_address, "");
+
+			flow[id].settings[i].pushy = 0;
+
+			flow[id].settings[i].cork = 0;
+			flow[id].settings[i].cc_alg[0] = 0;
+			flow[id].settings[i].elcn = 0;
+			flow[id].settings[i].icmp = 0;
+			flow[id].settings[i].dscp = 0;
+			flow[id].settings[i].ipmtudiscover = 0;
 		}
 		flow[id].settings[SOURCE].duration[WRITE] = 5.0;
 		flow[id].settings[DESTINATION].duration[WRITE] = 0.0;
-
-		flow[id].cc_alg = NULL;
-		flow[id].elcn = 0;
-		flow[id].cork = 0;
-		flow[id].pushy = 0;
-		flow[id].dscp = 0;
 
 		flow[id].source_id = flow[id].destination_id = -1;
 		flow[id].start_timestamp[0].tv_sec = 0;
@@ -855,11 +858,11 @@ void report_final(void)
 
 			if (flow[id].endpoint_options[endpoint].rate_str)
 				CATC("rate = %s", flow[id].endpoint_options[endpoint].rate_str);
-			if (flow[id].elcn)
-				CATC("ELCN %s", flow[id].elcn==1 ? "enabled" : "disabled");
-			if (flow[id].cork)
+			if (flow[id].settings[endpoint].elcn)
+				CATC("ELCN %s", flow[id].settings[endpoint].elcn == 1 ? "enabled" : "disabled");
+			if (flow[id].settings[endpoint].cork)
 				CATC("TCP_CORK");
-			if (flow[id].pushy)
+			if (flow[id].settings[endpoint].pushy)
 				CATC("PUSHY");
 /*
 #ifdef __LINUX__
@@ -871,8 +874,8 @@ void report_final(void)
 			CAT(" (was set to \"%s\")", flow[id].cc_alg);
 #endif
 */
-		if (flow[id].dscp)
-			CATC("dscp = 0x%02x", flow[id].dscp);
+		if (flow[id].settings[endpoint].dscp)
+			CATC("dscp = 0x%02x", flow[id].settings[endpoint].dscp);
 		if (flow[id].late_connect)
 			CATC("late connecting");
 		if (flow[id].shutdown)
@@ -1427,7 +1430,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	int real_listen_read_buffer_size;
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[DESTINATION].server_url, "add_flow_destination", &resultP,
-		"({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i})",
+		"({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i})",
 
 		/* general flow settings */
 		"bind_address", flow[id].endpoint_options[DESTINATION].bind_address,
@@ -1441,13 +1444,19 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"read_block_size", flow[id].settings[DESTINATION].read_block_size,
 		"advstats", (int)opt.advstats,
 		"so_debug", (int)flow[id].so_debug,
-		"route_record", (int)flow[id].endpoint_options[DESTINATION].route_record,
-		"pushy", (int)flow[id].pushy,
+		"route_record", (int)flow[id].settings[DESTINATION].route_record,
+		"pushy", flow[id].settings[DESTINATION].pushy,
 		"shutdown", (int)flow[id].shutdown,
 		"write_rate", flow[id].settings[DESTINATION].write_rate,
 		"poisson_distributed", flow[id].settings[DESTINATION].poisson_distributed,
 		"flow_control", flow[id].settings[DESTINATION].flow_control,
-		"cork", (int)flow[id].cork);
+		"byte_counting", flow[id].byte_counting,
+		"cork", (int)flow[id].settings[DESTINATION].cork,
+		"cc_alg", flow[id].settings[DESTINATION].cc_alg,
+		"elcn", flow[id].settings[DESTINATION].elcn,
+		"icmp", flow[id].settings[DESTINATION].icmp,
+		"dscp", (int)flow[id].settings[DESTINATION].dscp,
+		"ipmtudiscover", flow[id].settings[DESTINATION].ipmtudiscover);
 
 	die_if_fault_occurred(&rpc_env);
 
@@ -1463,8 +1472,8 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(resultP);
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[SOURCE].server_url, "add_flow_source", &resultP,
-		"({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i}"
-		"{s:s,s:s,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i})",
+		"({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i}"
+		"{s:s,s:s,s:i,s:i,s:i})",
 
 		/* general flow settings */
 		"bind_address", flow[id].endpoint_options[SOURCE].bind_address,
@@ -1478,26 +1487,26 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"read_block_size", flow[id].settings[SOURCE].read_block_size,
 		"advstats", (int)opt.advstats,
 		"so_debug", (int)flow[id].so_debug,
-		"route_record", (int)flow[id].endpoint_options[SOURCE].route_record,
-		"pushy", (int)flow[id].pushy,
+		"route_record", (int)flow[id].settings[SOURCE].route_record,
+		"pushy", flow[id].settings[SOURCE].pushy,
 		"shutdown", (int)flow[id].shutdown,
 		"write_rate", flow[id].settings[SOURCE].write_rate,
 		"poisson_distributed", flow[id].settings[SOURCE].poisson_distributed,
 		"flow_control", flow[id].settings[SOURCE].flow_control,
-		"cork", (int)flow[id].cork,
+		"byte_counting", flow[id].byte_counting,
+		"cork", (int)flow[id].settings[SOURCE].cork,
+		"cc_alg", flow[id].settings[SOURCE].cc_alg,
+		"elcn", flow[id].settings[SOURCE].elcn,
+		"icmp", flow[id].settings[SOURCE].icmp,
+		"dscp", (int)flow[id].settings[SOURCE].dscp,
+		"ipmtudiscover", flow[id].settings[SOURCE].ipmtudiscover,
 
 		/* source settings */
 		"destination_address", flow[id].endpoint_options[DESTINATION].test_address,
 		"destination_address_reply", flow[id].endpoint_options[DESTINATION].test_address,
 		"destination_port", listen_data_port,
 		"destination_port_reply", listen_reply_port,
-		"cc_alg", flow[id].cc_alg ? flow[id].cc_alg : "",
-		"elcn", flow[id].elcn,
-		"icmp", flow[id].icmp,
-		"dscp", (int)flow[id].dscp,
-		"ipmtudiscover", flow[id].ipmtudiscover,
-		"late_connect", (int)flow[id].late_connect,
-		"byte_counting", flow[id].byte_counting);
+		"late_connect", (int)flow[id].late_connect);
 	die_if_fault_occurred(&rpc_env);
 
 	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,*}",
@@ -1595,6 +1604,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 	char* arg;
 	char type;
 	int rc = 0;
+	int optint;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
 
@@ -1667,6 +1677,26 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 						(PROPERTY_VALUE); \
 				} \
 			}
+	#define ASSIGN_COMMON_FLOW_SETTING_STR(PROPERTY_NAME, PROPERTY_VALUE) \
+			if (current_flow_ids[0] == -1) { \
+				int id; \
+				for (id = 0; id < MAX_FLOWS; id++) { \
+					if (type != 'd') \
+						strcpy(flow[id].settings[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
+					if (type != 's') \
+						strcpy(flow[id].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
+				} \
+			} else { \
+				int id; \
+				for (id = 0; id < MAX_FLOWS; id++) { \
+					if (current_flow_ids[id] == -1) \
+						break; \
+					if (type != 'd') \
+						strcpy(flow[id].settings[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
+					if (type != 's') \
+						strcpy(flow[id].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
+				} \
+			}
 	for (token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
 		type = token[0];
 		if (token[1] == '=')
@@ -1692,6 +1722,16 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 			case 'C':
 				ASSIGN_COMMON_FLOW_SETTING(flow_control, 1)
 				break;
+			case 'D':
+				rc = sscanf(arg, "%x", &optint);
+				if (rc != 1 || (optint & ~0x3f)) {
+					fprintf(stderr, "malformed differentiated "
+							"service code point.\n");
+					usage();
+				}
+				ASSIGN_COMMON_FLOW_SETTING(dscp, optint);
+			break;
+
 			case 'H':
 				{
 					char url[1000];
@@ -1733,29 +1773,36 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					usage_sockopt();
 				}
 
-				if (!strcmp(arg, "TCP_CORK") && type == 's') {
-					ASSIGN_FLOW_OPTION(cork, 1);
+				if (!strcmp(arg, "TCP_CORK")) {
+					ASSIGN_COMMON_FLOW_SETTING(cork, 1);
 				}
-				else if (!strcmp(arg, "TCP_ELCN") && type == 's') {
-					ASSIGN_FLOW_OPTION(elcn, 1);
+				else if (!strcmp(arg, "TCP_ELCN")) {
+					ASSIGN_COMMON_FLOW_SETTING(elcn, 1);
 				}
-				else if (!strcmp(arg, "TCP_ICMP") && type == 's') {
-					ASSIGN_FLOW_OPTION(icmp, 1);
+				else if (!strcmp(arg, "TCP_ICMP")) {
+					ASSIGN_COMMON_FLOW_SETTING(icmp, 1);
 				}
 				else if (!strcmp(arg, "ROUTE_RECORD")) {
-					ASSIGN_ENDPOINT_FLOW_OPTION(route_record, 1);
+					ASSIGN_COMMON_FLOW_SETTING(route_record, 1);
 				}
-				else if (!memcmp(arg, "TCP_CONG_MODULE=", 16) && type == 's') {
-					ASSIGN_FLOW_OPTION(cc_alg, arg + 16);
+				else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
+					if (strlen(arg + 16) >= sizeof(flow[0].settings[SOURCE].cc_alg)) {
+						fprintf(stderr, "Too large string for TCP_CONG_MODULE value");
+						usage_sockopt();
+					}
+					ASSIGN_COMMON_FLOW_SETTING_STR(cc_alg, arg + 16);
 				}
-				else if (!memcmp(arg, "IP_MTU_DISCOVER", 15) && type == 's') {
-					ASSIGN_FLOW_OPTION(ipmtudiscover, 1);
+				else if (!memcmp(arg, "IP_MTU_DISCOVER", 15)) {
+					ASSIGN_COMMON_FLOW_SETTING(ipmtudiscover, 1);
 				}
 				else {
 					fprintf(stderr, "Unknown socket option or socket option not implemented for endpoint\n");
 					usage_sockopt();
 				}
 
+				break;
+			case 'P':
+				ASSIGN_COMMON_FLOW_SETTING(pushy, 1)
 				break;
 			case 'R':
 				if (!*arg) {
@@ -1821,7 +1868,7 @@ static void parse_cmdline(int argc, char **argv) {
 
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "ab:c:de:h:i:l:mn:op:qvwB:CD:EF:H:LNO:PQR:S:T:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "ab:c:de:h:i:l:mn:op:qvwB:CD:EF:H:LNO:P:QR:S:T:W:Y:")) != -1)
 		switch (ch) {
 
 		case 'a':
@@ -1907,16 +1954,6 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.dont_log_logfile = 0;
 			break;
 
-		case 'D':
-			rc = sscanf(optarg, "%x", &optint);
-			if (rc != 1 || (optint & ~0x3f)) {
-				fprintf(stderr, "malformed differentiated "
-						"service code point.\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(dscp, optint);
-			break;
-
 		case 'E':
 			ASSIGN_FLOW_OPTION(byte_counting, 1)
 			break;
@@ -1949,16 +1986,15 @@ static void parse_cmdline(int argc, char **argv) {
 			ASSIGN_FLOW_OPTION(shutdown, 1);
 			break;
 
-		case 'P':
-			ASSIGN_FLOW_OPTION(pushy, 1)
-			break;
 		case 'Q':
 			ASSIGN_FLOW_OPTION(summarize_only, 1)
 			break;
 		case 'B':
 		case 'C':
+		case 'D':
 		case 'H':
 		case 'O':
+		case 'P':
 		case 'R':
 		case 'S':
 		case 'T':

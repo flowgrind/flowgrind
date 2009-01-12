@@ -251,6 +251,11 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		num_flows--;
 		return;
 	}
+	if (flow->settings.byte_counting) {
+		int byte_idx;
+		for (byte_idx = 0; byte_idx < flow->settings.write_block_size; byte_idx++)
+			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
+	}
 
 	/* Create listen socket for reply connection */
 	if ((flow->listenfd_reply = create_listen_socket(flow, 0, &server_reply_port)) == -1) {
@@ -331,20 +336,9 @@ int accept_data(struct _flow *flow)
 				flow->real_listen_receive_buffer_size, real_receive_buffer_size);
 		return -1;
 	}
-	if (flow->settings.route_record)
-		set_route_record(flow->fd);
-	if (flow->settings.advstats)
-		fg_pcap_go(flow->fd);
-	if (flow->settings.so_debug && set_so_debug(flow->fd)) {
-		logging_log(LOG_WARNING, "Unable to set SO_DEBUG on test socket: %s",
-				  strerror(errno));
-	}
-	if (flow->settings.cork && set_tcp_cork(flow->fd) == -1) {
-		flow_error(flow, "Unable to set TCP_CORK: %s", strerror(errno));
-		return -1;
-	}
 
-	set_non_blocking(flow->fd);
+	if (set_flow_tcp_options(flow) == -1)
+		return -1;
 
 	DEBUG_MSG(2, "data socket accepted");
 	flow->state = GRIND;

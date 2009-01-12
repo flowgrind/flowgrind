@@ -100,8 +100,6 @@ struct _flow_endpoint {
 
 	char *rate_str;
 
-	char route_record;
-
 	char server_url[1000];
 	char server_address[1000];
 	unsigned server_port;
@@ -129,14 +127,7 @@ struct _flow_dummy {
 	int current_mss;
 	int current_mtu;
 
-	char *cc_alg;
-	int elcn;
-	int icmp;
-	int ipmtudiscover; //1 - set, 0 - option not set
-	char cork;
 	char so_debug;
-	uint8_t dscp;
-	char pushy;
 	char late_connect;
 	char connect_called;
 	char shutdown;
