@@ -14,7 +14,6 @@
 struct timeval now;
 char sigint_caught = 0;
 
-fd_set rfds, wfds, efds, efds_orig;
 FILE *log_stream = NULL;
 char *log_filename = NULL;
 int maxfd = 0;
@@ -141,8 +140,7 @@ struct _flow_dummy {
 	char final_cc_alg[30];
 #endif
 
-	int source_id;
-	int destination_id;
+	int endpoint_id[2];
 
 	struct timeval start_timestamp[2];
 

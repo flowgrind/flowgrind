@@ -1,3 +1,4 @@
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -541,7 +542,7 @@ void init_flows_defaults(void)
 		flow[id].settings[SOURCE].duration[WRITE] = 5.0;
 		flow[id].settings[DESTINATION].duration[WRITE] = 0.0;
 
-		flow[id].source_id = flow[id].destination_id = -1;
+		flow[id].endpoint_id[0] = flow[id].endpoint_id[1] = -1;
 		flow[id].start_timestamp[0].tv_sec = 0;
 		flow[id].start_timestamp[0].tv_usec = 0;
 		flow[id].start_timestamp[1].tv_sec = 0;
@@ -721,7 +722,8 @@ void print_tcp_report_line(char hash, int id,
 #endif
 		mss, mtu, comment_buffer, opt.mbyte
 	));
-	snprintf(report_buffer, sizeof(report_buffer), rep_string);
+	strncpy(report_buffer, rep_string, sizeof(report_buffer));
+	report_buffer[sizeof(report_buffer) - 1] = 0;
 	log_output(report_buffer);
 }
 
@@ -1106,15 +1108,13 @@ void report_flow(const char* server_url, struct _report* report)
 	/* Get matching flow for report */
 	for (id = 0; id < opt.num_flows; id++) {
  		f = &flow[id];
-		if (f->source_id == report->id && !strcmp(server_url, f->endpoint_options[SOURCE].server_url)) {
-			endpoint = SOURCE;
-			break;
-		}
-		if (f->destination_id == report->id && !strcmp(server_url, f->endpoint_options[DESTINATION].server_url)) {
-			endpoint = DESTINATION;
-			break;
+
+		for (endpoint = 0; endpoint < 2; endpoint++) {
+			if (f->endpoint_id[endpoint] == report->id && !strcmp(server_url, f->endpoint_options[endpoint].server_url))
+				goto exit_outer_loop;
 		}
 	}
+exit_outer_loop:
 
 	if (id == opt.num_flows) {
 		DEBUG_MSG(1, "Got report from nonexistant flow, ignoring");
@@ -1145,39 +1145,16 @@ void report_flow(const char* server_url, struct _report* report)
 	print_report(id, endpoint, report);
 }
 
-void stop_flow(int id)
-{
-/*	if (flow[id].stopped) {
-		DEBUG_MSG(3, "flow %d already stopped", id);
-		return;
-	}
-
-	DEBUG_MSG(3, "stopping flow %d", id);
-
-	close_flow(id);
-
-	flow[id].stopped = 1;
-	tsc_gettimeofday(&flow[id].stopped_timestamp);*/
-}
-
 void sigint_handler(int sig)
 {
 	UNUSED_ARGUMENT(sig);
 
-	int id;
-
 	DEBUG_MSG(1, "caught %s", strsignal(sig));
-	for (id = 0; id < opt.num_flows; id++)
-		stop_flow(id);
-
-	FD_ZERO(&rfds);
-	FD_ZERO(&wfds);
-	FD_ZERO(&wfds);
 
 	sigint_caught = 1;
 }
 
-static void die_if_fault_occurred (xmlrpc_env *env)
+static void die_if_fault_occurred(xmlrpc_env *env)
 {
     if (env->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
@@ -1195,6 +1172,10 @@ static void grind_flows(xmlrpc_client *rpc_client)
 	tsc_gettimeofday(&now);
 
 	for (j = 0; j < num_unique_servers; j++) {
+
+		if (sigint_caught)
+			return;
+
 		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "start_flows", &resultP,
 		"({s:i})",
 		"start_timestamp", now.tv_sec + 2);
@@ -1205,7 +1186,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 
 	active_flows = opt.num_flows;
 
-	for (;;) {
+	while (!sigint_caught) {
 
 		usleep(1000000 * opt.reporting_interval);
 
@@ -1320,50 +1301,55 @@ static void grind_flows(xmlrpc_client *rpc_client)
 			/* All flows have ended */
 			return;
 	}
-	
-	exit(0);
 }
 
 void close_flow(int id)
 {
-#ifdef __LINUX__
-	socklen_t opt_len = 0;
-#endif
-
 	DEBUG_MSG(2, "closing flow %d.", id);
 
-/*	if (flow[id].stopped || flow[id].closed)
+	xmlrpc_env env;
+	xmlrpc_client *client;
+
+	if (flow[id].finished[SOURCE] && flow[id].finished[DESTINATION])
 		return;
-*/
-#ifdef __LINUX__
-	opt_len = sizeof(flow[id].final_cc_alg);
-/*	if (getsockopt(flow[id].sock, IPPROTO_TCP, TCP_CONG_MODULE,
-				flow[id].final_cc_alg, &opt_len) == -1) {
-		error(ERR_WARNING, "failed to determine congestion control "
-				"algorithm for flow %d: %s: ", id,
-				strerror(errno));
-		flow[id].final_cc_alg[0] = '\0';
-	}*/
 
-/*	opt_len = sizeof(flow[id].final_tcp_info);
-	if (getsockopt(flow[id].sock, IPPROTO_TCP, TCP_INFO,
-				&flow[id].final_tcp_info, &opt_len) == -1) {
-		error(ERR_WARNING, "failed to get last tcp_info: %s",
-				strerror(errno));
-		flow[id].stopped = 1;
-	}*/
-#endif
+	/* We use new env and client, old one might be in fault condition */
+	xmlrpc_env_init(&env);
+	xmlrpc_client_create(&env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &client);
+	die_if_fault_occurred(&env);
+	xmlrpc_env_clean(&env);
 
-/*	flow[id].closed = 1;
+	for (unsigned int endpoint = 0; endpoint < 2; endpoint++) {
+		xmlrpc_value * resultP = 0;
 
-	active_flows--;*/
+		if (flow[id].endpoint_id[endpoint] == -1 ||
+				flow[id].finished[endpoint]) {
+			/* Endpoint does not need closing */
+			continue;
+		}
+
+		flow[id].finished[endpoint] = 1;
+
+		xmlrpc_env_init(&env);
+
+		xmlrpc_client_call2f(&env, client, flow[id].endpoint_options[endpoint].server_url, "stop_flow", &resultP,
+			"({s:i})", "flow_id", flow[id].endpoint_id[endpoint]);
+		if (resultP)
+			xmlrpc_DECREF(resultP);
+	
+		xmlrpc_env_clean(&env);
+	}
+
+	if (active_flows > 0)
+		active_flows--;
+
+	xmlrpc_client_destroy(client);
 }
 
 
 void close_flows(void)
 {
 	int id;
-
 	for (id = 0; id < opt.num_flows; id++)
 		close_flow(id);
 
@@ -1460,7 +1446,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	die_if_fault_occurred(&rpc_env);
 
 	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,s:i,s:i,*}",
-		"flow_id", &flow[id].destination_id,
+		"flow_id", &flow[id].endpoint_id[DESTINATION],
 		"listen_data_port", &listen_data_port,
 		"listen_reply_port", &listen_reply_port,
 		"real_listen_send_buffer_size", &real_listen_send_buffer_size,
@@ -1509,7 +1495,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	die_if_fault_occurred(&rpc_env);
 
 	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,*}",
-		"flow_id", &flow[id].source_id);
+		"flow_id", &flow[id].endpoint_id[SOURCE]);
 	die_if_fault_occurred(&rpc_env);
 
 	if (resultP)
@@ -1524,6 +1510,10 @@ void check_version(xmlrpc_client *rpc_client)
 	char mismatch = 0;
 
 	for (j = 0; j < num_unique_servers; j++) {
+
+		if (sigint_caught)
+			return;
+
 		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_version", &resultP,
 		"()");
 		die_if_fault_occurred(&rpc_env);
@@ -1533,7 +1523,7 @@ void check_version(xmlrpc_client *rpc_client)
 			xmlrpc_decompose_value(&rpc_env, resultP, "s", &version);
 			die_if_fault_occurred(&rpc_env);
 
-			if (!strcmp(version, FLOWGRIND_VERSION)) {
+			if (strcmp(version, FLOWGRIND_VERSION)) {
 				mismatch = 1;
 				fprintf(stderr, "Warning: Node %s uses version %s\n", unique_servers[j], version);
 			}
@@ -1551,6 +1541,10 @@ void check_version(xmlrpc_client *rpc_client)
 void prepare_flows(xmlrpc_client *rpc_client)
 {
 	for (int id = 0; id < opt.num_flows; id++) {
+
+		if (sigint_caught)
+			return;
+
 		prepare_flow(id, rpc_client);
 	}
 
@@ -2229,6 +2223,8 @@ static void parse_cmdline(int argc, char **argv) {
 
 int main(int argc, char *argv[])
 {
+	struct sigaction sa;
+
 	xmlrpc_client *rpc_client = 0;
 
 	xmlrpc_env_init(&rpc_env);
@@ -2239,13 +2235,25 @@ int main(int argc, char *argv[])
 	parse_cmdline(argc, argv);
 	init_logfile();
 
+	sa.sa_handler = sigint_handler;
+	sa.sa_flags = 0;
+	sigemptyset (&sa.sa_mask);
+	if (sigaction(SIGINT, &sa, NULL)) {
+		fprintf(stderr, "Error: Could not set handler for SIGINT\n");
+	}
+
 	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &rpc_client);
 
 	check_version(rpc_client);
-	prepare_flows(rpc_client);
-	grind_flows(rpc_client);
-	report_final();
-	//close_flows();
+	if (!sigint_caught)
+		prepare_flows(rpc_client);
+	if (!sigint_caught)
+		grind_flows(rpc_client);
+	if (!sigint_caught)
+		report_final();
+	
+	close_flows();
+
 	shutdown_logfile();
 	exit(0);
 }
