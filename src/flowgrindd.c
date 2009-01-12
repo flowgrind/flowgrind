@@ -365,7 +365,6 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
-	int rc;
 	xmlrpc_value *ret = 0;
 	DEBUG_MSG(2, "Method get_reports called");
 
@@ -496,6 +495,27 @@ cleanup:
 	return ret;
 }
 
+/* This method returns the version number of flowgrindd as string. */
+static xmlrpc_value * method_get_version(xmlrpc_env * const env,
+		   xmlrpc_value * const param_array,
+		   void * const user_data)
+{
+	xmlrpc_value *ret = 0;
+
+	DEBUG_MSG(2, "Method get_version called");
+
+	/* Return our result. */
+	ret = xmlrpc_build_value(env, "s", FLOWGRIND_VERSION);
+
+	if (env->fault_occurred)
+		logging_log(LOG_WARNING, "Method get_version failed: %s", env->fault_string);
+	else {
+		DEBUG_MSG(2, "Method get_version successful");
+	}
+
+	return ret;
+}
+
 void create_daemon_thread()
 {
 	int flags;
@@ -530,6 +550,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	xmlrpc_registry_add_method(env, registryP, NULL, "start_flows", &start_flows, NULL);
 	xmlrpc_registry_add_method(env, registryP, NULL, "get_reports", &method_get_reports, NULL);
 	xmlrpc_registry_add_method(env, registryP, NULL, "stop_flow", &method_stop_flow, NULL);
+	xmlrpc_registry_add_method(env, registryP, NULL, "get_version", &method_get_version, NULL);
 
 	/* In the modern form of the Abyss API, we supply parameters in memory
 	   like a normal API.  We select the modern form by setting
@@ -626,7 +647,7 @@ int main(int argc, char ** argv)
 		if (daemon(0, 0) == -1) {
 			error(ERR_FATAL, "daemon() failed: %s", strerror(errno));
 		}
-		logging_log(LOG_NOTICE, "flowgrindd  daemonized");
+		logging_log(LOG_NOTICE, "flowgrindd daemonized");
 	}
 
 	xmlrpc_env_init(&env);

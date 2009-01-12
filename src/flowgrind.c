@@ -31,7 +31,6 @@
 #include "fg_socket.h"
 #include "debug.h"
 #include "flowgrind.h"
-#include "svnversion.h"
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -1517,6 +1516,38 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(resultP);
 }
 
+/* Checks that all nodes use our flowgrind version */
+void check_version(xmlrpc_client *rpc_client)
+{
+	unsigned j;
+	xmlrpc_value * resultP = 0;
+	char mismatch = 0;
+
+	for (j = 0; j < num_unique_servers; j++) {
+		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_version", &resultP,
+		"()");
+		die_if_fault_occurred(&rpc_env);
+
+		if (resultP) {
+			char* version;
+			xmlrpc_decompose_value(&rpc_env, resultP, "s", &version);
+			die_if_fault_occurred(&rpc_env);
+
+			if (!strcmp(version, FLOWGRIND_VERSION)) {
+				mismatch = 1;
+				fprintf(stderr, "Warning: Node %s uses version %s\n", unique_servers[j], version);
+			}
+
+			xmlrpc_DECREF(resultP);
+		}
+	}
+
+	if (mismatch) {
+		fprintf(stderr, "Our version is %s\n\nContinuing in 10 seconds.\n", FLOWGRIND_VERSION);
+		sleep(10);
+	}
+}
+
 void prepare_flows(xmlrpc_client *rpc_client)
 {
 	for (int id = 0; id < opt.num_flows; id++) {
@@ -2208,8 +2239,9 @@ int main(int argc, char *argv[])
 	parse_cmdline(argc, argv);
 	init_logfile();
 
-	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", "todo: version", NULL, 0, &rpc_client);
+	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &rpc_client);
 
+	check_version(rpc_client);
 	prepare_flows(rpc_client);
 	grind_flows(rpc_client);
 	report_final();

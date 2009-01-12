@@ -32,7 +32,6 @@
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "log.h"
-#include "svnversion.h"
 #include "acl.h"
 #include "daemon.h"
 
