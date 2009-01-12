@@ -103,6 +103,8 @@ struct _flow_endpoint {
 	char route_record;
 
 	char server_url[1000];
+	char server_address[1000];
+	unsigned server_port;
 	char test_address[1000];
 	char bind_address[1000];
 };
@@ -142,8 +144,6 @@ struct _flow_dummy {
 	char two_way;
 	char byte_counting;
 
-	char stopped;
-	char closed;
 	struct timeval stopped_timestamp;
 
 #ifdef __LINUX__
@@ -163,6 +163,9 @@ struct _flow_dummy {
 	// 1 for destination
 	struct _flow_endpoint endpoint_options[2];
 	struct _flow_settings settings[2];
+
+	char finished[2];
+	struct _report *final_report[2];
 };
 struct _flow_dummy flow[MAX_FLOWS];
 

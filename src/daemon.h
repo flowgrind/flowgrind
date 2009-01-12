@@ -102,6 +102,7 @@ struct _flow
 	struct timeval last_block_read;
 	struct timeval last_block_written;
 
+	struct timeval first_report_time;
 	struct timeval last_report_time;
 
 	struct timeval next_write_block_timestamp;
@@ -143,14 +144,15 @@ struct _flow
 	socklen_t addr_len;
 
 	struct _statistics {
-		long bytes_read;
-		long bytes_written;
+		long long bytes_read;
+		long long bytes_written;
 		long reply_blocks_read;
 
 		double rtt_min, rtt_max, rtt_sum;
 		double iat_min, iat_max, iat_sum;
 
 #ifdef __LINUX__
+		int has_tcp_info;
 		struct tcp_info tcp_info;
 #endif
 
@@ -232,8 +234,8 @@ struct _report
 	struct timeval begin;
 	struct timeval end;
 
-	int bytes_read;
-	int bytes_written;
+	long long bytes_read;
+	long long bytes_written;
 	int reply_blocks_read;
 
 	double rtt_min, rtt_max, rtt_sum;

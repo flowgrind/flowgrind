@@ -45,7 +45,7 @@
 #endif
 
 char unique_servers[MAX_FLOWS * 2][1000];
-int num_unique_servers = 0;
+unsigned int num_unique_servers = 0;
 
 xmlrpc_env rpc_env;
 
@@ -525,6 +525,8 @@ void init_flows_defaults(void)
 			flow[id].settings[i].read_block_size = 8192;
 			flow[id].endpoint_options[i].route_record = 0;
 			strcpy(flow[id].endpoint_options[i].server_url, "http://localhost:5999/RPC2");
+			strcpy(flow[id].endpoint_options[i].server_address, "localhost");
+			flow[id].endpoint_options[i].server_port = DEFAULT_LISTEN_PORT;
 			strcpy(flow[id].endpoint_options[i].test_address, "localhost");
 			strcpy(flow[id].endpoint_options[i].bind_address, "");
 		}
@@ -547,6 +549,11 @@ void init_flows_defaults(void)
 		flow[id].last_retrans[0] = 0;
 		flow[id].last_retrans[1] = 0;
 #endif
+
+		flow[id].finished[0] = 0;
+		flow[id].finished[1] = 0;
+		flow[id].final_report[0] = NULL;
+		flow[id].final_report[1] = NULL;
 	}
 }
 
@@ -652,7 +659,7 @@ void print_tcp_report_line(char hash, int id,
 		min_iat = max_iat = avg_iat = INFINITY;
 	}
 
-	if (flow[id].stopped)
+	if (flow[id].finished[type])
 		COMMENT_CAT("stopped")
 	else {
 		blocks_written = bytes_written / flow[id].settings[type].write_block_size;
@@ -716,86 +723,145 @@ void print_tcp_report_line(char hash, int id,
 	log_output(report_buffer);
 }
 
+void print_report(int id, int endpoint, struct _report* report)
+{
+	double diff_first_last;
+	double diff_first_now;
+	struct _flow_dummy *f = &flow[id];
 
+	diff_first_last = time_diff(&f->start_timestamp[endpoint], &report->begin);
+	diff_first_now = time_diff(&f->start_timestamp[endpoint], &report->end);
+
+	print_tcp_report_line(
+		0, id, endpoint, diff_first_last, diff_first_now,
+		report->bytes_written,
+		report->bytes_read,
+		report->reply_blocks_read,
+		report->rtt_min,
+		report->rtt_sum,
+		report->rtt_max,
+		report->iat_min,
+		report->iat_sum,
+		report->iat_max,
+#ifdef __LINUX__
+		report->tcp_info.tcpi_snd_cwnd,
+		report->tcp_info.tcpi_snd_ssthresh,
+		report->tcp_info.tcpi_unacked, report->tcp_info.tcpi_sacked,
+		/*report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,*/
+		report->tcp_info.tcpi_lost,
+		f->last_retrans[endpoint] - report->tcp_info.tcpi_retrans,
+		report->tcp_info.tcpi_fackets,
+		report->tcp_info.tcpi_reordering,
+		report->tcp_info.tcpi_rtt,
+		report->tcp_info.tcpi_rttvar,
+		report->tcp_info.tcpi_rto,
+#endif
+		report->mss,
+		report->mtu
+	);
+#ifdef __LINUX__
+	f->last_retrans[endpoint] = report->tcp_info.tcpi_retrans;
+#endif
+}
 
 void report_final(void)
 {
 	int id = 0;
-	double thruput_read = 0.0;
-	double thruput_written = 0.0;
-	char header_buffer[300] = "";
-	char header_nibble[300] = "";
-#ifdef __LINUX__
-	struct tcp_info *info = NULL;
-#endif
+	char header_buffer[400] = "";
+	char header_nibble[400] = "";
 
 	for (id = 0; id < opt.num_flows; id++) {
-
-//		snprintf(header_buffer, sizeof(header_buffer),
-//			"\n# #%d: %s", id, flow[id].server_name);
 
 #define CAT(fmt, args...) do {\
 	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
 	strncat(header_buffer, header_nibble, sizeof(header_nibble)); } while (0)
 #define CATC(fmt, args...) CAT(", "fmt, ##args)
 
-/*		if (strcmp(flow[id].server_name, flow[id].server_name_control) != 0)
-			CAT("/%s", flow[id].server_name_control);
-		if (flow[id].server_control_port != DEFAULT_LISTEN_PORT)
-			CAT(",%d", flow[id].server_control_port);
-		CATC("MSS = %d", flow[id].mss);
-//		if (flow[id].mtu != -1)
-			CATC("MTU = %d (%s)", flow[id].current_mtu,
-				guess_topology(flow[id].current_mss, flow[id].current_mtu)
-	//possible correction
-	//		guess_topology(get_mss(flow[id].sock), get_mtu(flow[id].sock))
-			);
-		if (flow[id].stopped) {
-			thruput_read = flow[id].bytes_read_since_first
-				/ time_diff(&flow[id].endpoint_options[SOURCE].flow_start_timestamp,
-						&flow[id].stopped_timestamp);
-			thruput_written = flow[id].bytes_written_since_first
-				/ time_diff(&flow[id].endpoint_options[SOURCE].flow_start_timestamp,
-						&flow[id].stopped_timestamp);
-		}
-		else {
-			thruput_read = flow[id].bytes_read_since_first /
-				flow[id].settings[SOURCE].duration[WRITE];
-			thruput_written = flow[id].bytes_written_since_first /
-				flow[id].settings[SOURCE].duration[WRITE];
-		}
-		thruput_read = scale_thruput(thruput_read);
-		thruput_written = scale_thruput(thruput_written);
-		CATC("sb = %u/%u%s (%u/%u), rb = %u/%u%s (%u/%u), bs = %u/%u\n#delay = %.2fs/%.2fs, "
-				"duration = %.2fs/%.2fs, thruput = %.6f/%.6fM%c/s "
-				"(%llu/%llu blocks)",
-				flow[id].endpoint_options[SOURCE].send_buffer_size_real,
-				flow[id].endpoint_options[DESTINATION].send_buffer_size_real,
-				(flow[id].settings[DESTINATION].requested_send_buffer_size ? "" : "(?)"),
-				flow[id].settings[SOURCE].requested_send_buffer_size,
-				flow[id].settings[DESTINATION].requested_send_buffer_size,
-				flow[id].endpoint_options[SOURCE].receive_buffer_size_real,
-				flow[id].endpoint_options[DESTINATION].receive_buffer_size_real,
-				(flow[id].settings[DESTINATION].requested_read_buffer_size ? "" : "(?)"),
-				flow[id].settings[SOURCE].requested_read_buffer_size,
-				flow[id].settings[DESTINATION].requested_read_buffer_size,
-				flow[id].settings[SOURCE].write_block_size,
-				flow[id].settings[DESTINATION].write_block_size,
-				flow[id].settings[SOURCE].delay[WRITE],
-				flow[id].settings[DESTINATION].delay[WRITE],
-				flow[id].settings[SOURCE].duration[WRITE],
-				flow[id].settings[DESTINATION].duration[WRITE],
-				thruput_written, thruput_read, (opt.mbyte ? 'B' : 'b'),
-				flow[id].write_block_count, flow[id].read_block_count);
-		if (flow[id].endpoint_options[SOURCE].rate_str)
-			CATC("rate = %s", flow[id].endpoint_options[SOURCE].rate_str);
-		if (flow[id].elcn)
-			CATC("ELCN %s", flow[id].elcn==1 ? "enabled" : "disabled");
-		if (flow[id].cork)
-			CATC("TCP_CORK");
-		if (flow[id].pushy)
-			CATC("PUSHY");
+		log_output("\n");
 
+		for (int endpoint = 0; endpoint < 2; endpoint++) {
+			header_buffer[0] = 0;
+
+			int mtu;
+			int mss;
+
+			CAT("#% 4d %s:", id, endpoint ? "R" : "S");
+
+ 			CAT(" %s", flow[id].endpoint_options[endpoint].server_address);
+			if (flow[id].endpoint_options[endpoint].server_port != DEFAULT_LISTEN_PORT)
+				CAT(":%d", flow[id].endpoint_options[endpoint].server_port);
+			if (strcmp(flow[id].endpoint_options[endpoint].server_address, flow[id].endpoint_options[endpoint].test_address) != 0)
+				CAT("/%s", flow[id].endpoint_options[endpoint].test_address);
+
+			if (flow[id].final_report[endpoint]) {
+				mtu = flow[id].final_report[endpoint]->mtu;
+				mss = flow[id].final_report[endpoint]->mss;
+			}
+			else {
+				mtu = -1;
+				mss = -1;
+			}
+
+			CATC("MSS = %d", mss);
+			CATC("MTU = %d (%s)", mtu, guess_topology(mss, mtu));
+
+			CATC("sb = %u (%u)",
+				flow[id].endpoint_options[endpoint].send_buffer_size_real,
+				flow[id].settings[endpoint].requested_send_buffer_size);
+
+			CATC("rb = %u (%u)",
+				flow[id].endpoint_options[endpoint].receive_buffer_size_real,
+				flow[id].settings[endpoint].requested_read_buffer_size);
+
+			CATC("bs = %u/%u",
+				flow[id].settings[endpoint].write_block_size,
+				flow[id].settings[1 - endpoint].write_block_size);
+
+			CAT("\n         delay = %.2fs/%.2fs",
+				flow[id].settings[SOURCE].delay[WRITE],
+				flow[id].settings[SOURCE].delay[READ]);
+
+			CATC("duration = %.2fs/%.2fs",
+				flow[id].settings[SOURCE].duration[WRITE],
+				flow[id].settings[SOURCE].duration[READ]);
+
+			if (flow[id].final_report[endpoint]) {
+				double thruput_read = 0.0;
+				double thruput_written = 0.0;
+
+				double report_diff, duration_read, duration_write;
+
+				report_diff = time_diff(&flow[id].final_report[endpoint]->begin, &flow[id].final_report[endpoint]->end);
+				/* Calculate duration the flow was receiving */
+				duration_read = report_diff - flow[id].settings[endpoint].delay[DESTINATION];
+				if (duration_read > flow[id].settings[endpoint].duration[DESTINATION])
+					duration_read = flow[id].settings[endpoint].duration[DESTINATION];
+				/* Calculate duration the flow was sending */
+				duration_write = report_diff - flow[id].settings[endpoint].delay[SOURCE];
+				if (duration_write > flow[id].settings[endpoint].duration[SOURCE])
+					duration_write = flow[id].settings[endpoint].duration[SOURCE];
+
+				thruput_read = flow[id].final_report[endpoint]->bytes_read / duration_read;
+				thruput_written = flow[id].final_report[endpoint]->bytes_written / duration_write;
+
+				thruput_read = scale_thruput(thruput_read);
+				thruput_written = scale_thruput(thruput_written);
+
+				CATC("thruput = %.6f/%.6fM%c/s (%lld/%lld)", thruput_written, thruput_read, (opt.mbyte ? 'B' : 'b'),
+					flow[id].final_report[endpoint]->bytes_written / flow[id].settings[endpoint].write_block_size,
+					flow[id].final_report[endpoint]->bytes_read / flow[id].settings[endpoint].read_block_size
+					);
+			}
+
+			if (flow[id].endpoint_options[endpoint].rate_str)
+				CATC("rate = %s", flow[id].endpoint_options[endpoint].rate_str);
+			if (flow[id].elcn)
+				CATC("ELCN %s", flow[id].elcn==1 ? "enabled" : "disabled");
+			if (flow[id].cork)
+				CATC("TCP_CORK");
+			if (flow[id].pushy)
+				CATC("PUSHY");
+/*
 #ifdef __LINUX__
 		CATC("cc = \"%s\"", *flow[id].final_cc_alg ? flow[id].final_cc_alg :
 				"(failed)");
@@ -804,75 +870,40 @@ void report_final(void)
 		else if (strcmp(flow[id].final_cc_alg, flow[id].cc_alg) != 0)
 			CAT(" (was set to \"%s\")", flow[id].cc_alg);
 #endif
+*/
 		if (flow[id].dscp)
 			CATC("dscp = 0x%02x", flow[id].dscp);
 		if (flow[id].late_connect)
 			CATC("late connecting");
 		if (flow[id].shutdown)
 			CATC("calling shutdown");
-		if (flow[id].congestion_counter > CONGESTION_LIMIT)
+/*		if (flow[id].congestion_counter > CONGESTION_LIMIT)
 			CAT(" (overcongested)");
 		else if (flow[id].congestion_counter > 0)
 			CAT(" (congested = %u)", flow[id].congestion_counter);
 		if (flow[id].stopped &&
 				flow[id].congestion_counter <= CONGESTION_LIMIT)
 			CAT(" (stopped)");
-		CAT("\n");
-
-		log_output(header_buffer);
 */
-#ifdef __LINUX__
-/*		if (flow[id].stopped)
-			info = &flow[id].last_tcp_info;
-		else
-			info = &flow[id].final_tcp_info;*/
-#endif
-/*		if (flow[id].bytes_written_since_first == 0) {
-			print_tcp_report_line(
-				1, id, 0, flow[id].settings[SOURCE].delay[WRITE],
-				flow[id].settings[SOURCE].duration[WRITE] +
-				flow[id].settings[SOURCE].delay[WRITE], 0, 0,
-				0,
-				INFINITY, INFINITY, INFINITY,
-				INFINITY, INFINITY, INFINITY,
-#ifdef __LINUX__
-				info->tcpi_snd_cwnd, info->tcpi_snd_ssthresh,
-				info->tcpi_unacked, info->tcpi_sacked,
-				info->tcpi_lost, info->tcpi_retrans,
-				info->tcpi_fackets, info->tcpi_reordering,
-				info->tcpi_rtt, info->tcpi_rttvar,
-				info->tcpi_rto,
-#endif
-				flow[id].mss, flow[id].mtu
-			);
-			continue;
+		
+			CAT("\n");
+
+			log_output(header_buffer);
+
 		}
-*//*
-		print_tcp_report_line(
-			1, id, 0, flow[id].settings[SOURCE].delay[WRITE],
-			time_diff(&timer.start, &flow[id].last_block_written),
-			flow[id].bytes_written_since_first,
-			flow[id].bytes_read_since_first,
-			flow[id].read_reply_blocks_since_first,
-			flow[id].min_rtt_since_first,
-			flow[id].tot_rtt_since_first,
-			flow[id].max_rtt_since_first,
-			flow[id].min_iat_since_first,
-			flow[id].tot_iat_since_first,
-			flow[id].max_iat_since_first,
-#ifdef __LINUX__
-			info->tcpi_snd_cwnd, info->tcpi_snd_ssthresh,
-			info->tcpi_unacked, info->tcpi_sacked,
-			info->tcpi_lost, info->tcpi_retrans,
-			info->tcpi_fackets, info->tcpi_reordering,
-			info->tcpi_rtt, info->tcpi_rttvar, info->tcpi_rto,
-#endif
-			flow[id].mss, flow[id].mtu
-		);*/
 	}
 
-//now we can add the output for the anderson-darling test
-double t_result_s, r_result_s, i_result_s, t_result_r, r_result_r, i_result_r;
+	for (id = 0; id < opt.num_flows; id++) {
+
+		for (int endpoint = 0; endpoint < 2; endpoint++) {
+
+			if (!flow[id].final_report[endpoint])
+				continue;
+
+			print_report(id, endpoint, flow[id].final_report[endpoint]);
+		};
+	}
+
 
 /*
 Notes on Anderson Darlington Test
@@ -921,7 +952,12 @@ Notes on Anderson Darlington Test
 
 */
 
-	//now depending on which test the user wanted we make the function calls
+#if 0
+	/* Disabled for now, needs many more commandline options to work properly */
+
+	double t_result_s, r_result_s, i_result_s, t_result_r, r_result_r, i_result_r;
+
+	/* now depending on which test the user wanted we make the function calls */
 	if (doAnderson == 1) {
 
 		t_result_s = exp_A2_known_mean(t_array_s, array_size, ADT1);
@@ -1055,13 +1091,13 @@ Notes on Anderson Darlington Test
 		snprintf(report_buffer, sizeof(report_buffer), report_string);
 		log_output(report_buffer);
 	}
+
+#endif
 }
 
 void report_flow(const char* server_url, struct _report* report)
 {
-	double diff_first_last;
-	double diff_first_now;
-	int type;
+	int endpoint;
 	int id;
 	struct _flow_dummy *f;
 
@@ -1069,11 +1105,11 @@ void report_flow(const char* server_url, struct _report* report)
 	for (id = 0; id < opt.num_flows; id++) {
  		f = &flow[id];
 		if (f->source_id == report->id && !strcmp(server_url, f->endpoint_options[SOURCE].server_url)) {
-			type = 0;
+			endpoint = SOURCE;
 			break;
 		}
 		if (f->destination_id == report->id && !strcmp(server_url, f->endpoint_options[DESTINATION].server_url)) {
-			type = 1;
+			endpoint = DESTINATION;
 			break;
 		}
 	}
@@ -1083,47 +1119,33 @@ void report_flow(const char* server_url, struct _report* report)
 		return;
 	}
 
-	if (f->start_timestamp[type].tv_sec == 0) {
-		f->start_timestamp[type] = report->begin;
+	if (f->start_timestamp[endpoint].tv_sec == 0) {
+		f->start_timestamp[endpoint] = report->begin;
 	}
-	diff_first_last = time_diff(&f->start_timestamp[type], &report->begin);
-	diff_first_now = time_diff(&f->start_timestamp[type], &report->end);
 
-	print_tcp_report_line(
-		0, id, type, diff_first_last, diff_first_now,
-		report->bytes_written,
-		report->bytes_read,
-		report->reply_blocks_read,
-		report->rtt_min,
-		report->rtt_sum,
-		report->rtt_max,
-		report->iat_min,
-		report->iat_sum,
-		report->iat_max,
-#ifdef __LINUX__
-		report->tcp_info.tcpi_snd_cwnd,
-		report->tcp_info.tcpi_snd_ssthresh,
-		report->tcp_info.tcpi_unacked, report->tcp_info.tcpi_sacked,
-		/*report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,*/
-		report->tcp_info.tcpi_lost,
-		f->last_retrans[type] - report->tcp_info.tcpi_retrans,
-		report->tcp_info.tcpi_fackets,
-		report->tcp_info.tcpi_reordering,
-		report->tcp_info.tcpi_rtt,
-		report->tcp_info.tcpi_rttvar,
-		report->tcp_info.tcpi_rto,
-#endif
-		report->mss,
-		report->mtu
-	);
-#ifdef __LINUX__
-	f->last_retrans[type] = report->tcp_info.tcpi_retrans;
-#endif
+	if (report->type == TOTAL) {
+		/* Final report, keep it for later */
+		free(f->final_report[endpoint]);
+		f->final_report[endpoint] = malloc(sizeof(struct _report));
+		*f->final_report[endpoint] = *report;
+
+		if (!f->finished[endpoint]) {
+			f->finished[endpoint] = 1;
+
+			if (f->finished[1 - endpoint]) {
+				active_flows--;
+				assert(active_flows >= 0);
+			}
+		}
+		return;
+	}
+
+	print_report(id, endpoint, report);
 }
 
 void stop_flow(int id)
 {
-	if (flow[id].stopped) {
+/*	if (flow[id].stopped) {
 		DEBUG_MSG(3, "flow %d already stopped", id);
 		return;
 	}
@@ -1133,7 +1155,7 @@ void stop_flow(int id)
 	close_flow(id);
 
 	flow[id].stopped = 1;
-	tsc_gettimeofday(&flow[id].stopped_timestamp);
+	tsc_gettimeofday(&flow[id].stopped_timestamp);*/
 }
 
 void sigint_handler(int sig)
@@ -1179,6 +1201,8 @@ static void grind_flows(xmlrpc_client *rpc_client)
 			xmlrpc_DECREF(resultP);
 	}
 
+	active_flows = opt.num_flows;
+
 	for (;;) {
 
 		usleep(1000000 * opt.reporting_interval);
@@ -1215,9 +1239,11 @@ static void grind_flows(xmlrpc_client *rpc_client)
 					int tcpi_rto;
 					int tcpi_last_data_sent;
 					int tcpi_last_ack_recv;
+					int bytes_read_low, bytes_read_high;
+					int bytes_written_low, bytes_written_high;
 
 					xmlrpc_decompose_value(&rpc_env, rv, "{"
-						"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
+						"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:is:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
 						"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i" /* TCP info */
 						"*}",
 
@@ -1228,8 +1254,10 @@ static void grind_flows(xmlrpc_client *rpc_client)
 						"end_tv_sec", &end_sec,
 						"end_tv_usec", &end_usec,
 
-						"bytes_read", &report.bytes_read,
-						"bytes_written", &report.bytes_written,
+						"bytes_read_high", &bytes_read_high,
+						"bytes_read_low", &bytes_read_low,
+						"bytes_written_high", &bytes_written_high,
+						"bytes_written_low", &bytes_written_low,
 						"reply_blocks_read", &report.reply_blocks_read,
 
 						"rtt_min", &report.rtt_min,
@@ -1258,6 +1286,8 @@ static void grind_flows(xmlrpc_client *rpc_client)
 					);
 					xmlrpc_DECREF(rv);
 
+					report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
+					report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
 #ifdef __LINUX__
 					report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
 					report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
@@ -1283,6 +1313,10 @@ static void grind_flows(xmlrpc_client *rpc_client)
 			}
 			xmlrpc_DECREF(resultP);
 		}
+
+		if (!active_flows)
+			/* All flows have ended */
+			return;
 	}
 	
 	exit(0);
@@ -1296,9 +1330,9 @@ void close_flow(int id)
 
 	DEBUG_MSG(2, "closing flow %d.", id);
 
-	if (flow[id].stopped || flow[id].closed)
+/*	if (flow[id].stopped || flow[id].closed)
 		return;
-
+*/
 #ifdef __LINUX__
 	opt_len = sizeof(flow[id].final_cc_alg);
 /*	if (getsockopt(flow[id].sock, IPPROTO_TCP, TCP_CONG_MODULE,
@@ -1318,9 +1352,9 @@ void close_flow(int id)
 	}*/
 #endif
 
-	flow[id].closed = 1;
+/*	flow[id].closed = 1;
 
-	active_flows--;
+	active_flows--;*/
 }
 
 
@@ -1661,7 +1695,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 			case 'H':
 				{
 					char url[1000];
-					int port = 5999;
+					int port = DEFAULT_LISTEN_PORT;
 					char *sepptr, *test_address = 0;
 
 					sepptr = strchr(arg, '/');
@@ -1689,6 +1723,8 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					ASSIGN_ENDPOINT_FLOW_OPTION_STR(test_address, test_address)
 					sprintf(url, "http://%s:%d/RPC2", arg, port);
 					ASSIGN_ENDPOINT_FLOW_OPTION_STR(server_url, url);
+					ASSIGN_ENDPOINT_FLOW_OPTION_STR(server_address, arg);
+					ASSIGN_ENDPOINT_FLOW_OPTION(server_port, port);
 				}
 				break;
 			case 'O':
@@ -1997,6 +2033,11 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 		flow[id].settings[SOURCE].read_block_size = flow[id].settings[DESTINATION].write_block_size;
 		flow[id].settings[DESTINATION].read_block_size = flow[id].settings[SOURCE].write_block_size;
+
+		flow[id].settings[SOURCE].duration[READ] = flow[id].settings[DESTINATION].duration[WRITE];
+		flow[id].settings[DESTINATION].duration[READ] = flow[id].settings[SOURCE].duration[WRITE];
+		flow[id].settings[SOURCE].delay[READ] = flow[id].settings[DESTINATION].delay[WRITE];
+		flow[id].settings[DESTINATION].delay[READ] = flow[id].settings[SOURCE].delay[WRITE];
 
 		for (unsigned i = 0; i < 2; i++) {
 			unsigned int j;

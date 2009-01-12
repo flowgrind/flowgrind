@@ -232,6 +232,7 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 #ifdef __LINUX__
 int get_tcp_info(struct _flow *flow, struct tcp_info *info);
 #endif
+static void report_flow(struct _flow* flow, int type);
 
 static int prepare_fds() {
 
@@ -267,8 +268,16 @@ static int prepare_fds() {
 			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))) {
 
 			/* Nothing left to read, nothing left to send */
-			if (flow->fd != -1)
-				get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);
+			if (flow->fd != -1) {
+#ifdef __LINUX__
+				flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+#endif
+				flow->mtu = get_mtu(flow->fd);
+				flow->mss = get_mss(flow->fd);
+
+				report_flow(flow, TOTAL);
+			}
+
 			uninit_flow(flow);
 			remove_flow(--i);
 			continue;
@@ -321,6 +330,7 @@ static void start_flows(struct _request_start_flows *request)
 			flow->next_write_block_timestamp = flow->start_timestamp[WRITE];
 
 		tsc_gettimeofday(&flow->last_report_time);
+		flow->first_report_time = flow->last_report_time;
 	}
 
 	started = 1;
@@ -384,42 +394,57 @@ static void process_requests()
 	pthread_mutex_unlock(&mutex);
 }
 
-static void report_flow(struct _flow* flow)
+/* 
+ * Prepare a report.
+ * type is either INTERVAL or TOTAL
+ */
+static void report_flow(struct _flow* flow, int type)
 {
 	struct _report* report = (struct _report*)malloc(sizeof(struct _report));
 	
 	report->id = flow->id;
-	report->begin = flow->last_report_time;
+	report->type = type;
+
+	if (type == INTERVAL)
+		report->begin = flow->last_report_time;
+	else
+		report->begin = flow->first_report_time;
+
 	tsc_gettimeofday(&report->end);
 	flow->last_report_time = report->end;
-	report->bytes_read = flow->statistics[INTERVAL].bytes_read;
-	report->bytes_written = flow->statistics[INTERVAL].bytes_written;
-	report->reply_blocks_read = flow->statistics[INTERVAL].reply_blocks_read;
+	report->bytes_read = flow->statistics[type].bytes_read;
+	report->bytes_written = flow->statistics[type].bytes_written;
+	report->reply_blocks_read = flow->statistics[type].reply_blocks_read;
 
-	report->rtt_min = flow->statistics[INTERVAL].rtt_min;
-	report->rtt_max = flow->statistics[INTERVAL].rtt_max;
-	report->rtt_sum = flow->statistics[INTERVAL].rtt_sum;
-	report->iat_min = flow->statistics[INTERVAL].iat_min;
-	report->iat_max = flow->statistics[INTERVAL].iat_max;
-	report->iat_sum = flow->statistics[INTERVAL].iat_sum;
+	report->rtt_min = flow->statistics[type].rtt_min;
+	report->rtt_max = flow->statistics[type].rtt_max;
+	report->rtt_sum = flow->statistics[type].rtt_sum;
+	report->iat_min = flow->statistics[type].iat_min;
+	report->iat_max = flow->statistics[type].iat_max;
+	report->iat_sum = flow->statistics[type].iat_sum;
 
 #ifdef __LINUX__
-	report->tcp_info = flow->statistics[INTERVAL].tcp_info;
+	if (flow->statistics[type].has_tcp_info)
+		report->tcp_info = flow->statistics[type].tcp_info;
+	else
+		memset(&report->tcp_info, 0, sizeof(struct tcp_info));
 #endif
 	report->mss = flow->mss;
 	report->mtu = flow->mtu;
 
 	/* New report interval, reset old data */
-	flow->statistics[INTERVAL].bytes_read = 0;
-	flow->statistics[INTERVAL].bytes_written = 0;
-	flow->statistics[INTERVAL].reply_blocks_read = 0;
+	if (type == INTERVAL) {
+		flow->statistics[INTERVAL].bytes_read = 0;
+		flow->statistics[INTERVAL].bytes_written = 0;
+		flow->statistics[INTERVAL].reply_blocks_read = 0;
 
-	flow->statistics[INTERVAL].rtt_min = +INFINITY;
-	flow->statistics[INTERVAL].rtt_max = -INFINITY;
-	flow->statistics[INTERVAL].rtt_sum = 0;
-	flow->statistics[INTERVAL].iat_min = +INFINITY;
-	flow->statistics[INTERVAL].iat_max = -INFINITY;
-	flow->statistics[INTERVAL].iat_sum = 0;
+		flow->statistics[INTERVAL].rtt_min = +INFINITY;
+		flow->statistics[INTERVAL].rtt_max = -INFINITY;
+		flow->statistics[INTERVAL].rtt_sum = 0;
+		flow->statistics[INTERVAL].iat_min = +INFINITY;
+		flow->statistics[INTERVAL].iat_max = -INFINITY;
+		flow->statistics[INTERVAL].iat_sum = 0;
+	}
 
 	add_report(report);
 }
@@ -458,9 +483,9 @@ static void timer_check()
 
 #ifdef __LINUX__
 			if (flow->fd != -1)
-				get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info);
+				flow->statistics[INTERVAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info) ? 0 : 1;
 #endif
-			report_flow(flow);
+			report_flow(flow, INTERVAL);
 		}
 		timer.last = now;
 		while (time_is_after(&now, &timer.next))
@@ -532,8 +557,13 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 remove:
 		// Flow has ended
 #ifdef __LINUX__
-		if (flow->id != -1)
-			get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);
+		if (flow->fd != -1) {
+			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+			flow->mtu = get_mtu(flow->fd);
+			flow->mss = get_mss(flow->fd);
+
+			report_flow(flow, TOTAL);
+		}
 #endif
 		uninit_flow(flow);
 		remove_flow(i);
