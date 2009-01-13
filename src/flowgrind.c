@@ -106,7 +106,7 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	char *strHead1, char *strHead2, double value, unsigned int *control0,
 	unsigned int *control1, int numDigitsDecimalPart, int showColumn, int *columnWidthChanged) {
 
-	unsigned int maxTooLongColumns = opt.num_flows * 2; // Maximum number of rows with non-optimal column width
+	unsigned int maxTooLongColumns = opt.num_flows * 5; // Maximum number of rows with non-optimal column width
 	int lengthData = 0; // #digits of values
 	int lengthHead = 0; // Length of header string
 	unsigned int columnSize = 0;

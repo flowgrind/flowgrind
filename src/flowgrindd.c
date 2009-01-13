@@ -641,14 +641,16 @@ int main(int argc, char ** argv)
 	logging_init();
 	tsc_init();
 
-	create_daemon_thread();
-
 	if (log_type == LOGTYPE_SYSLOG) {
+		/* Need to call daemon() before creating the thread because
+		 * it internally calls fork() which does not copy threads. */
 		if (daemon(0, 0) == -1) {
 			error(ERR_FATAL, "daemon() failed: %s", strerror(errno));
 		}
 		logging_log(LOG_NOTICE, "flowgrindd daemonized");
 	}
+
+	create_daemon_thread();
 
 	xmlrpc_env_init(&env);
 	
