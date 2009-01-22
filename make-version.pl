@@ -58,6 +58,7 @@ use strict;
 
 use Time::Local;
 use POSIX qw(strftime);
+use POSIX qw(locale_h);
 use Getopt::Long;
 
 my $version_file = 'svnversion.h';
@@ -75,6 +76,9 @@ my %version_pref = (
 	);
 my $srcdir = ".";
 
+# Set locale to C so that output of 'svn info' can be parsed
+setlocale(LC_ALL, "C");
+$ENV{LC_ALL} = "C";
 
 # Run "svn info".  Parse out the most recent modification time and the
 # revision number.
