@@ -431,6 +431,43 @@ static void report_flow(struct _flow* flow, int type)
 	report->mss = flow->mss;
 	report->mtu = flow->mtu;
 
+	/* Add status flags to report */
+	report->status = 0;
+
+	if (flow->statistics[type].bytes_read == 0) {
+		if (flow_in_delay(&report->end, flow, READ))
+			report->status |= 'd';
+		else if (flow_sending(&report->end, flow, READ))
+			report->status |= 'l';
+		else if (flow->settings.duration[READ] == 0)
+			report->status |= 'o';
+		else
+			report->status |= 'f';
+	} else {
+		if (!flow_sending(&report->end, flow, READ) && !flow->finished)
+			report->status |= 'c';
+		else
+			report->status |= 'n';
+	}
+	report->status <<= 8;
+	
+	if (flow->statistics[type].bytes_written < flow->settings.write_block_size) {
+		if (flow_in_delay(&report->end, flow, WRITE))
+			report->status |= 'd';
+		else if (flow_sending(&report->end, flow, WRITE))
+			report->status |= 'l';
+		else if (flow->settings.duration[WRITE] == 0)
+			report->status |= 'o';
+		else
+			report->status |= 'f';
+	} else {
+		if (!flow_sending(&report->end, flow, WRITE) && !flow->finished)
+			report->status |= 'c';
+		else
+			report->status |= 'n';
+	}
+	
+
 	/* New report interval, reset old data */
 	if (type == INTERVAL) {
 		flow->statistics[INTERVAL].bytes_read = 0;

@@ -632,24 +632,24 @@ void print_tcp_report_line(char hash, int id,
 		long bytes_written, long bytes_read,
 		long read_reply_blocks,  double min_rtt,
 		double tot_rtt, double max_rtt, double min_iat,
-		double tot_iat, double max_iat
+		double tot_iat, double max_iat,
 #ifdef __LINUX__
-		,unsigned cwnd, unsigned ssth, unsigned uack,
+		unsigned cwnd, unsigned ssth, unsigned uack,
 		unsigned sack, unsigned lost, unsigned retr,
 		unsigned fack, unsigned reor, double rtt,
 		double rttvar, double rto,
-		int mss, int mtu
+		int mss, int mtu,
 #endif
+		int status
 )
 {
 	double avg_rtt;
 	double avg_iat;
-	unsigned blocks_written = 0;
-	char comment_buffer[100] = "(";
+	char comment_buffer[100] = " (";
 	char report_buffer[4000] = "";
 	double thruput = 0.0;
 
-#define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 1) \
+#define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
 		strncat(comment_buffer, "/", sizeof(comment_buffer)); \
 		strncat(comment_buffer, (s), sizeof(comment_buffer)); }while(0);
 
@@ -665,37 +665,42 @@ void print_tcp_report_line(char hash, int id,
 	if (flow[id].finished[type])
 		COMMENT_CAT("stopped")
 	else {
-		blocks_written = bytes_written / flow[id].settings[type].write_block_size;
-		if (blocks_written == 0) {
-			if (client_flow_in_delay(id))
-				COMMENT_CAT("d")
-			else if (client_flow_sending(id))
-				COMMENT_CAT("l")
-			else if (flow[id].settings[type].duration[WRITE] == 0)
-				COMMENT_CAT("o")
-			else
-				COMMENT_CAT("f")
-		} else {
-			if (!client_flow_sending(id) && active_flows > 0)
-				COMMENT_CAT("c")
-			else
-				COMMENT_CAT("n")
+		char tmp[2];
+
+		// Write status
+		switch (status & 0xFF)
+		{
+			case 'd':
+			case 'l':
+			case 'o':
+			case 'f':
+			case 'c':
+			case 'n':
+				tmp[0] = (char)(status & 0xFF);
+				tmp[1] = 0;
+				COMMENT_CAT(tmp);
+				break;
+			default:
+				COMMENT_CAT("u");
+				break;
 		}
 
-		if (bytes_read == 0) {
-			if (server_flow_in_delay(id))
-				COMMENT_CAT("d")
-			else if (server_flow_sending(id))
-				COMMENT_CAT("l")
-			else if (flow[id].settings[1 - type].duration[WRITE] == 0)
-				COMMENT_CAT("o")
-			else
-				COMMENT_CAT("f")
-		} else {
-			if (!server_flow_sending(id) && active_flows > 0)
-				COMMENT_CAT("c")
-			else
-				COMMENT_CAT("n")
+		// Read status
+		switch (status >> 8)
+		{
+			case 'd':
+			case 'l':
+			case 'o':
+			case 'f':
+			case 'c':
+			case 'n':
+				tmp[0] = (char)(status >> 8);
+				tmp[1] = 0;
+				COMMENT_CAT(tmp);
+				break;
+			default:
+				COMMENT_CAT("u");
+				break;
 		}
 	}
 	strncat(comment_buffer, ")", sizeof(comment_buffer));
@@ -761,7 +766,9 @@ void print_report(int id, int endpoint, struct _report* report)
 		report->tcp_info.tcpi_rto,
 #endif
 		report->mss,
-		report->mtu
+		report->mtu,
+
+		report->status
 	);
 #ifdef __LINUX__
 	f->last_retrans[endpoint] = report->tcp_info.tcpi_retrans;
@@ -1228,7 +1235,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 					xmlrpc_decompose_value(&rpc_env, rv, "{"
 						"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:is:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
 						"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i" /* TCP info */
-						"*}",
+						"s:i,*}",
 
 						"id", &report.id,
 						"type", &report.type,
@@ -1265,7 +1272,8 @@ static void grind_flows(xmlrpc_client *rpc_client)
 						"tcpi_rttvar", &tcpi_rttvar,
 						"tcpi_rto", &tcpi_rto,
 						"tcpi_last_data_sent", &tcpi_last_data_sent,
-						"tcpi_last_ack_recv", &tcpi_last_ack_recv
+						"tcpi_last_ack_recv", &tcpi_last_ack_recv,
+						"status", &report.status
 					);
 					xmlrpc_DECREF(rv);
 

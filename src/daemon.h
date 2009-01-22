@@ -248,6 +248,9 @@ struct _report
 	int mss;
 	int mtu;
 
+	/* Flow status.as displayed in comment column */
+	int status;
+
 	struct _report* next;
 };
 extern struct _report* reports;

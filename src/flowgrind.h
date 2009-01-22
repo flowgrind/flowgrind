@@ -168,30 +168,6 @@ char *guess_topology (int mss, int mtu);
 void close_flow(int id);
 void stop_flow(int id);
 
-static int server_flow_in_delay(int id)
-{
-	return time_is_after(&flow[id].endpoint_options[1].flow_start_timestamp, &now);
-}
-
-static int client_flow_in_delay(int id)
-{
-	return time_is_after(&flow[id].endpoint_options[0].flow_start_timestamp, &now);
-}
-
-static int server_flow_sending(int id)
-{
-	return !server_flow_in_delay(id) &&
-		(flow[id].settings[DESTINATION].duration[WRITE] < 0 ||
-		 time_diff(&flow[id].endpoint_options[DESTINATION].flow_stop_timestamp, &now) < 0.0);
-}
-
-static int client_flow_sending(int id)
-{
-	return !client_flow_in_delay(id) &&
-		(flow[id].settings[SOURCE].duration[WRITE] < 0 ||
-		 time_diff(&flow[id].endpoint_options[SOURCE].flow_stop_timestamp, &now) < 0);
-}
-
 inline static double scale_thruput(double thruput)
 {
 	if (opt.mbyte)

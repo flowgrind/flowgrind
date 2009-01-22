@@ -375,7 +375,8 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	while (report) {
 		xmlrpc_value *rv = xmlrpc_build_value(env, "{"
 			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
-			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}", /* TCP info */
+			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
+			"s:i}",
 		
 			"id", report->id,
 			"type", report->type,
@@ -412,7 +413,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"tcpi_rttvar", (int)report->tcp_info.tcpi_rttvar,
 			"tcpi_rto", (int)report->tcp_info.tcpi_rto,
 			"tcpi_last_data_sent", (int)report->tcp_info.tcpi_last_data_sent,
-			"tcpi_last_ack_recv", (int)report->tcp_info.tcpi_last_ack_recv
+			"tcpi_last_ack_recv", (int)report->tcp_info.tcpi_last_ack_recv,
 #else
 			"tcpi_snd_cwnd", 0,
 			"tcpi_snd_ssthresh", 0,
@@ -426,8 +427,10 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"tcpi_rttvar", 0,
 			"tcpi_rto", 0,
 			"tcpi_last_data_sent", 0,
-			"tcpi_last_ack_recv", 0
+			"tcpi_last_ack_recv", 0,
 #endif
+
+			"status", report->status
 		);
 		
 		xmlrpc_array_append_item(env, ret, rv);
