@@ -1158,7 +1158,12 @@ void sigint_handler(int sig)
 
 	DEBUG_MSG(1, "caught %s", strsignal(sig));
 
-	sigint_caught = 1;
+	if (sigint_caught == 0) {
+		fprintf(stderr, "Trying to gracefully close flows. Press CTRL+C again to force termination.\n");
+		sigint_caught = 1;
+	}
+	else
+		exit(1);
 }
 
 static void die_if_fault_occurred(xmlrpc_env *env)
