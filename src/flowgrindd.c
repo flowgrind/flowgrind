@@ -111,6 +111,8 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
+	UNUSED_ARGUMENT(user_data);
+
 	int rc;
 	xmlrpc_value *ret = 0;
 	char* destination_host = 0;
@@ -225,6 +227,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
+	UNUSED_ARGUMENT(user_data);
+
 	int rc;
 	xmlrpc_value *ret = 0;
 	char* cc_alg = 0;
@@ -322,6 +326,8 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
+	UNUSED_ARGUMENT(user_data);
+
 	int rc;
 	xmlrpc_value *ret = 0;
 	int start_timestamp;
@@ -368,6 +374,9 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
+	UNUSED_ARGUMENT(param_array);
+	UNUSED_ARGUMENT(user_data);
+
 	xmlrpc_value *ret = 0;
 	DEBUG_MSG(2, "Method get_reports called");
 
@@ -445,7 +454,6 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 		report = next;
 	}
 
-cleanup:
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_reports failed: %s", env->fault_string);
 	else {
@@ -459,6 +467,8 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
+	UNUSED_ARGUMENT(user_data);
+
 	int rc;
 	xmlrpc_value *ret = 0;
 	int flow_id;
@@ -506,6 +516,9 @@ static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
+	UNUSED_ARGUMENT(param_array);
+	UNUSED_ARGUMENT(user_data);
+
 	xmlrpc_value *ret = 0;
 
 	DEBUG_MSG(2, "Method get_version called");
@@ -527,6 +540,9 @@ static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
+	UNUSED_ARGUMENT(param_array);
+	UNUSED_ARGUMENT(user_data);
+
 	int rc;
 	xmlrpc_value *ret = 0;
 	struct _request_get_status *request = 0;

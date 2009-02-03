@@ -25,6 +25,7 @@
 #include <sys/time.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <inttypes.h>
 
 #include "common.h"
 #include "debug.h"
@@ -395,7 +396,7 @@ static void process_requests()
 	pthread_mutex_unlock(&mutex);
 }
 
-/* 
+/*
  * Prepare a report.
  * type is either INTERVAL or TOTAL
  */
@@ -792,7 +793,7 @@ static int write_data(struct _flow *flow)
 		flow->statistics[TOTAL].bytes_written += rc;
 		flow->write_block_bytes_written += rc;
 		if (flow->write_block_bytes_written >=
-				flow->settings.write_block_size) {
+				(unsigned int)flow->settings.write_block_size) {
 			flow->write_block_bytes_written = 0;
 			tsc_gettimeofday(&flow->last_block_written);
 			flow->write_block_count++;
@@ -804,7 +805,7 @@ static int write_data(struct _flow *flow)
 					/* TODO: log time_diff and check if
 					 * it's growing (queue build up) */
 					DEBUG_MSG(3, "incipient congestion on "
-							"flow %u (block %llu): "
+							"flow %u (block %" PRIu64 "): "
 							"new block scheduled "
 							"for %s, %.6lfs before now.",
 							flow->id,
@@ -901,8 +902,8 @@ static int read_data(struct _flow *flow)
 		flow->statistics[INTERVAL].bytes_read += rc;
 		flow->statistics[TOTAL].bytes_read += rc;
 		flow->read_block_bytes_read += rc;
-		if (flow->read_block_bytes_read >= flow->settings.read_block_size) {
-			assert(flow->read_block_bytes_read == flow->settings.read_block_size);
+		if (flow->read_block_bytes_read >= (unsigned int)flow->settings.read_block_size) {
+			assert(flow->read_block_bytes_read == (unsigned int)flow->settings.read_block_size);
 
 			flow->read_block_count++;
 			flow->read_block_bytes_read = 0;
@@ -946,7 +947,7 @@ static int read_data(struct _flow *flow)
 
 		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg;
 				cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %u",
+			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %lu",
 					flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
 		}
 
