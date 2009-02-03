@@ -382,6 +382,13 @@ static void process_requests()
 		case REQUEST_STOP_FLOW:
 			stop_flow((struct _request_stop_flow *)request);
 			break;
+		case REQUEST_GET_STATUS:
+			{
+				struct _request_get_status *r = (struct _request_get_status *)request;
+				r->started = started;
+				r->num_flows = num_flows;
+			}
+			break;
 		default:
 			request_error(request, "Unknown request type");
 			break;

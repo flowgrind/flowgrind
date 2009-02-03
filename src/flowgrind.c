@@ -513,7 +513,6 @@ void init_flows_defaults(void)
 	int id = 1;
 
 	for (id = 0; id < MAX_FLOWS; id++) {
-		flow[id].mss = 0;
 
 		flow[id].proto = PROTO_TCP;
 
@@ -1551,6 +1550,40 @@ void check_version(xmlrpc_client *rpc_client)
 	}
 }
 
+/* Checks that all nodes are currently idle */
+void check_idle(xmlrpc_client *rpc_client)
+{
+	unsigned j;
+	xmlrpc_value * resultP = 0;
+
+	for (j = 0; j < num_unique_servers; j++) {
+
+		if (sigint_caught)
+			return;
+
+		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_status", &resultP,
+		"()");
+		die_if_fault_occurred(&rpc_env);
+
+		if (resultP) {
+			int started;
+			int num_flows;
+
+			xmlrpc_decompose_value(&rpc_env, resultP, "{s:i,s:i,*}",
+				"started", &started,
+				"num_flows", &num_flows);
+			die_if_fault_occurred(&rpc_env);
+
+			if (started || num_flows) {
+				fprintf(stderr, "Error: Node %s is busy. %d flows, started=%d\n", unique_servers[j], num_flows, started);
+				exit(1);
+			}
+
+			xmlrpc_DECREF(resultP);
+		}
+	}
+}
+
 void prepare_flows(xmlrpc_client *rpc_client)
 {
 	for (int id = 0; id < opt.num_flows; id++) {
@@ -2086,25 +2119,6 @@ static void parse_cmdline(int argc, char **argv) {
 					"zero runtime for flow %d.\n", id);
 			error = 1;
 		}
-		if (flow[id].two_way) {
-			if (flow[id].settings[DESTINATION].duration[WRITE] != 0 &&
-					flow[id].settings[SOURCE].duration[WRITE] !=
-					flow[id].settings[DESTINATION].duration[WRITE]) {
-				fprintf(stderr, "Server flow duration "
-						"specified albeit -2.\n");
-				error = 1;
-			}
-			flow[id].settings[DESTINATION].duration[WRITE] =
-				flow[id].settings[SOURCE].duration[WRITE];
-			if (flow[id].settings[DESTINATION].delay[WRITE] != 0 &&
-					flow[id].settings[DESTINATION].delay[WRITE] !=
-					flow[id].settings[SOURCE].delay[WRITE]) {
-				fprintf(stderr, "Server flow delay specified "
-						"albeit -2.\n");
-				error = 1;
-			}
-			flow[id].settings[DESTINATION].delay[WRITE] = flow[id].settings[SOURCE].delay[WRITE];
-		}
 		flow[id].settings[SOURCE].read_block_size = flow[id].settings[DESTINATION].write_block_size;
 		flow[id].settings[DESTINATION].read_block_size = flow[id].settings[SOURCE].write_block_size;
 
@@ -2257,16 +2271,31 @@ int main(int argc, char *argv[])
 
 	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &rpc_client);
 
-	check_version(rpc_client);
+	/* Check that all nodes run a compatible flowgrind version */
+	if (!sigint_caught)
+		check_version(rpc_client);
+
+	/* Check that all nodes are currently idle */
+	if (!sigint_caught)
+		check_idle(rpc_client);
+
+	/* Setup flows */
 	if (!sigint_caught)
 		prepare_flows(rpc_client);
+
+	/* Start the test */
 	if (!sigint_caught)
 		grind_flows(rpc_client);
+
 	if (!sigint_caught)
 		report_final();
 	
 	close_flows();
 
 	shutdown_logfile();
-	exit(0);
+
+	xmlrpc_client_destroy(rpc_client);
+	xmlrpc_env_clean(&rpc_env);
+
+	return 0;
 }

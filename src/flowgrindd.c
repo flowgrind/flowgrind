@@ -519,6 +519,44 @@ static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 	return ret;
 }
 
+/* This method returns the number of flows and if actual test has started */
+static xmlrpc_value * method_get_status(xmlrpc_env * const env,
+		   xmlrpc_value * const param_array,
+		   void * const user_data)
+{
+	int rc;
+	xmlrpc_value *ret = 0;
+	struct _request_get_status *request = 0;
+
+	DEBUG_MSG(2, "Method get_status called");
+
+	request = malloc(sizeof(struct _request_get_status));
+	rc = dispatch_request((struct _request*)request, REQUEST_GET_STATUS);
+
+	if (rc == -1) {
+		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
+	}
+
+	/* Return our result. */
+	ret = xmlrpc_build_value(env, "{s:i,s:i}",
+		"started", request->started,
+		"num_flows", request->num_flows);
+
+cleanup:
+	if (request) {
+		free(request->r.error);
+		free(request);
+	}
+
+	if (env->fault_occurred)
+		logging_log(LOG_WARNING, "Method get_status failed: %s", env->fault_string);
+	else {
+		DEBUG_MSG(2, "Method get_status successful");
+	}
+
+	return ret;
+}
+
 void create_daemon_thread()
 {
 	int flags;
@@ -554,6 +592,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	xmlrpc_registry_add_method(env, registryP, NULL, "get_reports", &method_get_reports, NULL);
 	xmlrpc_registry_add_method(env, registryP, NULL, "stop_flow", &method_stop_flow, NULL);
 	xmlrpc_registry_add_method(env, registryP, NULL, "get_version", &method_get_version, NULL);
+	xmlrpc_registry_add_method(env, registryP, NULL, "get_status", &method_get_status, NULL);
 
 	/* In the modern form of the Abyss API, we supply parameters in memory
 	   like a normal API.  We select the modern form by setting

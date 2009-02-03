@@ -11,22 +11,12 @@
 #define CONGESTION_LIMIT 	10000
 #define DEFAULT_SELECT_TIMEOUT	10000
 
-struct timeval now;
 char sigint_caught = 0;
 
 FILE *log_stream = NULL;
 char *log_filename = NULL;
-int maxfd = 0;
 int active_flows = 0;
 unsigned select_timeout = DEFAULT_SELECT_TIMEOUT;
-
-unsigned int client_port, server_port;
-unsigned int packet_size;
-unsigned int protocol_rate;
-int tcp_sock, udp_sock;
-uint64_t npackets;
-struct sockaddr *server = NULL;
-socklen_t server_len;
 
 //Array for the dynamical output
 //default show every parameter
@@ -115,30 +105,12 @@ struct _flow_dummy {
 
 	enum protocol proto;
 
-	int mss;
-	int mtu;
-
-	/* here we use current_mss and current_mtu to store the most current
-	   values of get_mss and get_mtu. The problem encountered was that at the
-	   very end when guess_topology was called get_mss and get_mtu returned
-	   some bogus value because the call to getsockopt failed.
-	*/
-	int current_mss;
-	int current_mtu;
-
 	char so_debug;
 	char late_connect;
 	char connect_called;
 	char shutdown;
 	char summarize_only;
-	char two_way;
 	char byte_counting;
-
-	struct timeval stopped_timestamp;
-
-#ifdef __LINUX__
-	char final_cc_alg[30];
-#endif
 
 	int endpoint_id[2];
 
@@ -158,15 +130,8 @@ struct _flow_dummy {
 };
 struct _flow_dummy flow[MAX_FLOWS];
 
-struct {
-	struct timeval start;
-	struct timeval next;
-	struct timeval last;
-} timer;
-
 char *guess_topology (int mss, int mtu);
 void close_flow(int id);
-void stop_flow(int id);
 
 inline static double scale_thruput(double thruput)
 {
