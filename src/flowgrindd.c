@@ -127,7 +127,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array, "("
-			"{s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,*}"
+			"{s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,*}"
 			"{s:s,s:s,s:i,s:i,s:i,*}"
 			")",
 
@@ -137,6 +137,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"write_duration", &settings.duration[WRITE],
 		"read_delay", &settings.delay[READ],
 		"read_duration", &settings.duration[READ],
+		"reporting_interval", &settings.reporting_interval,
 		"requested_send_buffer_size", &settings.requested_send_buffer_size,
 		"requested_read_buffer_size", &settings.requested_read_buffer_size,
 		"write_block_size", &settings.write_block_size,
@@ -178,7 +179,8 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		source_settings.destination_port <= 0 || source_settings.destination_port > 65535 ||
 		strlen(cc_alg) > 255 ||
 		settings.dscp < 0 || settings.dscp > 255 ||
-		settings.write_rate < 0) {
+		settings.write_rate < 0 ||
+		settings.reporting_interval <= 0) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
 	strcpy(source_settings.destination_host, destination_host);
@@ -237,7 +239,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array,
-		"({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,*})",
+		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,*})",
 
 		/* general settings */
 		"bind_address", &bind_address,
@@ -245,6 +247,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"write_duration", &settings.duration[WRITE],
 		"read_delay", &settings.delay[READ],
 		"read_duration", &settings.duration[READ],
+		"reporting_interval", &settings.reporting_interval,
 		"requested_send_buffer_size", &settings.requested_send_buffer_size,
 		"requested_read_buffer_size", &settings.requested_read_buffer_size,
 		"write_block_size", &settings.write_block_size,

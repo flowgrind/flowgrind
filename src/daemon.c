@@ -53,16 +53,7 @@
 
 int daemon_pipe[2];
 
-double reporting_interval = 0.05;
-
 int next_flow_id = 0;
-
-struct _timer {
-	struct timeval start;
-	struct timeval next;
-	struct timeval last;
-};
-static struct _timer timer;
 
 pthread_mutex_t mutex;
 struct _request *requests = 0, *requests_last = 0;
@@ -301,24 +292,26 @@ static int prepare_fds() {
 
 static void start_flows(struct _request_start_flows *request)
 {
-	int start_timestamp = request->start_timestamp;
+	struct timeval start;
+	tsc_gettimeofday(&start);
 
-	tsc_gettimeofday(&timer.start);
-/*	if (timer.start.tv_sec < start_timestamp) {
+#if 0
+	if (start.tv_sec < request->start_timestamp) {
 		/* If the clock is synchronized between nodes, all nodes will start 
-		   at the same time regardless of any RPC delays *//*
-		timer.start.tv_sec = start_timestamp;
-		timer.start.tv_usec = 0;
-	}*/
-	timer.last = timer.next = timer.start;
-	time_add(&timer.next, reporting_interval);
+		   at the same time regardless of any RPC delays */
+		start.tv_sec = request->start_timestamp;
+		start.tv_usec = 0;
+	}
+#else
+	UNUSED_ARGUMENT(request);
+#endif
 
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
 
 		/* READ and WRITE */
 		for (int j = 0; j < 2; j++) {
-			flow->start_timestamp[j] = timer.start;
+			flow->start_timestamp[j] = start;
 			time_add(&flow->start_timestamp[j], flow->settings.delay[j]);
 			if (flow->settings.duration[j] >= 0) {
 				flow->stop_timestamp[j] = flow->start_timestamp[j];
@@ -330,6 +323,8 @@ static void start_flows(struct _request_start_flows *request)
 
 		tsc_gettimeofday(&flow->last_report_time);
 		flow->first_report_time = flow->last_report_time;
+		flow->next_report_time = flow->last_report_time;
+		time_add(&flow->next_report_time, flow->settings.reporting_interval);
 	}
 
 	started = 1;
@@ -519,20 +514,21 @@ static void timer_check()
 		return;
 
 	tsc_gettimeofday(&now);
-	if (time_is_after(&now, &timer.next)) {
+	for (unsigned int i = 0; i < num_flows; i++) {
+		struct _flow *flow = &flows[i];
 
-		for (unsigned int i = 0; i < num_flows; i++) {
-			struct _flow *flow = &flows[i];
+		if (!time_is_after(&now, &flow->next_report_time))
+			continue;
 
 #ifdef __LINUX__
-			if (flow->fd != -1)
-				flow->statistics[INTERVAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info) ? 0 : 1;
+		if (flow->fd != -1)
+			flow->statistics[INTERVAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info) ? 0 : 1;
 #endif
-			report_flow(flow, INTERVAL);
-		}
-		timer.last = now;
-		while (time_is_after(&now, &timer.next))
-			time_add(&timer.next, reporting_interval);
+		report_flow(flow, INTERVAL);
+
+		do {
+			time_add(&flow->next_report_time, flow->settings.reporting_interval);
+		} while (time_is_after(&now, &flow->next_report_time));
 	}
 }
 

@@ -27,6 +27,8 @@ struct _flow_settings
 	double delay[2];
 	double duration[2];
 
+	double reporting_interval;
+
 	int requested_send_buffer_size;
 	int requested_read_buffer_size;
 
@@ -105,6 +107,7 @@ struct _flow
 
 	struct timeval first_report_time;
 	struct timeval last_report_time;
+	struct timeval next_report_time;
 
 	struct timeval next_write_block_timestamp;
 
@@ -234,8 +237,6 @@ struct _request_get_status
 	int started;
 	int num_flows;
 };
-
-extern double reporting_interval;
 
 struct _report
 {

@@ -642,6 +642,8 @@ void print_tcp_report_line(char hash, int id,
 		int status
 )
 {
+	UNUSED_ARGUMENT(bytes_read);
+
 	double avg_rtt;
 	double avg_iat;
 	char comment_buffer[100] = " (";
@@ -1427,7 +1429,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	int real_listen_read_buffer_size;
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[DESTINATION].server_url, "add_flow_destination", &resultP,
-		"({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i})",
+		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i})",
 
 		/* general flow settings */
 		"bind_address", flow[id].endpoint_options[DESTINATION].bind_address,
@@ -1435,6 +1437,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"write_duration", flow[id].settings[DESTINATION].duration[WRITE],
 		"read_delay", flow[id].settings[SOURCE].delay[WRITE],
 		"read_duration", flow[id].settings[SOURCE].duration[WRITE],
+		"reporting_interval", opt.reporting_interval,
 		"requested_send_buffer_size", flow[id].settings[DESTINATION].requested_send_buffer_size,
 		"requested_read_buffer_size", flow[id].settings[DESTINATION].requested_read_buffer_size,
 		"write_block_size", flow[id].settings[DESTINATION].write_block_size,
@@ -1469,7 +1472,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(resultP);
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[SOURCE].server_url, "add_flow_source", &resultP,
-		"({s:s,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i}"
+		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i}"
 		"{s:s,s:s,s:i,s:i,s:i})",
 
 		/* general flow settings */
@@ -1478,6 +1481,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"write_duration", flow[id].settings[SOURCE].duration[WRITE],
 		"read_delay", flow[id].settings[DESTINATION].delay[WRITE],
 		"read_duration", flow[id].settings[DESTINATION].duration[WRITE],
+		"reporting_interval", opt.reporting_interval,
 		"requested_send_buffer_size", flow[id].settings[SOURCE].requested_send_buffer_size,
 		"requested_read_buffer_size", flow[id].settings[SOURCE].requested_read_buffer_size,
 		"write_block_size", flow[id].settings[SOURCE].write_block_size,
