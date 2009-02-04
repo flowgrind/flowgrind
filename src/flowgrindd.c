@@ -235,7 +235,6 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	char* bind_address = 0;
 
 	struct _flow_settings settings;
-	struct _flow_destination_settings destination_settings;
 
 	struct _request_add_flow_destination* request = 0;
 
@@ -290,7 +289,6 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	strcpy(settings.bind_address, bind_address);
 	request = malloc(sizeof(struct _request_add_flow_destination));
 	request->settings = settings;
-	request->destination_settings = destination_settings;
 	rc = dispatch_request((struct _request*)request, REQUEST_ADD_DESTINATION);
 
 	if (rc == -1) {

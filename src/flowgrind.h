@@ -96,18 +96,11 @@ struct _flow_endpoint {
 	char bind_address[1000];
 };
 
-#include "daemon.h"
-
-struct _flow_dummy {
-
-	struct sockaddr *saddr;
-	socklen_t saddr_len;
+struct _flow {
 
 	enum protocol proto;
 
-	char so_debug;
 	char late_connect;
-	char connect_called;
 	char shutdown;
 	char summarize_only;
 	char byte_counting;
@@ -128,7 +121,7 @@ struct _flow_dummy {
 	char finished[2];
 	struct _report *final_report[2];
 };
-struct _flow_dummy flow[MAX_FLOWS];
+struct _flow flow[MAX_FLOWS];
 
 char *guess_topology (int mss, int mtu);
 void close_flow(int id);

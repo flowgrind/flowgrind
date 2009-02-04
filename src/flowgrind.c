@@ -411,7 +411,7 @@ static void usage(void)
 		"               type \"flowgrind -h sockopt\" to see the specific values for OPT\n"
 		"  -P x         Do not iterate through select() to continue sending in case\n"
 		"               block size did not suffice to fill sending queue (pushy)\n"
-		"  -Q           Summarize only, skip interval reports (quite)\n"
+		"  -Q           Summarize only, skip interval reports (quiet)\n"
 		"  -R x=#.#[z|k|M|G][b|B][p|P]\n"
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
@@ -535,6 +535,7 @@ void init_flows_defaults(void)
 			flow[id].settings[i].cc_alg[0] = 0;
 			flow[id].settings[i].elcn = 0;
 			flow[id].settings[i].icmp = 0;
+			flow[id].settings[i].so_debug = 0;
 			flow[id].settings[i].dscp = 0;
 			flow[id].settings[i].ipmtudiscover = 0;
 		}
@@ -556,6 +557,11 @@ void init_flows_defaults(void)
 		flow[id].finished[1] = 0;
 		flow[id].final_report[0] = NULL;
 		flow[id].final_report[1] = NULL;
+
+		flow[id].summarize_only = 0;
+		flow[id].late_connect = 0;
+		flow[id].shutdown = 0;
+		flow[id].byte_counting = 0;
 	}
 }
 
@@ -737,7 +743,7 @@ void print_report(int id, int endpoint, struct _report* report)
 {
 	double diff_first_last;
 	double diff_first_now;
-	struct _flow_dummy *f = &flow[id];
+	struct _flow *f = &flow[id];
 
 	diff_first_last = time_diff(&f->start_timestamp[endpoint], &report->begin);
 	diff_first_now = time_diff(&f->start_timestamp[endpoint], &report->end);
@@ -1111,7 +1117,7 @@ void report_flow(const char* server_url, struct _report* report)
 {
 	int endpoint;
 	int id;
-	struct _flow_dummy *f;
+	struct _flow *f;
 
 	/* Get matching flow for report */
 	for (id = 0; id < opt.num_flows; id++) {
@@ -1437,13 +1443,13 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"write_duration", flow[id].settings[DESTINATION].duration[WRITE],
 		"read_delay", flow[id].settings[SOURCE].delay[WRITE],
 		"read_duration", flow[id].settings[SOURCE].duration[WRITE],
-		"reporting_interval", opt.reporting_interval,
+		"reporting_interval", flow[id].summarize_only ? 0 : opt.reporting_interval,
 		"requested_send_buffer_size", flow[id].settings[DESTINATION].requested_send_buffer_size,
 		"requested_read_buffer_size", flow[id].settings[DESTINATION].requested_read_buffer_size,
 		"write_block_size", flow[id].settings[DESTINATION].write_block_size,
 		"read_block_size", flow[id].settings[DESTINATION].read_block_size,
 		"advstats", (int)opt.advstats,
-		"so_debug", (int)flow[id].so_debug,
+		"so_debug", flow[id].settings[DESTINATION].so_debug,
 		"route_record", (int)flow[id].settings[DESTINATION].route_record,
 		"pushy", flow[id].settings[DESTINATION].pushy,
 		"shutdown", (int)flow[id].shutdown,
@@ -1481,13 +1487,13 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"write_duration", flow[id].settings[SOURCE].duration[WRITE],
 		"read_delay", flow[id].settings[DESTINATION].delay[WRITE],
 		"read_duration", flow[id].settings[DESTINATION].duration[WRITE],
-		"reporting_interval", opt.reporting_interval,
+		"reporting_interval", flow[id].summarize_only ? 0 : opt.reporting_interval,
 		"requested_send_buffer_size", flow[id].settings[SOURCE].requested_send_buffer_size,
 		"requested_read_buffer_size", flow[id].settings[SOURCE].requested_read_buffer_size,
 		"write_block_size", flow[id].settings[SOURCE].write_block_size,
 		"read_block_size", flow[id].settings[SOURCE].read_block_size,
 		"advstats", (int)opt.advstats,
-		"so_debug", (int)flow[id].so_debug,
+		"so_debug", flow[id].settings[SOURCE].so_debug,
 		"route_record", (int)flow[id].settings[SOURCE].route_record,
 		"pushy", flow[id].settings[SOURCE].pushy,
 		"shutdown", (int)flow[id].shutdown,
@@ -1543,7 +1549,7 @@ void check_version(xmlrpc_client *rpc_client)
 				mismatch = 1;
 				fprintf(stderr, "Warning: Node %s uses version %s\n", unique_servers[j], version);
 			}
-
+			free(version);
 			xmlrpc_DECREF(resultP);
 		}
 	}
@@ -1866,6 +1872,9 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 						usage_sockopt();
 					}
 					ASSIGN_COMMON_FLOW_SETTING_STR(cc_alg, arg + 16);
+				}
+				else if (!strcmp(arg, "SO_DEBUG")) {
+					ASSIGN_COMMON_FLOW_SETTING(so_debug, 1);
 				}
 				else if (!memcmp(arg, "IP_MTU_DISCOVER", 15)) {
 					ASSIGN_COMMON_FLOW_SETTING(ipmtudiscover, 1);
