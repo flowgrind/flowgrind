@@ -1330,6 +1330,9 @@ void close_flow(int id)
 	xmlrpc_env env;
 	xmlrpc_client *client;
 
+	free(flow[id].final_report[0]);
+	free(flow[id].final_report[1]);
+
 	if (flow[id].finished[SOURCE] && flow[id].finished[DESTINATION])
 		return;
 
@@ -2309,6 +2312,8 @@ int main(int argc, char *argv[])
 
 	xmlrpc_client_destroy(rpc_client);
 	xmlrpc_env_clean(&rpc_env);
+
+	xmlrpc_client_teardown_global_const();
 
 	return 0;
 }
