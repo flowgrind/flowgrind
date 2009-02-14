@@ -27,11 +27,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "adt.h"
-
 #include "common.h"
 #include "fg_socket.h"
 #include "debug.h"
 #include "flowgrind.h"
+#ifdef HAVE_GETOPT_LONG
+#include <getopt.h>
+#endif
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -357,12 +359,13 @@ static void usage(void)
 {
 	fprintf(stderr,
 		"Usage: flowgrind [general options] [flow options]\n"
-		"       flowgrind [-h|-v]\n\n"
+		"       flowgrind [-h|-s|-v]\n\n"
 
 		"flowgrind allows you to generate traffic among hosts in your network.\n\n"
 
 		"Miscellaneous:\n"
-		"  -h [sockopt] show help and exit\n"
+		"  -h           show help and exit\n"
+		"  -s           show help for socket options and exit\n"
 		"  -v           print version information and exit\n\n"
 
 		"General options:\n"
@@ -408,7 +411,7 @@ static void usage(void)
 		"  -L x         connect() socket immediately before sending (late)\n"
 		"  -N x         shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
-		"               type \"flowgrind -h sockopt\" to see the specific values for OPT\n"
+		"               type \"flowgrind -s\" to see the specific values for OPT\n"
 		"  -P x         Do not iterate through select() to continue sending in case\n"
 		"               block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q           Summarize only, skip interval reports (quiet)\n"
@@ -433,11 +436,11 @@ static void usage(void)
 		"respectively. For instance -O s=SO_DEBUG,s=TCP_CORK,d=TCP_CONG_MODULE=reno.\n\n"
 
 		"Examples:\n"
-		"  flowgrind -H testhost\n"
+		"  flowgrind -H d=testhost\n"
 		"               start bulk TCP transfer from this host to testhost\n"
-		"  flowgrind -H 192.168.0.69 -T s=0,d=5\n"
+		"  flowgrind -H d=192.168.0.69 -T s=0,d=5\n"
 		"               start bulk TCP transfer from 192.168.0.69 to this host\n"
-		"  flowgrind -n 2 -H 192.168.0.69 -F 1 -H 10.0.0.1\n"
+		"  flowgrind -n 2 -H d=192.168.0.69 -F 1 -H d=10.0.0.1\n"
 		"               start two TCP transfers one to 192.168.0.69 and another in\n"
 		"               parallel to 10.0.0.1\n",
 		opt.log_filename_prefix
@@ -1955,7 +1958,16 @@ static void parse_cmdline(int argc, char **argv) {
 
 	current_flow_ids[0] = -1;
 
-	while ((ch = getopt(argc, argv, "ab:c:de:h:i:l:mn:op:qvwB:CD:EF:H:LNO:P:QR:S:T:W:Y:")) != -1)
+#if HAVE_GETOPT_LONG
+	// getopt_long isn't portable, it's GNU extension
+	struct option lo[] = {	{"help", 0, 0, 'h' },
+							{"version", 0, 0, 'v'},
+							{0, 0, 0, 0}
+				};
+	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:op:qsvwB:CD:EF:H:LNO:P:QR:S:T:W:Y:", lo, 0)) != -1)
+#else
+	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:op:qsvwB:CD:EF:H:LNO:P:QR:S:T:W:Y:")) != -1)
+#endif
 		switch (ch) {
 
 		case 'a':
@@ -1979,13 +1991,7 @@ static void parse_cmdline(int argc, char **argv) {
 			break;
 
 		case 'h':
-			if(strcmp(optarg, "sockopt")) {
-				fprintf(stderr, "Illegal subargument: %s\n", optarg);
-				usage();
-			}
-			else {
-				usage_sockopt();
-			}
+			usage();
 			break;
 
 		case 'i':
@@ -2033,6 +2039,10 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.dont_log_stdout = 1;
 			break;
 
+		case 's':
+			usage_sockopt();
+			break;
+	
 		case 'v':
 			fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
 			exit(0);

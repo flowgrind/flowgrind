@@ -49,6 +49,7 @@ AC_TYPE_UINT8_T
 
 AC_CHECK_FUNCS([ \
 	bzero \
+	getopt_long \
 	gettimeofday \
 	memset \
 	select \
