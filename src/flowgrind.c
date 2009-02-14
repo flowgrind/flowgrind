@@ -1,4 +1,3 @@
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -729,7 +728,7 @@ void print_tcp_report_line(char hash, int id,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
-		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)retr, (double)fack, (double)reor,
+		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)reor, (double)retr, (double)fack,
 		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3,
 #else
 		0, 0, 0, 0, 0, 0, 0, 0,
