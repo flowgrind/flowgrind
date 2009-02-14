@@ -30,7 +30,7 @@
 #include "fg_socket.h"
 #include "debug.h"
 #include "flowgrind.h"
-#ifdef HAVE_GETOPT_LONG
+#if HAVE_GETOPT_LONG
 #include <getopt.h>
 #endif
 
@@ -354,11 +354,14 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 }
 /*New output end*/
 
+/* Program name. Can get updated from argv[0] in parse_cmdline */
+static char progname[50] = "flowgrind";
+
 static void usage(void)
 {
 	fprintf(stderr,
-		"Usage: flowgrind [general options] [flow options]\n"
-		"       flowgrind [-h|-s|-v]\n\n"
+		"Usage: %2$s [general options] [flow options]\n"
+		"       %2$s [-h|-s|-v]\n\n"
 
 		"flowgrind allows you to generate traffic among hosts in your network.\n\n"
 
@@ -382,7 +385,7 @@ static void usage(void)
 		"  -d           increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
 #endif
-		"  -e PRE       prepend prefix PRE to log filename (default: \"%s\")\n"
+		"  -e PRE       prepend prefix PRE to log filename (default: \"%1$s\")\n"
 		"  -i #.#       reporting interval in seconds (default: 0.05s)\n"
 		"  -l NAME      use log filename NAME (default: timestamp)\n"
 		"  -m           report throughput in 2**20 bytes/second\n"
@@ -397,7 +400,7 @@ static void usage(void)
 		"Flow options:\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
-		"  -D x=DSCP      DSCP value for TOS byte\n"
+		"  -D x=DSCP    DSCP value for TOS byte\n"
 		"  -E x         Enumerate bytes in payload (default: don't)\n"
 		"  -F #{,#}     Flow options following this option apply only to flow #{,#}.\n"
 		"               Useful in combination with -n to set specific options\n"
@@ -410,7 +413,7 @@ static void usage(void)
 		"  -L x         connect() socket immediately before sending (late)\n"
 		"  -N x         shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
-		"               type \"flowgrind -s\" to see the specific values for OPT\n"
+		"               For a list of supported socket options see '%2$s -s'\n"
 		"  -P x         Do not iterate through select() to continue sending in case\n"
 		"               block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q           Summarize only, skip interval reports (quiet)\n"
@@ -435,14 +438,15 @@ static void usage(void)
 		"respectively. For instance -O s=SO_DEBUG,s=TCP_CORK,d=TCP_CONG_MODULE=reno.\n\n"
 
 		"Examples:\n"
-		"  flowgrind -H d=testhost\n"
+		"  %2$s -H d=testhost\n"
 		"               start bulk TCP transfer from this host to testhost\n"
-		"  flowgrind -H d=192.168.0.69 -T s=0,d=5\n"
+		"  %2$s -H d=192.168.0.69 -T s=0,d=5\n"
 		"               start bulk TCP transfer from 192.168.0.69 to this host\n"
-		"  flowgrind -n 2 -H d=192.168.0.69 -F 1 -H d=10.0.0.1\n"
+		"  %2$s -n 2 -H d=192.168.0.69 -F 1 -H d=10.0.0.1\n"
 		"               start two TCP transfers one to 192.168.0.69 and another in\n"
 		"               parallel to 10.0.0.1\n",
-		opt.log_filename_prefix
+		opt.log_filename_prefix,
+		progname
 	);
 	exit(1);
 }
@@ -1956,6 +1960,20 @@ static void parse_cmdline(int argc, char **argv) {
 	double optdouble = 0.0;
 
 	current_flow_ids[0] = -1;
+
+	/* update progname from argv[0] */
+	if (argc > 0) {
+		/* Strip path */
+		tok = strrchr(argv[0], '/');
+		if (tok)
+			tok++;
+		else
+			tok = argv[0];
+		if (*tok) {
+			strncpy(progname, tok, sizeof(progname));
+			progname[sizeof(progname) - 1] = 0;
+		}
+	}
 
 #if HAVE_GETOPT_LONG
 	// getopt_long isn't portable, it's GNU extension

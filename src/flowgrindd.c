@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef WIN
@@ -12,13 +16,15 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#if HAVE_GETOPT_LONG
+#include <getopt.h>
+#endif
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
 #include <xmlrpc-c/util.h>
 
-#include "config.h"  /* information about this build environment */
 #include "common.h"
 #include "daemon.h"
 #include "log.h"
@@ -27,15 +33,17 @@
 #include "acl.h"
 #include "fg_pcap.h"
 
+static char progname[50] = "flowgrindd";
+
 static void __attribute__((noreturn)) usage(void)
 {
-	fprintf(stderr, "Usage: flowgrindd [-a address ] [-w#] [-p#] [-d]\n");
-	fprintf(stderr, "\t-a address\tadd address to list of allowed hosts "
-			"(CIDR syntax)\n");
-	fprintf(stderr, "\t-p#\t\tserver port\n");
-	fprintf(stderr, "\t-D \t\tincrease debug verbosity (no daemon, log to "
-					"stderr)\n");
-	fprintf(stderr, "\t-V\t\tPrint version information and exit\n");
+	fprintf(stderr,
+		"Usage: %1$s [-a address ] [-w#] [-p#] [-d]\n"
+		"\t-a address\tadd address to list of allowed hosts (CIDR syntax)\n"
+		"\t-p#\t\tserver port\n"
+		"\t-D \t\tincrease debug verbosity (no daemon, log to stderr)\n"
+		"\t-v\t\tPrint version information and exit\n",
+		progname);
 	exit(1);
 }
 
@@ -642,6 +650,20 @@ int main(int argc, char ** argv)
 
 	xmlrpc_env env;
 
+	/* update progname from argv[0] */
+	if (argc > 0) {
+		/* Strip path */
+		char *tok = strrchr(argv[0], '/');
+		if (tok)
+			tok++;
+		else
+			tok = argv[0];
+		if (*tok) {
+			strncpy(progname, tok, sizeof(progname));
+			progname[sizeof(progname) - 1] = 0;
+		}
+	}
+
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
 		error(ERR_FATAL, "Could not ignore SIGPIPE: %s",
 				strerror(errno));
@@ -657,7 +679,16 @@ int main(int argc, char ** argv)
 
 	fg_pcap_init();
 
-	while ((ch = getopt(argc, argv, "a:Dp:V")) != -1) {
+#if HAVE_GETOPT_LONG
+	// getopt_long isn't portable, it's GNU extension
+	struct option lo[] = {	{"help", 0, 0, 'h' },
+							{"version", 0, 0, 'v'},
+							{0, 0, 0, 0}
+				};
+	while ((ch = getopt_long(argc, argv, "a:Dhp:vV", lo, 0)) != -1) {
+#else
+	while ((ch = getopt(argc, argv, "a:Dhp:vV")) != -1) {
+#endif
 		switch (ch) {
 		case 'a':
 			if (acl_allow_add(optarg) == -1) {
@@ -665,6 +696,10 @@ int main(int argc, char ** argv)
 						"list\n");
 				usage();
 			}
+			break;
+
+		case 'h':
+			usage();
 			break;
 
 		case 'D':
@@ -681,6 +716,7 @@ int main(int argc, char ** argv)
 			}
 			break;
 
+		case 'v':
 		case 'V':
 			fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
