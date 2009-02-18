@@ -1,4 +1,28 @@
+                                  Flowgrind
+                                  =========
+
 flowgrind grinds flows among hosts in your network.
 
-For detailed information issue the command:
-configure && make && flowgrind -h
+See INSTALL for instructions how to build flowgrind.
+
+Execute 'flowgrind -h' for a list of supported options.
+
+Instructions to run a test
+==========================
+
+1. Start  flowgrindd  on all machines that should be the endpoint of a flow.
+2. Execute  flowgrind  on some machine (not necessarily one of the endpoints)
+   with the host names of the endpoints passed through the -H option. 
+
+Example
+=======
+
+Assume we have 4 machines, host0, host1, host2 and host3 and flowgrind has
+been installed on all of them.
+We want to measure flows from host1 to host2 and from host1 to host2 in
+parallel. First start flowgrindd on host1-host3. One some machine we then
+execute the following command, for example host0:
+
+# flowgrind -n 2 -F 0 -H s=host1,d=host2 -F 1 s=host1,d=host3
+
+
