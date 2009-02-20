@@ -333,6 +333,19 @@ static void start_flows(struct _request_start_flows *request)
 
 static void stop_flow(struct _request_stop_flow *request)
 {
+	if (request->flow_id == -1) {
+		/* Stop all flows */
+
+		for (unsigned int i = 0; i < num_flows; i++) {
+			struct _flow *flow = &flows[i];
+
+			uninit_flow(flow);
+			remove_flow(i);
+		}
+
+		return;
+	}
+
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
 
