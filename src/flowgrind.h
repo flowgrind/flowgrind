@@ -85,7 +85,6 @@ struct _flow_endpoint {
 
 	struct timeval flow_start_timestamp;
 	struct timeval flow_stop_timestamp;
-	char flow_finished;
 
 	char *rate_str;
 
@@ -124,7 +123,6 @@ struct _flow {
 struct _flow flow[MAX_FLOWS];
 
 char *guess_topology (int mss, int mtu);
-void close_flow(int id);
 
 inline static double scale_thruput(double thruput)
 {

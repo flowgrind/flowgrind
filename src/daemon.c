@@ -200,9 +200,7 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 		rc = connect(flow->fd, flow->addr,
 				flow->addr_len);
 		if (rc == -1 && errno != EINPROGRESS) {
-			error(ERR_WARNING, "Connect failed: %s",
-					strerror(errno));
-//xx_stop
+			flow_error(flow, "Connect failed: %s", strerror(errno));
 			return -1;
 		}
 		flow->connect_called = 1;
@@ -787,9 +785,8 @@ static int write_data(struct _flow *flow)
 						"for flow %d", flow->id);
 				break;
 			}
-			error(ERR_WARNING, "Premature end of test: %s",
+			flow_error(flow, "Premature end of test: %s",
 					strerror(errno));
-//xx_stop
 			return -1;
 		}
 
@@ -829,7 +826,6 @@ static int write_data(struct _flow *flow)
 					if (flow->congestion_counter >
 							CONGESTION_LIMIT &&
 							flow->settings.flow_control) {
-//xx_stop
 						return -1;
 					}
 					
@@ -876,9 +872,8 @@ static int read_data(struct _flow *flow)
 		if (rc == -1) {
 			if (errno == EAGAIN)
 				break;
-			error(ERR_WARNING, "Premature end of test: %s",
+			flow_error(flow, "Premature end of test: %s",
 					strerror(errno));
-//xx_stop
 			return -1;
 		}
 
@@ -892,7 +887,6 @@ static int read_data(struct _flow *flow)
 			flow->finished[READ] = 1;
 			if (flow->finished[WRITE]) {
 				DEBUG_MSG(4, "flow %u finished", flow->id);
-//xx_stop
 				return -1;
 			}
 			return 0;
@@ -1021,16 +1015,14 @@ static int read_reply(struct _flow *flow)
 		if (rc == -1) {
 			if (errno == EAGAIN)
 				break;
-			error(ERR_WARNING, "Premature end of test: %s",
+			flow_error(flow, "Premature end of test: %s",
 					strerror(errno));
-//xx_stop
 			return -1;
 		}
 
 		if (rc == 0) {
 			error(ERR_WARNING, "Premature end of test: server "
-					"shut down control of flow %d.", flow->id);
-//xx_stop
+					"shut down reply connection of flow %d.", flow->id);
 			return -1;
 		}
 
