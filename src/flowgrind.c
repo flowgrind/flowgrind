@@ -640,7 +640,7 @@ void log_output(const char *msg)
 void print_tcp_report_line(char hash, int id,
 		int type, /* 0 source 1 destination */
 		double time1, double time2,
-		long bytes_written, long bytes_read,
+		long long bytes_written, long long bytes_read,
 		long read_reply_blocks,  double min_rtt,
 		double tot_rtt, double max_rtt, double min_iat,
 		double tot_iat, double max_iat,
