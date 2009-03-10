@@ -380,22 +380,29 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
+	int has_more;
+	xmlrpc_value *ret = 0, *item = 0;
+
 	UNUSED_ARGUMENT(param_array);
 	UNUSED_ARGUMENT(user_data);
 
-	xmlrpc_value *ret = 0;
 	DEBUG_MSG(2, "Method get_reports called");
 
-	struct _report *report = get_reports();
+	struct _report *report = get_reports(&has_more);
 	
 	ret = xmlrpc_array_new(env);
-	
+
+	/* Add information if there's more reports pending */
+	item = xmlrpc_int_new(env, has_more);
+	xmlrpc_array_append_item(env, ret, item);
+	xmlrpc_DECREF(item);
+
 	while (report) {
 		xmlrpc_value *rv = xmlrpc_build_value(env, "{"
 			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
 			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
 			"s:i}",
-		
+
 			"id", report->id,
 			"type", report->type,
 			"begin_tv_sec", (int)report->begin.tv_sec,

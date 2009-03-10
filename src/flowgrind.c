@@ -1216,6 +1216,12 @@ static void grind_flows(xmlrpc_client *rpc_client)
 		usleep(1000000 * opt.reporting_interval);
 
 		for (j = 0; j < num_unique_servers; j++) {
+
+			int array_size, has_more;
+			xmlrpc_value *rv = 0;
+
+has_more_reports:
+
 			xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_reports", &resultP, "()");
 			if (rpc_env.fault_occurred) {
 				fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
@@ -1226,7 +1232,23 @@ static void grind_flows(xmlrpc_client *rpc_client)
 			if (!resultP)
 				continue;
 
-			for (int i = 0; i < xmlrpc_array_size(&rpc_env, resultP); i++) {
+			array_size = xmlrpc_array_size(&rpc_env, resultP);
+			if (!array_size) {
+				fprintf(stderr, "Empty array in get_reports reply\n");
+				continue;
+			}
+
+			xmlrpc_array_read_item(&rpc_env, resultP, 0, &rv);
+			xmlrpc_read_int(&rpc_env, rv, &has_more);
+			if (rpc_env.fault_occurred) {
+				fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+				rpc_env.fault_string, rpc_env.fault_code);
+				xmlrpc_DECREF(rv);
+				continue;
+			}
+			xmlrpc_DECREF(rv);
+
+			for (int i = 1; i < array_size; i++) {
 				xmlrpc_value *rv = 0;
 
 				xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
@@ -1321,6 +1343,12 @@ static void grind_flows(xmlrpc_client *rpc_client)
 				}
 			}
 			xmlrpc_DECREF(resultP);
+
+			if (has_more)
+			{
+				/* Go back to beginning of loop */
+				goto has_more_reports;
+			}
 		}
 
 		if (!active_flows)
@@ -1885,7 +1913,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				else if (!strcmp(arg, "SO_DEBUG")) {
 					ASSIGN_COMMON_FLOW_SETTING(so_debug, 1);
 				}
-				else if (!memcmp(arg, "IP_MTU_DISCOVER", 15)) {
+				else if (!strcmp(arg, "IP_MTU_DISCOVER")) {
 					ASSIGN_COMMON_FLOW_SETTING(ipmtudiscover, 1);
 				}
 				else {

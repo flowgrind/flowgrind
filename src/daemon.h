@@ -116,7 +116,10 @@ extern struct _report* reports_last;
 extern int pending_reports;
 
 void add_report(struct _report* report);
-struct _report* get_reports();
+
+/* Gets 50 reports. There may be more pending but there's a limit on how 
+ * large a reply can get */
+struct _report* get_reports(int *has_more);
 
 extern char started;
 

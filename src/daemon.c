@@ -653,7 +653,7 @@ void add_report(struct _report* report)
 	pthread_mutex_lock(&mutex);
 
 	// Do not keep too much data
-	if (pending_reports >= 100) {
+	if (pending_reports >= 100 && report->type != TOTAL) {
 		free(report);
 		pthread_mutex_unlock(&mutex);
 		return;
@@ -672,16 +672,34 @@ void add_report(struct _report* report)
 	pthread_mutex_unlock(&mutex);
 }
 
-struct _report* get_reports()
+struct _report* get_reports(int *has_more)
 {
+	const int max_reports = 50;
+
 	struct _report* ret;
 
 	pthread_mutex_lock(&mutex);
 
 	ret = reports;
-	pending_reports = 0;
-	reports = NULL;
-	reports_last = 0;
+
+	if (pending_reports <= max_reports) {
+		*has_more = 0;
+		pending_reports = 0;
+		reports = NULL;
+		reports_last = 0;
+	}
+	else {
+		/* Split off first 50 items */
+		struct _report* tmp;
+		for (unsigned int i = 0; i < max_reports - 1; i++)
+			reports = reports->next;
+		tmp = reports->next;
+		reports->next = 0;
+		reports = tmp;
+
+		pending_reports -= max_reports;
+		*has_more = 1;
+	}
 
 	pthread_mutex_unlock(&mutex);
 
