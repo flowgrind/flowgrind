@@ -26,6 +26,18 @@ enum flow_state
 	GRIND
 };
 
+struct _flow_source_settings
+{
+	char destination_host[256];
+	char destination_host_reply[256];
+	int destination_port;
+	int destination_port_reply;
+
+	int late_connect;
+
+	pthread_cond_t* add_source_condition;
+};
+
 struct _flow
 {
 	int id;
@@ -113,7 +125,7 @@ extern unsigned int num_flows;
 
 extern struct _report* reports;
 extern struct _report* reports_last;
-extern int pending_reports;
+extern unsigned int pending_reports;
 
 void add_report(struct _report* report);
 
@@ -122,6 +134,75 @@ void add_report(struct _report* report);
 struct _report* get_reports(int *has_more);
 
 extern char started;
+
+#define REQUEST_ADD_DESTINATION 0
+#define REQUEST_ADD_SOURCE 1
+#define REQUEST_START_FLOWS 2
+#define REQUEST_STOP_FLOW 3
+#define REQUEST_GET_STATUS 4
+struct _request
+{
+	char type;
+
+	/* We signal this condition once the daemon thread
+	 * has processed the request */
+	pthread_cond_t* condition;
+
+	char* error;
+
+	struct _request *next;
+};
+extern struct _request *requests, *requests_last;
+
+struct _request_add_flow_destination
+{
+	struct _request r;
+
+	struct _flow_settings settings;
+
+	/* The request reply */
+	int flow_id;
+	int listen_data_port;
+	int listen_reply_port;
+	int real_listen_send_buffer_size;
+	int real_listen_read_buffer_size;
+};
+
+struct _request_add_flow_source
+{
+	struct _request r;
+
+	struct _flow_settings settings;
+	struct _flow_source_settings source_settings;
+
+	/* The request reply */
+	int flow_id;
+	char cc_alg[256];
+	int real_send_buffer_size;
+	int real_read_buffer_size;
+};
+
+struct _request_start_flows
+{
+	struct _request r;
+
+	int start_timestamp;
+};
+
+struct _request_stop_flow
+{
+	struct _request r;
+
+	int flow_id;
+};
+
+struct _request_get_status
+{
+	struct _request r;
+
+	int started;
+	int num_flows;
+};
 
 void flow_error(struct _flow *flow, const char *fmt, ...);
 void request_error(struct _request *request, const char *fmt, ...);

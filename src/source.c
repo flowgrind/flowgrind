@@ -49,7 +49,9 @@ void init_flow(struct _flow* flow, int is_source);
 void uninit_flow(struct _flow *flow);
 
 static int name2socket(struct _flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
-		socklen_t *lenp, char do_connect)
+		socklen_t *lenp, char do_connect,
+		const int read_buffer_size_req, int *read_buffer_size,
+		const int send_buffer_size_req, int *send_buffer_size)
 {
 	int fd, n;
 	struct addrinfo hints, *res, *ressave;
@@ -76,6 +78,11 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port, str
 		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		if (fd < 0)
 			continue;
+
+		if (send_buffer_size)
+			*send_buffer_size = set_window_size_directed(fd, send_buffer_size_req, SO_SNDBUF);
+		if (read_buffer_size)
+		*read_buffer_size = set_window_size_directed(fd, read_buffer_size_req, SO_RCVBUF);
 
 		if (!do_connect)
 			break;
@@ -156,7 +163,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 
 	flow->fd_reply = name2socket(flow, flow->source_settings.destination_host_reply,
-				flow->source_settings.destination_port_reply, NULL, NULL, 1);
+				flow->source_settings.destination_port_reply, NULL, NULL, 1, 0, NULL, 0, NULL);
 	if (flow->fd_reply == -1) {
 		logging_log(LOG_ALERT, "Could not connect reply socket: %s", flow->error);
 		request_error(&request->r, "Could not connect reply socket: %s", flow->error);
@@ -167,7 +174,9 @@ int add_flow_source(struct _request_add_flow_source *request)
 	flow->state = GRIND_WAIT_CONNECT;
 	flow->fd = name2socket(flow, flow->source_settings.destination_host,
 			flow->source_settings.destination_port,
-			&flow->addr, &flow->addr_len, 0);
+			&flow->addr, &flow->addr_len, 0,
+			flow->settings.requested_read_buffer_size, &request->real_read_buffer_size,
+			flow->settings.requested_send_buffer_size, &request->real_send_buffer_size);
 	if (flow->fd == -1) {
 		logging_log(LOG_ALERT, "Could not create data socket: %s", flow->error);
 		request_error(&request->r, "Could not create data socket: %s", flow->error);

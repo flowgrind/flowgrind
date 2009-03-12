@@ -64,7 +64,7 @@ int maxfd;
 
 struct _report* reports = 0;
 struct _report* reports_last = 0;
-int pending_reports = 0;
+unsigned int pending_reports = 0;
 
 struct _flow flows[MAX_FLOWS];
 unsigned int num_flows = 0;
@@ -674,7 +674,7 @@ void add_report(struct _report* report)
 
 struct _report* get_reports(int *has_more)
 {
-	const int max_reports = 50;
+	const unsigned int max_reports = 50;
 
 	struct _report* ret;
 

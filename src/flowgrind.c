@@ -841,7 +841,7 @@ void report_final(void)
 				flow[id].settings[endpoint].write_block_size,
 				flow[id].settings[1 - endpoint].write_block_size);
 
-			CAT("\n         delay = %.2fs/%.2fs",
+			CATC("delay = %.2fs/%.2fs",
 				flow[id].settings[SOURCE].delay[WRITE],
 				flow[id].settings[SOURCE].delay[READ]);
 
@@ -1468,9 +1468,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 	int listen_data_port;
 	int listen_reply_port;
-	int real_listen_send_buffer_size;
-	int real_listen_read_buffer_size;
-
+	
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[DESTINATION].server_url, "add_flow_destination", &resultP,
 		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i})",
 
@@ -1507,8 +1505,8 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"flow_id", &flow[id].endpoint_id[DESTINATION],
 		"listen_data_port", &listen_data_port,
 		"listen_reply_port", &listen_reply_port,
-		"real_listen_send_buffer_size", &real_listen_send_buffer_size,
-		"real_listen_read_buffer_size", &real_listen_read_buffer_size);
+		"real_listen_send_buffer_size", &flow[id].endpoint_options[DESTINATION].send_buffer_size_real,
+		"real_listen_read_buffer_size", &flow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
 	die_if_fault_occurred(&rpc_env);
 
 	if (resultP)
@@ -1553,8 +1551,10 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"late_connect", (int)flow[id].late_connect);
 	die_if_fault_occurred(&rpc_env);
 
-	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,*}",
-		"flow_id", &flow[id].endpoint_id[SOURCE]);
+	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,*}",
+		"flow_id", &flow[id].endpoint_id[SOURCE],
+		"real_send_buffer_size", &flow[id].endpoint_options[SOURCE].send_buffer_size_real,
+		"real_read_buffer_size", &flow[id].endpoint_options[SOURCE].receive_buffer_size_real);
 	die_if_fault_occurred(&rpc_env);
 
 	if (resultP)

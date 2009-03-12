@@ -208,9 +208,11 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	}
 
 	/* Return our result. */
-	ret = xmlrpc_build_value(env, "{s:i,s:s}",
+	ret = xmlrpc_build_value(env, "{s:i,s:s,s:i,s:i}",
 		"flow_id", request->flow_id,
-		"cc_alg", request->cc_alg);
+		"cc_alg", request->cc_alg,
+		"real_send_buffer_size", request->real_send_buffer_size,
+		"real_read_buffer_size", request->real_read_buffer_size);
 
 cleanup:
 	if (request) {

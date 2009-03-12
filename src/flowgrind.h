@@ -78,10 +78,10 @@ struct _flow_endpoint {
 	/* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
 
 	/* SO_SNDBUF */
-	unsigned send_buffer_size_real;
+	int send_buffer_size_real;
 
 	/* SO_RCVBUF */
-	unsigned receive_buffer_size_real;
+	int receive_buffer_size_real;
 
 	struct timeval flow_start_timestamp;
 	struct timeval flow_stop_timestamp;
