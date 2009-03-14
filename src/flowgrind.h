@@ -92,6 +92,7 @@ struct _flow_endpoint {
 	char server_address[1000];
 	unsigned server_port;
 	char test_address[1000];
+	char reply_address[1000];
 	char bind_address[1000];
 };
 

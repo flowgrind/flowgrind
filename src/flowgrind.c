@@ -406,9 +406,9 @@ static void usage(void)
 		"               Useful in combination with -n to set specific options\n"
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
-		"  -H x=HOST[:PORT][/HOST]\n"
-		"               Test from/to host. Optional argument is the address the actual\n"
-		"               test socket should bind to.\n"
+		"  -H x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]\n"
+		"               Test from/to HOST. Optional argument is the address and\n"
+		"               port of the RPC server. Third address is for the reply connection.\n"
 		"               An endpoint that isn't specified is assumed to be localhost.\n"
 		"  -L x         connect() socket immediately before sending (late)\n"
 		"  -N x         shutdown() each socket direction after test flow\n"
@@ -533,6 +533,7 @@ void init_flows_defaults(void)
 			strcpy(flow[id].endpoint_options[i].server_address, "localhost");
 			flow[id].endpoint_options[i].server_port = DEFAULT_LISTEN_PORT;
 			strcpy(flow[id].endpoint_options[i].test_address, "localhost");
+			strcpy(flow[id].endpoint_options[i].reply_address, "localhost");
 			strcpy(flow[id].endpoint_options[i].bind_address, "");
 
 			flow[id].settings[i].pushy = 0;
@@ -1545,7 +1546,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 		/* source settings */
 		"destination_address", flow[id].endpoint_options[DESTINATION].test_address,
-		"destination_address_reply", flow[id].endpoint_options[DESTINATION].test_address,
+		"destination_address_reply", flow[id].endpoint_options[DESTINATION].reply_address,
 		"destination_port", listen_data_port,
 		"destination_port_reply", listen_reply_port,
 		"late_connect", (int)flow[id].late_connect);
@@ -1852,17 +1853,43 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 			case 'H':
 				{
+					/*	Three addresses:
+						- test address where the actual test connection goes to
+						- RPC address, where this program connects to
+						- Reply address for the reply connection
+
+						Unspecified RPC address falls back to test address, unspecified reply address 
+						falls back to RPC address.
+					 */
 					char url[1000];
 					int port = DEFAULT_LISTEN_PORT;
-					char *sepptr, *test_address = 0;
+					char *sepptr, *rpc_address = 0, *reply_address = 0;
 
+					/* RPC address */
 					sepptr = strchr(arg, '/');
 					if (sepptr) {
 						*sepptr = '\0';
-						test_address = sepptr + 1;
-						ASSIGN_ENDPOINT_FLOW_OPTION_STR(bind_address, test_address)
+						rpc_address = sepptr + 1;
 					}
+					else
+						rpc_address = arg;
+
+					/* Reply address. */
+					sepptr = strchr(rpc_address, '/');
+					if (sepptr) {
+						*sepptr = '\0';
+						reply_address = sepptr + 1;
+					}
+					else
+						reply_address = rpc_address;
+
 					sepptr = strchr(arg, ':');
+					if (sepptr) {
+						fprintf(stderr, "port not allowed in test address\n");
+						usage();
+					}
+
+					sepptr = strchr(rpc_address, ':');
 					if (sepptr) {
 						*sepptr = '\0';
 						port = atoi(sepptr + 1);
@@ -1871,17 +1898,23 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 							usage();
 						}
 					}
+
+					sepptr = strchr(reply_address, ':');
+					if (sepptr) {
+						fprintf(stderr, "port not allowed in reply address\n");
+						usage();
+					}
+
 					if (!*arg) {
 						fprintf(stderr, "No test host given in argument\n");
 						usage();
 					}
 
-					if (!test_address)
-						test_address = arg;
-					ASSIGN_ENDPOINT_FLOW_OPTION_STR(test_address, test_address)
-					sprintf(url, "http://%s:%d/RPC2", arg, port);
+					sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
 					ASSIGN_ENDPOINT_FLOW_OPTION_STR(server_url, url);
-					ASSIGN_ENDPOINT_FLOW_OPTION_STR(server_address, arg);
+					ASSIGN_ENDPOINT_FLOW_OPTION_STR(server_address, rpc_address);
+					ASSIGN_ENDPOINT_FLOW_OPTION_STR(test_address, arg);
+					ASSIGN_ENDPOINT_FLOW_OPTION_STR(reply_address, reply_address);
 					ASSIGN_ENDPOINT_FLOW_OPTION(server_port, port);
 				}
 				break;
