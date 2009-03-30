@@ -169,7 +169,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		double rttmin, double rttavg, double rttmax,
 		double iatmin, double iatavg, double iatmax,
 		int cwnd, int ssth, int uack, int sack, int lost, int reor,
-		int retr, int fack, double linrtt, double linrttvar,
+		unsigned int retr, unsigned int fack, double linrtt, double linrttvar,
 		double linrto, int mss, int mtu, char* comment, int unit_byte) {
 
 	static char * const str_id = "#  ID";
@@ -733,7 +733,7 @@ void print_tcp_report_line(char hash, int id,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
-		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)reor, (double)retr, (double)fack,
+		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)reor, retr, fack,
 		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3,
 #else
 		0, 0, 0, 0, 0, 0, 0, 0,
@@ -1767,9 +1767,9 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					if (current_flow_ids[id] == -1) \
 						break; \
 					if (type != 'd') \
-						strcpy(flow[id].endpoint_options[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
+						strcpy(flow[current_flow_ids[id]].endpoint_options[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
 					if (type != 's') \
-						strcpy(flow[id].endpoint_options[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
+						strcpy(flow[current_flow_ids[id]].endpoint_options[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 				} \
 			}
 	#define ASSIGN_COMMON_FLOW_SETTING(PROPERTY_NAME, PROPERTY_VALUE) \
@@ -1811,9 +1811,9 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					if (current_flow_ids[id] == -1) \
 						break; \
 					if (type != 'd') \
-						strcpy(flow[id].settings[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
+						strcpy(flow[current_flow_ids[id]].settings[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
 					if (type != 's') \
-						strcpy(flow[id].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
+						strcpy(flow[current_flow_ids[id]].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 				} \
 			}
 	for (token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
