@@ -555,11 +555,6 @@ void init_flows_defaults(void)
 		flow[id].start_timestamp[1].tv_sec = 0;
 		flow[id].start_timestamp[1].tv_usec = 0;
 
-#ifdef __LINUX__
-		flow[id].last_retrans[0] = 0;
-		flow[id].last_retrans[1] = 0;
-#endif
-
 		flow[id].finished[0] = 0;
 		flow[id].finished[1] = 0;
 		flow[id].final_report[0] = NULL;
@@ -772,7 +767,7 @@ void print_report(int id, int endpoint, struct _report* report)
 		report->tcp_info.tcpi_unacked, report->tcp_info.tcpi_sacked,
 		/*report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,*/
 		report->tcp_info.tcpi_lost,
-		f->last_retrans[endpoint] - report->tcp_info.tcpi_retrans,
+		report->tcp_info.tcpi_retrans,
 		report->tcp_info.tcpi_fackets,
 		report->tcp_info.tcpi_reordering,
 		report->tcp_info.tcpi_rtt,
@@ -784,9 +779,6 @@ void print_report(int id, int endpoint, struct _report* report)
 
 		report->status
 	);
-#ifdef __LINUX__
-	f->last_retrans[endpoint] = report->tcp_info.tcpi_retrans;
-#endif
 }
 
 void report_final(void)

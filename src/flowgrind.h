@@ -109,10 +109,6 @@ struct _flow {
 
 	struct timeval start_timestamp[2];
 
-#ifdef __LINUX__
-	int last_retrans[2];
-#endif
-
 	// 0 for source
 	// 1 for destination
 	struct _flow_endpoint endpoint_options[2];
