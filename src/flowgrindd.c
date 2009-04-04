@@ -121,12 +121,13 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 {
 	UNUSED_ARGUMENT(user_data);
 
-	int rc;
+	int rc, i;
 	xmlrpc_value *ret = 0;
 	char* destination_host = 0;
 	char* destination_host_reply = 0;
 	char* cc_alg = 0;
 	char* bind_address = 0;
+	xmlrpc_value* extra_options = 0;
 
 	struct _flow_settings settings;
 	struct _flow_source_settings source_settings;
@@ -137,7 +138,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array, "("
-			"{s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,*}"
+			"{s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A,*}"
 			"{s:s,s:s,s:i,s:i,s:i,*}"
 			")",
 
@@ -167,6 +168,8 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"icmp", &settings.icmp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
+		"num_extra_socket_options", &settings.num_extra_socket_options,
+		"extra_socket_options", &extra_options,
 
 		/* source settings */
 		"destination_address", &destination_host,
@@ -188,11 +191,53 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		strlen(destination_host_reply) >= sizeof(source_settings.destination_host_reply) - 1 ||
 		source_settings.destination_port <= 0 || source_settings.destination_port > 65535 ||
 		strlen(cc_alg) > 255 ||
+		settings.num_extra_socket_options < 0 || settings.num_extra_socket_options > MAX_EXTRA_SOCKET_OPTIONS ||
+		xmlrpc_array_size(env, extra_options) != settings.num_extra_socket_options ||
 		settings.dscp < 0 || settings.dscp > 255 ||
 		settings.write_rate < 0 ||
 		settings.reporting_interval <= 0) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
+
+	/* Parse extra socket options */
+	for (i = 0; i < settings.num_extra_socket_options; i++) {
+
+		const unsigned char* buffer = 0;
+		size_t len;
+		xmlrpc_value *option, *level = 0, *optname = 0, *value = 0;
+		xmlrpc_array_read_item(env, extra_options, i, &option);
+
+		if (!env->fault_occurred)
+			xmlrpc_struct_read_value(env, option, "level", &level);
+		if (!env->fault_occurred)
+			xmlrpc_struct_read_value(env, option, "optname", &optname);
+		if (!env->fault_occurred)
+			xmlrpc_struct_read_value(env, option, "value", &value);
+		if (!env->fault_occurred)
+			xmlrpc_read_int(env, level, &settings.extra_socket_options[i].level);
+		if (!env->fault_occurred)
+			xmlrpc_read_int(env, optname, &settings.extra_socket_options[i].optname);
+		if (!env->fault_occurred)
+			xmlrpc_read_base64(env, value, &len, &buffer);
+		if (level)
+			xmlrpc_DECREF(level);
+		if (optname)
+			xmlrpc_DECREF(optname);
+		if (value)
+			xmlrpc_DECREF(value);
+		if (!env->fault_occurred) {
+			if (len > MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH) {
+				free((void *)buffer);
+				XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Too long extra socket option length");
+			}
+			settings.extra_socket_options[i].optlen = len;
+			memcpy(settings.extra_socket_options[i].optval, buffer, len);
+			free((void *)buffer);
+		}
+		if (env->fault_occurred)
+			goto cleanup;
+	}
+
 	strcpy(source_settings.destination_host, destination_host);
 	strcpy(source_settings.destination_host_reply, destination_host_reply);
 	strcpy(settings.cc_alg, cc_alg);
@@ -224,6 +269,9 @@ cleanup:
 	free(cc_alg);
 	free(bind_address);
 
+	if (extra_options)
+		xmlrpc_DECREF(extra_options);
+
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_source failed: %s", env->fault_string);
 	else {
@@ -239,10 +287,11 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 {
 	UNUSED_ARGUMENT(user_data);
 
-	int rc;
+	int rc, i;
 	xmlrpc_value *ret = 0;
 	char* cc_alg = 0;
 	char* bind_address = 0;
+	xmlrpc_value* extra_options = 0;
 
 	struct _flow_settings settings;
 
@@ -252,7 +301,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array,
-		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,*})",
+		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A,*})",
 
 		/* general settings */
 		"bind_address", &bind_address,
@@ -279,7 +328,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"elcn", &settings.elcn,
 		"icmp", &settings.icmp,
 		"dscp", &settings.dscp,
-		"ipmtudiscover", &settings.ipmtudiscover);
+		"ipmtudiscover", &settings.ipmtudiscover,
+		"num_extra_socket_options", &settings.num_extra_socket_options,
+		"extra_socket_options", &extra_options);
 
 	if (env->fault_occurred)
 		goto cleanup;
@@ -291,8 +342,49 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
 		settings.write_block_size <= 0 || settings.read_block_size <= 0 ||
 		settings.write_rate < 0 ||
-		strlen(cc_alg) > 255) {
+		strlen(cc_alg) > 255 ||
+		settings.num_extra_socket_options < 0 || settings.num_extra_socket_options > MAX_EXTRA_SOCKET_OPTIONS ||
+		xmlrpc_array_size(env, extra_options) != settings.num_extra_socket_options) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
+	}
+
+	/* Parse extra socket options */
+	for (i = 0; i < settings.num_extra_socket_options; i++) {
+
+		const unsigned char* buffer = 0;
+		size_t len;
+		xmlrpc_value *option, *level = 0, *optname = 0, *value = 0;
+		xmlrpc_array_read_item(env, extra_options, i, &option);
+
+		if (!env->fault_occurred)
+			xmlrpc_struct_read_value(env, option, "level", &level);
+		if (!env->fault_occurred)
+			xmlrpc_struct_read_value(env, option, "optname", &optname);
+		if (!env->fault_occurred)
+			xmlrpc_struct_read_value(env, option, "value", &value);
+		if (!env->fault_occurred)
+			xmlrpc_read_int(env, level, &settings.extra_socket_options[i].level);
+		if (!env->fault_occurred)
+			xmlrpc_read_int(env, optname, &settings.extra_socket_options[i].optname);
+		if (!env->fault_occurred)
+			xmlrpc_read_base64(env, value, &len, &buffer);
+		if (level)
+			xmlrpc_DECREF(level);
+		if (optname)
+			xmlrpc_DECREF(optname);
+		if (value)
+			xmlrpc_DECREF(value);
+		if (!env->fault_occurred) {
+			if (len > MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH) {
+				free((void *)buffer);
+				XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Too long extra socket option length");
+			}
+			settings.extra_socket_options[i].optlen = len;
+			memcpy(settings.extra_socket_options[i].optval, buffer, len);
+			free((void *)buffer);
+		}
+		if (env->fault_occurred)
+			goto cleanup;
 	}
 
 	strcpy(settings.cc_alg, cc_alg);
@@ -320,6 +412,9 @@ cleanup:
 	}
 	free(cc_alg);
 	free(bind_address);
+
+	if (extra_options)
+		xmlrpc_DECREF(extra_options);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_destination failed: %s", env->fault_string);

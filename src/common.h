@@ -51,6 +51,19 @@ void error(int errcode, const char *fmt, ...);
 #define INTERVAL 0
 #define TOTAL 1
 
+#define MAX_EXTRA_SOCKET_OPTIONS 10
+#define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
+
+enum _extra_socket_option_level
+{
+	level_sol_socket,
+	level_sol_tcp,
+	level_ipproto_ip,
+	level_ipproto_sctp,
+	level_ipproto_tcp,
+	level_ipproto_udp
+};
+
 /* Common to both endpoints */
 struct _flow_settings
 {
@@ -85,6 +98,14 @@ struct _flow_settings
 	int icmp;
 	int dscp;
 	int ipmtudiscover;
+
+	struct _extra_socket_options {
+		int level;
+		int optname;
+		int optlen;
+		char optval[MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH];
+	} extra_socket_options[MAX_EXTRA_SOCKET_OPTIONS];
+	int num_extra_socket_options;
 };
 
 

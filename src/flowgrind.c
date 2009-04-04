@@ -523,6 +523,7 @@ void init_flows_defaults(void)
 		flow[id].proto = PROTO_TCP;
 
 		for (int i = 0; i < 2; i++) {
+
 			flow[id].settings[i].requested_send_buffer_size = 0;
 			flow[id].settings[i].requested_read_buffer_size = 0;
 			flow[id].settings[i].delay[WRITE] = 0;
@@ -545,6 +546,8 @@ void init_flows_defaults(void)
 			flow[id].settings[i].so_debug = 0;
 			flow[id].settings[i].dscp = 0;
 			flow[id].settings[i].ipmtudiscover = 0;
+
+			flow[id].settings[i].num_extra_socket_options = 0;
 		}
 		flow[id].settings[SOURCE].duration[WRITE] = 5.0;
 		flow[id].settings[DESTINATION].duration[WRITE] = 0.0;
@@ -1457,13 +1460,32 @@ char *guess_topology (int mss, int mtu)
 
 void prepare_flow(int id, xmlrpc_client *rpc_client)
 {
-	xmlrpc_value * resultP;
+	xmlrpc_value *resultP, *extra_options;
+	int i;
 
 	int listen_data_port;
 	int listen_reply_port;
 	
+	/* Contruct extra socket options array */
+	extra_options = xmlrpc_array_new(&rpc_env);
+	for (i = 0; i < flow[id].settings[DESTINATION].num_extra_socket_options; i++) {
+		
+		xmlrpc_value *value;
+		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
+			 "level", flow[id].settings[DESTINATION].extra_socket_options[i].level,
+			 "optname", flow[id].settings[DESTINATION].extra_socket_options[i].optname);
+
+		value =	xmlrpc_base64_new(&rpc_env, flow[id].settings[DESTINATION].extra_socket_options[i].optlen, (unsigned char*)flow[id].settings[DESTINATION].extra_socket_options[i].optval);
+
+		xmlrpc_struct_set_value(&rpc_env, option, "value", value);
+
+		xmlrpc_array_append_item(&rpc_env, extra_options, option);
+		xmlrpc_DECREF(value);
+		xmlrpc_DECREF(option);
+	}
+
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[DESTINATION].server_url, "add_flow_destination", &resultP,
-		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i})",
+		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A})",
 
 		/* general flow settings */
 		"bind_address", flow[id].endpoint_options[DESTINATION].bind_address,
@@ -1490,7 +1512,9 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"elcn", flow[id].settings[DESTINATION].elcn,
 		"icmp", flow[id].settings[DESTINATION].icmp,
 		"dscp", (int)flow[id].settings[DESTINATION].dscp,
-		"ipmtudiscover", flow[id].settings[DESTINATION].ipmtudiscover);
+		"ipmtudiscover", flow[id].settings[DESTINATION].ipmtudiscover,
+		"num_extra_socket_options", flow[id].settings[DESTINATION].num_extra_socket_options,
+		"extra_socket_options", extra_options);
 
 	die_if_fault_occurred(&rpc_env);
 
@@ -1505,8 +1529,26 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	if (resultP)
 		xmlrpc_DECREF(resultP);
 
+	/* Contruct extra socket options array */
+	extra_options = xmlrpc_array_new(&rpc_env);
+	for (i = 0; i < flow[id].settings[SOURCE].num_extra_socket_options; i++) {
+		
+		xmlrpc_value *value;
+		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
+			 "level", flow[id].settings[SOURCE].extra_socket_options[i].level,
+			 "optname", flow[id].settings[SOURCE].extra_socket_options[i].optname);
+
+		value =	xmlrpc_base64_new(&rpc_env, flow[id].settings[SOURCE].extra_socket_options[i].optlen, (unsigned char*)flow[id].settings[SOURCE].extra_socket_options[i].optval);
+
+		xmlrpc_struct_set_value(&rpc_env, option, "value", value);
+
+		xmlrpc_array_append_item(&rpc_env, extra_options, option);
+		xmlrpc_DECREF(value);
+		xmlrpc_DECREF(option);
+	}
+
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[SOURCE].server_url, "add_flow_source", &resultP,
-		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i}"
+		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A}"
 		"{s:s,s:s,s:i,s:i,s:i})",
 
 		/* general flow settings */
@@ -1535,6 +1577,8 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"icmp", flow[id].settings[SOURCE].icmp,
 		"dscp", (int)flow[id].settings[SOURCE].dscp,
 		"ipmtudiscover", flow[id].settings[SOURCE].ipmtudiscover,
+		"num_extra_socket_options", flow[id].settings[SOURCE].num_extra_socket_options,
+		"extra_socket_options", extra_options,
 
 		/* source settings */
 		"destination_address", flow[id].endpoint_options[DESTINATION].test_address,
@@ -1543,6 +1587,8 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"destination_port_reply", listen_reply_port,
 		"late_connect", (int)flow[id].late_connect);
 	die_if_fault_occurred(&rpc_env);
+
+	xmlrpc_DECREF(extra_options);
 
 	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,*}",
 		"flow_id", &flow[id].endpoint_id[SOURCE],

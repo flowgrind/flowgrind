@@ -192,6 +192,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 		flow->error = NULL;
 		uninit_flow(flow);
 		num_flows--;
+		return -1;
 	}
 
 #ifdef __LINUX__

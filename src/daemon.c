@@ -1057,6 +1057,50 @@ static int read_reply(struct _flow *flow)
 	return 0;
 }
 
+int apply_extra_socket_options(struct _flow *flow)
+{
+	int i;
+
+	for (i = 0; i < flow->settings.num_extra_socket_options; i++) {
+
+		int level, res;
+		const struct _extra_socket_options *option = &flow->settings.extra_socket_options[i];
+
+		switch (option->level) {
+			case level_sol_socket:
+				level = SOL_SOCKET;
+				break;
+			case level_sol_tcp:
+				level = SOL_TCP;
+				break;
+			case level_ipproto_ip:
+				level = IPPROTO_IP;
+				break;
+			case level_ipproto_sctp:
+				level = IPPROTO_SCTP;
+				break;
+			case level_ipproto_tcp:
+				level = IPPROTO_TCP;
+				break;
+			case level_ipproto_udp:
+				level = IPPROTO_UDP;
+				break;
+			default:
+				flow_error(flow, "Unknown socket option level: %d", option->level);
+				return -1;
+		}
+
+		res = setsockopt(flow->fd, level, option->optname, option->optval, option->optlen);
+
+		if (res == -1) {
+			flow_error(flow, "Unable to set socket option %d: %s", option->optname, strerror(errno));
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 /* Set the TCP options on the data socket */
 int set_flow_tcp_options(struct _flow *flow)
 {
@@ -1112,6 +1156,9 @@ int set_flow_tcp_options(struct _flow *flow)
 			strerror(errno));
 		return -1;
 	}
+
+	if (apply_extra_socket_options(flow) == -1)
+		return -1;
 
 	return 0;
 }
