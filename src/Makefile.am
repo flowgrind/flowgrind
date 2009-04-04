@@ -1,5 +1,4 @@
 AM_CFLAGS = -Wall -Wextra -std=c99 -D_GNU_SOURCE
-dist_bin_SCRIPTS = flow_plotter
 bin_PROGRAMS = flowgrind flowgrind-stop
 sbin_PROGRAMS = flowgrindd
 noinst_HEADERS = acl.h adt.h common.h debug.h fg_pcap.h fg_socket.h fg_time.h
