@@ -862,7 +862,11 @@ void report_final(void)
 					duration_write = flow[id].settings[endpoint].duration[SOURCE];
 
 				thruput_read = flow[id].final_report[endpoint]->bytes_read / duration_read;
+				if (isnan(thruput_read)) /* 0/0 */
+					thruput_read = 0.0;
 				thruput_written = flow[id].final_report[endpoint]->bytes_written / duration_write;
+				if (isnan(thruput_written))
+					thruput_written = 0.0;
 
 				thruput_read = scale_thruput(thruput_read);
 				thruput_written = scale_thruput(thruput_written);
