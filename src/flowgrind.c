@@ -2233,6 +2233,34 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 #undef ASSIGN_FLOW_OPTION
 
+#if 0
+	/* Demonstration how to set arbitary socket options. Note that this is
+	 * only intended for quickly testing new options without having to
+	 * recompile and restart the daemons. To add support for a particular
+	 * options in future flowgrind versions it's recommended to implement
+	 * them like the other options supported by the -O argument.
+	 */
+	{
+		assert(flow[0].settings[SOURCE].num_extra_socket_options < MAX_EXTRA_SOCKET_OPTIONS);
+		struct _extra_socket_options *option = &flow[0].settings[SOURCE].extra_socket_options[flow[0].settings[SOURCE].num_extra_socket_options++];
+		int v;
+
+		/* The value of the TCP_NODELAY constant gets passed to the daemons.
+		 * If daemons use a different system, constants may be different. In this case use
+		 * a value that matches the daemons'. */
+		option->optname = TCP_NODELAY; /* or option->optname = 12345; as explained above */
+
+		option->level = level_ipproto_tcp; /* See _extra_socket_option_level enum in common.h */
+
+		/* Again, value needs to be of correct size for the daemons.
+		 * Particular pitfalls can be differences in integer sizes or endianess.
+		 */
+		assert(sizeof(v) < MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH);
+		option->optlen = sizeof(v);
+		memcpy(option->optval, &v, sizeof(v));
+	}
+#endif
+
 	/* Sanity checking flow options */
 	if (opt.num_flows <= max_flow_specifier) {
 		fprintf(stderr, "Must not specify option for non-existing flow.\n");
