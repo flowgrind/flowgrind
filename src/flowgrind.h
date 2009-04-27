@@ -5,51 +5,14 @@
 #include "config.h"
 #endif
 
+#include "common.h"
 #include "fg_time.h"
 
 #define	MAX_FLOWS		256
 #define CONGESTION_LIMIT 	10000
 #define DEFAULT_SELECT_TIMEOUT	10000
 
-char sigint_caught = 0;
-
-FILE *log_stream = NULL;
-char *log_filename = NULL;
-int active_flows = 0;
-unsigned select_timeout = DEFAULT_SELECT_TIMEOUT;
-
-//Array for the dynamical output
-//default show every parameter
-//[0] := begin
-//[1] := end
-//[2] := throughput
-//[3] := rtt
-//[4] := iat
-//[5] := linux kernel output
-int visible_columns[6] = {1, 1, 1, 1, 1, 1};
-
-
-//now we define the arrays to be used for anderson-darlington test
-//naming convention: add _s or _r for sender and receiver respectively.
-//use	t_ for throughput
-//	r_ for average rtt
-//	i_ for average IAT
-// array_size will be the counter for the number of values inside the arrays
-int array_size = 0;
-#define MAXANDERSONSIZE 1000
-double t_array_s[MAXANDERSONSIZE], r_array_s[MAXANDERSONSIZE], i_array_s[MAXANDERSONSIZE]
-	, t_array_r[MAXANDERSONSIZE], r_array_r[MAXANDERSONSIZE], i_array_r[MAXANDERSONSIZE];
-
-// these are the 2 parameters for the ADT test. If the user wants to test for
-// Exponential only ADT1 will be used and will represent the mean if the user
-// wants to test for the uniform then ADT1 is the lower bound and ADT2 the
-// upper bound
-double ADT1 = 0.05;
-double ADT2 = 0.05;
-int anderson_outbound = 0 ; // will become one if array_size> MAXANDERSONSIZE
-int doAnderson = 0; // it will be 1 if we do the exponential test; it will be 2 if we do the uniform test
-
-struct {
+struct _opt {
 	unsigned short num_flows;
 	double reporting_interval;
 	char advstats;
@@ -60,7 +23,8 @@ struct {
 	char clobber;
 	char mbyte;
 	unsigned short base_port;
-} opt;
+};
+extern struct _opt opt;
 
 enum protocol {
 	PROTO_TCP = 1,
@@ -117,7 +81,6 @@ struct _flow {
 	char finished[2];
 	struct _report *final_report[2];
 };
-struct _flow flow[MAX_FLOWS];
 
 char *guess_topology (int mss, int mtu);
 

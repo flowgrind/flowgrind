@@ -4,54 +4,69 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "flowgrind.h"
+
+/*
+Notes on Anderson Darlington Test
+    
+   Both routines return a significance level, as described earlier. This
+   is a value between 0 and 1.  The correct use of the routines is to
+   pick in advance the threshold for the significance level to test;
+   generally, this will be 0.05, corresponding to 5%, as also described
+   above.  Subsequently, if the routines return a value strictly less
+   than this threshold, then the data are deemed to be inconsistent with
+   the presumed distribution, *subject to an error corresponding to the
+   significance level*.  That is, for a significance level of 5%, 5% of
+   the time data that is indeed drawn from the presumed distribution
+   will be erroneously deemed inconsistent.
+
+   Thus, it is important to bear in mind that if these routines are used
+   frequently, then one will indeed encounter occasional failures, even
+   if the data is unblemished.
 
 
-/* Returns the raw A^2 test statistic for n sorted samples
- * z[0] .. z[n-1], for z ~ Unif(0,1).
- */
-extern double compute_A2(double z[], int n);
+   We note, however, that the process of computing Y above might yield
+   values of Y outside the range (0..1).  Such values should not occur
+   if X is indeed distributed according to G(x), but easily can occur if
+   it is not.  In the latter case, we need to avoid computing the
+   central A2 statistic, since floating-point exceptions may occur if
+   any of the values lie outside (0..1).  Accordingly, the routines
+   check for this possibility, and if encountered, return a raw A2
+   statistic of -1.  The routine that converts the raw A2 statistic to a
+   significance level likewise propagates this value, returning a
+   significance level of -1.  So, any use of these routines must be
+   prepared for a possible negative significance level.
 
-/* Returns the significance level associated with a A^2 test
-* statistic value of A2, assuming no parameters of the tested
-* distribution were estimated from the data.
+   The last important point regarding use of A2 statistic concerns n,
+   the number of values being tested.  If n < 5 then the test is not
+   meaningful, and in this case a significance level of -1 is returned.
+
+   On the other hand, for "real" data the test *gains* power as n
+   becomes larger.  It is well known in the statistics community that
+   real data almost never exactly matches a theoretical distribution,
+   even in cases such as rolling dice a great many times (see [Pa94] for
+   a brief discussion and references).  The A2 test is sensitive enough
+   that, for sufficiently large sets of real data, the test will almost
+   always fail, because it will manage to detect slight imperfections in
+   the fit of the data to the distribution.
 */
-extern double A2_significance(double A2);
 
-/* Returns a pseudo-random number distributed according to an
-* exponential distribution with the given mean.
-*/
-extern double random_exponential(double mean);
-#endif
+enum _adt_data_type
+{
+	adt_throughput,
+	adt_iat,
+	adt_rtt,
 
+	adt_type_max
+};
 
-/* the following 2 functions are the ones we are interested in externally
+void adt_add_data(double v, enum endpoint direction, enum _adt_data_type type);
 
-   Both take as their first argument, x, the array of n values to be
-   tested.  (Upon return, the elements of x are sorted.)  The remaining
-   parameters characterize the distribution to be used: either the mean
-   (1/lambda), for an exponential distribution, or the lower and upper
-   bounds, for a uniform distribution.  The names of the routines stress
-   that these values must be known in advance, and *not* estimated from
-   the data (for example, by computing its sample mean).  Estimating the
-   parameters from the data *changes* the significance level of the test
-   statistic.
-*/
+double adt_get_result_range(enum endpoint direction, enum _adt_data_type type, 
+                      double lower_bound, double upper_bound);
+double adt_get_result_mean(enum endpoint direction, enum _adt_data_type type, 
+                      double mean);
 
-/* Returns the A^2 significance level for testing n observations
-* x[0] .. x[n-1] against an exponential distribution with the
-* given mean.
-*
-* SIDE EFFECT: the x[0..n-1] are sorted upon return.
-*/
-extern double exp_A2_known_mean(double x[], int n, double mean);
+int adt_too_much_data();
 
-/* Returns the A^2 significance level for testing n observations
-* x[0] .. x[n-1] against the uniform distribution [min_val, max_val].
-*
-* SIDE EFFECT: the x[0..n-1] are sorted upon return.
-*/
-extern double unif_A2_known_range(double x[], int n,
-		double min_val, double max_val);
-
-
-
+#endif //_ADT_H_

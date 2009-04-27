@@ -45,6 +45,33 @@
 #define RANDOM_MAX		RAND_MAX	/* Linux, FreeBSD */
 #endif
 
+char sigint_caught = 0;
+
+FILE *log_stream = NULL;
+char *log_filename = NULL;
+int active_flows = 0;
+unsigned select_timeout = DEFAULT_SELECT_TIMEOUT;
+
+//Array for the dynamical output
+//default show every parameter
+//[0] := begin
+//[1] := end
+//[2] := throughput
+//[3] := rtt
+//[4] := iat
+//[5] := linux kernel output
+int visible_columns[6] = {1, 1, 1, 1, 1, 1};
+
+// these are the 2 parameters for the ADT test. If the user wants to test for
+// Exponential only ADT1 will be used and will represent the mean if the user
+// wants to test for the uniform then ADT1 is the lower bound and ADT2 the
+// upper bound
+double ADT[adt_type_max][2];
+int doAnderson = 0; // it will be 1 if we do the exponential test; it will be 2 if we do the uniform test
+
+struct _opt opt;
+static struct _flow flow[MAX_FLOWS];
+
 char unique_servers[MAX_FLOWS * 2][1000];
 unsigned int num_unique_servers = 0;
 
@@ -333,23 +360,6 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	}
 	counter++;
 
-	// now do the anderson darlington stuff
-	if (doAnderson > 0) {
-/* TODO, this one needs to be reworked
-		if (array_size < MAXANDERSONSIZE) {
-			t_array_s[array_size] = cs ;
-			r_array_s[array_size] = rttavg ;
-			i_array_s[array_size] = iatavg ;
-			t_array_r[array_size] = sc ;
-			r_array_r[array_size] = 0 ; //dummy since nothing is available yet
-			i_array_r[array_size] = 0 ; //dummy since nothing is available yet
-			array_size++;
-		}
-		else
-			anderson_outbound =1;
-*/
-	}
-
 	return outputString;
 }
 /*New output end*/
@@ -374,10 +384,11 @@ static void usage(void)
 #ifdef HAVE_LIBPCAP
 		"  -a           advanced statistics (pcap)\n"
 #endif
-		"  -b mean|lower_bound,upper_bound\n"
-		"               mean for computing Anderson-Darling Test for exponential\n"
+		"  -b mean1,mean2,mean3\n"
+	    "  -b lwr_bound1,upr_bound1,lwr_bound2,upr_bound2,lwr_bound3,upr_bound3\n"
+		"               means for computing Anderson-Darling Test for exponential\n"
 		"               distribution OR\n"
-		"               lower_boud,upper_bound for computing the test for uniform\n"
+		"               lower and upper bounds for computing the test for uniform\n"
 		"               distribution with the given bounds\n"
 		"  -o +begin,+end,+thrpt,+rtt,+iat,+kernel\n"
 		"               comma separated list of parameters to investigate +: show -: hide\n"
@@ -507,12 +518,16 @@ static void usage_flowopt(void)
 
 void init_options_defaults(void)
 {
+	int i, j;
 	opt.num_flows = 1;
 	opt.reporting_interval = 0.05;
 	opt.log_filename_prefix = "flowlog-";
 	opt.dont_log_logfile = 1;
-}
 
+	for (i = 0; i < adt_type_max; i++)
+		for (j = 0; j < 2; j++)
+			ADT[i][j] = 0.05;
+}
 
 void init_flows_defaults(void)
 {
@@ -789,6 +804,7 @@ void report_final(void)
 	int id = 0;
 	char header_buffer[400] = "";
 	char header_nibble[400] = "";
+	int i, j;
 
 	for (id = 0; id < opt.num_flows; id++) {
 
@@ -928,195 +944,40 @@ void report_final(void)
 		};
 	}
 
-
-/*
-Notes on Anderson Darlington Test
-
-	Both routines return a significance level, as described earlier. This
-   is a value between 0 and 1.  The correct use of the routines is to
-   pick in advance the threshold for the significance level to test;
-   generally, this will be 0.05, corresponding to 5%, as also described
-   above.  Subsequently, if the routines return a value strictly less
-   than this threshold, then the data are deemed to be inconsistent with
-   the presumed distribution, *subject to an error corresponding to the
-   significance level*.  That is, for a significance level of 5%, 5% of
-   the time data that is indeed drawn from the presumed distribution
-   will be erroneously deemed inconsistent.
-
-	Thus, it is important to bear in mind that if these routines are used
-   frequently, then one will indeed encounter occasional failures, even
-   if the data is unblemished.
-
-
-	We note, however, that the process of computing Y above might yield
-   values of Y outside the range (0..1).  Such values should not occur
-   if X is indeed distributed according to G(x), but easily can occur if
-   it is not.  In the latter case, we need to avoid computing the
-   central A2 statistic, since floating-point exceptions may occur if
-   any of the values lie outside (0..1).  Accordingly, the routines
-   check for this possibility, and if encountered, return a raw A2
-   statistic of -1.  The routine that converts the raw A2 statistic to a
-   significance level likewise propagates this value, returning a
-   significance level of -1.  So, any use of these routines must be
-   prepared for a possible negative significance level.
-
-   The last important point regarding use of A2 statistic concerns n,
-   the number of values being tested.  If n < 5 then the test is not
-   meaningful, and in this case a significance level of -1 is returned.
-
-   On the other hand, for "real" data the test *gains* power as n
-   becomes larger.  It is well known in the statistics community that
-   real data almost never exactly matches a theoretical distribution,
-   even in cases such as rolling dice a great many times (see [Pa94] for
-   a brief discussion and references).  The A2 test is sensitive enough
-   that, for sufficiently large sets of real data, the test will almost
-   always fail, because it will manage to detect slight imperfections in
-   the fit of the data to the distribution.
-
-
-*/
-
-#if 0
-	/* Disabled for now, needs many more commandline options to work properly */
-
-	double t_result_s, r_result_s, i_result_s, t_result_r, r_result_r, i_result_r;
-
 	/* now depending on which test the user wanted we make the function calls */
-	if (doAnderson == 1) {
-
-		t_result_s = exp_A2_known_mean(t_array_s, array_size, ADT1);
-		r_result_s = exp_A2_known_mean(r_array_s, array_size, ADT1);
-		i_result_s = exp_A2_known_mean(i_array_s, array_size, ADT1);
-		t_result_r = exp_A2_known_mean(t_array_r, array_size, ADT1);
-		r_result_r = exp_A2_known_mean(r_array_r, array_size, ADT1);
-		i_result_r = exp_A2_known_mean(i_array_r, array_size, ADT1);
-
-		char report_buffer[4000] = "";
-
+	if (doAnderson) {
 		char report_string[4000];
-		/* strings for sender */
-		char string_t_result_s[100]; /* string_throughput_result_server */
-		char string_r_result_s[100]; /* string_rtt_result_server */
-		char string_i_result_s[100]; /* string_iat_result_server */
-		/* strings for receiver */
-		char string_t_result_r[100]; /* string_throughput_result_receiver */
-		char string_r_result_r[100]; /* string_rtt_result_receiver */
-		char string_i_result_r[100]; /* string_iat_result_receiver */
+		const char names[][20] = {"Throughput", "IAT", "RTT"};
 
-		/*convert double to string*/
-		sprintf(string_t_result_s, "%.6f", t_result_s);
-		sprintf(string_r_result_s, "%.6f", r_result_s);
-		sprintf(string_i_result_s, "%.6f", i_result_s);
+		if (doAnderson == 1) {
+			log_output("# Anderson-Darling test statistic (A2) for Exponential Distribution\n");
+			for (i = 0; i < 2; i++)
+				for (j = 0; j < 3; j++) {
+					double result = adt_get_result_mean(i, j, ADT[j][0]);
+					sprintf(report_string, "# A2 %s for %s with mean %.6f: %.6f\n",
+					        names[j], j ? "destination" : "source", ADT[j][0],
+					        result);
+					log_output(report_string);
+				}
+		}
+		else if (doAnderson == 2) {
+			log_output("# Anderson-Darling test statistic (A2) for Uniform Distribution\n");
 
-		sprintf(string_t_result_r, "%.6f", t_result_r);
-		sprintf(string_r_result_r, "%.6f", r_result_r);
-		sprintf(string_i_result_r, "%.6f", i_result_r);
-
-		/* create the output to the logfile */
-		strcpy(report_string, "\n#Anderson-Darling test statistic (A2) for Exponential Distribution with mean=");
-
-		char buf[100];
-		sprintf(buf, "%.6f", ADT1);
-		strcat(report_string, buf);
-		strcat(report_string, " :\n");
-
-		strcat(report_string, "#A2 Throughput of sender = ");
-		strcat(report_string, string_t_result_s);
-		strcat(report_string, "; ");
-
-		strcat(report_string, "A2 Throughput of receiver = ");
-		strcat(report_string, string_t_result_r);
-		strcat(report_string, " \n");
-
-		strcat(report_string, "#A2 RTT of sender = ");
-		strcat(report_string, string_r_result_s);
-		strcat(report_string, "; ");
-
-		strcat(report_string, "A2 RTT of receiver = ");
-		strcat(report_string, string_r_result_r);
-		strcat(report_string, " \n");
-
-		strcat(report_string, "#A2 IAT of sender = ");
-		strcat(report_string, string_i_result_s);
-		strcat(report_string, "; ");
-
-		strcat(report_string, "A2 RTT of receiver = ");
-		strcat(report_string, string_i_result_r);
-		strcat(report_string, " \n");
-
-		if (anderson_outbound == 1) {
-			strcat(report_string, "\n#Note: The Darlington test was done only on the first 1000 samples. The reason for this is that the test gives poor results for a larger sample size (as specified in literature)\n");
+			for (i = 0; i < 2; i++)
+				for (j = 0; j < 3; j++) {
+					double result = adt_get_result_range(i, j, ADT[j][0], ADT[j][1]);
+					sprintf(report_string, "# A2 %s for %s with bounds %.6f, %.6f: %.6f\n",
+					        names[j], j ? "destination" : "source",
+					        ADT[j][0],
+					        ADT[j][1],
+					        result);
+					log_output(report_string);
+				}
 		}
 
-		snprintf(report_buffer, sizeof(report_buffer), report_string);
-		log_output(report_buffer);
+		if (adt_too_much_data())
+			log_output("# Note: The Darlington test was done only on the first 1000 samples. The reason for this is that the test gives poor results for a larger sample size (as specified in literature)\n");
 	}
-	else if (doAnderson == 2) {
-
-		t_result_s = unif_A2_known_range(t_array_s, array_size, ADT1, ADT2);
-		r_result_s = unif_A2_known_range(r_array_s, array_size, ADT1, ADT2);
-		i_result_s = unif_A2_known_range(i_array_s, array_size, ADT1, ADT2);
-		t_result_r = unif_A2_known_range(t_array_r, array_size, ADT1, ADT2);
-		r_result_r = unif_A2_known_range(r_array_r, array_size, ADT1, ADT2);
-		i_result_r = unif_A2_known_range(i_array_r, array_size, ADT1, ADT2);
-
-		char report_buffer[4000] = "";
-
-		char report_string[4000];
-		/* strings for sender */
-		char string_t_result_s[100]; /* string_throughput_result_server */
-		char string_r_result_s[100]; /* string_rtt_result_server */
-		char string_i_result_s[100]; /* string_iat_result_server */
-		/* strings for receiver */
-		char string_t_result_r[100]; /* string_throughput_result_receiver */
-		char string_r_result_r[100]; /* string_rtt_result_receiver */
-		char string_i_result_r[100]; /* string_iat_result_receiver */
-
-		/*convert double to string*/
-		sprintf(string_t_result_s, "%.6f", t_result_s);
-		sprintf(string_r_result_s, "%.6f", r_result_s);
-		sprintf(string_i_result_s, "%.6f", i_result_s);
-
-		sprintf(string_t_result_r, "%.6f", t_result_r);
-		sprintf(string_r_result_r, "%.6f", r_result_r);
-		sprintf(string_i_result_r, "%.6f", i_result_r);
-
-		/* create the output to the logfile */
-		strcpy(report_string, "\n#Anderson-Darling test statistic (A2) for Uniform Distribution with lower bound ");
-
-		char buf[100];
-		sprintf(buf, "%.6f and upper bound %.6f", ADT1, ADT2);
-		strcat(report_string, buf);
-
-		strcat(report_string, ":\n#A2 Throughput of sender = ");
-		strcat(report_string, string_t_result_s);
-		strcat(report_string, "; ");
-
-		strcat(report_string, "A2 Throughput of receiver = ");
-		strcat(report_string, string_t_result_r);
-		strcat(report_string, " \n");
-
-		strcat(report_string, "#A2 RTT of sender = ");
-		strcat(report_string, string_r_result_s);
-		strcat(report_string, "; ");
-
-		strcat(report_string, "A2 RTT of receiver = ");
-		strcat(report_string, string_r_result_r);
-		strcat(report_string, " \n");
-
-		strcat(report_string, "#A2 IAT of sender = ");
-		strcat(report_string, string_i_result_s);
-		strcat(report_string, "; ");
-
-		strcat(report_string, "A2 RTT of receiver = ");
-		strcat(report_string, string_i_result_r);
-		strcat(report_string, " \n");
-
-		snprintf(report_buffer, sizeof(report_buffer), report_string);
-		log_output(report_buffer);
-	}
-
-#endif
 }
 
 void report_flow(const char* server_url, struct _report* report)
@@ -1139,6 +1000,16 @@ exit_outer_loop:
 	if (id == opt.num_flows) {
 		DEBUG_MSG(1, "Got report from nonexistant flow, ignoring");
 		return;
+	}
+
+	if (doAnderson && !id && report->type == INTERVAL) {
+		/* Record ADT data on first flow */
+		double delta = time_diff(&report->begin, &report->end);
+		adt_add_data(report->bytes_written / delta, endpoint, adt_throughput);
+		if (report->iat_sum != INFINITY)
+			adt_add_data(report->iat_sum, endpoint, adt_iat);
+		if (report->rtt_sum != INFINITY)
+			adt_add_data(report->rtt_sum, endpoint, adt_rtt);
 	}
 
 	if (f->start_timestamp[endpoint].tv_sec == 0) {
@@ -1725,9 +1596,8 @@ int parse_Anderson_Test(char *params) {
 	//  if (strcmp(c,"-")==5)  //TODO: Bug to figure out why there is an offset of 5 here!!
 	//		return 0;
 
-	while ( sscanf(params, "%31[^,]%n", field, &n) == 1 ){
-		if ( i==0)  {ADT1 = atof (field); doAnderson=1;}
-		if (i==1) {ADT2 = atof (field); doAnderson=2;}
+	while (sscanf(params, "%31[^,]%n", field, &n) == 1 ) {
+		ADT[i % 3][i / 3] = atof(field);
 
 		i++;
 		params += n; /* advance the pointer by the number of characters read */
@@ -1737,9 +1607,13 @@ int parse_Anderson_Test(char *params) {
 		++params; /* skip the delimiter */
 	}
 
-	if (i==0) return 0;
+	if (i == 3)
+		doAnderson = 1;
+	else if (i == 6)
+		doAnderson = 2;
+	else
+		return 0;
 
-	printf("\n values for adt params :::_  adt1 %f,adt2 %f \n", ADT1, ADT2);
 	return 1;
 }
 
@@ -2095,7 +1969,10 @@ static void parse_cmdline(int argc, char **argv) {
 			break;
 
 		case 'b':
-			parse_Anderson_Test(optarg);
+			if (!parse_Anderson_Test(optarg)) {
+				fprintf(stderr, "Failed to parse adt options\n");
+				usage();
+			}
 			break;
 
 		case 'c':
