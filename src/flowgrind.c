@@ -191,13 +191,70 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	return 0;
 }
 
+int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRow,
+	char *strHead1, char *strHead2, char* value, unsigned int *control0,
+	unsigned int *control1, int showColumn, int *columnWidthChanged) {
+
+	unsigned int maxTooLongColumns = opt.num_flows * 5; // Maximum number of rows with non-optimal column width
+	int lengthData = 0; // #digits of values
+	int lengthHead = 0; // Length of header string
+	unsigned int columnSize = 0;
+	unsigned int a;
+
+	if (!showColumn)
+		return 0;
+
+	// get max columnsize
+	lengthData = strlen(value);
+	lengthHead = MAX(strlen(strHead1), strlen(strHead2));
+	columnSize = MAX(lengthData, lengthHead);
+
+	// check if columnsize has changed
+	if (*control1 < columnSize) {
+		/* column too small */
+		*columnWidthChanged = 1;
+		*control1 = columnSize;
+		*control0 = 0;
+	}
+	else if (*control1 > 1 + columnSize) {
+		/* column too big */
+		if (*control0 >= maxTooLongColumns) {
+			/* column too big for quite a while */
+			*columnWidthChanged = 1;
+			*control1 = columnSize;
+			*control0 = 0;
+		}
+		else
+			(*control0)++;
+	}
+	else /* This size was needed,keep it */
+		*control0 = 0;
+
+	// create columns
+	for (a = lengthData; a < columnSize; a++)
+		strcat(strDataRow, " ");
+	strcat(strDataRow, value);
+
+	// 1st header row
+	for (a = *control1; a > strlen(strHead1); a--)
+		strcat(strHead1Row, " ");
+	strcat(strHead1Row, strHead1);
+
+	// 2nd header Row
+	for (a = *control1; a > strlen(strHead2); a--)
+		strcat(strHead2Row, " ");
+	strcat(strHead2Row, strHead2);
+
+	return 0;
+}
+
 char *createOutput(char hash, int id, int type, double begin, double end,
 		double throughput,
 		double rttmin, double rttavg, double rttmax,
 		double iatmin, double iatavg, double iatmax,
 		int cwnd, int ssth, int uack, int sack, int lost, int reor,
 		unsigned int retr, unsigned int fack, double linrtt, double linrttvar,
-		double linrto, int mss, int mtu, char* comment, int unit_byte) {
+		double linrto, int ca_state, int mss, int mtu, char* comment, int unit_byte) {
 
 	static char * const str_id = "#  ID";
 	static char * const str_begin[] = {" begin", " [s]"};
@@ -222,6 +279,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	static char * const str_linrtt[] = {" rtt", " "};
 	static char * const str_linrttvar[] = {" rttvar", " "};
 	static char * const str_linrto[] = {" rto", " "};
+	static char * const str_ca[] = {" castate", " "};
 	static char * const str_mss[] = {" mss", " "};
 	static char * const str_mtu[] = {" mtu", " "};
 	static char * const str_comment[] = {" ;-)", " "};
@@ -234,7 +292,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	x=0: Number of rows with too much space
 	x=1: last column width
 	*/
-	static unsigned int control[24][2];
+	static unsigned int control[25][2];
 	int i = 0;
 	static int counter = 0;
 
@@ -243,6 +301,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	char headerString1[1000];
 	char headerString2[1000];
 	static char outputString[4000];
+	char tmp[100];
 
 	//output string
 	//param # + flow_id
@@ -333,6 +392,25 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 
 	//param str_linrto
 	createOutputColumn(headerString1, headerString2, dataString, str_linrto[0], str_linrto[1], linrto, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	i++;
+
+	//param ca_state
+	if (ca_state == TCP_CA_Open)
+		strcpy(tmp, "open");
+	else if (ca_state == TCP_CA_Disorder)
+		strcpy(tmp, "disorder");
+	else if (ca_state == TCP_CA_CWR)
+		strcpy(tmp, "cwr");
+	else if (ca_state == TCP_CA_Recovery)
+		strcpy(tmp, "recovery");
+	else if (ca_state == TCP_CA_Loss)
+		strcpy(tmp, "loss");
+	else if (ca_state)
+		sprintf(tmp, "unknown(%d)", ca_state);
+	else
+		strcpy(tmp, "none");
+	
+	createOutputColumn_str(headerString1, headerString2, dataString, str_ca[0], str_ca[1], tmp, &control[i][0], &control[i][1], visible_columns[5], &columnWidthChanged);
 	i++;
 
 	createOutputColumn(headerString1, headerString2, dataString, str_mss[0], str_mss[1], mss, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
@@ -662,7 +740,7 @@ void print_tcp_report_line(char hash, int id,
 		unsigned cwnd, unsigned ssth, unsigned uack,
 		unsigned sack, unsigned lost, unsigned retr,
 		unsigned fack, unsigned reor, double rtt,
-		double rttvar, double rto,
+		double rttvar, double rto, int ca_state,
 		int mss, int mtu,
 #endif
 		int status
@@ -747,10 +825,10 @@ void print_tcp_report_line(char hash, int id,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
 		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)reor, retr, fack,
-		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3,
+		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3, ca_state,
 #else
 		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0,
+		0, 0, 0, 0,
 #endif
 		mss, mtu, comment_buffer, opt.mbyte
 	));
@@ -791,6 +869,7 @@ void print_report(int id, int endpoint, struct _report* report)
 		report->tcp_info.tcpi_rtt,
 		report->tcp_info.tcpi_rttvar,
 		report->tcp_info.tcpi_rto,
+		report->tcp_info.tcpi_ca_state,
 #endif
 		report->mss,
 		report->mtu,
@@ -1140,12 +1219,13 @@ has_more_reports:
 					int tcpi_rto;
 					int tcpi_last_data_sent;
 					int tcpi_last_ack_recv;
+					int tcpi_ca_state;
 					int bytes_read_low, bytes_read_high;
 					int bytes_written_low, bytes_written_high;
 
 					xmlrpc_decompose_value(&rpc_env, rv, "{"
 						"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:is:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
-						"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i" /* TCP info */
+						"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i" /* TCP info */
 						"s:i,*}",
 
 						"id", &report.id,
@@ -1184,6 +1264,8 @@ has_more_reports:
 						"tcpi_rto", &tcpi_rto,
 						"tcpi_last_data_sent", &tcpi_last_data_sent,
 						"tcpi_last_ack_recv", &tcpi_last_ack_recv,
+						"tcpi_ca_state", &tcpi_ca_state,
+
 						"status", &report.status
 					);
 					xmlrpc_DECREF(rv);
@@ -1204,6 +1286,7 @@ has_more_reports:
 					report.tcp_info.tcpi_rto = tcpi_rto;
 					report.tcp_info.tcpi_last_data_sent = tcpi_last_data_sent;
 					report.tcp_info.tcpi_last_ack_recv = tcpi_last_ack_recv;
+					report.tcp_info.tcpi_ca_state = tcpi_ca_state;
 #endif
 					report.begin.tv_sec = begin_sec;
 					report.begin.tv_usec = begin_usec;
