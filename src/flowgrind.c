@@ -863,7 +863,7 @@ void print_report(int id, int endpoint, struct _report* report)
 		report->tcp_info.tcpi_unacked, report->tcp_info.tcpi_sacked,
 		/*report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,*/
 		report->tcp_info.tcpi_lost,
-		report->tcp_info.tcpi_retrans,
+		report->tcp_info.tcpi_retransmits,
 		report->tcp_info.tcpi_fackets,
 		report->tcp_info.tcpi_reordering,
 		report->tcp_info.tcpi_rtt,
@@ -1211,7 +1211,7 @@ has_more_reports:
 					int tcpi_unacked;
 					int tcpi_sacked;
 					int tcpi_lost;
-					int tcpi_retrans;
+					int tcpi_retransmits;
 					int tcpi_fackets;
 					int tcpi_reordering;
 					int tcpi_rtt;
@@ -1256,7 +1256,7 @@ has_more_reports:
 						"tcpi_unacked", &tcpi_unacked,
 						"tcpi_sacked", &tcpi_sacked,
 						"tcpi_lost", &tcpi_lost,
-						"tcpi_retrans", &tcpi_retrans,
+						"tcpi_retransmits", &tcpi_retransmits,
 						"tcpi_fackets", &tcpi_fackets,
 						"tcpi_reordering", &tcpi_reordering,
 						"tcpi_rtt", &tcpi_rtt,
@@ -1278,7 +1278,7 @@ has_more_reports:
 					report.tcp_info.tcpi_unacked = tcpi_unacked;
 					report.tcp_info.tcpi_sacked = tcpi_sacked;
 					report.tcp_info.tcpi_lost = tcpi_lost;
-					report.tcp_info.tcpi_retrans = tcpi_retrans;
+					report.tcp_info.tcpi_retransmits = tcpi_retransmits;
 					report.tcp_info.tcpi_fackets = tcpi_fackets;
 					report.tcp_info.tcpi_reordering = tcpi_reordering;
 					report.tcp_info.tcpi_rtt = tcpi_rtt;
