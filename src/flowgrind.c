@@ -282,7 +282,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	static char * const str_ca[] = {" castate", " "};
 	static char * const str_mss[] = {" mss", " "};
 	static char * const str_mtu[] = {" mtu", " "};
-	static char * const str_comment[] = {" ;-)", " "};
+	static char * const str_comment[] = {" status", " "};
 
 	int columnWidthChanged = 0; //Flag: 0: column width has not changed
 

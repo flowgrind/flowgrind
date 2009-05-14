@@ -61,3 +61,24 @@ So our host argument will be this:
 In words: Test from 192.168.0.1 to 192.168.0.2 on the nodes identified by
 10.0.0.1 and 10.0.0.2 respectively. Since we didn't specify a reply address,
 the reply connection will also use 10.0.0.2
+
+Colums
+======
+
+Status column
+-------------
+
+The status column in the output conists of both the sending and receiving state separated by a slash.
+Possible states:
+- c = directon completed
+- d = direction in initial delay
+- f = fault
+- l = active, nothing sent/received yet
+- n = normal activity
+- o = zero duration, not going to receive/send data
+
+Examples:
+  d/o   Unidirectional flow with sending in initial delay, receiving disabled
+  n/n   Bidirectiona flow, active and some data got transferred in each direction
+  c/d   Sending has completed, receiving still in initial delay
+
