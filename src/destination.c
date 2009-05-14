@@ -69,53 +69,6 @@ int get_tcp_info(struct _flow *flow, struct tcp_info *info);
 void init_flow(struct _flow* flow, int is_source);
 void uninit_flow(struct _flow *flow);
 
-int destination_prepare_fds(fd_set *rfds, fd_set *wfds, fd_set *efds, int *maxfd)
-{
-	unsigned int i = 0;
-
-	while (i < num_flows) {
-		struct _flow *flow = &flows[i++];
-
-		if (started) {
-			if ((flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(flow, READ) && !flow_sending(flow, READ))) &&
-				(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(flow, WRITE) && !flow_sending(flow, WRITE)))) {
-
-				/* Nothing left to read, nothing left to send */
-				/*get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info);*/
-				uninit_flow(flow);
-				remove_flow(--i);
-				continue;
-			}
-		}
-
-		if (flow->fd_reply != -1) {
-			FD_SET(flow->fd_reply, rfds);
-			FD_SET(flow->fd_reply, efds);
-			*maxfd = MAX(*maxfd, flow->fd_reply);
-		}
-		if (flow->state == WAIT_ACCEPT_REPLY && flow->listenfd_reply != -1) {
-			FD_SET(flow->listenfd_reply, rfds);
-			*maxfd = MAX(*maxfd, flow->listenfd_reply);
-		}
-		if (flow->state == GRIND_WAIT_ACCEPT && flow->listenfd_data != -1) {
-			FD_SET(flow->listenfd_data, rfds);
-			*maxfd = MAX(*maxfd, flow->listenfd_data);
-		}
-		if (flow->fd != -1) {
-			if (!flow->finished[READ])
-				FD_SET(flow->fd, rfds);
-			if (flow->settings.duration[WRITE] != 0)
-				FD_SET(flow->fd, wfds);
-			else
-				flow->finished[WRITE] = 1;
-			FD_SET(flow->fd, efds);
-			*maxfd = MAX(*maxfd, flow->fd);
-		}
-	}
-
-	return num_flows;
-}
-
 static void log_client_address(const struct sockaddr *sa, socklen_t salen)
 {
 	logging_log(LOG_NOTICE, "connection from %s", fg_nameinfo(sa, salen));
