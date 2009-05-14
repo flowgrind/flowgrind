@@ -240,20 +240,8 @@ static int prepare_fds() {
 	while (i < num_flows) {
 		struct _flow *flow = &flows[i++];
 
-		if (flow->state == WAIT_ACCEPT_REPLY && flow->listenfd_reply != -1) {
-			FD_SET(flow->listenfd_reply, &rfds);
-			maxfd = MAX(maxfd, flow->listenfd_reply);
-		}
-
-		if (flow->state == GRIND_WAIT_ACCEPT && flow->listenfd_data != -1) {
-			FD_SET(flow->listenfd_data, &rfds);
-			maxfd = MAX(maxfd, flow->listenfd_data);
-		}
-
-		if (!started)
-			continue;
-
-		if ((flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(&now, flow, READ) && !flow_sending(&now, flow, READ))) &&
+		if (started && 
+			(flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(&now, flow, READ) && !flow_sending(&now, flow, READ))) &&
 			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))) {
 
 			/* Nothing left to read, nothing left to send */
@@ -271,6 +259,19 @@ static int prepare_fds() {
 			remove_flow(--i);
 			continue;
 		}
+
+		if (flow->state == WAIT_ACCEPT_REPLY && flow->listenfd_reply != -1) {
+			FD_SET(flow->listenfd_reply, &rfds);
+			maxfd = MAX(maxfd, flow->listenfd_reply);
+		}
+
+		if (flow->state == GRIND_WAIT_ACCEPT && flow->listenfd_data != -1) {
+			FD_SET(flow->listenfd_data, &rfds);
+			maxfd = MAX(maxfd, flow->listenfd_data);
+		}
+
+		if (!started)
+			continue;
 
 		if (flow->fd_reply != -1) {
 			FD_SET(flow->fd_reply, &rfds);
