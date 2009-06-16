@@ -207,7 +207,7 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 	// get max columnsize
 	lengthData = strlen(value);
 	lengthHead = MAX(strlen(strHead1), strlen(strHead2));
-	columnSize = MAX(lengthData, lengthHead);
+	columnSize = MAX(lengthData, lengthHead) + 2;
 
 	// check if columnsize has changed
 	if (*control1 < columnSize) {
