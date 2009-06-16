@@ -443,6 +443,16 @@ static void report_flow(struct _flow* flow, int type)
 	else
 		memset(&report->tcp_info, 0, sizeof(struct tcp_info));
 #endif
+	if (flow->fd != -1) {
+		/* Get latest MTU and MSS */
+		int mtu, mss;
+		mtu = get_mtu(flow->fd);
+		mss = get_mss(flow->fd);
+		if (mtu != -1)
+			flow->mtu = mtu;
+		if (mss != -1)
+			flow->mss = mss;
+	}
 	report->mss = flow->mss;
 	report->mtu = flow->mtu;
 
