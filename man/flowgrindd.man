@@ -1,0 +1,39 @@
+.TH flowgrindd 1 "June 2009" "" "Flowgrind Manual"
+
+.SH NAME
+flowgrindd network performance measurement tool daemon
+.SH SYNOPSIS
+flowgrindd
+.B -h|-v
+.br
+flowgrindd [options]
+
+.SH DESCRIPTION
+.B flowgrindd is the daemon for the flowgrind distributed network performance measurement tool. Using the
+.B flowgrind
+controller, tests can be setup between hosts running
+.BR flowgrindd ","
+the flowgrind daemon.
+
+Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the data returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
+
+.SH OPTIONS
+
+.TP
+.BR -a " addresses"
+Comma-separated list of hosts allowed to connect to the daemon, in CIDR syntax.
+
+.TP
+.B -h
+Show help and exit.
+
+.TP
+.BR -p " #"
+Port the server should listen on.
+
+.TP
+.B -D
+Do not daemonize, increase debug verbosity. Add multiple times to increase debug verbosity further.
+
+.SH SEE ALSO
+flowgrind(1)

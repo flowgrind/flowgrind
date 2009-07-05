@@ -70,7 +70,7 @@ Status column
 
 The status column in the output conists of both the sending and receiving state separated by a slash.
 Possible states:
-- c = directon completed
+- c = direction completed
 - d = direction in initial delay
 - f = fault
 - l = active, nothing sent/received yet

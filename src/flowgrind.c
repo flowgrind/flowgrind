@@ -463,13 +463,15 @@ static void usage(void)
 		"  -a           advanced statistics (pcap)\n"
 #endif
 		"  -b mean1,mean2,mean3\n"
-	    "  -b lwr_bound1,upr_bound1,lwr_bound2,upr_bound2,lwr_bound3,upr_bound3\n"
+		"  -b lwr_bound1,upr_bound1,lwr_bound2,upr_bound2,lwr_bound3,upr_bound3\n"
 		"               means for computing Anderson-Darling Test for exponential\n"
 		"               distribution OR\n"
 		"               lower and upper bounds for computing the test for uniform\n"
 		"               distribution with the given bounds\n"
-		"  -o +begin,+end,+thrpt,+rtt,+iat,+kernel\n"
-		"               comma separated list of parameters to investigate +: show -: hide\n"
+		"  -c +begin,+end,+thrpt,+rtt,+iat,+kernel\n"
+		"               comma separated list of column groups to display in output.\n"
+		"               Prefix with either + to show column group or - to hide\n"
+		"               column group.\n"
 #ifdef DEBUG
 		"  -d           increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
@@ -481,8 +483,6 @@ static void usage(void)
 		"               (default: 10**6 bit/sec)\n"
 		"  -n #         number of test flows (default: 1)\n"
 		"  -o           overwrite existing log files (default: don't)\n"
-		"  -p PORT      use PORT as base port number of test flows (default: none)\n"
-		"               (default: none)\n"
 		"  -q           be quiet, do not log to screen (default: off)\n"
 		"  -w           write output to logfile (default: off)\n\n"
 
@@ -499,7 +499,9 @@ static void usage(void)
 		"               Test from/to HOST. Optional argument is the address and\n"
 		"               port of the RPC server. Third address is for the reply connection.\n"
 		"               An endpoint that isn't specified is assumed to be localhost.\n"
-		"  -L x         connect() socket immediately before sending (late)\n"
+		"  -L x         Call connect() on test socket immediately before starting to send\n"
+		"               data (late connect). If not specified the test connection is\n"
+		"               established in the preparation phase before the test starts.\n"
 		"  -N x         shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
 		"               For a list of supported socket options see '%2$s -s'\n"
@@ -512,8 +514,7 @@ static void usage(void)
 		"               b = bytes per second, B = blocks per second (default)\n"
 		"               p = periodic, P = Poisson distributed (default)\n"
 		"  -S x=#       Set block size (default: s=8192,d=8192)\n"
-		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0),\n"
-		"               negative meaning don't stop.\n"
+		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0)"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n"
 
@@ -2103,16 +2104,6 @@ static void parse_cmdline(int argc, char **argv) {
 
 		case 'o':
 			opt.clobber = 1;
-			break;
-
-		case 'p':
-			rc = sscanf(optarg, "%u", &optunsigned);
-                        if (rc != 1 || optunsigned > USHRT_MAX) {
-				fprintf(stderr, "base port must be within "
-						"[1..%d]\n", USHRT_MAX);
-				usage();
-			}
-			opt.base_port = (short)optunsigned;
 			break;
 
 		case 'q':
