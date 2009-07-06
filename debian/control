@@ -1,0 +1,20 @@
+Source: flowgrind-distributed
+Section: net
+Priority: extra
+Maintainer: Tim Kosse <tim.kosse@gmx.de>
+Build-Depends: debhelper (>= 7), autotools-dev, libxmlrpc-c3-dev, libcurl4-dev, libcurl4-gnutls-dev
+Standards-Version: 3.8.0
+Homepage: http://umic-mesh.net/research/flowgrind/
+
+Package: flowgrind-distributed
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Flowgrind distributed network performance measurement tool
+ Flowgrind is a distributed network performance measurment tool.
+ Using the flowgrind controller, flows between any two machines
+ running the flowgrindd daemon can be created.
+
+Package: flowgrind-distributed-doc
+Architecture: all
+Description: documentation for flowgrind-distributed
+ <insert long description, indented with spaces>
