@@ -514,7 +514,7 @@ static void usage(void)
 		"               b = bytes per second, B = blocks per second (default)\n"
 		"               p = periodic, P = Poisson distributed (default)\n"
 		"  -S x=#       Set block size (default: s=8192,d=8192)\n"
-		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0)"
+		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n"
 
