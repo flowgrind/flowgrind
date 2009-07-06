@@ -9,5 +9,7 @@ svnversion.h: FORCE
 	$(PERL) $(srcdir)/make-version.pl $(srcdir)
 
 dist_man1_MANS = man/flowgrind.man \
-		 man/flowgrindd.man
+		 man/flowgrindd.man \
+		 man/flowgrind-stop.man
+
 

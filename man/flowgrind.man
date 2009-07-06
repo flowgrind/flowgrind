@@ -1,7 +1,7 @@
 .TH flowgrind 1 "June 2009" "" "Flowgrind Manual"
 
 .SH NAME
-flowgrind network performance measurement tool
+flowgrind \- network performance measurement tool
 .SH SYNOPSIS
 flowgrind
 .B -h|-s|-v
@@ -195,3 +195,4 @@ Start two TCP transfers one from 192.168.0.1 to 192.168.0.69 and another in from
 
 .SH SEE ALSO
 flowgrindd(1)
+flowgrind-stop(1)

@@ -1,7 +1,7 @@
 .TH flowgrindd 1 "June 2009" "" "Flowgrind Manual"
 
 .SH NAME
-flowgrindd network performance measurement tool daemon
+flowgrindd \- network performance measurement tool daemon
 .SH SYNOPSIS
 flowgrindd
 .B -h|-v
@@ -32,8 +32,14 @@ Show help and exit.
 Port the server should listen on.
 
 .TP
+.B -v
+Show version and exit.
+
+.TP
 .B -D
 Do not daemonize, increase debug verbosity. Add multiple times to increase debug verbosity further.
 
 .SH SEE ALSO
 flowgrind(1)
+flowgrind-stop(1)
+
