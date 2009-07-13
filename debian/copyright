@@ -5,17 +5,17 @@ It was downloaded from <url://example.com>
 
 Upstream Author(s):
 
-    <put author's name and email here>
-    <likewise for another author>
+    Daniel Schaffrath <daniel.schaffrath@mac.com>
+    Tim Kosse <tim.kosse@gmx.de>
 
 Copyright:
 
-    <Copyright (C) YYYY Name OfAuthor>
-    <likewise for another author>
+    Copyright (C) 2008 Daniel Schaffrath
+    Copyright (C) 2009 Tim Kosse
 
 License:
 
-    <Put the license of the package here indented by 4 spaces>
+    GPL
 
 The Debian packaging is copyright 2009, Tim Kosse <tim.kosse@gmx.de> and
 is licensed under the GPL, see `/usr/share/common-licenses/GPL'.

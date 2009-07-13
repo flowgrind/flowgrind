@@ -17,4 +17,6 @@ Description: Flowgrind distributed network performance measurement tool
 Package: flowgrind-distributed-doc
 Architecture: all
 Description: documentation for flowgrind-distributed
- <insert long description, indented with spaces>
+ Flowgrind is a distributed network performance measurment tool.
+ Using the flowgrind controller, flows between any two machines
+ running the flowgrindd daemon can be created.
