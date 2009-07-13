@@ -91,7 +91,7 @@ install-arch:
 
 	# Add here commands to install the arch part of the package into
 	# debian/tmp.
-	$(MAKE) DESTDIR=$(CURDIR)/debian/flowgrind-distributed install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/flowgrind install
 
 	dh_install -s
 # Must not depend on anything. This is to be called by

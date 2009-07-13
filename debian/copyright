@@ -1,12 +1,12 @@
 This package was debianized by Tim Kosse <tim.kosse@gmx.de> on
 Mon, 06 Jul 2009 11:21:28 +0200.
 
-It was downloaded from <url://example.com>
+It was downloaded from http://umic-mesh.net/research/flowgrind/
 
-Upstream Author(s):
+Upstream Authors:
 
-    Daniel Schaffrath <daniel.schaffrath@mac.com>
     Tim Kosse <tim.kosse@gmx.de>
+    Daniel Schaffrath <daniel.schaffrath@mac.com>
 
 Copyright:
 
@@ -15,10 +15,8 @@ Copyright:
 
 License:
 
-    GPL
+    /usr/share/common-licenses/GPL-2
 
 The Debian packaging is copyright 2009, Tim Kosse <tim.kosse@gmx.de> and
-is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
+is licensed under the GPL, see `/usr/share/common-licenses/GPL-2'.
 
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.
