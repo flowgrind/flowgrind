@@ -1,8 +1,7 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
-#include "config.h"
-
+#define DEBUG
 void decrease_debuglevel();
 void increase_debuglevel();
 

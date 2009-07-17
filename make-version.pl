@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# Copyright 2004 Jörg Mayer (see AUTHORS file)
+# Copyright 2004 Jï¿½rg Mayer (see AUTHORS file)
 #
 # $Id: make-version.pl 20499 2007-01-19 06:28:56Z gerald $
 #
@@ -58,6 +58,7 @@ use strict;
 
 use Time::Local;
 use POSIX qw(strftime);
+use POSIX qw(locale_h);
 use Getopt::Long;
 
 my $version_file = 'svnversion.h';
@@ -75,6 +76,9 @@ my %version_pref = (
 	);
 my $srcdir = ".";
 
+# Set locale to C so that output of 'svn info' can be parsed
+setlocale(LC_ALL, "C");
+$ENV{LC_ALL} = "C";
 
 # Run "svn info".  Parse out the most recent modification time and the
 # revision number.
@@ -110,7 +114,7 @@ sub read_svn_info {
 		}
 	}
 	if ($version_pref{"svn_client"} || ($repo_version ne "pre1.4")) {
-		$line = qx{svn info};
+		$line = qx{svn info "$srcdir"};
 		if ($line =~ /Last Changed Date: (\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/) {
 			$last = timegm($6, $5, $4, $3, $2 - 1, $1);
 		}
@@ -149,7 +153,6 @@ sub read_svn_info {
 		$package_format =~ s/%#/$revision/;
 		$package_string = strftime($package_format, gmtime($last));
 	}
-		
 }
 
 
@@ -269,9 +272,9 @@ sub get_config {
 
 &get_config();
 
-if (-d "./.svn") {
+if (-d "$srcdir/.svn") {
 	print "This is a build from SVN (or a SVN snapshot).\n";
-	&read_svn_info(".");
+	&read_svn_info("$srcdir");
 	if ($pkg_version) {
 		print "Generating package version.  Ignoring $version_file\n";
 		&update_configure_in;

@@ -42,7 +42,7 @@ void fg_pcap_init()
 			char addr[100];
 			if (!a->addr)
 				continue;
-			snprintf(addr, sizeof(addr), "a=%s", fg_nameinfo(a->addr));
+			snprintf(addr, sizeof(addr), "a=%s", fg_nameinfo(a->addr, sizeof(struct sockaddr)));
 			strncat(devdes, addr, sizeof(devdes));
 			if (a->next)
 				strncat(devdes, ", ", sizeof(devdes));
@@ -73,7 +73,7 @@ void fg_pcap_go(int fd)
 			if (sockaddr_compare(a->addr, (struct sockaddr *)&sa)) {
 				DEBUG_MSG(2, "pcap: data connection inbound "
 						"from %s (%s)", d->name, 
-						fg_nameinfo(a->addr));
+						fg_nameinfo(a->addr, sizeof(struct sockaddr)));
 				found = 1;
 				break;
 			}

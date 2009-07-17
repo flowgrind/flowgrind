@@ -12,10 +12,6 @@
 #define TCP_CONG_MODULE 13
 #endif
 
-ssize_t read_exactly(int, void *, size_t);
-size_t read_until_plus(int d, char *buf, size_t nbytes);
-ssize_t write_exactly(int, const void *, size_t);
-
 int set_congestion_control(int fd, const char *cc_alg);
 int set_so_debug(int fd);
 int set_keepalive(int fd, int how);
@@ -31,10 +27,13 @@ int toggle_tcp_cork(int fd);
 int set_window_size(int, int);
 int set_window_size_directed(int, int, int);
 
+int set_ip_mtu_discover(int fd);
 int get_mtu(int fd);
 int get_mss(int fd);
 
-const char *fg_nameinfo(const struct sockaddr *sa);
+const char *fg_nameinfo(const struct sockaddr *sa, socklen_t salen);
 char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b);
+
+int get_port(int fd);
 
 #endif

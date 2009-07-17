@@ -1,0 +1,198 @@
+.TH flowgrind 1 "June 2009" "" "Flowgrind Manual"
+
+.SH NAME
+flowgrind \- network performance measurement tool
+.SH SYNOPSIS
+flowgrind
+.B -h|-s|-v
+.br
+flowgrind [general options] [flow options]
+.SH DESCRIPTION
+.B flowgrind
+is a distributed network performance measurement tool. Using the
+.B flowgrind
+controller, tests can be setup between hosts running
+.BR flowgrindd ","
+the flowgrind daemon.
+
+Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the data returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
+
+.SH OPTIONS
+.SS General information
+
+Two important groups of options are the global options and flow options. Like the name suggests, global options apply globally and potentially affect all flows. Flow-specific options only apply to the subset of flows selected using the
+.B -F
+option.
+
+.SS Miscallaneous
+
+.TP
+.B -h
+Show help and exit.
+
+.TP
+.B -s
+Show help for socket options and exit.
+
+.TP
+.B -v
+Print version information and exit.
+
+.SS General options
+
+.TP
+.B -a
+Advanced statistics, only if compiled with libpcap support.
+
+.P
+.BR -b " mean1,mean2,mean3"
+.br
+.BR -b " lwr_bound1,upr_bound1,lwr_bound2,upr_bound2,lwr_bound3,upr_bound3"
+.IP
+Perform Anderson-Darling Test for exponential distribution OR lower and upper bounds for computing the test for uniform distribution with the given bounds. Test data always generated from first flow.
+
+.TP
+.BR -c " +begin,+end,+thrpt,+rtt,+iat,+kernel"
+Comma separated list of column groups to display in output. Prefix with either + to show column group, - to hide column group.
+
+.TP
+.B -d
+Increase debugging verbosity. Add option multiple times to be even more verbose. Only available if compiled with DEBUG define set.
+
+.TP
+.BR -e " PREFIX"
+Prepend PREFIX to log filename (default: "flowlog-").
+
+.TP
+.BR -i " #.#"
+Reporting interval in seconds (default: 0.05s).
+
+.TP
+.BR -l " NAME"
+Use log filename NAME instead. If not specified the current time is used for the filename.
+
+.TP
+.BR -m
+Report throughput in 2**20 bytes/second (default: 10**6 bit/sec).
+
+.TP
+.BR -n " #"
+Number of test flows (default: 1).
+
+.TP
+.BR -o
+Overwrite existing log files (default: don't).
+
+.TP
+.B -q
+Be quiet, do not log to screen (default: off).
+
+.TP
+.B -w
+Write output to logfile (default: off).
+
+.SS Flow options
+
+All flows have two endpoints, a source and a destination. Some of these options take the flow endpoint as argument. Is is denoted by 'x' in the option syntax. 'x' needs to be replaced with either 's' for the source endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To specify different values for both endpoints, separate them by comma.
+
+Example: -T s=5,d=10
+
+.TP
+.BR -B " x=#"
+Set requested sending buffer in bytes.
+
+.TP
+.BR -C " x"
+Stop flow if it is experiencing local congestion.
+
+.TP
+.BR -D " x=DSCP"
+DSCP value for type-of-service IP header byte.
+
+.TP
+.BR -E " x"
+Enumerate bytes in payload (default: don't).
+
+.TP
+.BR -F " #[,#]*"
+Comma-separated list of flows.
+Flow options following this option apply only to the specified flows.
+Useful in combination with
+.B -n
+to set specific options for certain flows.
+Numbering starts with 0, so -F 1 refers to the second flow.
+All flow options before the first -F apply to all flows.
+
+.TP
+.BR -H "x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]"
+Test from/to HOST. Optional argument is the address and port of the RPC server.
+Third address is for the reply connection.
+An endpoint that isn't specified is assumed to be localhost.
+
+.TP
+.BR -L " x"
+Call connect() on test socket immediately before starting to send data (late connect).
+If not specified the test connection is established in the preparation phase before the test starts.
+
+.TP
+.BR -N " x"
+Call shutdown() after test flow is scheduled to end.
+
+.TP
+.BR -O " x=OPT"
+Set specific socket options on test socket.
+For a list of supported socket options see
+.B -s
+option.
+
+.TP
+.BR -P " x"
+Do not iterate through select() to continue sending in case block size did not suffice to fill sending queue (pushy).
+
+.TP
+.BR -Q
+Summarize only, skip interval reports (quiet).
+
+.TP
+.BR -R " x=#.#[z|k|M|G][b|B][p|P]\n"
+Rate limiting. Send data at specified rate per second, where:
+.br
+z = 2**0, k = 2**10, M = 2**20, G = 2**30.
+.br
+b = bytes per second, B = blocks per second (default).
+.br
+p = periodic, P = Poisson distributed (default).
+
+.TP
+.BR -S " x=#"
+Set block size (default: s=8192,d=8192).
+
+.TP
+.BR -T " x=#.#"
+Set flow duration, in seconds (default: s=5,d=0).
+
+.TP
+.BR -W " x=#"
+Set requested receiver buffer (advertised window) in bytes.
+
+.TP
+.BR -Y " x=#.#"
+Set initial delay before the host starts to send data.
+
+.SH EXAMPLES
+
+.TP
+.B flowgrind -H s=thishost,d=testhost
+Start bulk TCP transfer from thishost to testhost"
+
+.TP
+.B flowgrind -H s=thishost,d=testhost -T s=0,d=5
+Start bulk TCP transfer from testhost to thishost
+
+.TP
+.B flowgrind -n 2 -H s=192.168.0.1,d=192.168.0.69 -F 1 -H s=10.0.0.1,d=10.0.0.2
+Start two TCP transfers one from 192.168.0.1 to 192.168.0.69 and another in from 10.0.0.1 to 10.0.0.2
+
+.SH SEE ALSO
+flowgrindd(1)
+flowgrind-stop(1)

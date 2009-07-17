@@ -1,10 +1,11 @@
 AC_PREREQ(2.59)
-AC_INIT([flowgrind],[0.12],[daniel.schaffrath@mac.com])
+AC_INIT([flowgrind],[0.2],[tim.kosse@gmx.de])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
 
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
 
@@ -48,6 +49,7 @@ AC_TYPE_UINT8_T
 
 AC_CHECK_FUNCS([ \
 	bzero \
+	getopt_long \
 	gettimeofday \
 	memset \
 	select \
@@ -66,7 +68,7 @@ AC_CHECK_LIB([fasttime], [fasttime_init_context])
 AC_CHECK_LIB([tsci2], [tsci2_init])
 
 AC_ARG_WITH(pcap,
-[  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=no]]],
+[  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=yes]]],
 [
 	if test $withval = no
 	then
@@ -88,17 +90,6 @@ else
 	AC_MSG_RESULT(yes)
 	AC_PCAP_CHECK
 fi
-
-AC_MSG_CHECKING(if we're including debugging code)
-AC_ARG_ENABLE(debugging,
- AS_HELP_STRING([--enable-debugging],[include debugging code (default is no)])], 
- [debug_enabled=yes],
- [debug_enabled=no])
-
-if test "x$debug_enabled" = "xyes" ; then 
-    AC_DEFINE(DEBUG, 1, [Enable debugging?])
-fi
-AC_MSG_RESULT($debug)
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
@@ -122,5 +113,34 @@ AC_CONFIG_FILES([ \
 	Makefile
 	src/Makefile \
 ])
+
+AC_CHECK_PROG(xmlrpcconfig, xmlrpc-c-config, yes, no)
+
+if test "x$xmlrpcconfig" = "xno"; then
+  AC_MSG_ERROR(xmlrpc-c-config not found in path.)
+fi
+
+if ! xmlrpc-c-config --features | grep "curl-client" > /dev/null; then
+  AC_MSG_ERROR([xmlrpc-c needs to be compiled with curl-client enabled.])
+fi
+if ! xmlrpc-c-config --features | grep "abyss-server" > /dev/null; then
+  AC_MSG_ERROR([xmlrpc-c needs to be compiled with abyss-server enabled.])
+fi
+
+AC_CHECK_LIB(curl, curl_version,
+  [],
+  [
+    AC_MSG_ERROR([libcurl not found.])
+  ])
+
+XMLRPC_C_CLIENT_CFLAGS=`xmlrpc-c-config client --cflags`
+XMLRPC_C_CLIENT_LDADD=`xmlrpc-c-config client --ldadd`
+XMLRPC_C_SERVER_CFLAGS=`xmlrpc-c-config abyss-server --cflags`
+XMLRPC_C_SERVER_LDADD=`xmlrpc-c-config abyss-server --ldadd`
+
+AC_SUBST(XMLRPC_C_CLIENT_CFLAGS)
+AC_SUBST(XMLRPC_C_CLIENT_LDADD)
+AC_SUBST(XMLRPC_C_SERVER_CFLAGS)
+AC_SUBST(XMLRPC_C_SERVER_LDADD)
 
 AC_OUTPUT
