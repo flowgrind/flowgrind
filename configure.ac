@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([flowgrind],[0.12],[daniel.schaffrath@mac.com])
+AC_INIT([flowgrind],[0.2],[tim.kosse@gmx.de])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
 
