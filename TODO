@@ -1,20 +1,16 @@
 +allow setsockopt of SO_DEBUG, TCP_ICMP, TCP_ELCN etc.. independently on server and client  [arnd 07.03.08]
-+rewrite all the timing code to not contain struct timeval anymore but just relative times (jiffies like)
-+unify client/server
 +recover UDP option
 +check what DEBUG_MSGs might be worth a "real" message
 +(try to)track route changes (IP route record option)
 +add DCCP/SCTP support
-+add control connection less mode (-T: traffic only)
-+fix 32/64-, network/host byte order issues
-+sendfile() support (open("/dev/zero") at first)
-+use urgend data for reporting? (maybe even SIGIO)
++add reply-connection-less mode (-T: traffic only)
++sendfile() support (open("/dev/zero") at first). sendfile() is special case of splice() in recent Linux versions
 +functions to generate sending rate
++allow send volume to be specified (instead of duration/rate)
 +request/response test
 +meet more the spirit of IPPM (connectivity test, etc.)
-+fix inter arival time calculation for rate limited flows
++save whole RTT/IAT distribution
 +for rate rate limited flows make receiving peer check if the inter arrival times are distributed as choosen 
 +add sequence numbers for block (even tcp) to meassure application level throuput (and to disclose aggregate queue capacity along network path)
-+more timing precision!
-+save whole RTT/IAT distribution
-+allow send volume to be specified (instead of duration/rate)
++rewrite all the timing code to not contain struct timeval anymore but just relative times (jiffies like)
++more timing precision! (for most precise scheduling the processing thread would need realtime priority. The RPC thread must have lower priority)
