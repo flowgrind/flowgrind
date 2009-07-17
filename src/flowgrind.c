@@ -52,15 +52,19 @@ char *log_filename = NULL;
 int active_flows = 0;
 unsigned select_timeout = DEFAULT_SELECT_TIMEOUT;
 
-//Array for the dynamical output
-//default show every parameter
-//[0] := begin
-//[1] := end
-//[2] := throughput
-//[3] := rtt
-//[4] := iat
-//[5] := linux kernel output
-int visible_columns[6] = {1, 1, 1, 1, 1, 1};
+enum _column_types
+{
+	column_type_begin,
+	column_type_end,
+	column_type_thrpt,
+	column_type_rtt,
+	column_type_iat,
+	column_type_kernel,
+	column_type_other
+};
+
+// Array for the dynamical output, show all by default
+int visible_columns[7] = {1, 1, 1, 1, 1, 1, 1};
 
 // these are the 2 parameters for the ADT test. If the user wants to test for
 // Exponential only ADT1 will be used and will represent the mean if the user
@@ -80,29 +84,29 @@ xmlrpc_env rpc_env;
 void parse_visible_param(char *to_parse) {
 	// {begin, end, throughput, RTT, IAT, Kernel}
 	if (strstr(to_parse, "+begin"))
-		visible_columns[0] = 1;
+		visible_columns[column_type_begin] = 1;
 	if (strstr(to_parse, "-begin"))
-		visible_columns[0] = 0;
+		visible_columns[column_type_begin] = 0;
 	if (strstr(to_parse, "+end"))
-		visible_columns[1] = 1;
+		visible_columns[column_type_end] = 1;
 	if (strstr(to_parse, "-end"))
-		visible_columns[1] = 0;
+		visible_columns[column_type_end] = 0;
 	if (strstr(to_parse, "+thrpt"))
-		visible_columns[2] = 1;
+		visible_columns[column_type_thrpt] = 1;
 	if (strstr(to_parse, "-thrpt"))
-		visible_columns[2] = 0;
+		visible_columns[column_type_thrpt] = 0;
 	if (strstr(to_parse, "+rtt"))
-		visible_columns[3] = 1;
+		visible_columns[column_type_rtt] = 1;
 	if (strstr(to_parse, "-rtt"))
-		visible_columns[3] = 0;
+		visible_columns[column_type_rtt] = 0;
 	if (strstr(to_parse, "+iat"))
-		visible_columns[4] = 1;
+		visible_columns[column_type_iat] = 1;
 	if (strstr(to_parse, "-iat"))
-		visible_columns[4] = 0;
+		visible_columns[column_type_iat] = 0;
 	if (strstr(to_parse, "+kernel"))
-		visible_columns[5] = 1;
+		visible_columns[column_type_kernel] = 1;
 	if (strstr(to_parse, "-kernel"))
-		visible_columns[5] = 0;
+		visible_columns[column_type_kernel] = 0;
 }
 
 /* New output
@@ -130,105 +134,151 @@ char *outStringPart(int digits, int decimalPart) {
 	return outstr;
 }
 
-int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
-	char *strHead1, char *strHead2, double value, unsigned int *control0,
-	unsigned int *control1, int numDigitsDecimalPart, int showColumn, int *columnWidthChanged) {
+struct _header_info
+{
+	const char* first;
+	const char* second;
+	enum _column_types column_type;
+};
 
+const struct _header_info header_info[] = {
+	{ "#  ID", "#    ", column_type_other },
+	{ " begin", " [s]", column_type_begin },
+	{ " end", " [s]", column_type_end },
+	{ " through", " [Mbit]", column_type_thrpt },
+	{ " through", " [Mbyte]", column_type_thrpt },
+	{ " RTT", " min", column_type_rtt },
+	{ " RTT", " avg", column_type_rtt },
+	{ " RTT", " max", column_type_rtt },
+	{ " IAT", " min", column_type_iat },
+	{ " IAT", " avg", column_type_iat },
+	{ " IAT", " max", column_type_iat },
+	{ " cwnd", " ", column_type_kernel },
+	{ " ssth", " ", column_type_kernel },
+	{ " uack", " #", column_type_kernel },
+	{ " sack", " #", column_type_kernel },
+	{ " lost", " #", column_type_kernel },
+	{ " retr", " #", column_type_kernel },
+	{ " fack", " #", column_type_kernel },
+	{ " reor", " #", column_type_kernel },
+	{ " rtt", " ", column_type_kernel },
+	{ " rttvar", " ", column_type_kernel },
+	{ " rto", " ", column_type_kernel },
+	{ " castate", " ", column_type_kernel },
+	{ " mss", " ", column_type_kernel },
+	{ " mtu", " ", column_type_kernel },
+	{ " status", " ", column_type_other }
+};
+
+struct _column_state
+{
+	unsigned int count_oversized;
+	unsigned int last_width;
+};
+
+struct _column_state column_states[sizeof(header_info) / sizeof(struct _header_info)] = {{0,0}};
+
+int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
+	int column, double value, struct _column_state *column_state,
+	int numDigitsDecimalPart, int *columnWidthChanged)
+{
 	unsigned int maxTooLongColumns = opt.num_flows * 5; // Maximum number of rows with non-optimal column width
 	int lengthData = 0; // #digits of values
 	int lengthHead = 0; // Length of header string
 	unsigned int columnSize = 0;
 	char tempBuffer[50];
 	unsigned int a;
+	const struct _header_info *header = &header_info[column];
 
 	char* number_formatstring;
 
-	if (!showColumn)
+	if (!visible_columns[header->column_type])
 		return 0;
 
 	// get max columnsize
 	lengthData = det_output_column_size(value) + 2 + numDigitsDecimalPart;
-	lengthHead = MAX(strlen(strHead1), strlen(strHead2));
+	lengthHead = MAX(strlen(header->first), strlen(header->second));
 	columnSize = MAX(lengthData, lengthHead);
 
 	// check if columnsize has changed
-	if (*control1 < columnSize) {
+	if (column_state->last_width < columnSize) {
 		/* column too small */
 		*columnWidthChanged = 1;
-		*control1 = columnSize;
-		*control0 = 0;
+		column_state->last_width = columnSize;
+		column_state->count_oversized = 0;
 	}
-	else if (*control1 > 1 + columnSize) {
+	else if (column_state->last_width > 1 + columnSize) {
 		/* column too big */
-		if (*control0 >= maxTooLongColumns) {
+		if (column_state->count_oversized >= maxTooLongColumns) {
 			/* column too big for quite a while */
 			*columnWidthChanged = 1;
-			*control1 = columnSize;
-			*control0 = 0;
+			column_state->last_width = columnSize;
+			column_state->count_oversized = 0;
 		}
 		else
-			(*control0)++;
+			(column_state->count_oversized)++;
 	}
 	else /* This size was needed,keep it */
-		*control0 = 0;
+		column_state->count_oversized = 0;
 
-	number_formatstring = outStringPart(*control1, numDigitsDecimalPart);
+	number_formatstring = outStringPart(column_state->last_width, numDigitsDecimalPart);
 
 	// create columns
 	sprintf(tempBuffer, number_formatstring, value);
 	strcat(strDataRow, tempBuffer);
 
 	// 1st header row
-	for (a = *control1; a > strlen(strHead1); a--)
+	for (a = column_state->last_width; a > strlen(header->first); a--)
 		strcat(strHead1Row, " ");
-	strcat(strHead1Row, strHead1);
+	strcat(strHead1Row, header->first);
 
 	// 2nd header Row
-	for (a = *control1; a > strlen(strHead2); a--)
+	for (a = column_state->last_width; a > strlen(header->second); a--)
 		strcat(strHead2Row, " ");
-	strcat(strHead2Row, strHead2);
+	strcat(strHead2Row, header->second);
 
 	return 0;
 }
 
 int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRow,
-	char *strHead1, char *strHead2, char* value, unsigned int *control0,
-	unsigned int *control1, int showColumn, int *columnWidthChanged) {
+	int column, char* value, struct _column_state *column_state,
+	int *columnWidthChanged) {
 
 	unsigned int maxTooLongColumns = opt.num_flows * 5; // Maximum number of rows with non-optimal column width
 	int lengthData = 0; // #digits of values
 	int lengthHead = 0; // Length of header string
 	unsigned int columnSize = 0;
 	unsigned int a;
+	const struct _header_info *header = &header_info[column];
 
-	if (!showColumn)
+	if (!visible_columns[header->column_type])
 		return 0;
 
 	// get max columnsize
 	lengthData = strlen(value);
-	lengthHead = MAX(strlen(strHead1), strlen(strHead2));
+	lengthHead = MAX(strlen(header->first), strlen(header->second));
 	columnSize = MAX(lengthData, lengthHead) + 2;
 
 	// check if columnsize has changed
-	if (*control1 < columnSize) {
+	if (column_state->last_width < columnSize) {
 		/* column too small */
 		*columnWidthChanged = 1;
-		*control1 = columnSize;
-		*control0 = 0;
+		column_state->last_width = columnSize;
+		column_state->count_oversized = 0;
 	}
-	else if (*control1 > 1 + columnSize) {
+	else if (column_state->last_width > 1 + columnSize) {
 		/* column too big */
-		if (*control0 >= maxTooLongColumns) {
+		if (column_state->count_oversized >= maxTooLongColumns) {
 			/* column too big for quite a while */
 			*columnWidthChanged = 1;
-			*control1 = columnSize;
-			*control0 = 0;
+			column_state->last_width = columnSize;
+			column_state->count_oversized = 0;
 		}
 		else
-			(*control0)++;
+			(column_state->count_oversized)++;
 	}
 	else /* This size was needed,keep it */
-		*control0 = 0;
+		column_state->count_oversized = 0;
 
 	// create columns
 	for (a = lengthData; a < columnSize; a++)
@@ -236,14 +286,14 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 	strcat(strDataRow, value);
 
 	// 1st header row
-	for (a = *control1; a > strlen(strHead1); a--)
+	for (a = column_state->last_width; a > strlen(header->first); a--)
 		strcat(strHead1Row, " ");
-	strcat(strHead1Row, strHead1);
+	strcat(strHead1Row, header->first);
 
 	// 2nd header Row
-	for (a = *control1; a > strlen(strHead2); a--)
+	for (a = column_state->last_width; a > strlen(header->second); a--)
 		strcat(strHead2Row, " ");
-	strcat(strHead2Row, strHead2);
+	strcat(strHead2Row, header->second);
 
 	return 0;
 }
@@ -254,45 +304,10 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		double iatmin, double iatavg, double iatmax,
 		int cwnd, int ssth, int uack, int sack, int lost, int reor,
 		unsigned int retr, unsigned int fack, double linrtt, double linrttvar,
-		double linrto, int ca_state, int mss, int mtu, char* comment, int unit_byte) {
-
-	static char * const str_id = "#  ID";
-	static char * const str_begin[] = {" begin", " [s]"};
-	static char * const str_end[] = {" end", " [s]"};
-	static char *str_cs[] = {" through", " [Mbit]"};
-	if (unit_byte == 1)
-		str_cs[1] = " [Mbyte]";
-	static char * const str_rttmin[] = {" RTT", " min"};
-	static char * const str_rttavg[] = {" RTT", " avg"};
-	static char * const str_rttmax[] = {" RTT", " max"};
-	static char * const str_iatmin[] = {" IAT", " min"};
-	static char * const str_iatavg[] = {" IAT", " avg"};
-	static char * const str_iatmax[] = {" IAT", " max"};
-	static char * const str_cwnd[] = {" cwnd", " "};
-	static char * const str_ssth[] = {" ssth", " "};
-	static char * const str_uack[] = {" uack", " #"};
-	static char * const str_sack[] = {" sack", " #"};
-	static char * const str_lost[] = {" lost", " #"};
-	static char * const str_retr[] = {" retr", " #"};
-	static char * const str_fack[] = {" fack", " #"};
-	static char * const str_reor[] = {" reor", " #"};
-	static char * const str_linrtt[] = {" rtt", " "};
-	static char * const str_linrttvar[] = {" rttvar", " "};
-	static char * const str_linrto[] = {" rto", " "};
-	static char * const str_ca[] = {" castate", " "};
-	static char * const str_mss[] = {" mss", " "};
-	static char * const str_mtu[] = {" mtu", " "};
-	static char * const str_comment[] = {" status", " "};
-
+		double linrto, int ca_state, int mss, int mtu, char* comment, int unit_byte)
+{
 	int columnWidthChanged = 0; //Flag: 0: column width has not changed
 
-	/*
-	ControlArray [i][x]
-	i: Number of Parameter
-	x=0: Number of rows with too much space
-	x=1: last column width
-	*/
-	static unsigned int control[25][2];
 	int i = 0;
 	static int counter = 0;
 
@@ -309,89 +324,92 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		sprintf(dataString, "%cS%3d", hash, id);
 	else
 		sprintf(dataString, "%cR%3d", hash, id);
-	strcpy(headerString1, str_id);
-	strcpy(headerString2, "#    ");
+	strcpy(headerString1, header_info[0].first);
+	strcpy(headerString2, header_info[0].first);
 	i++;
 
 	//param begin
-	createOutputColumn(headerString1, headerString2, dataString, str_begin[0], str_begin[1], begin, &control[i][0], &control[i][1], 3, visible_columns[0], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, begin, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param end
-	createOutputColumn(headerString1, headerString2, dataString,  str_end[0], str_end[1], end, &control[i][0], &control[i][1], 3, visible_columns[1], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,  i, end, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param throughput
-	createOutputColumn(headerString1, headerString2, dataString, str_cs[0], str_cs[1], throughput, &control[i][0], &control[i][1], 6, visible_columns[2], &columnWidthChanged);
-	i++;
+	if (unit_byte == 1)
+		createOutputColumn(headerString1, headerString2, dataString, i + 1, throughput, &column_states[i], 6, &columnWidthChanged);
+	else
+		createOutputColumn(headerString1, headerString2, dataString, i, throughput, &column_states[i], 6, &columnWidthChanged);
+	i += 2;
 
 	//param str_rttmin
-	createOutputColumn(headerString1, headerString2, dataString, str_rttmin[0], str_rttmin[1], rttmin, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, rttmin, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param str_rttavg
-	createOutputColumn(headerString1, headerString2, dataString, str_rttavg[0], str_rttavg[1], rttavg, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, rttavg, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param str_rttmax
-	createOutputColumn(headerString1, headerString2, dataString, str_rttmax[0], str_rttmax[1], rttmax, &control[i][0], &control[i][1], 3, visible_columns[3], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, rttmax, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param str_iatmin
-	createOutputColumn(headerString1, headerString2, dataString, str_iatmin[0], str_iatmin[1], iatmin, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, iatmin, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param str_iatavg
-	createOutputColumn(headerString1, headerString2, dataString, str_iatavg[0], str_iatavg[1], iatavg, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, iatavg, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param str_iatmax
-	createOutputColumn(headerString1, headerString2, dataString, str_iatmax[0], str_iatmax[1], iatmax, &control[i][0], &control[i][1], 3, visible_columns[4], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, iatmax, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//linux kernel output
 	//param str_cwnd
-	createOutputColumn(headerString1, headerString2, dataString, str_cwnd[0], str_cwnd[1], cwnd, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, cwnd, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param str_ssth
-	createOutputColumn(headerString1, headerString2, dataString, str_ssth[0], str_ssth[1], ssth, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, ssth, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	//param str_uack
-	createOutputColumn(headerString1, headerString2, dataString, str_uack[0], str_uack[1], uack, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, uack, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	//param str_sack
-	createOutputColumn(headerString1, headerString2, dataString, str_sack[0], str_sack[1], sack, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, sack, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	//param str_lost
-	createOutputColumn(headerString1, headerString2, dataString, str_lost[0], str_lost[1], lost, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, lost, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	//param str_retr
-	createOutputColumn(headerString1, headerString2, dataString, str_retr[0], str_retr[1], retr, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, retr, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	//param str_fack
-	createOutputColumn(headerString1, headerString2, dataString, str_fack[0], str_fack[1], fack, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, fack, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	//param str_reor
-	createOutputColumn(headerString1, headerString2, dataString, str_reor[0], str_reor[1], reor, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, reor, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	//param str_linrtt
-	createOutputColumn(headerString1, headerString2, dataString, str_linrtt[0], str_linrtt[1], linrtt, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrtt, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param str_linrttvar
-	createOutputColumn(headerString1, headerString2, dataString, str_linrttvar[0], str_linrttvar[1], linrttvar, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrttvar, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param str_linrto
-	createOutputColumn(headerString1, headerString2, dataString, str_linrto[0], str_linrto[1], linrto, &control[i][0], &control[i][1], 3, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrto, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	//param ca_state
@@ -410,17 +428,17 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else
 		strcpy(tmp, "none");
 	
-	createOutputColumn_str(headerString1, headerString2, dataString, str_ca[0], str_ca[1], tmp, &control[i][0], &control[i][1], visible_columns[5], &columnWidthChanged);
+	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
 	i++;
 
-	createOutputColumn(headerString1, headerString2, dataString, str_mss[0], str_mss[1], mss, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, mss, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	createOutputColumn(headerString1, headerString2, dataString, str_mtu[0], str_mtu[1], mtu, &control[i][0], &control[i][1], 0, visible_columns[5], &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, mtu, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	strcat(headerString1, str_comment[0]);
-	strcat(headerString2, str_comment[1]);
+	strcat(headerString1, header_info[i].first);
+	strcat(headerString2, header_info[i].second);
 	strcat(dataString, comment);
 
 	//newline at the end of the string
@@ -818,7 +836,7 @@ void print_tcp_report_line(char hash, int id,
 	char rep_string[4000];
 #ifndef __LINUX__
 	// dont show linux kernel output if there is no linux OS
-	visible_columns[5] = 0;
+	column_type_kernel = 0;
 #endif
 	strcpy(rep_string, createOutput((hash ? '#' : ' '), id, type,
 		time1, time2, thruput,
