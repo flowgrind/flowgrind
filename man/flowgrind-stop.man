@@ -28,5 +28,5 @@ Show help and exit.
 Show version and exit.
 
 .SH SEE ALSO
-flowgrind(1)
+flowgrind(1),
 flowgrindd(1)

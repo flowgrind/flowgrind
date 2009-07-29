@@ -504,7 +504,15 @@ static void usage(void)
 		"  -q           be quiet, do not log to screen (default: off)\n"
 		"  -w           write output to logfile (default: off)\n\n"
 
-		"Flow options:\n"
+		"Flow options:\n\n"
+
+		"  Some of these options take the flow endpoint as argument. Is is denoted by 'x'\n"
+		"  in the option syntax. 'x' needs to be replaced with either 's' for the source\n"
+		"  endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To\n"
+		"  specify different values for each endpoints, separate them by comma.\n"
+		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
+		"  and 4096 at the destination.\n\n"
+
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -514,15 +522,17 @@ static void usage(void)
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
 		"  -H x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]\n"
-		"               Test from/to HOST. Optional argument is the address and\n"
-		"               port of the RPC server. Third address is for the reply connection.\n"
+		"               Test from/to HOST. Optional argument is the address and port\n"
+		"               of the RPC server. Third address is for the reply connection.\n"
 		"               An endpoint that isn't specified is assumed to be localhost.\n"
 		"  -L x         Call connect() on test socket immediately before starting to send\n"
 		"               data (late connect). If not specified the test connection is\n"
 		"               established in the preparation phase before the test starts.\n"
 		"  -N x         shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
-		"               For a list of supported socket options see '%2$s -s'\n"
+		"               For a list of supported socket options see '%2$s -s'.\n"
+		"               It is possible to repeatedly pass the same endpoint in order to\n"
+		"               specify multiple socket options, e.g. s=SO_DEBUG,s=TCP_CORK\n"
 		"  -P x         Do not iterate through select() to continue sending in case\n"
 		"               block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q           Summarize only, skip interval reports (quiet)\n"
@@ -534,25 +544,7 @@ static void usage(void)
 		"  -S x=#       Set block size (default: s=8192,d=8192)\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
-		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n"
-
-		"x has to be replaced with 's' for source, 'd' for destination or 'b' for both.\n"
-		"For all options which take x, an additional parameter can be specified if\n"
-		"separated by comma.\n"
-		"For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
-		"and 4096 at the destination.\n\n"
-
-		"The -O option, it is also possible to repeatedly specify s or d options\n"
-		"respectively. For instance -O s=SO_DEBUG,s=TCP_CORK,d=TCP_CONG_MODULE=reno.\n\n"
-
-		"Examples:\n"
-		"  %2$s -H d=testhost\n"
-		"               start bulk TCP transfer from this host to testhost\n"
-		"  %2$s -H d=192.168.0.69 -T s=0,d=5\n"
-		"               start bulk TCP transfer from 192.168.0.69 to this host\n"
-		"  %2$s -n 2 -H d=192.168.0.69 -F 1 -H d=10.0.0.1\n"
-		"               start two TCP transfers one to 192.168.0.69 and another in\n"
-		"               parallel to 10.0.0.1\n",
+		"  -Y x=#.#     Set initial delay before the host starts to send data\n",
 		opt.log_filename_prefix,
 		progname
 	);

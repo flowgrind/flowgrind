@@ -15,7 +15,9 @@ controller, tests can be setup between hosts running
 .BR flowgrindd ","
 the flowgrind daemon.
 
-Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the data returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
+Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the TCP metrics returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
+
+The flowgrind daemon needs to be running on every host that is supposed to be endpoint of a flow.
 
 .SH OPTIONS
 
@@ -40,6 +42,6 @@ Show version and exit.
 Do not daemonize, increase debug verbosity. Add multiple times to increase debug verbosity further.
 
 .SH SEE ALSO
-flowgrind(1)
+flowgrind(1),
 flowgrind-stop(1)
 

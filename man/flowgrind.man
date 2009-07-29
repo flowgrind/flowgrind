@@ -15,7 +15,13 @@ controller, tests can be setup between hosts running
 .BR flowgrindd ","
 the flowgrind daemon.
 
-Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the data returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
+Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the TCP metrics returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
+
+Each test connection is called a flow and
+.B flowgrindd
+has to be running on every host that supped to be a flow endpoint. The 
+.B flowgrind
+controller only sets up the flows as well as gathers and prints the results. The controller does however not actually participate in the test.
 
 .SH OPTIONS
 .SS General information
@@ -44,11 +50,11 @@ Print version information and exit.
 .B -a
 Advanced statistics, only if compiled with libpcap support.
 
-.P
+.TP
 .BR -b " mean1,mean2,mean3"
-.br
+.PD 0
+.TP
 .BR -b " lwr_bound1,upr_bound1,lwr_bound2,upr_bound2,lwr_bound3,upr_bound3"
-.IP
 Perform Anderson-Darling Test for exponential distribution OR lower and upper bounds for computing the test for uniform distribution with the given bounds. Test data always generated from first flow.
 
 .TP
@@ -93,7 +99,9 @@ Write output to logfile (default: off).
 
 .SS Flow options
 
-All flows have two endpoints, a source and a destination. Some of these options take the flow endpoint as argument. Is is denoted by 'x' in the option syntax. 'x' needs to be replaced with either 's' for the source endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To specify different values for both endpoints, separate them by comma.
+All flows have two endpoints, a source and a destination. The distinction between source and destination endpoints only affects connection establishment. When starting a flow the destination endpoint listens on a socket and the source endpoint connects to it. For the actual test this makes no difference, both endpoints have exactly the same capabilities. Data can be sent in either direction and many settings can be configured individually for each endpoint.
+
+Some of these options take the flow endpoint as argument. Is is denoted by 'x' in the option syntax. 'x' needs to be replaced with either 's' for the source endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To specify different values for both endpoints, separate them by comma.
 
 Example: -T s=5,d=10
 
@@ -124,7 +132,7 @@ Numbering starts with 0, so -F 1 refers to the second flow.
 All flow options before the first -F apply to all flows.
 
 .TP
-.BR -H "x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]"
+.BR -H " x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]"
 Test from/to HOST. Optional argument is the address and port of the RPC server.
 Third address is for the reply connection.
 An endpoint that isn't specified is assumed to be localhost.
@@ -182,17 +190,17 @@ Set initial delay before the host starts to send data.
 .SH EXAMPLES
 
 .TP
-.B flowgrind -H s=thishost,d=testhost
-Start bulk TCP transfer from thishost to testhost"
+.B flowgrind -H s=host1,d=host2
+Start bulk TCP transfer with host1 as source and host2 as destination endpoint. Both endpoints need to be running the flowgrind daemon. The default flow options are used, with a flow of 5 seconds duration with data sent from the source to the destination endpoint.
 
 .TP
-.B flowgrind -H s=thishost,d=testhost -T s=0,d=5
-Start bulk TCP transfer from testhost to thishost
+.B flowgrind -H s=host1,d=host2 -T s=0,d=10
+Same as the above but instead with a flow sending data for 10 seconds from the destination to the source endpoint.
 
 .TP
 .B flowgrind -n 2 -H s=192.168.0.1,d=192.168.0.69 -F 1 -H s=10.0.0.1,d=10.0.0.2
-Start two TCP transfers one from 192.168.0.1 to 192.168.0.69 and another in from 10.0.0.1 to 10.0.0.2
+Setup two flows, first flow between 192.168.0.1 and 192.168.0.69, second flow between 10.0.0.1 to 10.0.0.2
 
 .SH SEE ALSO
-flowgrindd(1)
+flowgrindd(1),
 flowgrind-stop(1)
