@@ -466,8 +466,8 @@ static char progname[50] = "flowgrind";
 static void usage(void)
 {
 	fprintf(stderr,
-		"Usage: %2$s [general options] [flow options]\n"
-		"       %2$s [-h|-s|-v]\n\n"
+		"Usage  %2$s [-h|-s|-v]\n"
+		"       %2$s [general options] [flow options]\n\n"
 
 		"flowgrind allows you to generate traffic among hosts in your network.\n\n"
 
