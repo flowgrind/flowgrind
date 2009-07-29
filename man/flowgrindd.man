@@ -9,7 +9,8 @@ flowgrindd
 flowgrindd [options]
 
 .SH DESCRIPTION
-.B flowgrindd is the daemon for the flowgrind distributed network performance measurement tool. Using the
+.B flowgrindd
+is the daemon for the flowgrind distributed network performance measurement tool. Using the
 .B flowgrind
 controller, tests can be setup between hosts running
 .BR flowgrindd ","
