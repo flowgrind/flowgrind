@@ -29,7 +29,9 @@
 
 #include "common.h"
 #include "debug.h"
+#if HAVE_LIBPCAP
 #include "fg_pcap.h"
+#endif
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "log.h"
@@ -170,7 +172,9 @@ static void prepare_wfds(struct timeval *now, struct _flow *flow, fd_set *wfds)
 				error(ERR_WARNING, "shutdown() SHUT_WR failed: %s",
 						strerror(errno));
 			}
+#if HAVE_LIBPCAP
 			fg_pcap_dispatch();
+#endif
 		}
 	}
 
@@ -1145,8 +1149,10 @@ int set_flow_tcp_options(struct _flow *flow)
 		return -1;
 	}
 
+#if HAVE_LIBPCAP
 	if (flow->settings.advstats)
 		fg_pcap_go(flow->fd);
+#endif
 
 	if (flow->settings.so_debug && set_so_debug(flow->fd) == -1) {
 		flow_error(flow, "Unable to set SO_DEBUG: %s",

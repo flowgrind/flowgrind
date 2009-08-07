@@ -31,7 +31,9 @@
 #include "fg_time.h"
 #include "debug.h"
 #include "acl.h"
+#if HAVE_LIBPCAP
 #include "fg_pcap.h"
+#endif
 
 static char progname[50] = "flowgrindd";
 
@@ -783,7 +785,9 @@ int main(int argc, char ** argv)
 	sigaction (SIGALRM, &sa, NULL);
 	sigaction (SIGCHLD, &sa, NULL);
 
+#if HAVE_LIBPCAP
 	fg_pcap_init();
+#endif
 
 #if HAVE_GETOPT_LONG
 	// getopt_long isn't portable, it's GNU extension
