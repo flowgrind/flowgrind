@@ -167,9 +167,9 @@ Rate limiting. Send data at specified rate per second, where:
 .br
 z = 2**0, k = 2**10, M = 2**20, G = 2**30.
 .br
-b = bytes per second, B = blocks per second (default).
+b = bits per second (default), y = bytes per second, B = blocks per second.
 .br
-p = periodic, P = Poisson distributed (default).
+p = periodic (default), P = Poisson distributed.
 
 .TP
 .BR -S " x=#"
