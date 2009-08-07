@@ -324,6 +324,7 @@ static void start_flows(struct _request_start_flows *request)
 		tsc_gettimeofday(&flow->last_report_time);
 		flow->first_report_time = flow->last_report_time;
 		flow->next_report_time = flow->last_report_time;
+
 		time_add(&flow->next_report_time, flow->settings.reporting_interval);
 	}
 
@@ -539,6 +540,9 @@ static void timer_check()
 	tsc_gettimeofday(&now);
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
+
+		if (!flow->settings.reporting_interval)
+			continue;
 
 		if (!time_is_after(&now, &flow->next_report_time))
 			continue;

@@ -195,7 +195,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		xmlrpc_array_size(env, extra_options) != settings.num_extra_socket_options ||
 		settings.dscp < 0 || settings.dscp > 255 ||
 		settings.write_rate < 0 ||
-		settings.reporting_interval <= 0) {
+		settings.reporting_interval < 0) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
 
