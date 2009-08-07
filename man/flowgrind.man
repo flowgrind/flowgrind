@@ -201,6 +201,118 @@ Same as the above but instead with a flow sending data for 10 seconds from the d
 .B flowgrind -n 2 -H s=192.168.0.1,d=192.168.0.69 -F 1 -H s=10.0.0.1,d=10.0.0.2
 Setup two flows, first flow between 192.168.0.1 and 192.168.0.69, second flow between 10.0.0.1 to 10.0.0.2
 
+.SH OUTPUT COLUMNS
+
+.TP
+.B #
+The endpoint, either S for source or R for destination.
+
+.TP
+.B ID
+The flow identifier.
+
+.TP
+.BR begin " and " end
+The boundaries of the measuring interval in seconds. The time shown is the elapsed time since receiving the RPC message to start the test from the daemon’s point of view.
+
+.TP
+.B through
+The transmitting goodput of the flow endpoint during this measurement interval, measured in Mb/s.
+
+.TP
+.BR IAT " and " RTT
+The 1-way and 2-way block delays respectively block IAT and block RTT. For both delays the minimum and maximum encoutered values in that interval are displayed in addition to the artihmetic mean. If no block acknowledgement arrived during that report interval, inf is displayed.
+
+.TP
+.B cwnd
+Size of TCP congestion window in number of segements. All TCP specific metrics are obtained from the Linux kernel through the TCP_INFO socket option at the end of every reporting interval.
+
+.TP
+.B ssth
+The slowstart threshold of the sender in number of segments.
+
+.TP
+.BR uack ", " sack " and " fack
+Statistics about unacknowledged, selectively acknowledged or forward acknowledged segments.
+
+.TP
+.B lost
+Number of segments assumed lost during reporting interval.
+
+.TP
+.B reor
+Segment reordering metric. The Linux kernel can detect and cope with reordering without loss of performance if the distance a segment gets displaced does not exceed the reordering metric.
+
+.TP
+.BR rtt " and " rttvar
+TCP round-trip time and its variance given in ms.
+
+.TP
+.B rto
+The retransmission timeout given in ms.
+
+.TP
+.B castate
+Internal state of congestion control state machine as implemented in the Linux kernel. Can be one of open, disorder, cwr, recovery or loss:
+
+.RS 8
+
+.TP
+.B Open
+is the normal state. It indicates that there are no issues with the connection.
+
+.TP
+.B Disorder
+is similar to Open but is entered upon receiving duplicate ACKs or selective acknowledgements as special attention might be neded in the near future.
+
+.TP
+.B CWR
+is entered when the size of the congestion window got lowered due to receiving an ICMP Source Quench message or a notification from Explicit Congestion Notification (ECN).
+
+.TP
+.B Recovery
+indicates that the congestion window got lowered and a segment is fast-retransmitted.
+
+.TP
+.B Loss
+is entered if the RTO expires. Again the size of the congestion window got lowered in this state.
+.RE
+
+.TP
+.BR mss " and " mtu
+Maximum segment size and maximum transmission unit in bytes.
+
+.TP
+.B status
+The state of the flow inside flowgrind for diagnostic purposes. It is a tuple of two values, the first for sending and the second for receiving. Ideally the states of both the source and destination endpoints of a flow should be symmetrical but since they are not synchronized they may not change at the same time. The possible values are:
+
+.RS 8
+
+.TP
+.B c
+Direction completed sending/receiving.
+
+.TP
+.B d
+Waiting for initial delay.
+
+.TP
+.B f
+Fault state.
+
+.TP
+.B l
+Active state, nothing yet transmitted or received.
+
+.TP
+.B n
+Normal activity, some data got transmitted or received.
+
+.TP
+.B o
+Flow has zero duration in that direction, no data is going to be exchanged.
+.RE
+
 .SH SEE ALSO
 flowgrindd(1),
 flowgrind-stop(1)
