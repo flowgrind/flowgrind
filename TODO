@@ -1,4 +1,4 @@
-+allow setsockopt of SO_DEBUG, TCP_ICMP, TCP_ELCN etc.. independently on server and client  [arnd 07.03.08]
++allow setsockopt of SO_DEBUG, TCP_ICMP etc.. independently on server and client
 +recover UDP option
 +check what DEBUG_MSGs might be worth a "real" message
 +(try to)track route changes (IP route record option)
