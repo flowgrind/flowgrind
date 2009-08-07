@@ -539,8 +539,8 @@ static void usage(void)
 		"  -R x=#.#[z|k|M|G][b|B][p|P]\n"
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
-		"               b = bytes per second, B = blocks per second (default)\n"
-		"               p = periodic, P = Poisson distributed (default)\n"
+		"               b = bits per second (default), y = bytes/second, B = blocks/s\n"
+		"               p = periodic (default), P = Poisson distributed\n"
 		"  -S x=#       Set block size (default: s=8192,d=8192)\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
@@ -2307,6 +2307,17 @@ static void parse_cmdline(int argc, char **argv) {
 				switch (type) {
 				case 0:
 				case 'b':
+					optdouble /= flow[id].settings[SOURCE].write_block_size * 8;
+					if (optdouble < 1) {
+						fprintf(stderr, "client block size "
+								"for flow %u is too "
+								"big for specified "
+								"rate.\n", id);
+						error = 1;
+					}
+					break;
+
+				case 'y':
 					optdouble /= flow[id].settings[SOURCE].write_block_size;
 					if (optdouble < 1) {
 						fprintf(stderr, "client block size "
@@ -2318,7 +2329,6 @@ static void parse_cmdline(int argc, char **argv) {
 					break;
 
 				case 'B':
-					/* Is default */
 					break;
 
 				default:
