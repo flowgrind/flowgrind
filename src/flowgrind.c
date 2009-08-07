@@ -477,7 +477,7 @@ static void usage(void)
 		"  -v           print version information and exit\n\n"
 
 		"General options:\n"
-#ifdef HAVE_LIBPCAP
+#if HAVE_LIBPCAP
 		"  -a           advanced statistics (pcap)\n"
 #endif
 		"  -b mean1,mean2,mean3\n"
@@ -2058,9 +2058,11 @@ static void parse_cmdline(int argc, char **argv) {
 #endif
 		switch (ch) {
 
+#if HAVE_LIBPCAP
 		case 'a':
 			opt.advstats = 1;
 			break;
+#endif
 
 		case 'b':
 			if (!parse_Anderson_Test(optarg)) {

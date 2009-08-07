@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([flowgrind],[0.2],[tim.kosse@gmx.de])
+AC_INIT([flowgrind],[0.2.1],[tim.kosse@gmx.de])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
 
@@ -68,7 +68,7 @@ AC_CHECK_LIB([fasttime], [fasttime_init_context])
 AC_CHECK_LIB([tsci2], [tsci2_init])
 
 AC_ARG_WITH(pcap,
-[  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=yes]]],
+[  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=no]]],
 [
 	if test $withval = no
 	then
@@ -81,7 +81,7 @@ AC_ARG_WITH(pcap,
 		pcap_dir=$withval
 	fi
 ],[
-	want_pcap=yes
+	want_pcap=no
 	pcap_dir=
 ])
 if test "x$want_pcap" = "xno" ; then

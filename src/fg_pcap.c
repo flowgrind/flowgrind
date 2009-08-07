@@ -13,7 +13,7 @@
 #include "fg_time.h"
 #include "log.h"
 
-#ifdef HAVE_LIBPCAP
+#if HAVE_LIBPCAP
 
 #include "pcap.h"
 
@@ -178,13 +178,7 @@ void fg_pcap_shutdown()
 	pcap_freealldevs(alldevs);
 }
 
-#else
-
-void fg_pcap_init(struct sockaddr *addr) {DEBUG_MSG(1, "(no pcap support compiled)");}
-void fg_pcap_go(struct sockaddr *addr) {}
-void fg_pcap_dispatch(void) {}
-void fg_pcap_shutdown() {}
-
 #endif
+
 
 #endif
