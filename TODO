@@ -11,6 +11,6 @@
 +meet more the spirit of IPPM (connectivity test, etc.)
 +save whole RTT/IAT distribution
 +for rate rate limited flows make receiving peer check if the inter arrival times are distributed as choosen 
-+add sequence numbers for block (even tcp) to meassure application level throuput (and to disclose aggregate queue capacity along network path)
++add sequence numbers for block (even tcp) to measure application level throuput (and to disclose aggregate queue capacity along network path)
 +rewrite all the timing code to not contain struct timeval anymore but just relative times (jiffies like)
 +more timing precision! (for most precise scheduling the processing thread would need realtime priority. The RPC thread must have lower priority)
