@@ -9,8 +9,9 @@ flowgrind_LDADD = $(XMLRPC_C_CLIENT_LDADD)
 flowgrindd_SOURCES = acl.c acl.h common.c daemon.c daemon.h debug.c \
 	destination.c destination.h fg_pcap.c fg_socket.c fg_time.c flowgrindd.c log.c log.h \
 	source.h source.c
-flowgrindd_LDFLAGS = -lpcap
+
 flowgrindd_LDADD = $(XMLRPC_C_SERVER_LDADD)
+flowgrindd_LDADD += $(PCAP_LIBS)
 flowgrindd_CFLAGS = $(AM_CFLAGS) $(XMLRPC_C_SERVER_CFLAGS)
 
 flowgrind_stop_SOURCES = flowgrind_stop.c
