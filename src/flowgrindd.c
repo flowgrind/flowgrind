@@ -736,10 +736,16 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	serverparm.port_number	  = port;
 	serverparm.log_file_name	= NULL; /*"/tmp/xmlrpc_log";*/
 
+	/* Increase HTTP keep-alive duration. Using defaults the amount of
+	 * sockets in TIME_WAIT state would become too high.
+	 */
+	serverparm.keepalive_timeout = 60;
+	serverparm.keepalive_max_conn = 1000;	
+
 	logging_log(LOG_NOTICE, "Running XML-RPC server on port %u", port);
 	printf("Running XML-RPC server...\n");
 
-	xmlrpc_server_abyss(env, &serverparm, XMLRPC_APSIZE(log_file_name));
+	xmlrpc_server_abyss(env, &serverparm, XMLRPC_APSIZE(keepalive_max_conn));
 
     if (env->fault_occurred) {
         fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
