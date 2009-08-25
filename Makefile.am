@@ -12,4 +12,5 @@ dist_man1_MANS = man/flowgrind.man \
 		 man/flowgrindd.man \
 		 man/flowgrind-stop.man
 
+dist_noinst_DATA = COPYING.thrulay
 
