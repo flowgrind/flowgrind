@@ -991,7 +991,7 @@ static int read_data(struct _flow *flow)
 
 		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg;
 				cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %lu",
+			DEBUG_MSG(2, "flow %d received cmsg: type = %u, len = %zu",
 					flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
 		}
 
