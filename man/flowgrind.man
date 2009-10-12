@@ -240,6 +240,10 @@ Statistics about unacknowledged, selectively acknowledged or forward acknowledge
 Number of segments assumed lost during reporting interval.
 
 .TP
+.BR fret ", " tret
+Number of segments retransmitted by Fast Retransmit and due to a retransmission timeout.
+
+.TP
 .B reor
 Segment reordering metric. The Linux kernel can detect and cope with reordering without loss of performance if the distance a segment gets displaced does not exceed the reordering metric.
 
