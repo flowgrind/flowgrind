@@ -158,7 +158,8 @@ const struct _header_info header_info[] = {
 	{ " uack", " #", column_type_kernel },
 	{ " sack", " #", column_type_kernel },
 	{ " lost", " #", column_type_kernel },
-	{ " retr", " #", column_type_kernel },
+	{ " fret", " #", column_type_kernel },
+	{ " tret", " #", column_type_kernel },
 	{ " fack", " #", column_type_kernel },
 	{ " reor", " #", column_type_kernel },
 	{ " rtt", " ", column_type_kernel },
@@ -303,7 +304,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		double rttmin, double rttavg, double rttmax,
 		double iatmin, double iatavg, double iatmax,
 		int cwnd, int ssth, int uack, int sack, int lost, int reor,
-		unsigned int retr, unsigned int fack, double linrtt, double linrttvar,
+		unsigned int fret, unsigned int tret, unsigned int fack, double linrtt, double linrttvar,
 		double linrto, int ca_state, int mss, int mtu, char* comment, int unit_byte)
 {
 	int columnWidthChanged = 0; //Flag: 0: column width has not changed
@@ -388,8 +389,12 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	createOutputColumn(headerString1, headerString2, dataString, i, lost, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_retr
-	createOutputColumn(headerString1, headerString2, dataString, i, retr, &column_states[i], 0, &columnWidthChanged);
+	//param str_fret
+	createOutputColumn(headerString1, headerString2, dataString, i, fret, &column_states[i], 0, &columnWidthChanged);
+	i++;
+
+	//param str_tret
+	createOutputColumn(headerString1, headerString2, dataString, i, tret, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	//param str_fack
@@ -749,7 +754,7 @@ void print_tcp_report_line(char hash, int id,
 		double tot_iat, double max_iat,
 #ifdef __LINUX__
 		unsigned cwnd, unsigned ssth, unsigned uack,
-		unsigned sack, unsigned lost, unsigned retr,
+		unsigned sack, unsigned lost, unsigned fret, unsigned tret,
 		unsigned fack, unsigned reor, double rtt,
 		double rttvar, double rto, int ca_state,
 		int mss, int mtu,
@@ -835,7 +840,7 @@ void print_tcp_report_line(char hash, int id,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
-		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)reor, retr, fack,
+		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)reor, fret, tret, fack,
 		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3, ca_state,
 #else
 		0, 0, 0, 0, 0, 0, 0, 0,
@@ -874,6 +879,7 @@ void print_report(int id, int endpoint, struct _report* report)
 		report->tcp_info.tcpi_unacked, report->tcp_info.tcpi_sacked,
 		/*report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,*/
 		report->tcp_info.tcpi_lost,
+		report->tcp_info.tcpi_retrans,
 		report->tcp_info.tcpi_retransmits,
 		report->tcp_info.tcpi_fackets,
 		report->tcp_info.tcpi_reordering,
@@ -1222,6 +1228,7 @@ has_more_reports:
 					int tcpi_unacked;
 					int tcpi_sacked;
 					int tcpi_lost;
+					int tcpi_retrans;
 					int tcpi_retransmits;
 					int tcpi_fackets;
 					int tcpi_reordering;
@@ -1267,6 +1274,7 @@ has_more_reports:
 						"tcpi_unacked", &tcpi_unacked,
 						"tcpi_sacked", &tcpi_sacked,
 						"tcpi_lost", &tcpi_lost,
+						"tcpi_retrans", &tcpi_retrans,
 						"tcpi_retransmits", &tcpi_retransmits,
 						"tcpi_fackets", &tcpi_fackets,
 						"tcpi_reordering", &tcpi_reordering,
@@ -1289,6 +1297,7 @@ has_more_reports:
 					report.tcp_info.tcpi_unacked = tcpi_unacked;
 					report.tcp_info.tcpi_sacked = tcpi_sacked;
 					report.tcp_info.tcpi_lost = tcpi_lost;
+					report.tcp_info.tcpi_retrans = tcpi_retrans;
 					report.tcp_info.tcpi_retransmits = tcpi_retransmits;
 					report.tcp_info.tcpi_fackets = tcpi_fackets;
 					report.tcp_info.tcpi_reordering = tcpi_reordering;
