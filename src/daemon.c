@@ -951,7 +951,8 @@ static int read_data(struct _flow *flow)
 
 			flow->read_block_count++;
 			flow->read_block_bytes_read = 0;
-
+			/* the size of the reply is stored in the first byte of the incoming block */
+			/* this size is echoed back from the received block, to calculate RTT */
 			int reply_block_length = flow->read_block[0] + sizeof(double);
 			double *iat_ptr = (double *)(flow->read_block
 				+ flow->read_block[0]);
