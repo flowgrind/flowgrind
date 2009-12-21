@@ -1243,7 +1243,7 @@ has_more_reports:
 
 					xmlrpc_decompose_value(&rpc_env, rv, "{"
 						"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:is:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
-						"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i" /* TCP info */
+						"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
 						"s:i,*}",
 
 						"id", &report.id,
