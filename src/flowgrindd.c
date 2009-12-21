@@ -499,7 +499,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	while (report) {
 		xmlrpc_value *rv = xmlrpc_build_value(env, "{"
 			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
-			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
+			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
 			"s:i}",
 
 			"id", report->id,
