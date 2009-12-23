@@ -747,25 +747,15 @@ void log_output(const char *msg)
 
 void print_tcp_report_line(char hash, int id,
 		int type, /* 0 source 1 destination */
-		double time1, double time2,
-		long long bytes_written, long long bytes_read,
-		long read_reply_blocks,  double min_rtt,
-		double tot_rtt, double max_rtt, double min_iat,
-		double tot_iat, double max_iat,
-#ifdef __LINUX__
-		unsigned cwnd, unsigned ssth, unsigned uack,
-		unsigned sack, unsigned lost, unsigned fret, unsigned tret,
-		unsigned fack, unsigned reor, double rtt,
-		double rttvar, double rto, int ca_state,
-		int mss, int mtu,
-#endif
-		int status
-)
+		double time1, double time2, struct _report *r)
 {
-	UNUSED_ARGUMENT(bytes_read);
-
+	double min_rtt = r->rtt_min;
+	double max_rtt = r->rtt_max;
 	double avg_rtt;
+	double min_iat = r->iat_min;
+	double max_iat = r->iat_max;
 	double avg_iat;
+
 	char comment_buffer[100] = " (";
 	char report_buffer[4000] = "";
 	double thruput = 0.0;
@@ -774,14 +764,15 @@ void print_tcp_report_line(char hash, int id,
 		strncat(comment_buffer, "/", sizeof(comment_buffer)); \
 		strncat(comment_buffer, (s), sizeof(comment_buffer)); }while(0);
 
-	if (read_reply_blocks) {
-		avg_rtt = tot_rtt / (double)(read_reply_blocks);
-		avg_iat = tot_iat / (double)(read_reply_blocks);
-	}
-	else {
+	if (r->reply_blocks_read) 
+		avg_rtt = r->rtt_sum / (double)(r->reply_blocks_read);
+	else 
 		min_rtt = max_rtt = avg_rtt = INFINITY;
+	
+	if (r->blocks_read) 
+		avg_iat = r->iat_sum / (double)(r->blocks_read);
+	else
 		min_iat = max_iat = avg_iat = INFINITY;
-	}
 
 	if (flow[id].finished[type])
 		COMMENT_CAT("stopped")
@@ -789,7 +780,7 @@ void print_tcp_report_line(char hash, int id,
 		char tmp[2];
 
 		// Write status
-		switch (status & 0xFF)
+		switch (r->status & 0xFF)
 		{
 			case 'd':
 			case 'l':
@@ -797,7 +788,7 @@ void print_tcp_report_line(char hash, int id,
 			case 'f':
 			case 'c':
 			case 'n':
-				tmp[0] = (char)(status & 0xFF);
+				tmp[0] = (char)(r->status & 0xFF);
 				tmp[1] = 0;
 				COMMENT_CAT(tmp);
 				break;
@@ -807,7 +798,7 @@ void print_tcp_report_line(char hash, int id,
 		}
 
 		// Read status
-		switch (status >> 8)
+		switch (r->status >> 8)
 		{
 			case 'd':
 			case 'l':
@@ -815,7 +806,7 @@ void print_tcp_report_line(char hash, int id,
 			case 'f':
 			case 'c':
 			case 'n':
-				tmp[0] = (char)(status >> 8);
+				tmp[0] = (char)(r->status >> 8);
 				tmp[1] = 0;
 				COMMENT_CAT(tmp);
 				break;
@@ -828,7 +819,7 @@ void print_tcp_report_line(char hash, int id,
 	if (strlen(comment_buffer) == 2)
 		comment_buffer[0] = '\0';
 
-	thruput = scale_thruput((double)bytes_written / (time2 - time1));
+	thruput = scale_thruput((double)r->bytes_written / (time2 - time1));
 
 	char rep_string[4000];
 #ifndef __LINUX__
@@ -840,13 +831,16 @@ void print_tcp_report_line(char hash, int id,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
-		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)reor, fret, tret, fack,
-		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3, ca_state,
+		(double)r->tcp_info.tcpi_snd_cwnd, (double)r->tcp_info.tcpi_snd_ssthresh, (double)r->tcp_info.tcpi_unacked, 
+		(double)r->tcp_info.tcpi_sacked, (double)r->tcp_info.tcpi_lost, (double)r->tcp_info.tcpi_reordering, 
+		r->tcp_info.tcpi_retrans, r->tcp_info.tcpi_total_retrans, r->tcp_info.tcpi_fackets,
+		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, 
+		(double)r->tcp_info.tcpi_rto / 1e3, r->tcp_info.tcpi_ca_state,
 #else
 		0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0,
 #endif
-		mss, mtu, comment_buffer, opt.mbyte
+		r->mss, r->mtu, comment_buffer, opt.mbyte
 	));
 	strncpy(report_buffer, rep_string, sizeof(report_buffer));
 	report_buffer[sizeof(report_buffer) - 1] = 0;
@@ -863,36 +857,7 @@ void print_report(int id, int endpoint, struct _report* report)
 	diff_first_now = time_diff(&f->start_timestamp[endpoint], &report->end);
 
 	print_tcp_report_line(
-		0, id, endpoint, diff_first_last, diff_first_now,
-		report->bytes_written,
-		report->bytes_read,
-		report->reply_blocks_read,
-		report->rtt_min,
-		report->rtt_sum,
-		report->rtt_max,
-		report->iat_min,
-		report->iat_sum,
-		report->iat_max,
-#ifdef __LINUX__
-		report->tcp_info.tcpi_snd_cwnd,
-		report->tcp_info.tcpi_snd_ssthresh,
-		report->tcp_info.tcpi_unacked, report->tcp_info.tcpi_sacked,
-		/*report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,*/
-		report->tcp_info.tcpi_lost,
-		report->tcp_info.tcpi_retrans,
-		report->tcp_info.tcpi_retransmits,
-		report->tcp_info.tcpi_fackets,
-		report->tcp_info.tcpi_reordering,
-		report->tcp_info.tcpi_rtt,
-		report->tcp_info.tcpi_rttvar,
-		report->tcp_info.tcpi_rto,
-		report->tcp_info.tcpi_ca_state,
-#endif
-		report->mss,
-		report->mtu,
-
-		report->status
-	);
+		0, id, endpoint, diff_first_last, diff_first_now, report);
 }
 
 void report_final(void)
@@ -1242,7 +1207,7 @@ has_more_reports:
 					int bytes_written_low, bytes_written_high;
 
 					xmlrpc_decompose_value(&rpc_env, rv, "{"
-						"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:is:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
+						"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
 						"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
 						"s:i,*}",
 
@@ -1257,6 +1222,7 @@ has_more_reports:
 						"bytes_read_low", &bytes_read_low,
 						"bytes_written_high", &bytes_written_high,
 						"bytes_written_low", &bytes_written_low,
+						"blocks_read", &report.blocks_read,
 						"reply_blocks_read", &report.reply_blocks_read,
 
 						"rtt_min", &report.rtt_min,
