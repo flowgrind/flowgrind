@@ -887,6 +887,9 @@ static int read_data(struct _flow *flow)
 	struct msghdr msg;
 	char cbuf[512];
 	struct cmsghdr *cmsg;
+	double current_iat = .0;
+	struct timeval now;
+	
 
 	for (;;) {
 		if (flow->read_block_bytes_read == 0)
@@ -947,25 +950,33 @@ static int read_data(struct _flow *flow)
 		flow->statistics[TOTAL].bytes_read += rc;
 		flow->read_block_bytes_read += rc;
 		if (flow->read_block_bytes_read >= (unsigned int)flow->settings.read_block_size) {
+	
 			assert(flow->read_block_bytes_read == (unsigned int)flow->settings.read_block_size);
 
+			/* We just finished to read a whole block */
 			flow->read_block_count++;
 			flow->read_block_bytes_read = 0;
-			/* the size of the reply is stored in the first byte of the incoming block */
-			/* this size is echoed back from the received block, to calculate RTT */
-			int reply_block_length = flow->read_block[0] + sizeof(double);
-			double *iat_ptr = (double *)(flow->read_block
-				+ flow->read_block[0]);
+			
+			tsc_gettimeofday(&now);
+		
+			if (flow->last_block_read.tv_sec != 0 ||  
+				flow->last_block_read.tv_usec != 0) {
+				current_iat = time_diff(&flow->last_block_read, &now);
+				/* both interval and total */
+				for (int i = 0; i < 2; i++) {
+					ASSIGN_MIN(flow->statistics[i].iat_min, current_iat);
+					ASSIGN_MAX(flow->statistics[i].iat_max, current_iat);
+					flow->statistics[i].iat_sum += current_iat;
+				}
+			} else {
+				current_iat = NAN;
+				DEBUG_MSG(5, "iat isnan = %d", isnan(current_iat));
+			}
+
+			flow->last_block_read = now;
+
+			int reply_block_length = flow->read_block[0];
 			if (flow->settings.read_block_size >= reply_block_length) {
-				if (flow->last_block_read.tv_sec == 0 &&
-					flow->last_block_read.tv_usec == 0) {
-					*iat_ptr = NAN;
-					DEBUG_MSG(5, "isnan = %d",
-						isnan(*iat_ptr));
-				} else
-					*iat_ptr = time_diff_now(
-						&flow->last_block_read);
-				tsc_gettimeofday(&flow->last_block_read);
 				rc = write(flow->fd_reply, flow->read_block,
 						reply_block_length);
 				if (rc == -1) {
@@ -983,9 +994,7 @@ static int read_data(struct _flow *flow)
 					}
 				}
 				else {
-					DEBUG_MSG(4, "sent reply block (IAT = "
-						"%.3lf)", (isnan(*iat_ptr) ?
-							NAN : (*iat_ptr) * 1e3));
+					DEBUG_MSG(4, "sent reply block");
 				}
 			}
 		}
@@ -1009,14 +1018,13 @@ static void process_reply(struct _flow* flow)
 		network to host byte order needed here!! */
 	struct timeval *sent = (struct timeval *)(flow->reply_block + 1);
 	double current_rtt;
-	double *current_iat_ptr = (double *)(flow->reply_block + sizeof(struct timeval) + 1);
 
 	tsc_gettimeofday(&now);
 	current_rtt = time_diff(sent, &now);
 
-	if ((!isnan(*current_iat_ptr) && *current_iat_ptr <= 0) || current_rtt <= 0) {
-		DEBUG_MSG(5, "illegal reply_block: isnan = %d, iat = %e, rtt = %e", isnan(*current_iat_ptr), *current_iat_ptr, current_rtt);
-		error(ERR_WARNING, "Found block with illegal round trip time or illegal inter arrival time, ignoring block.");
+	if (current_rtt <= 0) {
+		DEBUG_MSG(5, "illegal reply_block: rtt = %e", current_rtt);
+		error(ERR_WARNING, "Found block with illegal round trip time ignoring block.");
 		return;
 	}
 
@@ -1028,17 +1036,9 @@ static void process_reply(struct _flow* flow)
 		ASSIGN_MIN(flow->statistics[i].rtt_min, current_rtt);
 		ASSIGN_MAX(flow->statistics[i].rtt_max, current_rtt);
 		flow->statistics[i].rtt_sum += current_rtt;
-	
-		/* Inter arrival times */
-		if (!isnan(*current_iat_ptr)) {
-			ASSIGN_MIN(flow->statistics[i].iat_min, *current_iat_ptr);
-			ASSIGN_MAX(flow->statistics[i].iat_max, *current_iat_ptr);
-			flow->statistics[i].iat_sum += *current_iat_ptr;
-		}
-
 	}
 	
-	DEBUG_MSG(4, "processed reply_block of flow %d, (RTT = %.3lfms, IAT = %.3lfms)", flow->id, current_rtt * 1e3, isnan(*current_iat_ptr) ? NAN : *current_iat_ptr * 1e3);
+	DEBUG_MSG(4, "processed reply_block of flow %d, (RTT = %.3lfms)", flow->id, current_rtt * 1e3);
 }
 
 static int read_reply(struct _flow *flow)
