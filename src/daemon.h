@@ -72,7 +72,7 @@ struct _flow
 	unsigned write_block_bytes_written;
 	uint64_t write_block_count;
 
-	char reply_block[sizeof(struct timeval) + sizeof(double) + 1];
+	char reply_block[sizeof(struct timeval) + 1];
 	unsigned int reply_block_bytes_read;
 
 	unsigned short requested_server_test_port;
@@ -103,10 +103,11 @@ struct _flow
 	struct _statistics {
 		long long bytes_read;
 		long long bytes_written;
+		long blocks_read;
 		long reply_blocks_read;
 
-		double rtt_min, rtt_max, rtt_sum;
 		double iat_min, iat_max, iat_sum;
+		double rtt_min, rtt_max, rtt_sum;
 
 #ifdef __LINUX__
 		int has_tcp_info;

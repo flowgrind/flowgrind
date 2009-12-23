@@ -433,6 +433,7 @@ static void report_flow(struct _flow* flow, int type)
 	flow->last_report_time = report->end;
 	report->bytes_read = flow->statistics[type].bytes_read;
 	report->bytes_written = flow->statistics[type].bytes_written;
+	report->blocks_read = flow->statistics[type].blocks_read;
 	report->reply_blocks_read = flow->statistics[type].reply_blocks_read;
 
 	report->rtt_min = flow->statistics[type].rtt_min;
@@ -502,6 +503,7 @@ static void report_flow(struct _flow* flow, int type)
 	if (type == INTERVAL) {
 		flow->statistics[INTERVAL].bytes_read = 0;
 		flow->statistics[INTERVAL].bytes_written = 0;
+		flow->statistics[INTERVAL].blocks_read = 0;
 		flow->statistics[INTERVAL].reply_blocks_read = 0;
 
 		flow->statistics[INTERVAL].rtt_min = +INFINITY;
@@ -755,6 +757,7 @@ void init_flow(struct _flow* flow, int is_source)
 	for (int i = 0; i < 2; i++) {
 		flow->statistics[i].bytes_read = 0;
 		flow->statistics[i].bytes_written = 0;
+		flow->statistics[i].blocks_read = 0;
 		flow->statistics[i].reply_blocks_read = 0;
 
 		flow->statistics[i].rtt_min = +INFINITY;
@@ -956,7 +959,10 @@ static int read_data(struct _flow *flow)
 			/* We just finished to read a whole block */
 			flow->read_block_count++;
 			flow->read_block_bytes_read = 0;
-			
+			for (int i = 0; i < 2; i++) {
+				flow->statistics[i].blocks_read++;
+			}
+		
 			tsc_gettimeofday(&now);
 		
 			if (flow->last_block_read.tv_sec != 0 ||  
@@ -994,8 +1000,10 @@ static int read_data(struct _flow *flow)
 					}
 				}
 				else {
-					DEBUG_MSG(4, "sent reply block");
+					DEBUG_MSG(4, "sent reply block current_iat=%.3lfms", current_iat * 1e3);
 				}
+			} else {
+				DEBUG_MSG(LOG_WARNING, "read_block_size < reply_block_length");
 			}
 		}
 

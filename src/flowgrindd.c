@@ -498,7 +498,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 	while (report) {
 		xmlrpc_value *rv = xmlrpc_build_value(env, "{"
-			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
+			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
 			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
 			"s:i}",
 
@@ -513,6 +513,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"bytes_read_low", (int32_t)(report->bytes_read & 0xFFFFFFFF),
 			"bytes_written_high", (int32_t)(report->bytes_written >> 32),
 			"bytes_written_low", (int32_t)(report->bytes_written & 0xFFFFFFFF),
+			"blocks_read", report->blocks_read,
 			"reply_blocks_read", report->reply_blocks_read,
 
 			"rtt_min", report->rtt_min,

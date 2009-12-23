@@ -118,7 +118,8 @@ struct _report
 
 	long long bytes_read;
 	long long bytes_written;
-	int reply_blocks_read;
+	long blocks_read;
+	long reply_blocks_read;
 
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;
