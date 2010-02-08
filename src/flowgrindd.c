@@ -104,8 +104,8 @@ static int dispatch_request(struct _request *request, int type)
 		requests_last = request;
 	}
 
-	write(daemon_pipe[1], &type, 1); /* Doesn't matter what we write */
-
+	if ( write(daemon_pipe[1], &type, 1) != 1 ) /* Doesn't matter what we write */
+		return -1;
 	/* Wait until the daemon thread has processed the request */
 	pthread_cond_wait(&cond, &mutex);
 
@@ -126,7 +126,6 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	int rc, i;
 	xmlrpc_value *ret = 0;
 	char* destination_host = 0;
-	char* destination_host_reply = 0;
 	char* cc_alg = 0;
 	char* bind_address = 0;
 	xmlrpc_value* extra_options = 0;
@@ -140,8 +139,8 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array, "("
-			"{s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A,*}"
-			"{s:s,s:s,s:i,s:i,s:i,*}"
+			"{s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i,s:A,*}"
+			"{s:s,s:i,s:i,*}"
 			")",
 
 		/* general settings */
@@ -151,10 +150,12 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"read_delay", &settings.delay[READ],
 		"read_duration", &settings.duration[READ],
 		"reporting_interval", &settings.reporting_interval,
+		"interleave_time", &settings.interleave_time,
 		"requested_send_buffer_size", &settings.requested_send_buffer_size,
 		"requested_read_buffer_size", &settings.requested_read_buffer_size,
 		"write_block_size", &settings.write_block_size,
 		"read_block_size", &settings.read_block_size,
+		"reply_block_size", &settings.reply_block_size,
 		"advstats", &settings.advstats,
 		"so_debug", &settings.so_debug,
 		"route_record", &settings.route_record,
@@ -175,9 +176,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 		/* source settings */
 		"destination_address", &destination_host,
-		"destination_address_reply", &destination_host_reply,
 		"destination_port", &source_settings.destination_port,
-		"destination_port_reply", &source_settings.destination_port_reply,
 		"late_connect", &source_settings.late_connect);
 
 	if (env->fault_occurred)
@@ -190,7 +189,6 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
 		settings.write_block_size <= 0 || settings.read_block_size <= 0 ||
 		strlen(destination_host) >= sizeof(source_settings.destination_host) - 1||
-		strlen(destination_host_reply) >= sizeof(source_settings.destination_host_reply) - 1 ||
 		source_settings.destination_port <= 0 || source_settings.destination_port > 65535 ||
 		strlen(cc_alg) > 255 ||
 		settings.num_extra_socket_options < 0 || settings.num_extra_socket_options > MAX_EXTRA_SOCKET_OPTIONS ||
@@ -241,7 +239,6 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	}
 
 	strcpy(source_settings.destination_host, destination_host);
-	strcpy(source_settings.destination_host_reply, destination_host_reply);
 	strcpy(settings.cc_alg, cc_alg);
 	strcpy(settings.bind_address, bind_address);
 
@@ -267,7 +264,6 @@ cleanup:
 		free(request);
 	}
 	free(destination_host);
-	free(destination_host_reply);
 	free(cc_alg);
 	free(bind_address);
 
@@ -303,7 +299,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array,
-		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A,*})",
+		"({s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A,*})",
 
 		/* general settings */
 		"bind_address", &bind_address,
@@ -312,6 +308,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"read_delay", &settings.delay[READ],
 		"read_duration", &settings.duration[READ],
 		"reporting_interval", &settings.reporting_interval,
+		"interleave_time", &settings.interleave_time,
 		"requested_send_buffer_size", &settings.requested_send_buffer_size,
 		"requested_read_buffer_size", &settings.requested_read_buffer_size,
 		"write_block_size", &settings.write_block_size,
@@ -400,10 +397,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	}
 
 	/* Return our result. */
-	ret = xmlrpc_build_value(env, "{s:i,s:i,s:i,s:i,s:i}",
+	ret = xmlrpc_build_value(env, "{s:i,s:i,s:i,s:i}",
 		"flow_id", request->flow_id,
 		"listen_data_port", request->listen_data_port,
-		"listen_reply_port", request->listen_reply_port,
 		"real_listen_send_buffer_size", request->real_listen_send_buffer_size,
 		"real_listen_read_buffer_size", request->real_listen_read_buffer_size);
 
@@ -488,7 +484,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	DEBUG_MSG(2, "Method get_reports called");
 
 	struct _report *report = get_reports(&has_more);
-	
+
 	ret = xmlrpc_array_new(env);
 
 	/* Add information if there's more reports pending */
@@ -498,7 +494,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 	while (report) {
 		xmlrpc_value *rv = xmlrpc_build_value(env, "{"
-			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
+			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
 			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
 			"s:i}",
 
@@ -513,6 +509,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"bytes_read_low", (int32_t)(report->bytes_read & 0xFFFFFFFF),
 			"bytes_written_high", (int32_t)(report->bytes_written >> 32),
 			"bytes_written_low", (int32_t)(report->bytes_written & 0xFFFFFFFF),
+			"blocks_read", report->blocks_read,
 			"reply_blocks_read", report->reply_blocks_read,
 
 			"rtt_min", report->rtt_min,
@@ -560,7 +557,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 			"status", report->status
 		);
-		
+
 		xmlrpc_array_append_item(env, ret, rv);
 
 		xmlrpc_DECREF(rv);
@@ -731,7 +728,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 
 	/* In the modern form of the Abyss API, we supply parameters in memory
 	   like a normal API.  We select the modern form by setting
-	   config_file_name to NULL: 
+	   config_file_name to NULL:
 	*/
 	serverparm.config_file_name = NULL;
 	serverparm.registryP		= registryP;
@@ -742,7 +739,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	 * sockets in TIME_WAIT state would become too high.
 	 */
 	serverparm.keepalive_timeout = 60;
-	serverparm.keepalive_max_conn = 1000;	
+	serverparm.keepalive_max_conn = 1000;
 
 	logging_log(LOG_NOTICE, "Running XML-RPC server on port %u", port);
 	printf("Running XML-RPC server...\n");
@@ -866,7 +863,7 @@ int main(int argc, char ** argv)
 	create_daemon_thread();
 
 	xmlrpc_env_init(&env);
-	
+
 	run_rpc_server(&env, port);
 
 	fprintf(stderr, "Control should never reach end of main()\n");
