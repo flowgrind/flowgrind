@@ -45,7 +45,7 @@ void remove_flow(unsigned int i);
 int get_tcp_info(struct _flow *flow, struct tcp_info *info);
 #endif
 
-void init_flow(struct _flow* flow, int is_source);
+void init_flow(struct _flow* flow);
 void uninit_flow(struct _flow *flow);
 
 static int name2socket(struct _flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
@@ -142,7 +142,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 
 	flow = &flows[num_flows++];
-	init_flow(flow, 1);
+	init_flow(flow);
 
 	flow->settings = request->settings;
 	flow->source_settings = request->source_settings;
@@ -162,15 +162,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
 	}
 
-	flow->fd_reply = name2socket(flow, flow->source_settings.destination_host_reply,
-				flow->source_settings.destination_port_reply, NULL, NULL, 1, 0, NULL, 0, NULL);
-	if (flow->fd_reply == -1) {
-		logging_log(LOG_ALERT, "Could not connect reply socket: %s", flow->error);
-		request_error(&request->r, "Could not connect reply socket: %s", flow->error);
-		uninit_flow(flow);
-		num_flows--;
-		return -1;
-	}
 	flow->state = GRIND_WAIT_CONNECT;
 	flow->fd = name2socket(flow, flow->source_settings.destination_host,
 			flow->source_settings.destination_port,
@@ -184,8 +175,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		num_flows--;
 		return -1;
 	}
-
-	set_non_blocking(flow->fd_reply);
 
 	if (set_flow_tcp_options(flow) == -1) {
 		request->r.error = flow->error;

@@ -76,29 +76,30 @@ static void log_client_address(const struct sockaddr *sa, socklen_t salen)
 
 int accept_reply(struct _flow *flow)
 {
+	//TODO
 	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof(addr);
 
-	flow->fd_reply = accept(flow->listenfd_reply, (struct sockaddr *)&addr, &addrlen);
-	if (flow->fd_reply == -1) {
+	flow->fd = accept(flow->listenfd_data, (struct sockaddr *)&addr, &addrlen);
+	if (flow->fd == -1) {
 		if (errno == EINTR || errno == EAGAIN)
 			return 0;
-		
+
 		logging_log(LOG_WARNING, "accept() failed: %s, continuing", strerror(errno));
 		return 0;
 	}
-	if (close(flow->listenfd_reply) == -1)
+	if (close(flow->listenfd_data) == -1)
 		logging_log(LOG_WARNING, "close(): failed");
-	flow->listenfd_reply = -1;
+	flow->listenfd_data = -1;
 
-	set_non_blocking(flow->fd_reply);
-	set_nodelay(flow->fd_reply);
+	set_non_blocking(flow->fd);
+	set_nodelay(flow->fd);
 
 	if (acl_check((struct sockaddr *)&addr) == ACL_DENY) {
 		logging_log(LOG_WARNING, "Access denied for host %s",
 				fg_nameinfo((struct sockaddr *)&addr, addrlen));
-		close(flow->fd_reply);
-		flow->fd_reply = -1;
+		close(flow->fd);
+		flow->fd = -1;
 		return 0;
 	}
 
@@ -146,7 +147,7 @@ static int create_listen_socket(struct _flow *flow, char *bind_addr, unsigned sh
 		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
-	
+
 	if (res == NULL) {
 		logging_log(LOG_ALERT, "failed to create listen socket");
 		flow_error(flow, "Failed to create listen socket: %s", strerror(errno));
@@ -180,7 +181,6 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 {
 	struct _flow *flow;
 
-	unsigned short server_reply_port;
 	unsigned short server_data_port;
 
 	if (num_flows >= MAX_FLOWS) {
@@ -209,15 +209,6 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
 	}
 
-	/* Create listen socket for reply connection */
-	if ((flow->listenfd_reply = create_listen_socket(flow, 0, &server_reply_port)) == -1) {
-		logging_log(LOG_ALERT, "could not create listen socket for reply connection: %s", flow->error);
-		request_error(&request->r, "could not create listen socket for reply connection: %s", flow->error);
-		uninit_flow(flow);
-		num_flows--;
-		return;
-	}
-
 	/* Create listen socket for data connection */
 	if ((flow->listenfd_data = create_listen_socket(flow, flow->settings.bind_address[0] ? flow->settings.bind_address : 0, &server_data_port)) == -1) {
 		logging_log(LOG_ALERT, "could not create listen socket for data connection: %s", flow->error);
@@ -233,7 +224,6 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	 * socket to the client as the window size of test socket might differ
 	 * from the reported one. Close the socket in that case. */
 
-	request->listen_reply_port = (int)server_reply_port;
 	request->listen_data_port = (int)server_data_port;
 	request->real_listen_send_buffer_size = flow->real_listen_send_buffer_size;
 	request->real_listen_read_buffer_size = flow->real_listen_receive_buffer_size;
@@ -259,7 +249,7 @@ int accept_data(struct _flow *flow)
 			// logging_log(LOG_ALERT, "client did not connect().");
 			return 0;
 		}
-		
+
 		logging_log(LOG_ALERT, "accept() failed: %s", strerror(errno));
 		return -1;
 	}

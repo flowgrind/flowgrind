@@ -432,7 +432,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		sprintf(tmp, "unknown(%d)", ca_state);
 	else
 		strcpy(tmp, "none");
-	
+
 	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
 	i++;
 
@@ -470,6 +470,7 @@ static char progname[50] = "flowgrind";
 
 static void usage(void)
 {
+	int minreplysize = (sizeof (struct timeval))+1;
 	fprintf(stderr,
 		"Usage  %2$s [-h|-s|-v]\n"
 		"       %2$s [general options] [flow options]\n\n"
@@ -518,6 +519,8 @@ static void usage(void)
 		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
 
+		"  -A x=#       Activate challenge response for RTT and IAT calculation with\n"
+		"               blocksize x=#, x >= %3$u || x = 0 (disabled, default)\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -526,10 +529,11 @@ static void usage(void)
 		"               Useful in combination with -n to set specific options\n"
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
-		"  -H x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]\n"
+		"  -H x=HOST[/CONTROL[:PORT]]\n"
 		"               Test from/to HOST. Optional argument is the address and port\n"
-		"               of the RPC server. Third address is for the reply connection.\n"
+		"               for the CONTROL connection to the same host.\n"
 		"               An endpoint that isn't specified is assumed to be localhost.\n"
+		"  -I #.#       Interleaving time for reply in seconds (default: 0s)\n"
 		"  -L x         Call connect() on test socket immediately before starting to send\n"
 		"               data (late connect). If not specified the test connection is\n"
 		"               established in the preparation phase before the test starts.\n"
@@ -551,7 +555,8 @@ static void usage(void)
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n",
 		opt.log_filename_prefix,
-		progname
+		progname,
+		minreplysize
 	);
 	exit(1);
 }
@@ -573,7 +578,8 @@ static void usage_sockopt(void)
 			char buffer[1024];
 			int r;
 			while ((r = read(fd, buffer, 1024)) > 0)
-				fwrite(buffer, r, 1, stderr);
+				if (fwrite(buffer, r, 1, stderr) != 1)
+				      fprintf(stderr, "fwrite() failed: %s\n", strerror(errno));
 			close(fd);
 		}
 
@@ -638,12 +644,12 @@ void init_flows_defaults(void)
 			flow[id].settings[i].delay[WRITE] = 0;
 			flow[id].settings[i].write_block_size = 8192;
 			flow[id].settings[i].read_block_size = 8192;
+			flow[id].settings[i].reply_block_size = 0;
 			flow[id].settings[i].route_record = 0;
 			strcpy(flow[id].endpoint_options[i].server_url, "http://localhost:5999/RPC2");
 			strcpy(flow[id].endpoint_options[i].server_address, "localhost");
 			flow[id].endpoint_options[i].server_port = DEFAULT_LISTEN_PORT;
 			strcpy(flow[id].endpoint_options[i].test_address, "localhost");
-			strcpy(flow[id].endpoint_options[i].reply_address, "localhost");
 			strcpy(flow[id].endpoint_options[i].bind_address, "");
 
 			flow[id].settings[i].pushy = 0;
@@ -747,41 +753,32 @@ void log_output(const char *msg)
 
 void print_tcp_report_line(char hash, int id,
 		int type, /* 0 source 1 destination */
-		double time1, double time2,
-		long long bytes_written, long long bytes_read,
-		long read_reply_blocks,  double min_rtt,
-		double tot_rtt, double max_rtt, double min_iat,
-		double tot_iat, double max_iat,
-#ifdef __LINUX__
-		unsigned cwnd, unsigned ssth, unsigned uack,
-		unsigned sack, unsigned lost, unsigned fret, unsigned tret,
-		unsigned fack, unsigned reor, double rtt,
-		double rttvar, double rto, int ca_state,
-		int mss, int mtu,
-#endif
-		int status
-)
+		double time1, double time2, struct _report *r)
 {
-	UNUSED_ARGUMENT(bytes_read);
-
+	double min_rtt = r->rtt_min;
+	double max_rtt = r->rtt_max;
 	double avg_rtt;
+	double min_iat = r->iat_min;
+	double max_iat = r->iat_max;
 	double avg_iat;
+
 	char comment_buffer[100] = " (";
 	char report_buffer[4000] = "";
 	double thruput = 0.0;
 
 #define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
-		strncat(comment_buffer, "/", sizeof(comment_buffer)); \
-		strncat(comment_buffer, (s), sizeof(comment_buffer)); }while(0);
+		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
+		strncat(comment_buffer, (s), sizeof(comment_buffer)-1); }while(0);
 
-	if (read_reply_blocks) {
-		avg_rtt = tot_rtt / (double)(read_reply_blocks);
-		avg_iat = tot_iat / (double)(read_reply_blocks);
-	}
-	else {
+	if (r->reply_blocks_read)
+		avg_rtt = r->rtt_sum / (double)(r->reply_blocks_read);
+	else
 		min_rtt = max_rtt = avg_rtt = INFINITY;
+
+	if (r->blocks_read)
+		avg_iat = r->iat_sum / (double)(r->blocks_read);
+	else
 		min_iat = max_iat = avg_iat = INFINITY;
-	}
 
 	if (flow[id].finished[type])
 		COMMENT_CAT("stopped")
@@ -789,7 +786,7 @@ void print_tcp_report_line(char hash, int id,
 		char tmp[2];
 
 		// Write status
-		switch (status & 0xFF)
+		switch (r->status & 0xFF)
 		{
 			case 'd':
 			case 'l':
@@ -797,7 +794,7 @@ void print_tcp_report_line(char hash, int id,
 			case 'f':
 			case 'c':
 			case 'n':
-				tmp[0] = (char)(status & 0xFF);
+				tmp[0] = (char)(r->status & 0xFF);
 				tmp[1] = 0;
 				COMMENT_CAT(tmp);
 				break;
@@ -807,7 +804,7 @@ void print_tcp_report_line(char hash, int id,
 		}
 
 		// Read status
-		switch (status >> 8)
+		switch (r->status >> 8)
 		{
 			case 'd':
 			case 'l':
@@ -815,7 +812,7 @@ void print_tcp_report_line(char hash, int id,
 			case 'f':
 			case 'c':
 			case 'n':
-				tmp[0] = (char)(status >> 8);
+				tmp[0] = (char)(r->status >> 8);
 				tmp[1] = 0;
 				COMMENT_CAT(tmp);
 				break;
@@ -828,7 +825,7 @@ void print_tcp_report_line(char hash, int id,
 	if (strlen(comment_buffer) == 2)
 		comment_buffer[0] = '\0';
 
-	thruput = scale_thruput((double)bytes_written / (time2 - time1));
+	thruput = scale_thruput((double)r->bytes_written / (time2 - time1));
 
 	char rep_string[4000];
 #ifndef __LINUX__
@@ -840,13 +837,16 @@ void print_tcp_report_line(char hash, int id,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
-		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)reor, fret, tret, fack,
-		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3, ca_state,
+		(double)r->tcp_info.tcpi_snd_cwnd, (double)r->tcp_info.tcpi_snd_ssthresh, (double)r->tcp_info.tcpi_unacked,
+		(double)r->tcp_info.tcpi_sacked, (double)r->tcp_info.tcpi_lost, (double)r->tcp_info.tcpi_reordering,
+		r->tcp_info.tcpi_retrans, r->tcp_info.tcpi_total_retrans, r->tcp_info.tcpi_fackets,
+		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3,
+		(double)r->tcp_info.tcpi_rto / 1e3, r->tcp_info.tcpi_ca_state,
 #else
 		0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0,
 #endif
-		mss, mtu, comment_buffer, opt.mbyte
+		r->mss, r->mtu, comment_buffer, opt.mbyte
 	));
 	strncpy(report_buffer, rep_string, sizeof(report_buffer));
 	report_buffer[sizeof(report_buffer) - 1] = 0;
@@ -863,36 +863,7 @@ void print_report(int id, int endpoint, struct _report* report)
 	diff_first_now = time_diff(&f->start_timestamp[endpoint], &report->end);
 
 	print_tcp_report_line(
-		0, id, endpoint, diff_first_last, diff_first_now,
-		report->bytes_written,
-		report->bytes_read,
-		report->reply_blocks_read,
-		report->rtt_min,
-		report->rtt_sum,
-		report->rtt_max,
-		report->iat_min,
-		report->iat_sum,
-		report->iat_max,
-#ifdef __LINUX__
-		report->tcp_info.tcpi_snd_cwnd,
-		report->tcp_info.tcpi_snd_ssthresh,
-		report->tcp_info.tcpi_unacked, report->tcp_info.tcpi_sacked,
-		/*report->tcp_info.tcpi_last_data_sent, report->tcp_info.tcpi_last_ack_recv,*/
-		report->tcp_info.tcpi_lost,
-		report->tcp_info.tcpi_retrans,
-		report->tcp_info.tcpi_retransmits,
-		report->tcp_info.tcpi_fackets,
-		report->tcp_info.tcpi_reordering,
-		report->tcp_info.tcpi_rtt,
-		report->tcp_info.tcpi_rttvar,
-		report->tcp_info.tcpi_rto,
-		report->tcp_info.tcpi_ca_state,
-#endif
-		report->mss,
-		report->mtu,
-
-		report->status
-	);
+		0, id, endpoint, diff_first_last, diff_first_now, report);
 }
 
 void report_final(void)
@@ -906,7 +877,7 @@ void report_final(void)
 
 #define CAT(fmt, args...) do {\
 	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
-	strncat(header_buffer, header_nibble, sizeof(header_nibble)); } while (0)
+	strncat(header_buffer, header_nibble, sizeof(header_nibble)-1); } while (0)
 #define CATC(fmt, args...) CAT(", "fmt, ##args)
 
 		log_output("\n");
@@ -1021,7 +992,7 @@ void report_final(void)
 				flow[id].congestion_counter <= CONGESTION_LIMIT)
 			CAT(" (stopped)");
 */
-		
+
 			CAT("\n");
 
 			log_output(header_buffer);
@@ -1242,7 +1213,7 @@ has_more_reports:
 					int bytes_written_low, bytes_written_high;
 
 					xmlrpc_decompose_value(&rpc_env, rv, "{"
-						"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:is:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
+						"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
 						"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
 						"s:i,*}",
 
@@ -1257,6 +1228,7 @@ has_more_reports:
 						"bytes_read_low", &bytes_read_low,
 						"bytes_written_high", &bytes_written_high,
 						"bytes_written_low", &bytes_written_low,
+						"blocks_read", &report.blocks_read,
 						"reply_blocks_read", &report.reply_blocks_read,
 
 						"rtt_min", &report.rtt_min,
@@ -1367,7 +1339,7 @@ void close_flow(int id)
 			"({s:i})", "flow_id", flow[id].endpoint_id[endpoint]);
 		if (resultP)
 			xmlrpc_DECREF(resultP);
-	
+
 		xmlrpc_env_clean(&env);
 	}
 
@@ -1395,6 +1367,7 @@ struct _mtu_info {
 	{ 17914,	"16 MB/s Token Ring" },
 	{ 16436,	"Linux Loopback device" },
 	{ 16352,	"Darwin Loopback device"},
+	{ 9000,		"Gigabit Ethernet (Jumboframes)"},
 	{ 8166,		"802.4 Token Bus" },		/* RFC1042 */
 	{ 4464,		"4 MB/s Token Ring" },
 	{ 4352,		"FDDI" },			/* RFC1390 */
@@ -1404,7 +1377,7 @@ struct _mtu_info {
 	{ 576,		"X.25 & ISDN" },		/* RFC1356 */
 	{ 296,		"PPP (low delay)" },
 };
-#define MTU_LIST_NUM	12
+#define MTU_LIST_NUM	13
 
 
 char *guess_topology (int mss, int mtu)
@@ -1442,12 +1415,11 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	int i;
 
 	int listen_data_port;
-	int listen_reply_port;
-	
+
 	/* Contruct extra socket options array */
 	extra_options = xmlrpc_array_new(&rpc_env);
 	for (i = 0; i < flow[id].settings[DESTINATION].num_extra_socket_options; i++) {
-		
+
 		xmlrpc_value *value;
 		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
 			 "level", flow[id].settings[DESTINATION].extra_socket_options[i].level,
@@ -1463,7 +1435,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	}
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[DESTINATION].server_url, "add_flow_destination", &resultP,
-		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A})",
+		"({s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A})",
 
 		/* general flow settings */
 		"bind_address", flow[id].endpoint_options[DESTINATION].bind_address,
@@ -1472,8 +1444,10 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"read_delay", flow[id].settings[SOURCE].delay[WRITE],
 		"read_duration", flow[id].settings[SOURCE].duration[WRITE],
 		"reporting_interval", flow[id].summarize_only ? 0 : opt.reporting_interval,
+		"interleave_time", flow[id].settings[DESTINATION].interleave_time,
 		"requested_send_buffer_size", flow[id].settings[DESTINATION].requested_send_buffer_size,
 		"requested_read_buffer_size", flow[id].settings[DESTINATION].requested_read_buffer_size,
+		"reply_block_size", flow[id].settings[DESTINATION].reply_block_size,
 		"write_block_size", flow[id].settings[DESTINATION].write_block_size,
 		"read_block_size", flow[id].settings[DESTINATION].read_block_size,
 		"advstats", (int)opt.advstats,
@@ -1496,10 +1470,9 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 	die_if_fault_occurred(&rpc_env);
 
-	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,s:i,s:i,*}",
+	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,s:i,*}",
 		"flow_id", &flow[id].endpoint_id[DESTINATION],
 		"listen_data_port", &listen_data_port,
-		"listen_reply_port", &listen_reply_port,
 		"real_listen_send_buffer_size", &flow[id].endpoint_options[DESTINATION].send_buffer_size_real,
 		"real_listen_read_buffer_size", &flow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
 	die_if_fault_occurred(&rpc_env);
@@ -1510,7 +1483,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	/* Contruct extra socket options array */
 	extra_options = xmlrpc_array_new(&rpc_env);
 	for (i = 0; i < flow[id].settings[SOURCE].num_extra_socket_options; i++) {
-		
+
 		xmlrpc_value *value;
 		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
 			 "level", flow[id].settings[SOURCE].extra_socket_options[i].level,
@@ -1526,8 +1499,8 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	}
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[SOURCE].server_url, "add_flow_source", &resultP,
-		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A}"
-		"{s:s,s:s,s:i,s:i,s:i})",
+		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A}"
+		"{s:s,s:i,s:i})",
 
 		/* general flow settings */
 		"bind_address", flow[id].endpoint_options[SOURCE].bind_address,
@@ -1536,8 +1509,10 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"read_delay", flow[id].settings[DESTINATION].delay[WRITE],
 		"read_duration", flow[id].settings[DESTINATION].duration[WRITE],
 		"reporting_interval", flow[id].summarize_only ? 0 : opt.reporting_interval,
+		"interleave_time", flow[id].settings[SOURCE].interleave_time,
 		"requested_send_buffer_size", flow[id].settings[SOURCE].requested_send_buffer_size,
 		"requested_read_buffer_size", flow[id].settings[SOURCE].requested_read_buffer_size,
+		"reply_block_size", flow[id].settings[SOURCE].reply_block_size,
 		"write_block_size", flow[id].settings[SOURCE].write_block_size,
 		"read_block_size", flow[id].settings[SOURCE].read_block_size,
 		"advstats", (int)opt.advstats,
@@ -1560,9 +1535,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 		/* source settings */
 		"destination_address", flow[id].endpoint_options[DESTINATION].test_address,
-		"destination_address_reply", flow[id].endpoint_options[DESTINATION].reply_address,
 		"destination_port", listen_data_port,
-		"destination_port_reply", listen_reply_port,
 		"late_connect", (int)flow[id].late_connect);
 	die_if_fault_occurred(&rpc_env);
 
@@ -1737,6 +1710,7 @@ int parse_Anderson_Test(char *params) {
 				} \
 			}
 
+
 static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 	char* token;
 	char* arg;
@@ -1848,6 +1822,23 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 		}
 
 		switch (ch) {
+			case 'A':
+				rc = sscanf(arg, "%u", &optunsigned);
+				if (rc != 1 || (optunsigned <= (sizeof (struct timeval)) && optunsigned > 0  ) ) {
+					fprintf(stderr, "reply size must be a positive integer (in bytes)\n");
+					usage();
+				}
+				ASSIGN_COMMON_FLOW_SETTING(reply_block_size, optunsigned)
+				break;
+			case 'I':
+				rc = sscanf(optarg, "%lf", &opt.reporting_interval);
+				if (rc != 1 || optdouble <= 0) {
+					fprintf(stderr, "interleaving interval must be "
+					"a positive number (in seconds)\n");
+					usage();
+				}
+				ASSIGN_COMMON_FLOW_SETTING(interleave_time, optdouble)
+				break;
 			case 'B':
 				rc = sscanf(arg, "%u", &optunsigned);
 				if (rc != 1) {
@@ -1872,17 +1863,15 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 			case 'H':
 				{
-					/*	Three addresses:
+					/*	two addresses:
 						- test address where the actual test connection goes to
 						- RPC address, where this program connects to
-						- Reply address for the reply connection
 
-						Unspecified RPC address falls back to test address, unspecified reply address 
-						falls back to RPC address.
+						Unspecified RPC address falls back to test address
 					 */
 					char url[1000];
 					int port = DEFAULT_LISTEN_PORT;
-					char *sepptr, *rpc_address = 0, *reply_address = 0;
+					char *sepptr, *rpc_address = 0;
 
 					/* RPC address */
 					sepptr = strchr(arg, '/');
@@ -1892,15 +1881,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					}
 					else
 						rpc_address = arg;
-
-					/* Reply address. */
-					sepptr = strchr(rpc_address, '/');
-					if (sepptr) {
-						*sepptr = '\0';
-						reply_address = sepptr + 1;
-					}
-					else
-						reply_address = rpc_address;
 
 					sepptr = strchr(arg, ':');
 					if (sepptr) {
@@ -1918,12 +1898,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 						}
 					}
 
-					sepptr = strchr(reply_address, ':');
-					if (sepptr) {
-						fprintf(stderr, "port not allowed in reply address\n");
-						usage();
-					}
-
 					if (!*arg) {
 						fprintf(stderr, "No test host given in argument\n");
 						usage();
@@ -1933,7 +1907,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					ASSIGN_ENDPOINT_FLOW_OPTION_STR(server_url, url);
 					ASSIGN_ENDPOINT_FLOW_OPTION_STR(server_address, rpc_address);
 					ASSIGN_ENDPOINT_FLOW_OPTION_STR(test_address, arg);
-					ASSIGN_ENDPOINT_FLOW_OPTION_STR(reply_address, reply_address);
 					ASSIGN_ENDPOINT_FLOW_OPTION(server_port, port);
 				}
 				break;
@@ -2134,7 +2107,7 @@ static void parse_cmdline(int argc, char **argv) {
 		case 's':
 			usage_sockopt();
 			break;
-	
+
 		case 'v':
 			fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
@@ -2178,6 +2151,7 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'Q':
 			ASSIGN_FLOW_OPTION(summarize_only, 1)
 			break;
+		case 'A':
 		case 'B':
 		case 'C':
 		case 'D':
@@ -2191,7 +2165,6 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'Y':
 			parse_flow_option(ch, optarg, current_flow_ids);
 			break;
-
 
 		default:
 			usage();
@@ -2445,7 +2418,7 @@ int main(int argc, char *argv[])
 
 	if (!sigint_caught)
 		report_final();
-	
+
 	close_flows();
 
 	shutdown_logfile();

@@ -73,12 +73,14 @@ struct _flow_settings
 	double duration[2];
 
 	double reporting_interval;
+	double interleave_time;
 
 	int requested_send_buffer_size;
 	int requested_read_buffer_size;
 
 	int write_block_size;
 	int read_block_size;
+	int reply_block_size;
 
 	int advstats;
 	int so_debug;
@@ -118,7 +120,8 @@ struct _report
 
 	long long bytes_read;
 	long long bytes_written;
-	int reply_blocks_read;
+	long blocks_read;
+	long reply_blocks_read;
 
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;

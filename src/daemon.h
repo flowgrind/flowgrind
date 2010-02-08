@@ -15,11 +15,9 @@ extern pthread_mutex_t mutex;
 enum flow_state
 {
 	/* SOURCE */
-	WAIT_CONNECT_REPLY,
 	GRIND_WAIT_CONNECT,
 
 	/* DESTINATION */
-	WAIT_ACCEPT_REPLY,
 	GRIND_WAIT_ACCEPT,
 
 	/* BOTH */
@@ -29,9 +27,7 @@ enum flow_state
 struct _flow_source_settings
 {
 	char destination_host[256];
-	char destination_host_reply[256];
 	int destination_port;
-	int destination_port_reply;
 
 	int late_connect;
 
@@ -44,10 +40,7 @@ struct _flow
 
 	enum flow_state state;
 
-	int fd_reply;
 	int fd;
-
-	int listenfd_reply;
 	int listenfd_data;
 
 	struct _flow_settings settings;
@@ -72,7 +65,7 @@ struct _flow
 	unsigned write_block_bytes_written;
 	uint64_t write_block_count;
 
-	char reply_block[sizeof(struct timeval) + sizeof(double) + 1];
+	char reply_block[sizeof(struct timeval) + 1];
 	unsigned int reply_block_bytes_read;
 
 	unsigned short requested_server_test_port;
@@ -103,10 +96,11 @@ struct _flow
 	struct _statistics {
 		long long bytes_read;
 		long long bytes_written;
+		long blocks_read;
 		long reply_blocks_read;
 
-		double rtt_min, rtt_max, rtt_sum;
 		double iat_min, iat_max, iat_sum;
+		double rtt_min, rtt_max, rtt_sum;
 
 #ifdef __LINUX__
 		int has_tcp_info;
@@ -129,7 +123,7 @@ extern unsigned int pending_reports;
 
 void add_report(struct _report* report);
 
-/* Gets 50 reports. There may be more pending but there's a limit on how 
+/* Gets 50 reports. There may be more pending but there's a limit on how
  * large a reply can get */
 struct _report* get_reports(int *has_more);
 
@@ -163,7 +157,6 @@ struct _request_add_flow_destination
 	/* The request reply */
 	int flow_id;
 	int listen_data_port;
-	int listen_reply_port;
 	int real_listen_send_buffer_size;
 	int real_listen_read_buffer_size;
 };
