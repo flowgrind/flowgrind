@@ -75,7 +75,12 @@ char started = 0;
 
 static void process_rtt(struct _flow* flow);
 static void process_iat(struct _flow* flow);
+inline static int is_source(struct _flow* flow);
 
+inline static int is_source(struct _flow* flow) 
+{
+	return true;
+}
 void flow_error(struct _flow *flow, const char *fmt, ...)
 {
 	char str[1000];
@@ -987,7 +992,7 @@ static void process_iat(struct _flow* flow)
 {
 	double current_iat = .0;
 	struct timeval now;
-	int rc;	
+	int rc;
 
 	if (flow->last_block_read.tv_sec  != 0 ||
 	    flow->last_block_read.tv_usec != 0) {
@@ -1007,7 +1012,7 @@ static void process_iat(struct _flow* flow)
 
 	int reply_block_length = flow->read_block[0];
 	/* prepare and send challenge response block */
-	if (flow->settings.reply_block_size > (sizeof (struct timeval))) {
+	if ( (unsigned int)flow->settings.reply_block_size > (sizeof (struct timeval))) {
 		if (flow->settings.read_block_size >= reply_block_length) {
 			char reply_block[flow->settings.reply_block_size];
 			memset(reply_block,0,flow->settings.reply_block_size);
