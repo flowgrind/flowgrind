@@ -41,7 +41,7 @@
 
 static struct timeval now;
 
-static int flow_in_delay(struct _flow *flow, int direction)
+*static int flow_in_delay(struct _flow *flow, int direction)
 {
 	return time_is_after(&flow->start_timestamp[direction], &now);
 }
@@ -53,12 +53,12 @@ static int flow_sending(struct _flow *flow, int direction)
 		 time_diff(&flow->stop_timestamp[direction], &now) < 0.0);
 }
 
-/*
+
 static int flow_block_scheduled(struct _flow *flow)
 {
 	return !flow->settings.write_rate ||
 		time_is_after(&now, &flow->next_write_block_timestamp);
-}*/
+}
 
 void remove_flow(unsigned int i);
 

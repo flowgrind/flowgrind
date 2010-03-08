@@ -2368,7 +2368,9 @@ static void parse_cmdline(int argc, char **argv) {
 		exit(EXIT_FAILURE);
 #endif
 	}
-
+#ifdef DEBUG
+	DEBUG_MSG(4, "sanity check parameter set of flow %d. completed", id);
+#endif
 	if (max_flow_rate > 0) {
 		select_timeout = 1e6/max_flow_rate/2;
 		if (select_timeout > DEFAULT_SELECT_TIMEOUT)
