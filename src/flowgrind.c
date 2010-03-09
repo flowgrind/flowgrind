@@ -370,7 +370,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 
 	//linux kernel output
 	//param str_cwnd
-	createOutputColumn(headerString1, headerString2, dataString, i, cwnd, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, cwnd, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	//param str_ssth
@@ -840,7 +840,7 @@ void print_tcp_report_line(char hash, int id,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
-		(double)cwnd, (double)ssth, (double)uack, (double)sack, (double)lost, (double)reor, fret, tret, fack,
+		(int)cwnd, (int)ssth, (int)uack, (int)sack, (int)lost, (int)reor, fret, tret, fack,
 		(double)rtt / 1e3, (double)rttvar / 1e3, (double)rto / 1e3, ca_state,
 #else
 		0, 0, 0, 0, 0, 0, 0, 0,
