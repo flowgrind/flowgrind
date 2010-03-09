@@ -406,15 +406,15 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	i++;
 
 	//param str_linrtt
-	createOutputColumn(headerString1, headerString2, dataString, i, linrtt, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrtt, &column_states[i], 1, &columnWidthChanged);
 	i++;
 
 	//param str_linrttvar
-	createOutputColumn(headerString1, headerString2, dataString, i, linrttvar, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrttvar, &column_states[i], 1, &columnWidthChanged);
 	i++;
 
 	//param str_linrto
-	createOutputColumn(headerString1, headerString2, dataString, i, linrto, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrto, &column_states[i], 1, &columnWidthChanged);
 	i++;
 
 	//param ca_state
