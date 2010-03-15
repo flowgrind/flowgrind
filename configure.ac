@@ -67,6 +67,20 @@ AC_CHECK_LIB([rt], [nanosleep])
 AC_CHECK_LIB([fasttime], [fasttime_init_context])
 AC_CHECK_LIB([tsci2], [tsci2_init])
 
+# check if DEBUG to be set
+AC_ARG_ENABLE(debug,
+[  --enable-debug          enable internal debugging output and debugging symbols [[default=no]]],
+[
+enable_debug=yes
+],[
+enable_debug=no
+])
+
+if test "$enable_debug" = yes ; then
+	AC_DEFINE(DEBUG, [1], [Use debugging])
+	CFLAGS="-ggdb $CFLAGS"
+fi
+
 AC_ARG_WITH(pcap,
 [  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=no]]],
 [

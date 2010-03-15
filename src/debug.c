@@ -9,8 +9,8 @@
 
 #ifdef DEBUG
 
-#if defined __GNUC__ && !defined __GNUC_STDC_INLINE__ && !defined __GNUC_GNU_INLINE__
-# define __GNUC_GNU_INLINE__ 1
+#ifdef HAVE_CONFIG_H
+#include "config.h"
 #endif
 
 inline void decrease_debuglevel()
