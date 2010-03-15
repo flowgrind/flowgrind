@@ -45,12 +45,12 @@ int set_window_size_directed(int fd, int window, int direction)
 	unsigned int optlen = sizeof w;
 
 	if (window <= 0)
-		DEBUG_MSG(3, "Getting %sBUF from fd %d ",
-				(direction == SO_SNDBUF ? "SND" : "RCV"), fd);
+			{ DEBUG_MSG(3, "Getting %sBUF from fd %d ",
+				(direction == SO_SNDBUF ? "SND" : "RCV"), fd); }
 	else
-		DEBUG_MSG(3, "Setting %sBUF on fd %d to %d",
+			{ DEBUG_MSG(3, "Setting %sBUF on fd %d to %d",
 				(direction == SO_SNDBUF ? "SND" : "RCV"),
-				fd, window);
+				fd, window); }
 
 	rc = getsockopt(fd, SOL_SOCKET, direction, (char *)&w, &optlen);
 	if (rc == -1)
@@ -84,9 +84,9 @@ int set_window_size(int fd, int window)
 	int send, receive;
 
 	if (window <= 0)
-		DEBUG_MSG(3, "Getting window size of fd %d", fd);
+		{ DEBUG_MSG(3, "Getting window size of fd %d", fd); }
 	else
-		DEBUG_MSG(3, "Setting window size of fd %d to %d", fd, window);
+		{ DEBUG_MSG(3, "Setting window size of fd %d to %d", fd, window); }
 
 	send = set_window_size_directed(fd, window, SO_SNDBUF);
 	receive = set_window_size_directed(fd, window, SO_RCVBUF);
