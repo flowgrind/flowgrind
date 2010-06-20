@@ -68,6 +68,8 @@ struct _flow {
 	char summarize_only;
 	char byte_counting;
 
+	int random_seed;
+
 	int endpoint_id[2];
 
 	struct timeval start_timestamp[2];

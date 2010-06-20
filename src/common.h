@@ -64,6 +64,13 @@ enum _extra_socket_option_level
 	level_ipproto_udp
 };
 
+enum _traffic_generation_types
+{
+	CONSTANT=0,
+	POISSON,
+	WEIBULL,
+};
+
 /* Common to both endpoints */
 struct _flow_settings
 {
@@ -78,9 +85,8 @@ struct _flow_settings
 	int requested_send_buffer_size;
 	int requested_read_buffer_size;
 
-	int write_block_size;
-	int read_block_size;
-	int reply_block_size;
+	int default_request_block_size;
+	int default_response_block_size;
 
 	int advstats;
 	int so_debug;
@@ -89,7 +95,11 @@ struct _flow_settings
 	int shutdown;
 
 	int write_rate;
-	int poisson_distributed;
+	enum _traffic_generation_types traffic_generation_type;
+	double traffic_generation_parm_alpha;
+	double traffic_generation_parm_beta;
+	int random_seed;
+
 	int flow_control;
 
 	int byte_counting;
@@ -120,8 +130,11 @@ struct _report
 
 	long long bytes_read;
 	long long bytes_written;
-	long blocks_read;
-	long reply_blocks_read;
+
+	long request_blocks_read;
+	long request_blocks_written;
+	long response_blocks_read;
+	long response_blocks_written;
 
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;

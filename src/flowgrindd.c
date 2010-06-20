@@ -31,6 +31,7 @@
 #include "fg_time.h"
 #include "debug.h"
 #include "acl.h"
+#include "fg_math.h"
 #if HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif
@@ -40,7 +41,7 @@ static char progname[50] = "flowgrindd";
 static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
-		"Usage: %1$s [-a address ] [-w#] [-p#] [-d]\n"
+		"Usage: %1$s [-a address ] [-w#] [-p#] [-D]\n"
 		"\t-a address\tadd address to list of allowed hosts (CIDR syntax)\n"
 		"\t-p#\t\tserver port\n"
 		"\t-D \t\tincrease debug verbosity (no daemon, log to stderr)\n"
@@ -103,7 +104,6 @@ static int dispatch_request(struct _request *request, int type)
 		requests_last->next = request;
 		requests_last = request;
 	}
-
 	if ( write(daemon_pipe[1], &type, 1) != 1 ) /* Doesn't matter what we write */
 		return -1;
 	/* Wait until the daemon thread has processed the request */
@@ -138,39 +138,57 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	DEBUG_MSG(1, "Method add_flow_source called");
 
 	/* Parse our argument array. */
-	xmlrpc_decompose_value(env, param_array, "("
-			"{s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:i,s:A,*}"
-			"{s:s,s:i,s:i,*}"
-			")",
+	xmlrpc_decompose_value(env, param_array, 
+		"({"
+		"s:s,"
+		"s:d,s:d,s:d,s:d,s:d,"
+		"s:i,s:i,s:i,s:i,"
+		"s:b,s:b,s:b,s:b,s:b,"
+		"s:i,s:i,s:d,s:d,s:i,"
+		"s:b,s:b,s:i,"
+		"s:s,"
+		"s:i,s:i,s:i,s:i,"
+		"s:i,s:A,"
+		"s:s,s:i,s:i,*"
+		"})",
 
 		/* general settings */
 		"bind_address", &bind_address,
+
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
 		"read_delay", &settings.delay[READ],
 		"read_duration", &settings.duration[READ],
 		"reporting_interval", &settings.reporting_interval,
-		"interleave_time", &settings.interleave_time,
+
 		"requested_send_buffer_size", &settings.requested_send_buffer_size,
 		"requested_read_buffer_size", &settings.requested_read_buffer_size,
-		"write_block_size", &settings.write_block_size,
-		"read_block_size", &settings.read_block_size,
-		"reply_block_size", &settings.reply_block_size,
+		"default_request_block_size", &settings.default_request_block_size,
+		"default_response_block_size", &settings.default_response_block_size,
+
 		"advstats", &settings.advstats,
 		"so_debug", &settings.so_debug,
 		"route_record", &settings.route_record,
 		"pushy", &settings.pushy,
 		"shutdown", &settings.shutdown,
-		"write_rate", &settings.write_rate,
-		"poisson_distributed", &settings.poisson_distributed,
+
+                "write_rate", &settings.write_rate,
+                "traffic_generation_type", &settings.traffic_generation_type,
+                "traffic_generation_parm_alpha", &settings.traffic_generation_parm_alpha,
+                "traffic_generation_parm_beta", &settings.traffic_generation_parm_beta,
+                "random_seed",&settings.random_seed,
+		
 		"flow_control", &settings.flow_control,
 		"byte_counting", &settings.byte_counting,
 		"cork", &settings.cork,
+
 		"cc_alg", &cc_alg,
+
 		"elcn", &settings.elcn,
 		"icmp", &settings.icmp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
+
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options,
 
@@ -182,12 +200,12 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	if (env->fault_occurred)
 		goto cleanup;
 
-	/* Check for sanity */
+	/* Check for sanity TODO: add traffic generation checks */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
 		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
-		settings.write_block_size <= 0 || settings.read_block_size <= 0 ||
+		settings.default_request_block_size <= 0 || settings.default_response_block_size < 0 ||
 		strlen(destination_host) >= sizeof(source_settings.destination_host) - 1||
 		source_settings.destination_port <= 0 || source_settings.destination_port > 65535 ||
 		strlen(cc_alg) > 255 ||
@@ -198,7 +216,11 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		settings.reporting_interval < 0) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
-
+	/* initalize random number generator (use cmdline option if given, else use random data) */
+	if (settings.random_seed)
+		rn_set_seed(settings.random_seed);
+	else
+		rn_set_seed(rn_read_dev_random());
 	/* Parse extra socket options */
 	for (i = 0; i < settings.num_extra_socket_options; i++) {
 
@@ -299,47 +321,67 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array,
-		"({s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A,*})",
+		"({"
+		"s:s,"
+		"s:d,s:d,s:d,s:d,s:d,"
+		"s:i,s:i,s:i,s:i,"
+		"s:b,s:b,s:b,s:b,s:b,"
+		"s:i,s:i,s:d,s:d,s:i,"
+		"s:b,s:b,s:i,"
+		"s:s,"
+		"s:i,s:i,s:i,s:i,"
+		"s:i,s:A,*"
+		"})",
 
 		/* general settings */
 		"bind_address", &bind_address,
+		
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
 		"read_delay", &settings.delay[READ],
 		"read_duration", &settings.duration[READ],
 		"reporting_interval", &settings.reporting_interval,
-		"interleave_time", &settings.interleave_time,
+		
 		"requested_send_buffer_size", &settings.requested_send_buffer_size,
 		"requested_read_buffer_size", &settings.requested_read_buffer_size,
-		"write_block_size", &settings.write_block_size,
-		"read_block_size", &settings.read_block_size,
+		"default_request_block_size", &settings.default_request_block_size,
+		"default_response_block_size", &settings.default_response_block_size,
+
 		"advstats", &settings.advstats,
 		"so_debug", &settings.so_debug,
 		"route_record", &settings.route_record,
 		"pushy", &settings.pushy,
 		"shutdown", &settings.shutdown,
-		"write_rate", &settings.write_rate,
-		"poisson_distributed", &settings.poisson_distributed,
+		
+                "write_rate", &settings.write_rate,
+                "traffic_generation_type", &settings.traffic_generation_type,
+                "traffic_generation_parm_alpha", &settings.traffic_generation_parm_alpha,
+                "traffic_generation_parm_beta", &settings.traffic_generation_parm_beta,
+                "random_seed",&settings.random_seed,
+
 		"flow_control", &settings.flow_control,
 		"byte_counting", &settings.byte_counting,
 		"cork", &settings.cork,
+
 		"cc_alg", &cc_alg,
+
 		"elcn", &settings.elcn,
 		"icmp", &settings.icmp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
+		
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options);
 
 	if (env->fault_occurred)
 		goto cleanup;
 
-	/* Check for sanity */
+	/* Check for sanity TODO: checks  */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
 		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
-		settings.write_block_size <= 0 || settings.read_block_size <= 0 ||
+		settings.default_request_block_size <= 0 || settings.default_response_block_size < 0 ||
 		settings.write_rate < 0 ||
 		strlen(cc_alg) > 255 ||
 		settings.num_extra_socket_options < 0 || settings.num_extra_socket_options > MAX_EXTRA_SOCKET_OPTIONS ||
@@ -493,10 +535,18 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	xmlrpc_DECREF(item);
 
 	while (report) {
-		xmlrpc_value *rv = xmlrpc_build_value(env, "{"
-			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
-			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
-			"s:i}",
+		xmlrpc_value *rv = xmlrpc_build_value(env, 
+			"({"
+			"s:i,s:i,s:i,s:i,s:i,s:i," /* timeval */
+			"s:i,s:i,s:i,s:i," /* bytes */
+			"s:i,s:i,s:i,s:i," /* block counts */
+			"s:d,s:d,s:d,s:d,s:d,s:d," /* RTT, IAT */
+			"s:i,s:i," /* MSS, MTU */
+			"s:i,s:i,s:i,s:i,s:i," /* TCP info */
+			"s:i,s:i,s:i,s:i,s:i," /* ...      */
+			"s:i,s:i,s:i,s:i,s:i," /* ...      */
+			"s:i"
+			"})",
 
 			"id", report->id,
 			"type", report->type,
@@ -509,8 +559,11 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"bytes_read_low", (int32_t)(report->bytes_read & 0xFFFFFFFF),
 			"bytes_written_high", (int32_t)(report->bytes_written >> 32),
 			"bytes_written_low", (int32_t)(report->bytes_written & 0xFFFFFFFF),
-			"blocks_read", report->blocks_read,
-			"reply_blocks_read", report->reply_blocks_read,
+			
+			"request_blocks_read", report->request_blocks_read,
+			"request_blocks_written", report->request_blocks_written,
+			"response_blocks_read", report->response_blocks_read,
+			"response_blocks_written", report->response_blocks_written,
 
 			"rtt_min", report->rtt_min,
 			"rtt_max", report->rtt_max,
@@ -527,11 +580,13 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"tcpi_unacked", (int)report->tcp_info.tcpi_unacked,
 			"tcpi_sacked", (int)report->tcp_info.tcpi_sacked,
 			"tcpi_lost", (int)report->tcp_info.tcpi_lost,
+
 			"tcpi_retrans", (int)report->tcp_info.tcpi_retrans,
 			"tcpi_retransmits", (int)report->tcp_info.tcpi_retransmits,
 			"tcpi_fackets", (int)report->tcp_info.tcpi_fackets,
 			"tcpi_reordering", (int)report->tcp_info.tcpi_reordering,
 			"tcpi_rtt", (int)report->tcp_info.tcpi_rtt,
+
 			"tcpi_rttvar", (int)report->tcp_info.tcpi_rttvar,
 			"tcpi_rto", (int)report->tcp_info.tcpi_rto,
 			"tcpi_last_data_sent", (int)report->tcp_info.tcpi_last_data_sent,

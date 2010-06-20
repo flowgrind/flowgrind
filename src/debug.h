@@ -1,7 +1,10 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
-#define DEBUG
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 void decrease_debuglevel();
 void increase_debuglevel();
 
@@ -15,14 +18,11 @@ unsigned debug_level;
 const char *debug_timestamp(void);
 
 #define DEBUG_MSG(message_level, msg, args...) \
-        do { \
-                if (debug_level>=message_level) { \
+		if (debug_level>=message_level) { \
                         fprintf(stderr, "%s %s:%d  [%d] " msg "\n", \
                                         debug_timestamp(), __FUNCTION__, \
                                         __LINE__, getpid(), ##args); \
-                } \
-        } while(0)
-
+                } 
 #else
 
 #define DEBUG_MSG(message_level, msg, args...) do {} while(0)
