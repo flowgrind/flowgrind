@@ -31,6 +31,7 @@
 #include "fg_pcap.h"
 #include "fg_socket.h"
 #include "fg_time.h"
+#include "fg_math.h"
 #include "log.h"
 #include "acl.h"
 #include "daemon.h"
@@ -45,7 +46,7 @@ void remove_flow(unsigned int i);
 int get_tcp_info(struct _flow *flow, struct tcp_info *info);
 #endif
 
-void init_flow(struct _flow* flow);
+void init_flow(struct _flow* flow, int is_source);
 void uninit_flow(struct _flow *flow);
 
 static int name2socket(struct _flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
@@ -142,13 +143,13 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 
 	flow = &flows[num_flows++];
-	init_flow(flow);
+	init_flow(flow, 1);
 
 	flow->settings = request->settings;
 	flow->source_settings = request->source_settings;
 
-	flow->write_block = calloc(1, flow->settings.write_block_size);
-	flow->read_block = calloc(1, flow->settings.read_block_size);
+	flow->write_block = calloc(1, flow->settings.default_request_block_size);
+	flow->read_block = calloc(1, flow->settings.default_response_block_size);
 	if (flow->write_block == NULL || flow->read_block == NULL) {
 		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");
@@ -158,7 +159,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 	if (flow->settings.byte_counting) {
 		int byte_idx;
-		for (byte_idx = 0; byte_idx < flow->settings.write_block_size; byte_idx++)
+		for (byte_idx = 0; byte_idx < flow->settings.default_response_block_size; byte_idx++)
 			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
 	}
 

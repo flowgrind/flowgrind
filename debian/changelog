@@ -1,5 +1,11 @@
+flowgrind (0.3) unstable; urgency=low
+
+  * bump
+
+ -- Christian Samsel <christian.samsel@rwth-aachen.de>  Fri, 19 Mar 2010 13:41:19 +0100
+
 flowgrind (0.2) unstable; urgency=low
 
-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  * Initial release 
 
  -- Tim Kosse <tim.kosse@gmx.de>  Mon, 06 Jul 2009 11:21:28 +0200

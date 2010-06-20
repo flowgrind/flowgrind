@@ -34,6 +34,7 @@
 #endif
 #include "fg_socket.h"
 #include "fg_time.h"
+#include "fg_math.h"
 #include "log.h"
 #include "acl.h"
 #include "daemon.h"
@@ -75,12 +76,8 @@ char started = 0;
 
 static void process_rtt(struct _flow* flow);
 static void process_iat(struct _flow* flow);
-inline static int is_source(struct _flow* flow);
+static void send_response(struct _flow* flow);
 
-inline static int is_source(struct _flow* flow) 
-{
-	return true;
-}
 void flow_error(struct _flow *flow, const char *fmt, ...)
 {
 	char str[1000];
@@ -427,8 +424,8 @@ static void report_flow(struct _flow* flow, int type)
 	flow->last_report_time = report->end;
 	report->bytes_read = flow->statistics[type].bytes_read;
 	report->bytes_written = flow->statistics[type].bytes_written;
-	report->blocks_read = flow->statistics[type].blocks_read;
-	report->reply_blocks_read = flow->statistics[type].reply_blocks_read;
+	report->request_blocks_read = flow->statistics[type].request_blocks_read;
+	report->response_blocks_read = flow->statistics[type].response_blocks_read;
 
 	report->rtt_min = flow->statistics[type].rtt_min;
 	report->rtt_max = flow->statistics[type].rtt_max;
@@ -476,7 +473,7 @@ static void report_flow(struct _flow* flow, int type)
 	}
 	report->status <<= 8;
 
-	if (flow->statistics[type].bytes_written < flow->settings.write_block_size) {
+	if (flow->statistics[type].bytes_written < flow->settings.default_request_block_size) {
 		if (flow_in_delay(&report->end, flow, WRITE))
 			report->status |= 'd';
 		else if (flow_sending(&report->end, flow, WRITE))
@@ -497,8 +494,12 @@ static void report_flow(struct _flow* flow, int type)
 	if (type == INTERVAL) {
 		flow->statistics[INTERVAL].bytes_read = 0;
 		flow->statistics[INTERVAL].bytes_written = 0;
-		flow->statistics[INTERVAL].blocks_read = 0;
-		flow->statistics[INTERVAL].reply_blocks_read = 0;
+
+		flow->statistics[INTERVAL].request_blocks_read = 0;
+		flow->statistics[INTERVAL].response_blocks_read = 0;
+
+                flow->statistics[INTERVAL].request_blocks_written = 0;
+                flow->statistics[INTERVAL].response_blocks_written = 0;
 
 		flow->statistics[INTERVAL].rtt_min = +INFINITY;
 		flow->statistics[INTERVAL].rtt_max = -INFINITY;
@@ -618,9 +619,11 @@ remove:
 
 			report_flow(flow, TOTAL);
 		}
-#endif
+#endif		
+		
 		uninit_flow(flow);
 		remove_flow(i);
+                DEBUG_MSG(1, "removed flow %d", flow->id);
 	}
 }
 
@@ -709,23 +712,20 @@ struct _report* get_reports(int *has_more)
 	return ret;
 }
 
-void init_flow(struct _flow* flow)
+void init_flow(struct _flow* flow, int is_source)
 {
 	flow->id = next_flow_id++;
-	// TODO
-	//flow->state = is_source ? WAIT_CONNECT_REPLY : WAIT_ACCEPT_REPLY;
+	flow->endpoint = is_source ? SOURCE : DESTINATION;
+	flow->state = is_source ? GRIND_WAIT_CONNECT : GRIND_WAIT_ACCEPT;
 	flow->fd = -1;
 	flow->listenfd_data = -1;
 
 	flow->read_block = 0;
-	flow->read_block_bytes_read = 0;
-	flow->read_block_count = 0;
 	flow->write_block = 0;
-	flow->write_block_bytes_written = 0;
-	flow->write_block_count = 0;
 
-	flow->reply_block_bytes_read = 0;
-
+	flow->current_block_bytes_read = 0;
+	flow->current_block_bytes_written = 0;
+	
 	flow->last_block_read.tv_sec = 0;
 	flow->last_block_read.tv_usec = 0;
 
@@ -736,10 +736,13 @@ void init_flow(struct _flow* flow)
 
 	/* INTERVAL and TOTAL */
 	for (int i = 0; i < 2; i++) {
-		flow->statistics[i].bytes_read = 0;
-		flow->statistics[i].bytes_written = 0;
-		flow->statistics[i].blocks_read = 0;
-		flow->statistics[i].reply_blocks_read = 0;
+                flow->statistics[i].bytes_read = 0;
+                flow->statistics[i].bytes_written = 0;
+
+                flow->statistics[i].request_blocks_read = 0;
+                flow->statistics[i].request_blocks_written = 0;
+                flow->statistics[i].response_blocks_read = 0;
+                flow->statistics[i].response_blocks_written = 0;
 
 		flow->statistics[i].rtt_min = +INFINITY;
 		flow->statistics[i].rtt_max = -INFINITY;
@@ -753,52 +756,119 @@ void init_flow(struct _flow* flow)
 	flow->congestion_counter = 0;
 
 	flow->error = 0;
+	DEBUG_MSG(4, "called init flow %d", flow->id);
 }
 
-static double flow_interpacket_delay(struct _flow *flow)
+static int next_request_block_size(struct _flow *flow)
 {
-	double delay = 0;
+	int bs = 0;
+	switch (flow->settings.traffic_generation_type)
+	{
+		case POISSON:
+		case WEIBULL:
+		case CONSTANT:
+		default:
+		bs = flow->settings.default_request_block_size;
+	}
+	DEBUG_MSG(5, "calculated next request blocksize %d for flow %d", bs, flow->id);
+	return bs;	
+}
+
+static int next_response_block_size(struct _flow *flow)
+{
+        int bs = 0;
+        switch (flow->settings.traffic_generation_type)
+        {	
+		case POISSON:
+		case WEIBULL:
+                case CONSTANT:
+                default:
+                bs = flow->settings.default_response_block_size;
+        }
+        DEBUG_MSG(5, "calculated next response blocksize %d for flow %d", bs, flow->id);
+        return bs;
+}
+
+static double next_interpacket_gap(struct _flow *flow)
+{
+	double gap = 0;
 
 	DEBUG_MSG(5, "flow %d has rate %u", flow->id, flow->settings.write_rate);
+	/* old variant just for documentation.
+	 * see: http://portal.acm.org/citation.cfm?id=208389.208390 
+	
 	if (flow->settings.poisson_distributed) {
 		double urand = (double)((random()+1.0)/(RANDOM_MAX+1.0));
 		double erand = -log(urand) * 1/(double)flow->settings.write_rate;
 		delay = erand;
-	} else {
+	} else { 
 		delay = (double)1/flow->settings.write_rate;
+	}  */
+
+	switch (flow->settings.traffic_generation_type)
+	{
+		case POISSON:
+		case WEIBULL:
+		case CONSTANT:
+		default:
+		gap = (double)1/flow->settings.write_rate;	
 	}
 
-	DEBUG_MSG(5, "new interpacket delay %.6f for flow %d.", delay, flow->id);
-	return delay;
+	DEBUG_MSG(5, "calculated next interpacket gap %.6f for flow %d", gap, flow->id);
+	return gap;
 }
 
 static int write_data(struct _flow *flow)
 {
 	int rc = 0;
+	int tmp;
+	int current_this_block_size;
+	int current_requested_block_size;
+	current_this_block_size = next_request_block_size(flow);
+	current_requested_block_size = next_response_block_size(flow);
 
-	/* Please note: you could argue that the following loop
-	   is not necessary as not filling the socket send queue completely
-	   would make the next select call return this very socket in wfds
-	   and thus sending more blocks would immediately happen. However,
-	   calling select with a non-full send queue might make the kernel
-	   think we don't have more data to send. As a result, the kernel
-	   might trigger some scheduling or whatever heuristics which would
-	   not take place if we had written immediately. On the other hand,
-	   in case the network is not a bottleneck the loop may take forever. */
-	/* XXX: Detect this! */
 	for (;;) {
-		if (flow->write_block_bytes_written == 0) {
-			DEBUG_MSG(5, "new write block %llu on flow %d",
-					(long long unsigned int)flow->write_block_count, flow->id);
-			flow->write_block[0] = sizeof(struct timeval) + 1;
-			tsc_gettimeofday((struct timeval *)(flow->write_block + 1));
+
+		/* fill buffer with new data */
+		if (flow->current_block_bytes_written >= (unsigned)current_this_block_size) {
+			current_this_block_size = next_request_block_size(flow);
+			current_requested_block_size = next_response_block_size(flow);
+			
+			/* 
+			 * our data block has the following layout:
+			 *
+			 * this_block_size (int32_t), request_block_size (int32_t), data (timeval), trail 
+			 *
+			 * this_block_size:	the size of our request or response block (we generate 
+			 * 			a request block here)
+			 *
+			 * request_block_size:  the size of the response block we request
+			 *                     	0 if we dont request a response block
+			 * 		       -1 indicates this is a response block (needed for parsing data)
+			 *
+			 * data:		IAT data if this is a request block
+			 *			RTT data if this is a response block
+			 * 		       
+			 * trail:		trailing garbage to fill up the blocksize
+			 */
+
+			/* serialize data:
+			 * this_block_size */
+			tmp = htonl(current_this_block_size);
+			memcpy (flow->write_block, (char*)&tmp, sizeof (int32_t));
+			/* request_block_size */
+                        tmp = htonl(current_requested_block_size);
+                        memcpy (flow->write_block+sizeof(int32_t), (char*)&tmp, sizeof (int32_t));
+			/* copy iat data */
+			tsc_gettimeofday((struct timeval *)( flow->write_block + 2*(sizeof (int32_t)) ));
+			DEBUG_MSG(5, "writing new data to buffer bs = %d on flow %d", htonl(*(int*)flow->write_block), flow->id);
 		}
 
 		rc = write(flow->fd,
 				flow->write_block +
-				flow->write_block_bytes_written,
-				flow->settings.write_block_size -
-				flow->write_block_bytes_written);
+				flow->current_block_bytes_written,
+				current_this_block_size -
+				flow->current_block_bytes_written);
 
 		if (rc == -1) {
 			if (errno == EAGAIN) {
@@ -817,30 +887,31 @@ static int write_data(struct _flow *flow)
 		}
 
 		DEBUG_MSG(4, "flow %d sent %d bytes of %u (already = %u)", flow->id, rc,
-				flow->settings.write_block_size,
-				flow->write_block_bytes_written);
+				current_this_block_size,
+				flow->current_block_bytes_written);
+		for (int i = 0; i < 2; i++) {
+			flow->statistics[i].bytes_written += rc;
+		}
+		flow->current_block_bytes_written += rc;
 
-		flow->statistics[INTERVAL].bytes_written += rc;
-		flow->statistics[TOTAL].bytes_written += rc;
-		flow->write_block_bytes_written += rc;
-		if (flow->write_block_bytes_written >=
-				(unsigned int)flow->settings.write_block_size) {
-			flow->write_block_bytes_written = 0;
+		if (flow->current_block_bytes_written >=(unsigned int)current_this_block_size) {
+			/* we just finished writing a block */
+			flow->current_block_bytes_written = 0;
 			tsc_gettimeofday(&flow->last_block_written);
-			flow->write_block_count++;
-
+			for (int i = 0; i < 2; i++) {
+				flow->statistics[i].request_blocks_written++;
+			}
+			/* TODO */
 			if (flow->settings.write_rate) {
 				time_add(&flow->next_write_block_timestamp,
-						flow_interpacket_delay(flow));
+						next_interpacket_gap(flow));
 				if (time_is_after(&flow->last_block_written, &flow->next_write_block_timestamp)) {
 					/* TODO: log time_diff and check if
 					 * it's growing (queue build up) */
 					DEBUG_MSG(3, "incipient congestion on "
-							"flow %u (block %" PRIu64 "): "
-							"new block scheduled "
+							"flow %u new block scheduled "
 							"for %s, %.6lfs before now.",
 							flow->id,
-							flow->write_block_count,
 							ctime_us(&flow->next_write_block_timestamp),
 							time_diff(&flow->next_write_block_timestamp, &flow->last_block_written));
 					flow->congestion_counter++;
@@ -867,20 +938,22 @@ static int write_data(struct _flow *flow)
 static int read_data(struct _flow *flow)
 {
 	int rc;
+	int current_requested_response_block_size;
+	int current_this_block_size;
 	struct iovec iov;
 	struct msghdr msg;
 	char cbuf[512];
 	struct cmsghdr *cmsg;
-	int is_source;
-	for (;;) {
-		if (flow->read_block_bytes_read == 0)
-			DEBUG_MSG(5, "new read block %llu on flow %d",
-					(long long unsigned int)flow->read_block_count, flow->id);
 
+	/* initalize with defaults */	
+        current_this_block_size = flow->settings.default_request_block_size; 
+        current_requested_response_block_size = flow->settings.default_response_block_size;
+	
+	for (;;) {
 		iov.iov_base = flow->read_block +
-			flow->read_block_bytes_read;
-		iov.iov_len = flow->settings.read_block_size -
-			flow->read_block_bytes_read;
+			flow->current_block_bytes_read;
+		iov.iov_len = current_this_block_size -
+			flow->current_block_bytes_read;
 		// no name required
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
@@ -913,42 +986,43 @@ static int read_data(struct _flow *flow)
 			return 0;
 		}
 
+		
 		DEBUG_MSG(4, "flow %d received %u bytes", flow->id, rc);
+		
+		flow->current_block_bytes_read += rc;			
+		for (int i = 0; i < 2; i++) {
+			flow->statistics[i].bytes_read += rc;
+		}
 
-#if 0
-		if (flow->settings[DESTINATION].duration[WRITE] == 0)
-			error(ERR_WARNING, "flow %d got unexpected data "
-					"from server (no two-way)", id);
-		else if (server_flow_in_delay(id))
-			error(ERR_WARNING, "flow %d got unexpected data "
-					"from server (too early)", id);
-		else if (!server_flow_sending(id))
-			error(ERR_WARNING, "flow %d got unexpected data "
-					"from server (too late)", id);
-#endif
-
-		flow->statistics[INTERVAL].bytes_read += rc;
-		flow->statistics[TOTAL].bytes_read += rc;
-		flow->read_block_bytes_read += rc;
-		if (flow->read_block_bytes_read >= (unsigned int)flow->settings.read_block_size) {
-
-			assert(flow->read_block_bytes_read == (unsigned int)flow->settings.read_block_size);
-
+		if (flow->current_block_bytes_read >= (unsigned int)current_this_block_size ) {
 			/* We just finished to read a whole block */
-			flow->read_block_count++;
-			flow->read_block_bytes_read = 0;
-			for (int i = 0; i < 2; i++) {
-				flow->statistics[i].blocks_read++;
-			}
-			// TODO
-			/* if this is flow source, consider data as RTT */
-			if (is_source) {
-			process_rtt(flow);
+			flow->current_block_bytes_read = 0;
+	        
+		        current_this_block_size = ntohl(*(int*)flow->read_block);
+        	        current_requested_response_block_size = ntohl(*(int*)flow->read_block + (sizeof (int32_t) ) );
 
+                        DEBUG_MSG(1, "new read block on flow %d: cbs=%d, rqs=%d",
+                                        flow->id,current_this_block_size,current_requested_response_block_size);
+
+			if (current_requested_response_block_size == -1) {
+				/* This is a response block, consider DATA as RTT */
+				for (int i = 0; i < 2; i++) {
+					flow->statistics[i].response_blocks_read++;
+				}
+				process_rtt(flow); 
+		
 			} else {
-			/* If this is flow destination, consider data as IAT and echo data as RTT (if desired)*/
-			process_iat(flow);
+				/* this is request block, consider DATA as IAT */
+				for (int i = 0; i < 2; i++) {
+                                        flow->statistics[i].request_blocks_read++;
+                                }
+				process_iat(flow);
+
+				/* skip response if not requested */
+				if ( current_requested_response_block_size <= 0 )
+					send_response(flow);
 			}
+
 		}
 
 		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg;
@@ -962,7 +1036,6 @@ static int read_data(struct _flow *flow)
 	}
 	return 0;
 }
-
 
 static void process_rtt(struct _flow* flow)
 {
@@ -981,9 +1054,11 @@ static void process_rtt(struct _flow* flow)
 		}
 	} else {
 		current_rtt = NAN;
-		DEBUG_MSG(5, "iat isnan = %d", isnan(current_rtt));
+		DEBUG_MSG(LOG_WARNING, "rtt isnan = %d", isnan(current_rtt));
 	}
-	DEBUG_MSG(4, "processed data of flow %d, (RTT = %.3lfms)", flow->id, current_rtt * 1e3);
+	flow->last_block_read = now;
+
+	DEBUG_MSG(LOG_NOTICE, "processed response block of flow %d, (RTT = %.3lfms)", flow->id, current_rtt * 1e3);
 }
 
 
@@ -992,7 +1067,6 @@ static void process_iat(struct _flow* flow)
 {
 	double current_iat = .0;
 	struct timeval now;
-	int rc;
 
 	if (flow->last_block_read.tv_sec  != 0 ||
 	    flow->last_block_read.tv_usec != 0) {
@@ -1006,28 +1080,43 @@ static void process_iat(struct _flow* flow)
 		}
 	} else {
 		current_iat = NAN;
-		DEBUG_MSG(5, "iat isnan = %d", isnan(current_iat));
+		DEBUG_MSG(LOG_WARNING, "iat isnan = %d", isnan(current_iat));
 	}
-					flow->last_block_read = now;
+	flow->last_block_read = now;
 
-	int reply_block_length = flow->read_block[0];
-	/* prepare and send challenge response block */
-	if ( (unsigned int)flow->settings.reply_block_size > (sizeof (struct timeval))) {
-		if (flow->settings.read_block_size >= reply_block_length) {
-			char reply_block[flow->settings.reply_block_size];
-			memset(reply_block,0,flow->settings.reply_block_size);
+	DEBUG_MSG(LOG_NOTICE, "processed iat block of flow %d (IAT = %.3lfms)", flow->id, current_iat * 1e3);
+}
 
-			/* copy timeval back */
-			memcpy(flow->read_block,reply_block,reply_block_length);
+static void send_response(struct _flow* flow)
+{
+		int requested_response_block_size;
+		requested_response_block_size = ntohl(*(int*)flow->read_block);
 
-			rc = write(flow->fd, flow->read_block,
-					flow->settings.reply_block_size);
+		int rc, tmp;
+		/* prepare block
+		 * char response_block[requested_response_block_size];
+		 *memset(response_block,0,requested_response_block_size); 
+		 */
+		/* start new writeblock as response */
+		flow->current_block_bytes_written = 0;
+		/* set this_blocksize to requested_repsonse_block_size */
+		tmp = htonl(requested_response_block_size);
+		memcpy(flow->write_block, (char*)&tmp,  sizeof (int32_t));
+		/* set requested response block size to -1, this indicates this is a response */
+		tmp = htonl(-1);
+		memcpy(flow->write_block + sizeof (int32_t), (char*)&tmp,  sizeof (int32_t));
+		/* copy timeval from data to response block */
+		memcpy(flow->write_block + 2*(sizeof (int32_t)), flow->read_block, sizeof(struct timeval));
+		/* send data out until block is finished */
+		for (;;) {
+			rc = write(flow->fd, flow->write_block, requested_response_block_size);
+			DEBUG_MSG(LOG_NOTICE, "send response with block size %d (%d)",rc,requested_response_block_size);
 			if (rc == -1) {
 				if (errno == EAGAIN) {
 					logging_log(LOG_WARNING,
-						"congestion on "
-						"control connection, "
-						"dropping reply block");
+						"congestion, "
+						"dropping response block");
+					break;
 				}
 				else {
 					logging_log(LOG_WARNING,
@@ -1036,14 +1125,22 @@ static void process_iat(struct _flow* flow)
 				}
 			}
 			else {
-				DEBUG_MSG(4, "sent challenge response current_data=%.3lfms", current_iat * 1e3);
+				flow->current_block_bytes_written += rc;
+	               		for (int i = 0; i < 2; i++) {
+					flow->statistics[i].bytes_written += rc;
+				}
+	               		if (flow->current_block_bytes_written >=
+                               	    (unsigned int)requested_response_block_size) {
+					/* just finish sending response block */
+                	       		flow->current_block_bytes_written = 0;
+					for (int i = 0; i < 2; i++) {
+	                                	flow->statistics[i].response_blocks_written++;
+					}
+					break;
+				}
 			}
-		} else {
-			DEBUG_MSG(LOG_WARNING, "read_block_size < reply_block_length");
 		}
-	} else {
-		DEBUG_MSG(LOG_NOTICE, "reply block disable, not sending response");
-	}
+
 }
 
 

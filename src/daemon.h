@@ -12,15 +12,21 @@ extern int daemon_pipe[2];
 
 extern pthread_mutex_t mutex;
 
+enum flow_endpoint
+{
+	SOURCE,
+	DESTINATION,
+};
+
 enum flow_state
 {
-	/* SOURCE */
-	GRIND_WAIT_CONNECT,
+        /* SOURCE */
+        GRIND_WAIT_CONNECT,
 
-	/* DESTINATION */
-	GRIND_WAIT_ACCEPT,
+        /* DESTINATION */
+        GRIND_WAIT_ACCEPT,
 
-	/* BOTH */
+	/* RUN */
 	GRIND
 };
 
@@ -34,12 +40,12 @@ struct _flow_source_settings
 	pthread_cond_t* add_source_condition;
 };
 
-
 struct _flow
 {
 	int id;
 
 	enum flow_state state;
+	enum flow_endpoint endpoint;
 
 	int fd;
 	int listenfd_data;
@@ -59,15 +65,10 @@ struct _flow
 	struct timeval next_write_block_timestamp;
 
 	char *read_block;
-	unsigned read_block_bytes_read;
-	uint64_t read_block_count;
-
 	char *write_block;
-	unsigned write_block_bytes_written;
-	uint64_t write_block_count;
-
-	char reply_block[sizeof(struct timeval) + 1];
-	unsigned int reply_block_bytes_read;
+	
+	unsigned int current_block_bytes_read;
+	unsigned int current_block_bytes_written;
 
 	unsigned short requested_server_test_port;
 
@@ -82,14 +83,6 @@ struct _flow
 
 	unsigned congestion_counter;
 
-	/* here we use current_mss and current_mtu to store the most current
-	   values of get_mss and get_mtu. The problem encountered was that at the
-	   very end when guess_topology was called get_mss and get_mtu returned
-	   some bogus value because the call to getsockopt failed.
-	*/
-	/*int current_mss;
-	int current_mtu;*/
-
 	/* Used for late_connect */
 	struct sockaddr *addr;
 	socklen_t addr_len;
@@ -97,8 +90,11 @@ struct _flow
 	struct _statistics {
 		long long bytes_read;
 		long long bytes_written;
-		long blocks_read;
-		long reply_blocks_read;
+
+		long request_blocks_read;
+		long request_blocks_written;
+		long response_blocks_read;
+		long response_blocks_written;
 
 		double iat_min, iat_max, iat_sum;
 		double rtt_min, rtt_max, rtt_sum;

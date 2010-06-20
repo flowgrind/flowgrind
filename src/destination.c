@@ -31,6 +31,7 @@
 #include "fg_pcap.h"
 #include "fg_socket.h"
 #include "fg_time.h"
+#include "fg_math.h"
 #include "log.h"
 #include "acl.h"
 #include "daemon.h"
@@ -41,12 +42,12 @@
 
 static struct timeval now;
 
-*static int flow_in_delay(struct _flow *flow, int direction)
+static int flow_in_delay(struct _flow *flow, int direction)
 {
 	return time_is_after(&flow->start_timestamp[direction], &now);
 }
 
-static int flow_sending(struct _flow *flow, int direction)
+/* static int flow_sending(struct _flow *flow, int direction)
 {
 	return !flow_in_delay(flow, direction) &&
 		(flow->settings.duration[direction] < 0 ||
@@ -58,7 +59,7 @@ static int flow_block_scheduled(struct _flow *flow)
 {
 	return !flow->settings.write_rate ||
 		time_is_after(&now, &flow->next_write_block_timestamp);
-}
+} */
 
 void remove_flow(unsigned int i);
 
@@ -68,47 +69,6 @@ int get_tcp_info(struct _flow *flow, struct tcp_info *info);
 
 void init_flow(struct _flow* flow, int is_source);
 void uninit_flow(struct _flow *flow);
-
-static void log_client_address(const struct sockaddr *sa, socklen_t salen)
-{
-	logging_log(LOG_NOTICE, "connection from %s", fg_nameinfo(sa, salen));
-}
-
-int accept_reply(struct _flow *flow)
-{
-	//TODO
-	struct sockaddr_storage addr;
-	socklen_t addrlen = sizeof(addr);
-
-	flow->fd = accept(flow->listenfd_data, (struct sockaddr *)&addr, &addrlen);
-	if (flow->fd == -1) {
-		if (errno == EINTR || errno == EAGAIN)
-			return 0;
-
-		logging_log(LOG_WARNING, "accept() failed: %s, continuing", strerror(errno));
-		return 0;
-	}
-	if (close(flow->listenfd_data) == -1)
-		logging_log(LOG_WARNING, "close(): failed");
-	flow->listenfd_data = -1;
-
-	set_non_blocking(flow->fd);
-	set_nodelay(flow->fd);
-
-	if (acl_check((struct sockaddr *)&addr) == ACL_DENY) {
-		logging_log(LOG_WARNING, "Access denied for host %s",
-				fg_nameinfo((struct sockaddr *)&addr, addrlen));
-		close(flow->fd);
-		flow->fd = -1;
-		return 0;
-	}
-
-	log_client_address((struct sockaddr *)&addr, addrlen);
-
-	flow->state = GRIND_WAIT_ACCEPT;
-
-	return 0;
-}
 
 /* listen_port will receive the port of the created socket */
 static int create_listen_socket(struct _flow *flow, char *bind_addr, unsigned short *listen_port)
@@ -194,8 +154,8 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 
 	flow->settings = request->settings;
 
-	flow->write_block = calloc(1, flow->settings.write_block_size);
-	flow->read_block = calloc(1, flow->settings.read_block_size);
+	flow->write_block = calloc(1, flow->settings.default_response_block_size );
+	flow->read_block = calloc(1, flow->settings.default_request_block_size );
 	if (flow->write_block == NULL || flow->read_block == NULL) {
 		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");
@@ -205,7 +165,7 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	}
 	if (flow->settings.byte_counting) {
 		int byte_idx;
-		for (byte_idx = 0; byte_idx < flow->settings.write_block_size; byte_idx++)
+		for (byte_idx = 0; byte_idx < flow->settings.default_request_block_size; byte_idx++)
 			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
 	}
 
