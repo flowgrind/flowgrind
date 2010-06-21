@@ -44,7 +44,7 @@ static void __attribute__((noreturn)) usage(void)
 		"Usage: %1$s [-a address ] [-w#] [-p#] [-D]\n"
 		"\t-a address\tadd address to list of allowed hosts (CIDR syntax)\n"
 		"\t-p#\t\tserver port\n"
-		"\t-D \t\tincrease debug verbosity (no daemon, log to stderr)\n"
+		"\t-d\t\tincrease debug verbosity (no daemon, log to stderr)\n"
 		"\t-v\t\tPrint version information and exit\n",
 		progname);
 	exit(1);
@@ -388,6 +388,14 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		xmlrpc_array_size(env, extra_options) != settings.num_extra_socket_options) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
+
+	 /* initalize random number generator (use cmdline option if given, else use random data) 
+	  * (currently not used for flow_destination, but added for future use)
+	  */
+        if (settings.random_seed)
+                rn_set_seed(settings.random_seed);
+        else
+                rn_set_seed(rn_read_dev_random());
 
 	/* Parse extra socket options */
 	for (i = 0; i < settings.num_extra_socket_options; i++) {
@@ -852,12 +860,13 @@ int main(int argc, char ** argv)
 #if HAVE_GETOPT_LONG
 	// getopt_long isn't portable, it's GNU extension
 	struct option lo[] = {	{"help", 0, 0, 'h' },
-							{"version", 0, 0, 'v'},
-							{0, 0, 0, 0}
+				{"version", 0, 0, 'v'},
+				{"debug", 0, 0, 'd'},
+				{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "a:Dhp:vV", lo, 0)) != -1) {
+	while ((ch = getopt_long(argc, argv, "a:dDhp:vV", lo, 0)) != -1) {
 #else
-	while ((ch = getopt(argc, argv, "a:Dhp:vV")) != -1) {
+	while ((ch = getopt(argc, argv, "a:dDhp:vV")) != -1) {
 #endif
 		switch (ch) {
 		case 'a':
@@ -872,6 +881,7 @@ int main(int argc, char ** argv)
 			usage();
 			break;
 
+		case 'd':
 		case 'D':
 			log_type = LOGTYPE_STDERR;
 			increase_debuglevel();
