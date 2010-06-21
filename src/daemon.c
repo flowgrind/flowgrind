@@ -821,7 +821,7 @@ static double next_interpacket_gap(struct _flow *flow)
 static int write_data(struct _flow *flow)
 {
 	int rc = 0;
-	int tmp;
+	int32_t data = 0;
 	int current_this_block_size;
 	int current_requested_block_size;
 	current_this_block_size = next_request_block_size(flow);
@@ -830,7 +830,7 @@ static int write_data(struct _flow *flow)
 	for (;;) {
 
 		/* fill buffer with new data */
-		if (flow->current_block_bytes_written >= (unsigned)current_this_block_size) {
+		if (flow->current_block_bytes_written == 0) {
 			current_this_block_size = next_request_block_size(flow);
 			current_requested_block_size = next_response_block_size(flow);
 			
@@ -854,14 +854,16 @@ static int write_data(struct _flow *flow)
 
 			/* serialize data:
 			 * this_block_size */
-			tmp = htonl(current_this_block_size);
-			memcpy (flow->write_block, (char*)&tmp, sizeof (int32_t));
+			data = htonl(current_this_block_size);
+			memcpy (flow->write_block, (char*)&data, sizeof (int32_t));
 			/* request_block_size */
-                        tmp = htonl(current_requested_block_size);
-                        memcpy (flow->write_block+sizeof(int32_t), (char*)&tmp, sizeof (int32_t));
+                        data = htonl(current_requested_block_size);
+                        memcpy (flow->write_block+sizeof(int32_t), (char*)&data, sizeof (int32_t));
 			/* copy iat data */
-			tsc_gettimeofday((struct timeval *)( flow->write_block + 2*(sizeof (int32_t)) ));
-			DEBUG_MSG(5, "writing new data to buffer bs = %d on flow %d", htonl(*(int*)flow->write_block), flow->id);
+			tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
+			DEBUG_MSG(5, "wrote new data to buffer bs = %d, rqs = %d, on flow %d", htonl(*(int*)flow->write_block), 
+										      		htonl(*(int*)flow->write_block+sizeof(int32_t)),
+										      		flow->id);
 		}
 
 		rc = write(flow->fd,
@@ -886,7 +888,7 @@ static int write_data(struct _flow *flow)
 			break;
 		}
 
-		DEBUG_MSG(4, "flow %d sent %d bytes of %u (already = %u)", flow->id, rc,
+		DEBUG_MSG(4, "flow %d sent %d bytes of %u (before = %u)", flow->id, rc,
 				current_this_block_size,
 				flow->current_block_bytes_written);
 		for (int i = 0; i < 2; i++) {
@@ -947,7 +949,7 @@ static int read_data(struct _flow *flow)
 
 	/* initalize with defaults */	
         current_this_block_size = flow->settings.default_request_block_size; 
-        current_requested_response_block_size = flow->settings.default_response_block_size;
+        current_requested_response_block_size = 0;
 	
 	for (;;) {
 		iov.iov_base = flow->read_block +
@@ -999,9 +1001,10 @@ static int read_data(struct _flow *flow)
 			flow->current_block_bytes_read = 0;
 	        
 		        current_this_block_size = ntohl(*(int*)flow->read_block);
-        	        current_requested_response_block_size = ntohl(*(int*)flow->read_block + (sizeof (int32_t) ) );
+        	        current_requested_response_block_size = 8192;
+			// ntohl(*(int*)flow->read_block + (sizeof (int32_t) ) );
 
-                        DEBUG_MSG(1, "new read block on flow %d: cbs=%d, rqs=%d",
+                        DEBUG_MSG(4, "new read block on flow %d: cbs=%d, rqs=%d",
                                         flow->id,current_this_block_size,current_requested_response_block_size);
 
 			if (current_requested_response_block_size == -1) {
@@ -1019,7 +1022,7 @@ static int read_data(struct _flow *flow)
 				process_iat(flow);
 
 				/* skip response if not requested */
-				if ( current_requested_response_block_size <= 0 )
+				if ( current_requested_response_block_size > (signed)( 2* (sizeof (int32_t)) + (sizeof (struct timeval)) ) )
 					send_response(flow);
 			}
 
@@ -1095,7 +1098,7 @@ static void send_response(struct _flow* flow)
 		int rc, tmp;
 		/* prepare block
 		 * char response_block[requested_response_block_size];
-		 *memset(response_block,0,requested_response_block_size); 
+		 * memset(response_block,0,requested_response_block_size); 
 		 */
 		/* start new writeblock as response */
 		flow->current_block_bytes_written = 0;
@@ -1106,7 +1109,7 @@ static void send_response(struct _flow* flow)
 		tmp = htonl(-1);
 		memcpy(flow->write_block + sizeof (int32_t), (char*)&tmp,  sizeof (int32_t));
 		/* copy timeval from data to response block */
-		memcpy(flow->write_block + 2*(sizeof (int32_t)), flow->read_block, sizeof(struct timeval));
+		memcpy(flow->write_block + 2*(sizeof (int32_t)), flow->read_block + 2*(sizeof (int32_t)), sizeof(struct timeval));
 		/* send data out until block is finished */
 		for (;;) {
 			rc = write(flow->fd, flow->write_block, requested_response_block_size);

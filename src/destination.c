@@ -40,14 +40,14 @@
 #include <float.h>
 #endif
 
-static struct timeval now;
+/* static struct timeval now;
 
 static int flow_in_delay(struct _flow *flow, int direction)
 {
 	return time_is_after(&flow->start_timestamp[direction], &now);
 }
 
-/* static int flow_sending(struct _flow *flow, int direction)
+ static int flow_sending(struct _flow *flow, int direction)
 {
 	return !flow_in_delay(flow, direction) &&
 		(flow->settings.duration[direction] < 0 ||

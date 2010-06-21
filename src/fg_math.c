@@ -1,24 +1,47 @@
-#include "fg_math.h"
-#include <math.h>
+#ifndef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
-#include <stdarg.h>
+#include <stdlib.h>
+#include <math.h>
+#include <errno.h>
+#include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <time.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
+
+#include "flowgrind.h"
+#include "debug.h"
+#include "common.h"
+#include "fg_math.h"
+
+#ifdef __SOLARIS__
+#define RANDOM_MAX              4294967295UL    /* 2**32-1 */
+#elif __DARWIN__
+#define RANDOM_MAX              LONG_MAX        /* Darwin */
+#else
+#define RANDOM_MAX              RAND_MAX        /* Linux, FreeBSD */
+#endif
 
 void
 rn_set_seed (const int i) {
 	srand((unsigned)i);
+	DEBUG_MSG(1, "initalizing random functions with seed %u",(unsigned)i);
 };
 
 int
 rn_read_dev_random () {
-	int i;
+	int i, rc;
 	int data = open("/dev/urandom", O_RDONLY);
-	read(data, &i, sizeof (int) );
+	rc = read(data, &i, sizeof (int) );
 	close(data);
+	if(rc == -1) {
+		error(ERR_FATAL, "read /dev/urandom failed: %s", strerror(errno));
+	}
+	return i;
 }
 
 inline double
@@ -45,6 +68,6 @@ dist_pareto (const double k, const double x_min) {
 inline double
 dist_weibull (const double alpha, const double beta) {
         double x = rn_uniform();
-        return   alpha * beta * pow (x,beta-1) * exp( -alpha, pow(x,beta) );
+        return   alpha * beta * pow (x,beta-1) * exp( -alpha * pow(x,beta) );
 }
 

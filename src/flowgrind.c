@@ -38,14 +38,6 @@
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
 
-#ifdef __SOLARIS__
-#define RANDOM_MAX		4294967295UL	/* 2**32-1 */
-#elif __DARWIN__
-#define RANDOM_MAX		LONG_MAX	/* Darwin */
-#else
-#define RANDOM_MAX		RAND_MAX	/* Linux, FreeBSD */
-#endif
-
 char sigint_caught = 0;
 
 FILE *log_stream = NULL;
@@ -528,7 +520,6 @@ static void usage(void)
 		"  -d           increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
 #endif
-		"  -r #		use random seed (default: use /dev/urandom)\n"
 		"  -e PRE       prepend prefix PRE to log filename (default: \"%1$s\")\n"
 		"  -i #.#       reporting interval in seconds (default: 0.05s)\n"
 		"  -l NAME      use log filename NAME (default: timestamp)\n"
@@ -537,6 +528,7 @@ static void usage(void)
 		"  -n #         number of test flows (default: 1)\n"
 		"  -o           overwrite existing log files (default: don't)\n"
 		"  -q           be quiet, do not log to screen (default: off)\n"
+		"  -r #         use random seed # (default: read /dev/urandom)\n"
 		"  -w           write output to logfile (default: off)\n\n"
 
 		"Flow options:\n\n"
@@ -548,8 +540,8 @@ static void usage(void)
 		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
 
-		"  -A x         Send response with minimal blocksize for RTT and IAT calculation\n"
-		"		(not needed in conjunction with -G)\n"
+		"  -A           Send response with minimal blocksize for RTT and IAT calculation\n"
+		"		(not needed in conjunction with -V)\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -582,8 +574,10 @@ static void usage(void)
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
 		"               b = bits per second (default), y = bytes/second, B = blocks/s\n"
-		"  -S x=#       Set block size (default: b=8192, denotes maximum value\n"
-		"		for stochastic generation)\n"
+		"  -U x=#       Set request block size  (default: b=8192)\n"
+		"  -V x=#	Set response block size (default: b=0)\n"
+		"               selected blocksizes denote maximum value if\n"
+		"               used with stochastic traffic generation (-G)\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n",
@@ -1143,7 +1137,7 @@ exit_outer_loop:
 
 void sigint_handler(int sig)
 {
-	/*UNUSED_ARGUMENT(sig);*/
+	UNUSED_ARGUMENT(sig);
 
 	DEBUG_MSG(1, "caught %s", strsignal(sig));
 
@@ -2045,7 +2039,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				}
 				ASSIGN_ENDPOINT_FLOW_OPTION(rate_str, arg)
 				break;
-			case 'S':
+			case 'U':
 				rc = sscanf(arg, "%u", &optunsigned);
 				if (rc != 1) {
 					fprintf(stderr, "block size must be a positive "
@@ -2054,8 +2048,17 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				}
 				ASSIGN_COMMON_FLOW_SETTING(default_request_block_size, optunsigned)
 				break;
+			case 'V':
+                                rc = sscanf(arg, "%u", &optunsigned);
+                                if (rc != 1) {
+                                        fprintf(stderr, "block size must be a positive "
+                                                "integer (in bytes)\n");
+                                        usage();
+                                }
+                                ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, optunsigned)
+                                break;	
 			case 'T':
-				rc = sscanf(arg, "%lf", &optdouble);
+			rc = sscanf(arg, "%lf", &optdouble);
 				if (rc != 1) {
 					fprintf(stderr, "malformed flow duration\n");
 					usage();
@@ -2122,9 +2125,9 @@ static void parse_cmdline(int argc, char **argv) {
 							{"version", 0, 0, 'v'},
 							{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwA:B:CD:EF:G:H:LNO:P:QR:S:T:W:Y:", lo, 0)) != -1)
+	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwAB:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
 #else
-	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwA:B:CD:EF:G:H:LNO:P:QR:S:T:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwAB:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:")) != -1)
 #endif
 		switch (ch) {
 
@@ -2257,9 +2260,10 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'O':
 		case 'P':
 		case 'R':
-		case 'S':
 		case 'T':
 		case 'W':
+		case 'U':
+		case 'V':
 		case 'Y':
 			parse_flow_option(ch, optarg, current_flow_ids);
 			break;

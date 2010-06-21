@@ -43,7 +43,7 @@ void fg_pcap_init()
 			if (!a->addr)
 				continue;
 			snprintf(addr, sizeof(addr), "a=%s", fg_nameinfo(a->addr, sizeof(struct sockaddr)));
-			strncat(devdes, addr, sizeof(devdes));
+			strncat(devdes, addr, sizeof(devdes)-1);
 			if (a->next)
 				strncat(devdes, ", ", sizeof(devdes));
 		}
