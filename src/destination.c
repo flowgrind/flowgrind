@@ -242,7 +242,7 @@ int accept_data(struct _flow *flow)
 	if (set_flow_tcp_options(flow) == -1)
 		return -1;
 
-	DEBUG_MSG(2, "data socket accepted");
+	DEBUG_MSG(LOG_NOTICE, "data socket accepted");
 	flow->state = GRIND;
 	flow->connect_called = 1;
 

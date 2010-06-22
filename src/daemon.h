@@ -91,10 +91,10 @@ struct _flow
 		long long bytes_read;
 		long long bytes_written;
 
-		long request_blocks_read;
-		long request_blocks_written;
-		long response_blocks_read;
-		long response_blocks_written;
+		int request_blocks_read;
+		int request_blocks_written;
+		int response_blocks_read;
+		int response_blocks_written;
 
 		double iat_min, iat_max, iat_sum;
 		double rtt_min, rtt_max, rtt_sum;
