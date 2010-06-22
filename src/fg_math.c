@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
+#include <syslog.h>
 
 #include "flowgrind.h"
 #include "debug.h"
@@ -29,7 +29,7 @@
 void
 rn_set_seed (const int i) {
 	srand((unsigned)i);
-	DEBUG_MSG(1, "initalizing random functions with seed %u",(unsigned)i);
+	DEBUG_MSG(LOG_WARNING, "initalizing random functions with seed %u",(unsigned)i);
 };
 
 int

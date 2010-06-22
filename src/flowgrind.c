@@ -25,6 +25,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <syslog.h>
 #include "adt.h"
 #include "common.h"
 #include "fg_socket.h"
@@ -324,7 +325,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		double throughput,
 		double rttmin, double rttavg, double rttmax,
 		double iatmin, double iatavg, double iatmax,
-		int cwnd, int ssth, int uack, int sack, int lost, int reor,
+		unsigned int cwnd, unsigned int ssth, unsigned int uack, unsigned int sack, unsigned int lost, unsigned int reor,
 		unsigned int fret, unsigned int tret, unsigned int fack, double linrtt, double linrttvar,
 		double linrto, int ca_state, int mss, int mtu, char* comment, int unit_byte)
 {
@@ -738,7 +739,7 @@ void init_logfile(void)
 		strcat(log_filename, buf);
 	}
 
-	DEBUG_MSG(2, "logging to \"%s\"", log_filename);
+	DEBUG_MSG(LOG_NOTICE, "logging to \"%s\"", log_filename);
 
 	if (!opt.clobber && access(log_filename, R_OK) == 0) {
 		fprintf(stderr, "fatal: log file exists\n");
@@ -796,12 +797,12 @@ void print_tcp_report_line(char hash, int id,
 		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
 		strncat(comment_buffer, (s), sizeof(comment_buffer)-1); }while(0);
 
-	if (type == 0)
+	if (type == 0 && r->response_blocks_read > 0)
 		avg_rtt = r->rtt_sum / (double)(r->response_blocks_read);
 	else
 		min_rtt = max_rtt = avg_rtt = INFINITY;
 
-	if (type == 1)
+	if (type == 1 && r->request_blocks_read > 0)
 		avg_iat = r->iat_sum / (double)(r->request_blocks_read);
 	else
 		min_iat = max_iat = avg_iat = INFINITY;
@@ -863,9 +864,9 @@ void print_tcp_report_line(char hash, int id,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
-		(int)r->tcp_info.tcpi_snd_cwnd, (int)r->tcp_info.tcpi_snd_ssthresh, (int)r->tcp_info.tcpi_unacked,
-		(int)r->tcp_info.tcpi_sacked, (int)r->tcp_info.tcpi_lost, (int)r->tcp_info.tcpi_reordering,
-		(int)r->tcp_info.tcpi_retrans, (int)r->tcp_info.tcpi_total_retrans, (int)r->tcp_info.tcpi_fackets,
+		(unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, (unsigned int)r->tcp_info.tcpi_unacked,
+		(unsigned int)r->tcp_info.tcpi_sacked, (unsigned int)r->tcp_info.tcpi_lost, (unsigned int)r->tcp_info.tcpi_reordering,
+		(unsigned int)r->tcp_info.tcpi_retrans, (unsigned int)r->tcp_info.tcpi_retransmits, (unsigned int)r->tcp_info.tcpi_fackets,
 		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3,
 		(double)r->tcp_info.tcpi_rto / 1e3, r->tcp_info.tcpi_ca_state,
 #else
@@ -975,7 +976,7 @@ void report_final(void)
                                 thruput_read = scale_thruput(thruput_read);
 				thruput_written = scale_thruput(thruput_written);
 
-				CATC("through = %.6f/%.6fM%c/s, %ld/%ld request blocks, %ld/%ld response blocks (out/in)", thruput_written, thruput_read, opt.mbyte ? 'B' : 'b', 
+				CATC("through = %.6f/%.6fM%c/s, %d/%d request blocks, %d/%d response blocks (out/in)", thruput_written, thruput_read, opt.mbyte ? 'B' : 'b', 
 					/* TODO: count blocks */
 					flow[id].final_report[endpoint]->request_blocks_written,
                                         flow[id].final_report[endpoint]->request_blocks_read,
@@ -1097,7 +1098,7 @@ void report_flow(const char* server_url, struct _report* report)
 exit_outer_loop:
 
 	if (id == opt.num_flows) {
-		DEBUG_MSG(1, "Got report from nonexistant flow, ignoring");
+		DEBUG_MSG(LOG_ERR, "Got report from nonexistant flow, ignoring");
 		return;
 	}
 
@@ -1139,7 +1140,7 @@ void sigint_handler(int sig)
 {
 	UNUSED_ARGUMENT(sig);
 
-	DEBUG_MSG(1, "caught %s", strsignal(sig));
+	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
 
 	if (sigint_caught == 0) {
 		fprintf(stderr, "Trying to gracefully close flows. Press CTRL+C again to force termination.\n");
@@ -1172,7 +1173,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 
 		if (sigint_caught)
 			return;
-		DEBUG_MSG(1, "starting flow on server %d", j);
+		DEBUG_MSG(LOG_ERR, "starting flow on server %d", j);
 		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "start_flows", &resultP,
 		"({s:i})",
 		"start_timestamp", now.tv_sec + 2);
@@ -1357,7 +1358,7 @@ has_more_reports:
 
 void close_flow(int id)
 {
-	DEBUG_MSG(2, "closing flow %d.", id);
+	DEBUG_MSG(LOG_WARNING, "closing flow %d.", id);
 
 	xmlrpc_env env;
 	xmlrpc_client *client;
@@ -1467,7 +1468,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	int i;
 
 	int listen_data_port;
-        DEBUG_MSG(1, "prepare flow %d destination", id);
+        DEBUG_MSG(LOG_WARNING, "prepare flow %d destination", id);
 
 	/* Contruct extra socket options array */
 	extra_options = xmlrpc_array_new(&rpc_env);
@@ -1570,7 +1571,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(value);
 		xmlrpc_DECREF(option);
 	}
-        DEBUG_MSG(1, "prepare flow %d source", id);
+        DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[SOURCE].server_url, "add_flow_source", &resultP,
 		"({"
@@ -1644,7 +1645,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 	if (resultP)
 		xmlrpc_DECREF(resultP);
-	DEBUG_MSG(1, "prepare flow %d completed", id);
+	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
 }
 
 /* Checks that all nodes use our flowgrind version */
@@ -2314,7 +2315,7 @@ static void parse_cmdline(int argc, char **argv) {
 		error = 1;
 	}
 	for (id = 0; id<opt.num_flows; id++) {
-		DEBUG_MSG(4, "sanity checking parameter set of flow %d.", id);
+		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
 		if (flow[id].settings[DESTINATION].duration[WRITE] > 0 && flow[id].late_connect &&
 				flow[id].settings[DESTINATION].delay[WRITE] <
 				flow[id].settings[SOURCE].delay[WRITE]) {
@@ -2448,17 +2449,17 @@ static void parse_cmdline(int argc, char **argv) {
 
 	if (error) {
 #ifdef DEBUG
-		DEBUG_MSG(1, "Skipping errors discovered by sanity checks.");
+		DEBUG_MSG(LOG_ERR, "Skipping errors discovered by sanity checks.");
 #else
 		exit(EXIT_FAILURE);
 #endif
 	}
-	DEBUG_MSG(4, "sanity check parameter set of flow %d. completed", id);
+	DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
 	if (max_flow_rate > 0) {
 		select_timeout = 1e6/max_flow_rate/2;
 		if (select_timeout > DEFAULT_SELECT_TIMEOUT)
 			select_timeout = DEFAULT_SELECT_TIMEOUT;
-		DEBUG_MSG(4, "setting select timeout = %uus", select_timeout);
+		DEBUG_MSG(LOG_WARNING, "setting select timeout = %uus", select_timeout);
 	}
 }
 
@@ -2486,27 +2487,27 @@ int main(int argc, char *argv[])
 	if (sigaction(SIGINT, &sa, NULL)) {
 		fprintf(stderr, "Error: Could not set handler for SIGINT\n");
 	}
-	DEBUG_MSG(1, "prepare xmlrpc client");
+	DEBUG_MSG(LOG_WARNING, "prepare xmlrpc client");
 	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &rpc_client);
 	/* Check that all nodes run a compatible flowgrind version */
-        DEBUG_MSG(1, "check flowgrindds versions");
+        DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
 	if (!sigint_caught)
 		check_version(rpc_client);
-        DEBUG_MSG(1, "check if flowgrindds are idle");
+        DEBUG_MSG(LOG_WARNING, "check if flowgrindds are idle");
 	/* Check that all nodes are currently idle */
 	if (!sigint_caught)
 		check_idle(rpc_client);
-        DEBUG_MSG(1, "prepare flows");
+        DEBUG_MSG(LOG_WARNING, "prepare flows");
 	/* Setup flows */
 	if (!sigint_caught)
 		prepare_flows(rpc_client);
 
-        DEBUG_MSG(1, "start flows");
+        DEBUG_MSG(LOG_WARNING, "start flows");
 	/* Start the test */
 	if (!sigint_caught)
 		grind_flows(rpc_client);
 
-	DEBUG_MSG(1, "report final");
+	DEBUG_MSG(LOG_WARNING, "report final");
 	if (!sigint_caught)
 		report_final();
 
@@ -2519,6 +2520,6 @@ int main(int argc, char *argv[])
 
 	xmlrpc_client_teardown_global_const();
 
-        DEBUG_MSG(1, "finished");
+        DEBUG_MSG(LOG_WARNING, "finished");
 	return 0;
 }

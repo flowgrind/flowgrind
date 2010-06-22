@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #include "common.h"
 #include "debug.h"
@@ -45,10 +46,10 @@ int set_window_size_directed(int fd, int window, int direction)
 	unsigned int optlen = sizeof w;
 
 	if (window <= 0)
-			{ DEBUG_MSG(3, "Getting %sBUF from fd %d ",
+			{ DEBUG_MSG(LOG_NOTICE, "Getting %sBUF from fd %d ",
 				(direction == SO_SNDBUF ? "SND" : "RCV"), fd); }
 	else
-			{ DEBUG_MSG(3, "Setting %sBUF on fd %d to %d",
+			{ DEBUG_MSG(LOG_NOTICE, "Setting %sBUF on fd %d to %d",
 				(direction == SO_SNDBUF ? "SND" : "RCV"),
 				fd, window); }
 
@@ -70,7 +71,7 @@ int set_window_size_directed(int fd, int window, int direction)
 	if (rc == -1)
 		return -1;
 	else {
-		DEBUG_MSG(3, "Set %sBUF on fd %d to %d (instead of %d)",
+		DEBUG_MSG(LOG_NOTICE, "Set %sBUF on fd %d to %d (instead of %d)",
 				(direction == SO_SNDBUF ? "SND" : "RCV"),
 				 fd, w, window);
 
@@ -84,9 +85,9 @@ int set_window_size(int fd, int window)
 	int send, receive;
 
 	if (window <= 0)
-		{ DEBUG_MSG(3, "Getting window size of fd %d", fd); }
+		{ DEBUG_MSG(LOG_NOTICE, "Getting window size of fd %d", fd); }
 	else
-		{ DEBUG_MSG(3, "Setting window size of fd %d to %d", fd, window); }
+		{ DEBUG_MSG(LOG_NOTICE, "Setting window size of fd %d to %d", fd, window); }
 
 	send = set_window_size_directed(fd, window, SO_SNDBUF);
 	receive = set_window_size_directed(fd, window, SO_RCVBUF);
@@ -98,7 +99,7 @@ int set_dscp(int fd, uint8_t dscp)
 	int optname = IP_TOS;
 	int optlevel = IPPROTO_IP;
 
-	DEBUG_MSG(3, "Setting DSCP of fd %d to %0x", fd, dscp);
+	DEBUG_MSG(LOG_NOTICE, "Setting DSCP of fd %d to %0x", fd, dscp);
 
 	if (dscp & ~0x3F) {
 		errno = EINVAL;
@@ -119,7 +120,7 @@ int set_route_record(int fd)
 	int nroutes = NROUTES;
 	char rspace[3 + 4 * NROUTES + 1];
 
-	DEBUG_MSG(3, "Enabling route_record for fd %d ", fd);
+	DEBUG_MSG(LOG_NOTICE, "Enabling route_record for fd %d ", fd);
 
 	if (!(rc = setsockopt(fd, IPPROTO_IP, IP_RECVOPTS, &opt_on, sizeof(opt_on))))
 		return rc;
@@ -138,7 +139,7 @@ int set_non_blocking(int fd)
 {
 	int flags;
 
-	DEBUG_MSG(3, "Setting fd %d non-blocking", fd);
+	DEBUG_MSG(LOG_NOTICE, "Setting fd %d non-blocking", fd);
 
 
 	if ((flags = fcntl(fd, F_GETFL, 0)) == -1)
@@ -150,7 +151,7 @@ int set_nodelay(int fd)
 {
 	int opt_on = 1;
 
-	DEBUG_MSG(3, "Setting TCP_NODELAY on fd %d", fd);
+	DEBUG_MSG(LOG_NOTICE, "Setting TCP_NODELAY on fd %d", fd);
 
 	return setsockopt(fd, SOL_TCP, TCP_NODELAY, &opt_on, sizeof(opt_on));
 }
@@ -185,7 +186,7 @@ int get_mss(int fd)
 
 int set_keepalive(int fd, int how)
 {
-	DEBUG_MSG(3, "Setting TCP_KEEPALIVE(%d) on fd %d", how, fd);
+	DEBUG_MSG(LOG_NOTICE, "Setting TCP_KEEPALIVE(%d) on fd %d", how, fd);
 
 	return setsockopt(fd, SOL_TCP, SO_KEEPALIVE, &how, sizeof(how));
 }
@@ -193,12 +194,12 @@ int set_keepalive(int fd, int how)
 int set_congestion_control(int fd, const char *cc_alg)
 {
 #ifdef __LINUX__
-	DEBUG_MSG(3, "Setting cc_alg=\"%s\" for fd %d", cc_alg, fd);
+	DEBUG_MSG(LOG_NOTICE, "Setting cc_alg=\"%s\" for fd %d", cc_alg, fd);
 	return setsockopt(fd, IPPROTO_TCP, TCP_CONG_MODULE, cc_alg, strlen(cc_alg));
 #else
 	UNUSED_ARGUMENT(fd);
 	UNUSED_ARGUMENT(cc_alg);
-	DEBUG_MSG(2, "Cannot set cc_alg for OS other than Linux");
+	DEBUG_MSG(LOG_ERR, "Cannot set cc_alg for OS other than Linux");
 	return -1;
 #endif
 }
@@ -208,7 +209,7 @@ int set_so_elcn(int fd, int val)
 #ifndef TCP_ELCN
 #define TCP_ELCN 20
 #endif
-	DEBUG_MSG(3, "Setting TCP_ELCN on fd %d", fd);
+	DEBUG_MSG(LOG_WARNING, "Setting TCP_ELCN on fd %d", fd);
 
 	return setsockopt(fd, SOL_TCP, TCP_ELCN, &val, sizeof(val));
 }
@@ -219,7 +220,7 @@ int set_so_icmp(int fd)
 #define TCP_ICMP 21
 #endif
 	int opt = 1;
-	DEBUG_MSG(3, "Setting TCP_ICMP on fd %d", fd);
+	DEBUG_MSG(LOG_WARNING, "Setting TCP_ICMP on fd %d", fd);
 
 	return setsockopt(fd, SOL_TCP, TCP_ICMP, &opt, sizeof(opt));
 
@@ -230,7 +231,7 @@ int set_ip_mtu_discover(int fd)
 #ifdef SOL_IP
 	const int dummy = IP_PMTUDISC_DO;
 
-	DEBUG_MSG(3, "Setting IP_MTU_DISCOVERY on fd %d", fd);
+	DEBUG_MSG(LOG_WARNING, "Setting IP_MTU_DISCOVERY on fd %d", fd);
 	return setsockopt(fd, SOL_IP, IP_MTU_DISCOVER, &dummy, sizeof(dummy)) ;
 
 #else
@@ -244,11 +245,11 @@ int set_tcp_cork(int fd)
 #ifdef __LINUX__
 	int opt = 1;
 
-	DEBUG_MSG(3, "Setting TCP_CORK on fd %d", fd);
+	DEBUG_MSG(LOG_WARNING, "Setting TCP_CORK on fd %d", fd);
 	return setsockopt(fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
 #else
 	UNUSED_ARGUMENT(fd);
-	DEBUG_MSG(2, "Cannot set TCP_CORK for OS other than Linux");
+	DEBUG_MSG(LOG_ERR, "Cannot set TCP_CORK for OS other than Linux");
 	return -1;
 #endif
 }
@@ -258,13 +259,13 @@ int toggle_tcp_cork(int fd)
 #ifdef __LINUX__
 	int opt = 0;
 
-	DEBUG_MSG(3, "Clearing TCP_CORK on fd %d", fd);
+	DEBUG_MSG(LOG_WARNING, "Clearing TCP_CORK on fd %d", fd);
 	if (setsockopt(fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt)) == -1)
 		return -1;
 	return set_tcp_cork(fd);
 #else
 	UNUSED_ARGUMENT(fd);
-	DEBUG_MSG(2, "Cannot toggle TCP_CORK for OS other than Linux");
+	DEBUG_MSG(LOG_ERR, "Cannot toggle TCP_CORK for OS other than Linux");
 	return -1;
 #endif
 }
@@ -273,7 +274,7 @@ int set_so_debug(int fd)
 {
 	int opt = 1;
 
-	DEBUG_MSG(3, "Setting TCP_DEBUG on fd %d", fd);
+	DEBUG_MSG(LOG_WARNING, "Setting TCP_DEBUG on fd %d", fd);
 	return setsockopt(fd, SOL_SOCKET, SO_DEBUG, &opt, sizeof(opt));
 }
 

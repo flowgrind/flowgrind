@@ -130,11 +130,11 @@ struct _report
 
 	long long bytes_read;
 	long long bytes_written;
-
-	long request_blocks_read;
-	long request_blocks_written;
-	long response_blocks_read;
-	long response_blocks_written;
+	/* TODO: figure out if long is needed here */
+	int request_blocks_read;
+	int request_blocks_written;
+	int response_blocks_read;
+	int response_blocks_written;
 
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;
