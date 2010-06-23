@@ -194,6 +194,31 @@ struct _request_get_status
 	int num_flows;
 };
 
+/* 
+ * our data block has the following layout:
+ *
+ * this_block_size (int32_t), request_block_size (int32_t), data (timeval), trail 
+ *
+ * this_block_size:     the size of our request or response block (we generate 
+ *                      a request block here)
+ *
+ * request_block_size:  the size of the response block we request
+ *                      0 if we dont request a response block
+ *                     -1 indicates this is a response block (needed for parsing data)
+ *
+ * data:                IAT data if this is a request block
+ *                      RTT data if this is a response block
+ *                     
+ * trail:               trailing garbage to fill up the blocksize (not used)
+ */
+
+struct _block 
+{
+	int32_t this_block_size;
+	int32_t	request_block_size;
+	struct timeval data;
+};
+
 void flow_error(struct _flow *flow, const char *fmt, ...);
 void request_error(struct _request *request, const char *fmt, ...);
 int set_flow_tcp_options(struct _flow *flow);
