@@ -965,11 +965,11 @@ void report_final(void)
 				if (duration_write > flow[id].settings[endpoint].duration[SOURCE])
 					duration_write = flow[id].settings[endpoint].duration[SOURCE];
 
-				thruput_read = flow[id].final_report[endpoint]->bytes_read / duration_read;
+				thruput_read = flow[id].final_report[endpoint]->bytes_read / MAX(duration_read,duration_write);
 				if (isnan(thruput_read)) 
 					thruput_read = 0.0;
 				
-				thruput_written = flow[id].final_report[endpoint]->bytes_written / duration_write;
+				thruput_written = flow[id].final_report[endpoint]->bytes_written / MAX(duration_read,duration_write);
 				if (isnan(thruput_written))
 					thruput_written = 0.0;
                                 
@@ -977,7 +977,6 @@ void report_final(void)
 				thruput_written = scale_thruput(thruput_written);
 
 				CATC("through = %.6f/%.6fM%c/s, %d/%d request blocks, %d/%d response blocks (out/in)", thruput_written, thruput_read, opt.mbyte ? 'B' : 'b', 
-					/* TODO: count blocks */
 					flow[id].final_report[endpoint]->request_blocks_written,
                                         flow[id].final_report[endpoint]->request_blocks_read,
 					flow[id].final_report[endpoint]->response_blocks_written,
@@ -1920,7 +1919,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 		switch (ch) {
 			case 'A':
-				ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, 2*(sizeof (int32_t) ) + (sizeof (struct timeval)) + 1)
+				ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, 32);
 				break;
 			case 'B':
 				rc = sscanf(arg, "%u", &optunsigned);
@@ -2126,9 +2125,9 @@ static void parse_cmdline(int argc, char **argv) {
 							{"version", 0, 0, 'v'},
 							{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwAB:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
+	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwA:B:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
 #else
-	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwAB:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwA:B:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:")) != -1)
 #endif
 		switch (ch) {
 

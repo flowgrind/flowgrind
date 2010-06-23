@@ -134,6 +134,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 #ifdef __LINUX__
 	socklen_t opt_len = 0;
 #endif
+	int buffersize;
 	struct _flow *flow;
 
 	if (num_flows >= MAX_FLOWS) {
@@ -147,9 +148,11 @@ int add_flow_source(struct _request_add_flow_source *request)
 
 	flow->settings = request->settings;
 	flow->source_settings = request->source_settings;
+	/* be greedy with buffer sizes */
+	buffersize=MAX(flow->settings.default_request_block_size,flow->settings.default_response_block_size);
+	flow->write_block = calloc(1, buffersize);
+	flow->read_block = calloc(1, buffersize);
 
-	flow->write_block = calloc(1, flow->settings.default_request_block_size);
-	flow->read_block = calloc(1, flow->settings.default_response_block_size);
 	if (flow->write_block == NULL || flow->read_block == NULL) {
 		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");
