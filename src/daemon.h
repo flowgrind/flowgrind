@@ -66,7 +66,10 @@ struct _flow
 
 	char *read_block;
 	char *write_block;
-	
+
+	unsigned int current_write_block_size;
+	unsigned int current_read_block_size;
+
 	unsigned int current_block_bytes_read;
 	unsigned int current_block_bytes_written;
 
@@ -212,6 +215,7 @@ struct _request_get_status
  * trail:               trailing garbage to fill up the blocksize (not used)
  */
 
+#define MIN_BLOCK_SIZE 32
 struct _block 
 {
 	int32_t this_block_size;
