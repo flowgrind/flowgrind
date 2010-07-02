@@ -205,7 +205,8 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
-		settings.default_request_block_size <= 0 || settings.default_response_block_size < 0 ||
+		(settings.default_request_block_size && settings.default_request_block_size < MIN_BLOCK_SIZE) || 
+		(settings.default_response_block_size && settings.default_response_block_size < MIN_BLOCK_SIZE)  ||
 		strlen(destination_host) >= sizeof(source_settings.destination_host) - 1||
 		source_settings.destination_port <= 0 || source_settings.destination_port > 65535 ||
 		strlen(cc_alg) > 255 ||
@@ -381,7 +382,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
-		settings.default_request_block_size <= 0 || settings.default_response_block_size < 0 ||
+               (settings.default_request_block_size != 0 && settings.default_request_block_size < MIN_BLOCK_SIZE) ||
+               (settings.default_response_block_size != 0 && settings.default_response_block_size < MIN_BLOCK_SIZE)  ||
 		settings.write_rate < 0 ||
 		strlen(cc_alg) > 255 ||
 		settings.num_extra_socket_options < 0 || settings.num_extra_socket_options > MAX_EXTRA_SOCKET_OPTIONS ||

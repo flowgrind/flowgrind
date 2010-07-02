@@ -235,13 +235,13 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	// output text for symbolic numbers
 	switch ((int)value) {
 		case INT_MAX:
-			for (a = lengthData; a < columnSize; a++)
+			for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
 				strcat(strDataRow, " ");
 			strcat(strDataRow, " INT_MAX");
 			break;
 
                 case USHRT_MAX:
-                        for (a = lengthData; a < columnSize; a++)
+                        for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
                                 strcat(strDataRow, " ");
                         strcat(strDataRow, " USHRT_MAX");
 			break;
@@ -976,7 +976,7 @@ void report_final(void)
                                 thruput_read = scale_thruput(thruput_read);
 				thruput_written = scale_thruput(thruput_written);
 
-				CATC("through = %.6f/%.6fM%c/s, %d/%d request blocks, %d/%d response blocks (out/in)", thruput_written, thruput_read, opt.mbyte ? 'B' : 'b', 
+				CATC("through = %.6f/%.6fM%c/s, %lu/%lu request blocks, %lu/%lu response blocks (out/in)", thruput_written, thruput_read, opt.mbyte ? 'B' : 'b', 
 					flow[id].final_report[endpoint]->request_blocks_written,
                                         flow[id].final_report[endpoint]->request_blocks_read,
 					flow[id].final_report[endpoint]->response_blocks_written,

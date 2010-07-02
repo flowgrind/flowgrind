@@ -1,7 +1,6 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -728,7 +727,10 @@ void init_flow(struct _flow* flow, int is_source)
 
 	flow->current_block_bytes_read = 0;
 	flow->current_block_bytes_written = 0;
-	
+	/* TODO */
+	flow->current_read_block_size = MIN_BLOCK_SIZE;
+	flow->current_write_block_size = MIN_BLOCK_SIZE;
+
 	flow->last_block_read.tv_sec = 0;
 	flow->last_block_read.tv_usec = 0;
 
@@ -773,7 +775,7 @@ static int next_request_block_size(struct _flow *flow)
 		default:
 		bs = flow->settings.default_request_block_size;
 	}
-	DEBUG_MSG(LOG_NOTICE, "calculated next request blocksize %d for flow %d", bs, flow->id);
+	DEBUG_MSG(LOG_NOTICE, "calculated request size %d for flow %d", bs, flow->id);
 	return bs;	
 }
 
@@ -788,7 +790,10 @@ static int next_response_block_size(struct _flow *flow)
                 default:
                 bs = flow->settings.default_response_block_size;
         }
-        DEBUG_MSG(LOG_NOTICE, "calculated next response blocksize %d for flow %d", bs, flow->id);
+	
+	if (bs)
+        	DEBUG_MSG(LOG_NOTICE, "calculated next response size %d for flow %d", bs, flow->id);
+
         return bs;
 }
 
@@ -796,7 +801,6 @@ static double next_interpacket_gap(struct _flow *flow)
 {
 	double gap = 0;
 
-	DEBUG_MSG(LOG_NOTICE, "flow %d has rate %u", flow->id, flow->settings.write_rate);
 	/* old variant just for documentation.
 	 * see: http://portal.acm.org/citation.cfm?id=208389.208390 
 	
@@ -819,30 +823,28 @@ static double next_interpacket_gap(struct _flow *flow)
 			DEBUG_MSG(LOG_DEBUG, "flow %d has rate %u", flow->id, flow->settings.write_rate);
 		}
 	}
-
-	DEBUG_MSG(LOG_NOTICE, "calculated next interpacket gap %.6f for flow %d", gap, flow->id);
+	if (gap)
+		DEBUG_MSG(LOG_NOTICE, "calculated next interpacket gap %.6f for flow %d", gap, flow->id);
 	return gap;
 }
 
 static int write_data(struct _flow *flow)
 {
 	int rc = 0;
-	int current_this_block_size;
-	int current_requested_block_size;
-	int current_interpacket_gap;
-	
+	int response_block_size = 0;
+	double interpacket_gap = .0;
 	for (;;) {
 
 		/* fill buffer with new data */
 		if (flow->current_block_bytes_written == 0) {
-			current_this_block_size = next_request_block_size(flow);
-			current_requested_block_size = next_response_block_size(flow);
-			current_interpacket_gap = next_interpacket_gap(flow);	
+			flow->current_write_block_size = next_request_block_size(flow);
+			response_block_size = next_response_block_size(flow);
+			interpacket_gap = next_interpacket_gap(flow);	
 			/* serialize data:
 			 * this_block_size */
-			((struct _block *)flow->write_block)->this_block_size = htonl(current_this_block_size); 
+			((struct _block *)flow->write_block)->this_block_size = htonl(flow->current_write_block_size); 
 			/* requested_block_size */  
-			((struct _block *)flow->write_block)->request_block_size = htonl(current_requested_block_size);
+			((struct _block *)flow->write_block)->request_block_size = htonl(response_block_size);
 			/* copy iat data */
 			tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
 			DEBUG_MSG(LOG_DEBUG, "wrote new request data to out buffer bs = %d, rqs = %d, on flow %d", 
@@ -854,7 +856,7 @@ static int write_data(struct _flow *flow)
 		rc = write(flow->fd,
 				flow->write_block +
 				flow->current_block_bytes_written,
-				current_this_block_size -
+				flow->current_write_block_size -
 				flow->current_block_bytes_written);
 
 		if (rc == -1) {
@@ -873,25 +875,25 @@ static int write_data(struct _flow *flow)
 			break;
 		}
 
-		DEBUG_MSG(LOG_DEBUG, "flow %d sent request %d bytes of %u (before = %u)", flow->id, rc,
-				current_this_block_size,
+		DEBUG_MSG(LOG_DEBUG, "flow %d sent %d request bytes of %u (before = %u)", flow->id, rc,
+				flow->current_write_block_size,
 				flow->current_block_bytes_written);
 		for (int i = 0; i < 2; i++) {
 			flow->statistics[i].bytes_written += rc;
 		}
 		flow->current_block_bytes_written += rc;
 
-		if (flow->current_block_bytes_written >=(unsigned int)current_this_block_size) {
+		if (flow->current_block_bytes_written >= flow->current_write_block_size) {
 			/* we just finished writing a block */
 			flow->current_block_bytes_written = 0;
 			tsc_gettimeofday(&flow->last_block_written);
 			for (int i = 0; i < 2; i++) {
 				flow->statistics[i].request_blocks_written++;
 			}
-			/* TODO */
-			if (current_interpacket_gap) {
+			
+			if (interpacket_gap) {
 				time_add(&flow->next_write_block_timestamp,
-						current_interpacket_gap);
+						interpacket_gap);
 				if (time_is_after(&flow->last_block_written, &flow->next_write_block_timestamp)) {
 					/* TODO: log time_diff and check if
 					 * it's growing (queue build up) */
@@ -925,22 +927,17 @@ static int write_data(struct _flow *flow)
 static int read_data(struct _flow *flow)
 {
 	int rc;
-	int current_requested_response_block_size;
-	int current_this_block_size;
+	int requested_response_block_size;
 	struct iovec iov;
 	struct msghdr msg;
 	char cbuf[512];
 	struct cmsghdr *cmsg;
-
-	/* initalize with defaults */	
-        current_this_block_size = flow->settings.default_request_block_size; 
-        current_requested_response_block_size = 0;
 	
 	for (;;) {
 		iov.iov_base = flow->read_block +
-			flow->current_block_bytes_read;
-		iov.iov_len = current_this_block_size -
-			flow->current_block_bytes_read;
+			       flow->current_block_bytes_read;
+		iov.iov_len = flow->current_read_block_size -
+			      flow->current_block_bytes_read;
 		// no name required
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
@@ -981,32 +978,32 @@ static int read_data(struct _flow *flow)
 			flow->statistics[i].bytes_read += rc;
 		}
 
-		current_this_block_size = ntohl( ((struct _block *)flow->read_block)->this_block_size );
-		current_requested_response_block_size = ntohl(((struct _block *)flow->read_block)->request_block_size );
+		flow->current_read_block_size = ntohl( ((struct _block *)flow->read_block)->this_block_size );
+		requested_response_block_size = ntohl( ((struct _block *)flow->read_block)->request_block_size );
 
-		if (flow->current_block_bytes_read >= (unsigned int)current_this_block_size ) {
+		if (flow->current_block_bytes_read >= flow->current_read_block_size ) {
 			/* We just finished to read a whole block */
 			flow->current_block_bytes_read = 0;
 
-                        DEBUG_MSG(LOG_DEBUG, "new read block on flow %d: cbs=%d, rqs=%d",
-                                        flow->id,current_this_block_size,current_requested_response_block_size);
+                        DEBUG_MSG(LOG_NOTICE, "new read block on flow %d: cbs=%d, rqs=%d",
+                                        flow->id,flow->current_read_block_size,requested_response_block_size);
 
-			if (current_requested_response_block_size == -1) {
-				/* This is a response block, consider DATA as RTT */
+			if (requested_response_block_size == -1) {
+				/* This is a response block, consider DATA as RTT,  */
 				for (int i = 0; i < 2; i++) {
 					flow->statistics[i].response_blocks_read++;
 				}
 				process_rtt(flow); 
 		
 			} else {
-				/* this is request block, consider DATA as IAT */
+				/* this is a request block, calculate IAT */
 				for (int i = 0; i < 2; i++) {
                                 	flow->statistics[i].request_blocks_read++;
                                 }
 				process_iat(flow);
  
-				/* skip response if not requested */
-				if ( current_requested_response_block_size > (signed)( (sizeof (struct _block)) ) )
+				/* send response if requested */
+				if ( requested_response_block_size > (signed)( (sizeof (struct _block)) ) )
 					send_response(flow);
 
 			}
@@ -1029,25 +1026,28 @@ static void process_rtt(struct _flow* flow)
 {
 	double current_rtt = .0;
 	struct timeval now;
+	struct timeval *data = (struct timeval *)(flow->read_block + 2*(sizeof (int32_t)) ); 
 
 	tsc_gettimeofday(&now);
-	if (flow->last_block_read.tv_sec  != 0 ||
-	    flow->last_block_read.tv_usec != 0) {
-		current_rtt = time_diff(&flow->last_block_read, &now);
-		/* both interval and total */
-		for (int i = 0; i < 2; i++) {
-			ASSIGN_MIN(flow->statistics[i].rtt_min, current_rtt);
-			ASSIGN_MAX(flow->statistics[i].rtt_max, current_rtt);
-			flow->statistics[i].rtt_sum += current_rtt;
-		}
-	} else {
+	current_rtt = time_diff(data, &now);
+
+	if (current_rtt < 0) {
 		current_rtt = NAN;
+		DEBUG_MSG(LOG_CRIT, "received malformed rtt block of flow %d (rtt = %.3lfms), ignoring", flow->id, current_rtt * 1e3);
 	}
+
 	flow->last_block_read = now;
 
-	DEBUG_MSG(LOG_WARNING, "processed response block of flow %d, (RTT = %.3lfms)", flow->id, current_rtt * 1e3);
-}
+	if (!isnan(current_rtt)) {
+                for (int i = 0; i < 2; i++) {
+                        ASSIGN_MIN(flow->statistics[i].rtt_min, current_rtt);
+                        ASSIGN_MAX(flow->statistics[i].rtt_max, current_rtt);
+                        flow->statistics[i].rtt_sum += current_rtt;
+                }
+	}	
 
+	DEBUG_MSG(LOG_WARNING, "processed response block of flow %d (RTT = %.3lfms)", flow->id, current_rtt * 1e3);
+}
 
 
 static void process_iat(struct _flow* flow)
@@ -1056,36 +1056,38 @@ static void process_iat(struct _flow* flow)
 	struct timeval now;
 
 	tsc_gettimeofday(&now);
+
 	if (flow->last_block_read.tv_sec  != 0 || 
 	    flow->last_block_read.tv_usec != 0) {
 		current_iat = time_diff(&flow->last_block_read, &now);
-		/* both interval and total */
-		for (int i = 0; i < 2; i++) {
-			ASSIGN_MIN(flow->statistics[i].iat_min, current_iat);
-			ASSIGN_MAX(flow->statistics[i].iat_max, current_iat);
-			flow->statistics[i].iat_sum += current_iat;
-		}
 	} else {
 		current_iat = NAN;
 	}
+	
 	flow->last_block_read = now;
-
-	DEBUG_MSG(LOG_WARNING, "processed iat block of flow %d (IAT = %.3lfms)", flow->id, current_iat * 1e3);
+	
+	if (!isnan(current_iat)) {
+	       	for (int i = 0; i < 2; i++) {
+                        ASSIGN_MIN(flow->statistics[i].iat_min, current_iat);
+                        ASSIGN_MAX(flow->statistics[i].iat_max, current_iat);
+                        flow->statistics[i].iat_sum += current_iat;
+                }
+	}
+	DEBUG_MSG(LOG_WARNING, "calculated iat of flow %d (IAT = %.3lfms)", flow->id, current_iat * 1e3);
 }
 
 static void send_response(struct _flow* flow)
-{
+{		
 		int rc, requested_response_block_size;
 		requested_response_block_size = ntohl(((struct _block *)flow->read_block)->request_block_size);
 		/* start new writeblock as response */
 		flow->current_block_bytes_written = 0;
-		/* set this_blocksize to requested_repsonse_block_size */
                 ((struct _block *)flow->write_block)->this_block_size = htonl(requested_response_block_size);
-                /* requested_block_size */
-                ((struct _block *)flow->write_block)->request_block_size = htonl(-1);
+		((struct _block *)flow->write_block)->request_block_size = htonl(-1);
+		/* TODO: something is wrong here */
+		//memcpy(flow->write_block + 2*(sizeof (int32_t)), flow->read_block + 2*(sizeof (int32_t)), sizeof(struct timeval));
+		tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
 
-		/* copy timeval from data to response block */
-		memcpy(flow->write_block + 2*(sizeof (int32_t)), flow->read_block + 2*(sizeof (int32_t)), sizeof(struct timeval));
                 DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, rqs = %d, on flow %d", 
 	                ntohl(((struct _block *)flow->write_block)->this_block_size),
                         ntohl(((struct _block *)flow->write_block)->request_block_size),
@@ -1094,13 +1096,13 @@ static void send_response(struct _flow* flow)
 		/* send data out until block is finished */
 		for (;;) {
 			rc = write(flow->fd, flow->write_block, requested_response_block_size);
-			DEBUG_MSG(LOG_NOTICE, "send %d bytes response (%d)",rc,requested_response_block_size);
+			DEBUG_MSG(LOG_NOTICE, "send %d bytes response (rqs %d) on flow %d",rc,requested_response_block_size,flow->id);
 			if (rc == -1) {
 				if (errno == EAGAIN) {
 					logging_log(LOG_WARNING,
 						"congestion, "
 						"dropping response block");
-					break;
+					//break;
 				}
 				else {
 					logging_log(LOG_WARNING,
@@ -1118,6 +1120,7 @@ static void send_response(struct _flow* flow)
                                	    (unsigned int)requested_response_block_size) {
 					/* just finish sending response block */
                 	       		flow->current_block_bytes_written = 0;
+					tsc_gettimeofday(&flow->last_block_written);
 					for (int i = 0; i < 2; i++) {
 	                                	flow->statistics[i].response_blocks_written++;
 					}

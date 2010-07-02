@@ -128,13 +128,12 @@ struct _report
 	struct timeval begin;
 	struct timeval end;
 
-	long long bytes_read;
-	long long bytes_written;
-	/* TODO: figure out if long is needed here */
-	int request_blocks_read;
-	int request_blocks_written;
-	int response_blocks_read;
-	int response_blocks_written;
+	unsigned long long bytes_read;
+	unsigned long long bytes_written;
+	unsigned long request_blocks_read;
+	unsigned long request_blocks_written;
+	unsigned long response_blocks_read;
+	unsigned long response_blocks_written;
 
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;
