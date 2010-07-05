@@ -7,6 +7,9 @@
 
 #include "common.h"
 #include "fg_time.h"
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/client.h>
+
 
 #define	MAX_FLOWS		256
 #define CONGESTION_LIMIT 	10000
@@ -22,6 +25,7 @@ struct _opt {
 	char *log_filename_prefix;
 	char clobber;
 	char mbyte;
+	char symbolic;
 	unsigned short base_port;
 };
 extern struct _opt opt;
@@ -91,4 +95,5 @@ inline static double scale_thruput(double thruput)
 		return thruput / (1<<20);
 	return thruput / 1e6 *(1<<3);
 }
+
 #endif

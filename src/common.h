@@ -71,6 +71,31 @@ enum _traffic_generation_types
 	WEIBULL,
 };
 
+/* 
+ * our data block has the following layout:
+ *
+ * this_block_size (int32_t), request_block_size (int32_t), data (timeval), trail 
+ *
+ * this_block_size:     the size of our request or response block (we generate 
+ *                      a request block here)
+ *
+ * request_block_size:  the size of the response block we request
+ *                      0 if we dont request a response block
+ *                     -1 indicates this is a response block (needed for parsing data)
+ *
+ * data                 RTT data if this is a response block
+ *                     
+ * trail:               trailing garbage to fill up the blocksize (not used)
+ */
+
+#define MIN_BLOCK_SIZE 32
+struct _block
+{
+        int32_t this_block_size;
+        int32_t request_block_size;
+        struct timeval data;
+};
+
 /* Common to both endpoints */
 struct _flow_settings
 {
