@@ -26,6 +26,7 @@ struct _opt {
 	char clobber;
 	char mbyte;
 	char symbolic;
+	char doAnderson;
 	unsigned short base_port;
 };
 extern struct _opt opt;
