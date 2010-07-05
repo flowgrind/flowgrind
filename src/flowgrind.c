@@ -71,7 +71,6 @@ int visible_columns[7] = {1, 1, 1, 1, 1, 1, 1};
 // wants to test for the uniform then ADT1 is the lower bound and ADT2 the
 // upper bound
 double ADT[adt_type_max][2];
-int doAnderson = 0; // it will be 1 if we do the exponential test; it will be 2 if we do the uniform test
 
 xmlrpc_env rpc_env;
 static void die_if_fault_occurred(xmlrpc_env *env);
@@ -560,7 +559,7 @@ static void usage(void)
 		"  and 4096 at the destination.\n\n"
 
 		"  -A           Send response with minimal blocksize for RTT and IAT calculation\n"
-		"		(not needed in conjunction with -V)\n"
+		"               (same as -V b=32)\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -662,16 +661,19 @@ static void usage_flowopt(void)
 }
 
 void init_options_defaults(void)
-{
-	int i, j;
+{	
 	opt.num_flows = 1;
 	opt.reporting_interval = 0.05;
 	opt.log_filename_prefix = "flowlog-";
 	opt.dont_log_logfile = 1;
+}
 
-	for (i = 0; i < adt_type_max; i++)
-		for (j = 0; j < 2; j++)
-			ADT[i][j] = 0.05;
+void init_adt_defaults(void)
+{
+        int i, j;
+	for (j = 0; j < 2; j++)
+	        for (i = 0; i < adt_type_max; i++)
+                        ADT[i][j] = 0.05;
 }
 
 void init_flows_defaults(void)
@@ -1062,29 +1064,29 @@ void report_final(void)
 	}
 
 	/* now depending on which test the user wanted we make the function calls */
-	if (doAnderson) {
-		char report_string[4000];
+	if (opt.doAnderson) {
+		char report_string[400];
 		const char names[][20] = {"Throughput", "IAT", "RTT"};
 
-		if (doAnderson == 1) {
+		if (opt.doAnderson == 1) {
 			log_output("# Anderson-Darling test statistic (A2) for Exponential Distribution\n");
 			for (i = 0; i < 2; i++)
 				for (j = 0; j < 3; j++) {
 					double result = adt_get_result_mean(i, j, ADT[j][0]);
-					sprintf(report_string, "# A2 %s for %s with mean %.6f: %.6f\n",
-					        names[j], j ? "destination" : "source", ADT[j][0],
+					sprintf(report_string, "# A2 \t%s for \t%s \twith mean %-5.3f: \t%-5.3f\n",
+					        names[j], i ? "destination" : "source     ", ADT[j][0],
 					        result);
 					log_output(report_string);
 				}
 		}
-		else if (doAnderson == 2) {
+		else if (opt.doAnderson == 2) {
 			log_output("# Anderson-Darling test statistic (A2) for Uniform Distribution\n");
 
 			for (i = 0; i < 2; i++)
 				for (j = 0; j < 3; j++) {
 					double result = adt_get_result_range(i, j, ADT[j][0], ADT[j][1]);
-					sprintf(report_string, "# A2 %s for %s with bounds %.6f, %.6f: %.6f\n",
-					        names[j], j ? "destination" : "source",
+					sprintf(report_string, "# A2 \t%s for \t%s \twith bounds %-5.3f, %-5.3f: \t%-5.3f\n",
+					        names[j], i ? "destination" : "source     ",
 					        ADT[j][0],
 					        ADT[j][1],
 					        result);
@@ -1119,7 +1121,7 @@ exit_outer_loop:
 		return;
 	}
 
-	if (doAnderson && !id && report->type == INTERVAL) {
+	if (opt.doAnderson && !id && report->type == INTERVAL) {
 		/* Record ADT data on first flow */
 		double delta = time_diff(&report->begin, &report->end);
 		adt_add_data(report->bytes_written / delta, endpoint, adt_throughput);
@@ -1276,20 +1278,14 @@ char *guess_topology (int mss, int mtu)
 int parse_Anderson_Test(char *params) {
 
 
-	//int rc=-9999;
+	init_adt_defaults();
+
 	int i=0;
-	//printf("add args: %s\n",params);
 
 	char field [ 32 ];
 	int n;
 	char c[1];
 	strncpy (c, params, 1);
-
-	//printf("c:%s:\n",c);
-	//rc=strcmp(c[0],"-");
-	//printf("rc:%d",rc);
-	//  if (strcmp(c,"-")==5)  //TODO: Bug to figure out why there is an offset of 5 here!!
-	//		return 0;
 
 	while (sscanf(params, "%31[^,]%n", field, &n) == 1 ) {
 		ADT[i % 3][i / 3] = atof(field);
@@ -1303,9 +1299,9 @@ int parse_Anderson_Test(char *params) {
 	}
 
 	if (i == 3)
-		doAnderson = 1;
+		opt.doAnderson = 1;
 	else if (i == 6)
-		doAnderson = 2;
+		opt.doAnderson = 2;
 	else
 		return 0;
 
@@ -2502,7 +2498,7 @@ int main(int argc, char *argv[])
         init_options_defaults();
         init_flows_defaults();
         parse_cmdline(argc, argv);
-        init_logfile();
+	init_logfile();
         sa.sa_handler = sigint_handler;
         sa.sa_flags = 0;
         sigemptyset (&sa.sa_mask);
