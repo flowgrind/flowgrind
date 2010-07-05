@@ -39,11 +39,17 @@
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
 
-char sigint_caught = 0;
-
 FILE *log_stream = NULL;
 char *log_filename = NULL;
+char sigint_caught = 0;
+char unique_servers[MAX_FLOWS * 2][1000];
+
+struct _opt opt;
+static struct _flow flow[MAX_FLOWS];
+
 int active_flows = 0;
+unsigned int num_unique_servers = 0;
+
 unsigned select_timeout = DEFAULT_SELECT_TIMEOUT;
 
 enum _column_types
@@ -67,13 +73,13 @@ int visible_columns[7] = {1, 1, 1, 1, 1, 1, 1};
 double ADT[adt_type_max][2];
 int doAnderson = 0; // it will be 1 if we do the exponential test; it will be 2 if we do the uniform test
 
-struct _opt opt;
-static struct _flow flow[MAX_FLOWS];
-
-char unique_servers[MAX_FLOWS * 2][1000];
-unsigned int num_unique_servers = 0;
-
 xmlrpc_env rpc_env;
+static void die_if_fault_occurred(xmlrpc_env *env);
+void check_version(xmlrpc_client *rpc_client);
+void check_idle(xmlrpc_client *rpc_client);
+void prepare_flows(xmlrpc_client *rpc_client);
+void prepare_flow(int id, xmlrpc_client *rpc_client);
+static void grind_flows(xmlrpc_client *rpc_client);
 
 void parse_visible_param(char *to_parse) {
 	// {begin, end, throughput, RTT, IAT, Kernel}
@@ -191,17 +197,22 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 		return 0;
 
 	// get max columnsize
-	switch ((int)value) {
-		case INT_MAX:
-			lengthData = strlen(" INT_MAX");
-			break;
+	if (opt.symbolic) {
+		switch ((int)value) {
+			case INT_MAX:
+				lengthData = strlen(" INT_MAX");
+				break;
 
-		case USHRT_MAX:
-	                lengthData = strlen(" USHRT_MAX");
-                        break;
+			case USHRT_MAX:
+	                	lengthData = strlen(" USHRT_MAX");
+                        	break;
 
-		default:
-			lengthData = det_output_column_size(value) + 2 + numDigitsDecimalPart;
+			default:
+				lengthData = det_output_column_size(value) + 2 + numDigitsDecimalPart;
+			} 
+		} 
+	else {
+		lengthData = det_output_column_size(value) + 2 + numDigitsDecimalPart;
 	}
 
 	lengthHead = MAX(strlen(header->first), strlen(header->second));
@@ -233,22 +244,28 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	// create columns
 	//
 	// output text for symbolic numbers
-	switch ((int)value) {
-		case INT_MAX:
-			for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " INT_MAX");
-			break;
+        if (opt.symbolic) {
+		switch ((int)value) {
+			case INT_MAX:
+				for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
+					strcat(strDataRow, " ");
+				strcat(strDataRow, " INT_MAX");
+				break;
 
-                case USHRT_MAX:
-                        for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
-                                strcat(strDataRow, " ");
-                        strcat(strDataRow, " USHRT_MAX");
-			break;
+                	case USHRT_MAX:
+                        	for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
+                                	strcat(strDataRow, " ");
+                        	strcat(strDataRow, " USHRT_MAX");
+				break;
 		
-		default: /*  number */
-			sprintf(tempBuffer, number_formatstring, value);
-			strcat(strDataRow, tempBuffer);
+			default: /*  number */
+				sprintf(tempBuffer, number_formatstring, value);
+				strcat(strDataRow, tempBuffer);
+		}
+	} 
+	else { 
+                sprintf(tempBuffer, number_formatstring, value);
+ 		strcat(strDataRow, tempBuffer);
 	}
 	// 1st header row
 	for (a = column_state->last_width; a > strlen(header->first); a--)
@@ -528,6 +545,7 @@ static void usage(void)
 		"               (default: 10**6 bit/sec)\n"
 		"  -n #         number of test flows (default: 1)\n"
 		"  -o           overwrite existing log files (default: don't)\n"
+                "  -p           print real numbers instead of symbolic values (like INT_MAX)\n"		
 		"  -q           be quiet, do not log to screen (default: off)\n"
 		"  -r #         use random seed # (default: read /dev/urandom)\n"
 		"  -w           write output to logfile (default: off)\n\n"
@@ -1149,212 +1167,6 @@ void sigint_handler(int sig)
 		exit(1);
 }
 
-static void die_if_fault_occurred(xmlrpc_env *env)
-{
-    if (env->fault_occurred) {
-        fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-                env->fault_string, env->fault_code);
-        exit(1);
-    }
-}
-
-static void grind_flows(xmlrpc_client *rpc_client)
-{
-	unsigned j;
-	xmlrpc_value * resultP = 0;
-
-	struct timeval lastreport;
-	struct timeval now;
-	tsc_gettimeofday(&now);
-	tsc_gettimeofday(&lastreport);
-
-	for (j = 0; j < num_unique_servers; j++) {
-
-		if (sigint_caught)
-			return;
-		DEBUG_MSG(LOG_ERR, "starting flow on server %d", j);
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "start_flows", &resultP,
-		"({s:i})",
-		"start_timestamp", now.tv_sec + 2);
-		die_if_fault_occurred(&rpc_env);
-		if (resultP)
-			xmlrpc_DECREF(resultP);
-	}
-
-	active_flows = opt.num_flows;
-
-	while (!sigint_caught) {
-
-		if ( time_diff_now(&lastreport) <  opt.reporting_interval ) {
-			usleep(100);
-			continue; 
-		}
-		tsc_gettimeofday(&lastreport);
-
-		for (j = 0; j < num_unique_servers; j++) {
-
-			int array_size, has_more;
-			xmlrpc_value *rv = 0;
-
-has_more_reports:
-
-			xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_reports", &resultP, "()");
-			if (rpc_env.fault_occurred) {
-				fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-				rpc_env.fault_string, rpc_env.fault_code);
-				continue;
-			}
-
-			if (!resultP)
-				continue;
-
-			array_size = xmlrpc_array_size(&rpc_env, resultP);
-			if (!array_size) {
-				fprintf(stderr, "Empty array in get_reports reply\n");
-				continue;
-			}
-
-			xmlrpc_array_read_item(&rpc_env, resultP, 0, &rv);
-			xmlrpc_read_int(&rpc_env, rv, &has_more);
-			if (rpc_env.fault_occurred) {
-				fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-				rpc_env.fault_string, rpc_env.fault_code);
-				xmlrpc_DECREF(rv);
-				continue;
-			}
-			xmlrpc_DECREF(rv);
-
-			for (int i = 1; i < array_size; i++) {
-				xmlrpc_value *rv = 0;
-
-				xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
-				if (rv) {
-					struct _report report;
-					int begin_sec, begin_usec, end_sec, end_usec;
-
-					int tcpi_snd_cwnd;
-					int tcpi_snd_ssthresh;
-					int tcpi_unacked;
-					int tcpi_sacked;
-					int tcpi_lost;
-					int tcpi_retrans;
-					int tcpi_retransmits;
-					int tcpi_fackets;
-					int tcpi_reordering;
-					int tcpi_rtt;
-					int tcpi_rttvar;
-					int tcpi_rto;
-					int tcpi_last_data_sent;
-					int tcpi_last_ack_recv;
-					int tcpi_ca_state;
-					int bytes_read_low, bytes_read_high;
-					int bytes_written_low, bytes_written_high;
-					
-					xmlrpc_decompose_value(&rpc_env, rv,
-						"({"
-						"s:i,s:i,s:i,s:i,s:i,s:i," /* timeval */
-						"s:i,s:i,s:i,s:i," /* bytes */
-						"s:i,s:i,s:i,s:i," /* blocks */
-						"s:d,s:d,s:d,s:d,s:d,s:d," /* RTT, IAT */
-						"s:i,s:i" /* MSS, MTU */
-						"s:i,s:i,s:i,s:i,s:i," /* TCP info */
-						"s:i,s:i,s:i,s:i,s:i," /* ...      */
-						"s:i,s:i,s:i,s:i,s:i," /* ...      */
-						"s:i,*"
-						"})",
-
-						"id", &report.id,
-						"type", &report.type,
-						"begin_tv_sec", &begin_sec,
-						"begin_tv_usec", &begin_usec,
-						"end_tv_sec", &end_sec,
-						"end_tv_usec", &end_usec,
-
-						"bytes_read_high", &bytes_read_high,
-						"bytes_read_low", &bytes_read_low,
-						"bytes_written_high", &bytes_written_high,
-						"bytes_written_low", &bytes_written_low,
-
-						"request_blocks_read", &report.request_blocks_read,
-						"request_blocks_written", &report.request_blocks_written,
-						"response_blocks_read", &report.response_blocks_read,
-						"response_blocks_written", &report.response_blocks_written,
-
-						"rtt_min", &report.rtt_min,
-						"rtt_max", &report.rtt_max,
-						"rtt_sum", &report.rtt_sum,
-						"iat_min", &report.iat_min,
-						"iat_max", &report.iat_max,
-						"iat_sum", &report.iat_sum,
-
-						"mss", &report.mss,
-						"mtu", &report.mtu,
-
-						"tcpi_snd_cwnd", &tcpi_snd_cwnd,
-						"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
-						"tcpi_unacked", &tcpi_unacked,
-						"tcpi_sacked", &tcpi_sacked,
-						"tcpi_lost", &tcpi_lost,
-
-						"tcpi_retrans", &tcpi_retrans,
-						"tcpi_retransmits", &tcpi_retransmits,
-						"tcpi_fackets", &tcpi_fackets,
-						"tcpi_reordering", &tcpi_reordering,
-						"tcpi_rtt", &tcpi_rtt,
-
-						"tcpi_rttvar", &tcpi_rttvar,
-						"tcpi_rto", &tcpi_rto,
-						"tcpi_last_data_sent", &tcpi_last_data_sent,
-						"tcpi_last_ack_recv", &tcpi_last_ack_recv,
-						"tcpi_ca_state", &tcpi_ca_state,
-
-						"status", &report.status
-					);
-					xmlrpc_DECREF(rv);
-
-					report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
-					report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
-
-#ifdef __LINUX__
-					report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
-					report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
-					report.tcp_info.tcpi_unacked = tcpi_unacked;
-					report.tcp_info.tcpi_sacked = tcpi_sacked;
-					report.tcp_info.tcpi_lost = tcpi_lost;
-					report.tcp_info.tcpi_retrans = tcpi_retrans;
-					report.tcp_info.tcpi_retransmits = tcpi_retransmits;
-					report.tcp_info.tcpi_fackets = tcpi_fackets;
-					report.tcp_info.tcpi_reordering = tcpi_reordering;
-					report.tcp_info.tcpi_rtt = tcpi_rtt;
-					report.tcp_info.tcpi_rttvar = tcpi_rttvar;
-					report.tcp_info.tcpi_rto = tcpi_rto;
-					report.tcp_info.tcpi_last_data_sent = tcpi_last_data_sent;
-					report.tcp_info.tcpi_last_ack_recv = tcpi_last_ack_recv;
-					report.tcp_info.tcpi_ca_state = tcpi_ca_state;
-#endif
-					report.begin.tv_sec = begin_sec;
-					report.begin.tv_usec = begin_usec;
-					report.end.tv_sec = end_sec;
-					report.end.tv_usec = end_usec;
-
-					report_flow(unique_servers[j], &report);
-				}
-			}
-			xmlrpc_DECREF(resultP);
-			
-			if (has_more)
-			{
-				/* Go back to beginning of loop */
-				goto has_more_reports;
-			}
-		}
-
-		if (!active_flows)
-			/* All flows have ended */
-			return;
-	}
-}
-
 void close_flow(int id)
 {
 	DEBUG_MSG(LOG_WARNING, "closing flow %d.", id);
@@ -1459,295 +1271,6 @@ char *guess_topology (int mss, int mtu)
 	}
 
 	return "unknown";
-}
-
-void prepare_flow(int id, xmlrpc_client *rpc_client)
-{
-	xmlrpc_value *resultP, *extra_options;
-	int i;
-
-	int listen_data_port;
-        DEBUG_MSG(LOG_WARNING, "prepare flow %d destination", id);
-
-	/* Contruct extra socket options array */
-	extra_options = xmlrpc_array_new(&rpc_env);
-	for (i = 0; i < flow[id].settings[DESTINATION].num_extra_socket_options; i++) {
-
-		xmlrpc_value *value;
-		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
-			 "level", flow[id].settings[DESTINATION].extra_socket_options[i].level,
-			 "optname", flow[id].settings[DESTINATION].extra_socket_options[i].optname);
-
-		value =	xmlrpc_base64_new(&rpc_env, flow[id].settings[DESTINATION].extra_socket_options[i].optlen, (unsigned char*)flow[id].settings[DESTINATION].extra_socket_options[i].optval);
-
-		xmlrpc_struct_set_value(&rpc_env, option, "value", value);
-
-		xmlrpc_array_append_item(&rpc_env, extra_options, option);
-		xmlrpc_DECREF(value);
-		xmlrpc_DECREF(option);
-	}
-	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[DESTINATION].server_url, "add_flow_destination", &resultP,
-		"({"
-		"s:s,"
-		"s:d,s:d,s:d,s:d,s:d,"
-		"s:i,s:i,"
-		"s:i,s:i,"
-		"s:b,s:b,s:b,s:b,s:b,"
-		"s:i,s:i,s:d,s:d,s:i,"
-		"s:b,s:b,s:i,"
-		"s:s,"
-		"s:i,s:i,s:i,s:i,"
-		"s:i,s:A"
-		"})",
-
-		/* general flow settings */
-		"bind_address", flow[id].endpoint_options[DESTINATION].bind_address,
-
-		"write_delay", flow[id].settings[DESTINATION].delay[WRITE],
-		"write_duration", flow[id].settings[DESTINATION].duration[WRITE],
-		"read_delay", flow[id].settings[SOURCE].delay[WRITE],
-		"read_duration", flow[id].settings[SOURCE].duration[WRITE],
-		"reporting_interval", flow[id].summarize_only ? 0 : opt.reporting_interval,
-
-		"requested_send_buffer_size", flow[id].settings[DESTINATION].requested_send_buffer_size,
-		"requested_read_buffer_size", flow[id].settings[DESTINATION].requested_read_buffer_size,
-		
-		"default_request_block_size", flow[id].settings[DESTINATION].default_request_block_size,
-		"default_response_block_size", flow[id].settings[DESTINATION].default_response_block_size,
-
-		"advstats", (int)opt.advstats,
-		"so_debug", flow[id].settings[DESTINATION].so_debug,
-		"route_record", (int)flow[id].settings[DESTINATION].route_record,
-		"pushy", flow[id].settings[DESTINATION].pushy,
-		"shutdown", (int)flow[id].shutdown,
-
-		"write_rate", flow[id].settings[DESTINATION].write_rate,
-		"traffic_generation_type", flow[id].settings[DESTINATION].traffic_generation_type,
-		"traffic_generation_parm_alpha", flow[id].settings[DESTINATION].traffic_generation_parm_alpha,
-		"traffic_generation_parm_beta", flow[id].settings[DESTINATION].traffic_generation_parm_beta,
-		"random_seed",flow[id].random_seed,
-
-		"flow_control", flow[id].settings[DESTINATION].flow_control,
-		"byte_counting", flow[id].byte_counting,
-		"cork", (int)flow[id].settings[DESTINATION].cork,
-
-		"cc_alg", flow[id].settings[DESTINATION].cc_alg,
-
-		"elcn", flow[id].settings[DESTINATION].elcn,
-		"icmp", flow[id].settings[DESTINATION].icmp,
-		"dscp", (int)flow[id].settings[DESTINATION].dscp,
-		"ipmtudiscover", flow[id].settings[DESTINATION].ipmtudiscover,
-		
-		"num_extra_socket_options", flow[id].settings[DESTINATION].num_extra_socket_options,
-		"extra_socket_options", extra_options);
-
-	die_if_fault_occurred(&rpc_env);
-	
-	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,s:i,*}",
-		"flow_id", &flow[id].endpoint_id[DESTINATION],
-		"listen_data_port", &listen_data_port,
-		"real_listen_send_buffer_size", &flow[id].endpoint_options[DESTINATION].send_buffer_size_real,
-		"real_listen_read_buffer_size", &flow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
-	die_if_fault_occurred(&rpc_env);
-
-	if (resultP)
-		xmlrpc_DECREF(resultP);
-
-	/* Contruct extra socket options array */
-	extra_options = xmlrpc_array_new(&rpc_env);
-	for (i = 0; i < flow[id].settings[SOURCE].num_extra_socket_options; i++) {
-
-		xmlrpc_value *value;
-		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
-			 "level", flow[id].settings[SOURCE].extra_socket_options[i].level,
-			 "optname", flow[id].settings[SOURCE].extra_socket_options[i].optname);
-
-		value =	xmlrpc_base64_new(&rpc_env, flow[id].settings[SOURCE].extra_socket_options[i].optlen, (unsigned char*)flow[id].settings[SOURCE].extra_socket_options[i].optval);
-
-		xmlrpc_struct_set_value(&rpc_env, option, "value", value);
-
-		xmlrpc_array_append_item(&rpc_env, extra_options, option);
-		xmlrpc_DECREF(value);
-		xmlrpc_DECREF(option);
-	}
-        DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
-
-	xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[SOURCE].server_url, "add_flow_source", &resultP,
-		"({"
-		"s:s,"
-		"s:d,s:d,s:d,s:d,s:d,"
-		"s:i,s:i,"
-		"s:i,s:i,"
-		"s:b,s:b,s:b,s:b,s:b,"
-		"s:i,s:i,s:d,s:d,s:i,"
-		"s:b,s:b,s:i,"
-		"s:s,"
-		"s:i,s:i,s:i,s:i,"
-		"s:i,s:A,"
-		"s:s,s:i,s:i"
-		"})",
-
-		/* general flow settings */
-		"bind_address", flow[id].endpoint_options[SOURCE].bind_address,
-
-		"write_delay", flow[id].settings[SOURCE].delay[WRITE],
-		"write_duration", flow[id].settings[SOURCE].duration[WRITE],
-		"read_delay", flow[id].settings[DESTINATION].delay[WRITE],
-		"read_duration", flow[id].settings[DESTINATION].duration[WRITE],
-		"reporting_interval", flow[id].summarize_only ? 0 : opt.reporting_interval,
-
-		"requested_send_buffer_size", flow[id].settings[SOURCE].requested_send_buffer_size,
-		"requested_read_buffer_size", flow[id].settings[SOURCE].requested_read_buffer_size,
-		
-		"default_request_block_size", flow[id].settings[SOURCE].default_request_block_size,
-		"default_response_block_size", flow[id].settings[SOURCE].default_response_block_size,
-
-		"advstats", (int)opt.advstats,
-		"so_debug", flow[id].settings[SOURCE].so_debug,
-		"route_record", (int)flow[id].settings[SOURCE].route_record,
-		"pushy", flow[id].settings[SOURCE].pushy,
-		"shutdown", (int)flow[id].shutdown,
-
-                "write_rate", flow[id].settings[SOURCE].write_rate,
-                "traffic_generation_type", flow[id].settings[SOURCE].traffic_generation_type,
-                "traffic_generation_parm_alpha", flow[id].settings[SOURCE].traffic_generation_parm_alpha,
-                "traffic_generation_parm_beta", flow[id].settings[SOURCE].traffic_generation_parm_beta,
-                "random_seed",flow[id].random_seed,
-
-		"flow_control", flow[id].settings[SOURCE].flow_control,
-		"byte_counting", flow[id].byte_counting,
-		"cork", (int)flow[id].settings[SOURCE].cork,
-		
-		"cc_alg", flow[id].settings[SOURCE].cc_alg,
-		
-		"elcn", flow[id].settings[SOURCE].elcn,
-		"icmp", flow[id].settings[SOURCE].icmp,
-		"dscp", (int)flow[id].settings[SOURCE].dscp,
-		"ipmtudiscover", flow[id].settings[SOURCE].ipmtudiscover,
-	
-		"num_extra_socket_options", flow[id].settings[SOURCE].num_extra_socket_options,
-		"extra_socket_options", extra_options,
-
-		/* source settings */
-		"destination_address", flow[id].endpoint_options[DESTINATION].test_address,
-		"destination_port", listen_data_port,
-		"late_connect", (int)flow[id].late_connect);
-	die_if_fault_occurred(&rpc_env);
-
-	xmlrpc_DECREF(extra_options);
-
-	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,*}",
-		"flow_id", &flow[id].endpoint_id[SOURCE],
-		"real_send_buffer_size", &flow[id].endpoint_options[SOURCE].send_buffer_size_real,
-		"real_read_buffer_size", &flow[id].endpoint_options[SOURCE].receive_buffer_size_real);
-	die_if_fault_occurred(&rpc_env);
-
-	if (resultP)
-		xmlrpc_DECREF(resultP);
-	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
-}
-
-/* Checks that all nodes use our flowgrind version */
-void check_version(xmlrpc_client *rpc_client)
-{
-	unsigned j;
-	xmlrpc_value * resultP = 0;
-	char mismatch = 0;
-
-	for (j = 0; j < num_unique_servers; j++) {
-
-		if (sigint_caught)
-			return;
-
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_version", &resultP,
-		"()");
-		die_if_fault_occurred(&rpc_env);
-
-		if (resultP) {
-			char* version;
-			xmlrpc_decompose_value(&rpc_env, resultP, "s", &version);
-			die_if_fault_occurred(&rpc_env);
-
-			if (strcmp(version, FLOWGRIND_VERSION)) {
-				mismatch = 1;
-				fprintf(stderr, "Warning: Node %s uses version %s\n", unique_servers[j], version);
-			}
-			free(version);
-			xmlrpc_DECREF(resultP);
-		}
-	}
-
-	if (mismatch) {
-		fprintf(stderr, "Our version is %s\n\nContinuing in 10 seconds.\n", FLOWGRIND_VERSION);
-		sleep(10);
-	}
-}
-
-/* Checks that all nodes are currently idle */
-void check_idle(xmlrpc_client *rpc_client)
-{
-	unsigned j;
-	xmlrpc_value * resultP = 0;
-
-	for (j = 0; j < num_unique_servers; j++) {
-
-		if (sigint_caught)
-			return;
-
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_status", &resultP,
-		"()");
-		die_if_fault_occurred(&rpc_env);
-
-		if (resultP) {
-			int started;
-			int num_flows;
-
-			xmlrpc_decompose_value(&rpc_env, resultP, "{s:i,s:i,*}",
-				"started", &started,
-				"num_flows", &num_flows);
-			die_if_fault_occurred(&rpc_env);
-
-			if (started || num_flows) {
-				fprintf(stderr, "Error: Node %s is busy. %d flows, started=%d\n", unique_servers[j], num_flows, started);
-				exit(1);
-			}
-
-			xmlrpc_DECREF(resultP);
-		}
-	}
-}
-
-void prepare_flows(xmlrpc_client *rpc_client)
-{
-	for (int id = 0; id < opt.num_flows; id++) {
-
-		if (sigint_caught)
-			return;
-
-		prepare_flow(id, rpc_client);
-	}
-
-	{
-		char headline[200];
-		int rc;
-		struct utsname me;
-		time_t start_ts;
-		char start_ts_buffer[26];
-
-		rc = uname(&me);
-		start_ts = time(NULL);
-		ctime_r(&start_ts, start_ts_buffer);
-		start_ts_buffer[24] = '\0';
-		snprintf(headline, sizeof(headline), "# %s: controlling host = %s, "
-				"number of flows = %d, reporting interval = %.2fs, "
-				"[tput] = %s (%s)\n",
-				(start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
-				(rc == -1 ? "(unknown)" : me.nodename),
-				opt.num_flows, opt.reporting_interval,
-				(opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
-				FLOWGRIND_VERSION);
-		log_output(headline);
-	}
 }
 
 int parse_Anderson_Test(char *params) {
@@ -1919,7 +1442,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 		switch (ch) {
 			case 'A':
-				ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, 32);
+				ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, MIN_BLOCK_SIZE);
 				break;
 			case 'B':
 				rc = sscanf(arg, "%u", &optunsigned);
@@ -2125,9 +1648,9 @@ static void parse_cmdline(int argc, char **argv) {
 							{"version", 0, 0, 'v'},
 							{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwA:B:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
+	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:opqr:svwA:B:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
 #else
-	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:op:qr:svwA:B:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:opqr:svwA:B:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:")) != -1)
 #endif
 		switch (ch) {
 
@@ -2189,6 +1712,10 @@ static void parse_cmdline(int argc, char **argv) {
 
 		case 'o':
 			opt.clobber = 1;
+			break;
+
+		case 'p':
+			opt.symbolic = 1;
 			break;
 
 		case 'q':
@@ -2462,63 +1989,560 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 }
 
-void init_random_numbers() {
-	
+static void die_if_fault_occurred(xmlrpc_env *env)
+{
+    if (env->fault_occurred) {
+        fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+                env->fault_string, env->fault_code);
+        exit(1);
+    }
 }
+
+/* Checks that all nodes use our flowgrind version */
+void check_version(xmlrpc_client *rpc_client)
+{
+        unsigned j;
+        xmlrpc_value * resultP = 0;
+        char mismatch = 0;
+
+        for (j = 0; j < num_unique_servers; j++) {
+
+                if (sigint_caught)
+                        return;
+
+                xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_version", &resultP,
+                "()");
+                die_if_fault_occurred(&rpc_env);
+
+                if (resultP) {
+                        char* version;
+                        xmlrpc_decompose_value(&rpc_env, resultP, "s", &version);
+                        die_if_fault_occurred(&rpc_env);
+
+                        if (strcmp(version, FLOWGRIND_VERSION)) {
+                                mismatch = 1;
+                                fprintf(stderr, "Warning: Node %s uses version %s\n", unique_servers[j], version);
+                        }
+                        free(version);
+                        xmlrpc_DECREF(resultP);
+                }
+        }
+
+        if (mismatch) {
+                fprintf(stderr, "Our version is %s\n\nContinuing in 10 seconds.\n", FLOWGRIND_VERSION);
+                sleep(10);
+        }
+}
+
+/* Checks that all nodes are currently idle */
+void check_idle(xmlrpc_client *rpc_client)
+{
+        unsigned j;
+        xmlrpc_value * resultP = 0;
+        
+        for (j = 0; j < num_unique_servers; j++) {
+        
+                if (sigint_caught)
+                        return;
+                        
+                xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_status", &resultP,
+                "()");
+                die_if_fault_occurred(&rpc_env);
+                
+                if (resultP) {
+                        int started;
+                        int num_flows;
+                        
+                        xmlrpc_decompose_value(&rpc_env, resultP, "{s:i,s:i,*}",
+                                "started", &started,
+                                "num_flows", &num_flows);
+                        die_if_fault_occurred(&rpc_env);
+                        
+                        if (started || num_flows) {
+                                fprintf(stderr, "Error: Node %s is busy. %d flows, started=%d\n", unique_servers[j], num_flows, started);
+                                exit(1);
+                        }       
+                        
+                        xmlrpc_DECREF(resultP);
+                }       
+        }       
+} 
+
+/* controller (flowgrind) functions */
+
+/* enumerate over prepare_flow */
+void prepare_flows(xmlrpc_client *rpc_client)
+{
+        for (int id = 0; id < opt.num_flows; id++) {
+
+                if (sigint_caught)
+                        return;
+
+                prepare_flow(id, rpc_client);
+        }
+
+        {
+                char headline[200];
+                int rc;
+                struct utsname me;
+                time_t start_ts;
+                char start_ts_buffer[26];
+
+                rc = uname(&me);
+                start_ts = time(NULL);
+                ctime_r(&start_ts, start_ts_buffer);
+                start_ts_buffer[24] = '\0';
+                snprintf(headline, sizeof(headline), "# %s: controlling host = %s, "
+                                "number of flows = %d, reporting interval = %.2fs, "
+                                "[tput] = %s (%s)\n",
+                                (start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
+                                (rc == -1 ? "(unknown)" : me.nodename),
+                                opt.num_flows, opt.reporting_interval,
+                                (opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
+                                FLOWGRIND_VERSION);
+                log_output(headline);
+        }
+}
+
+
+void prepare_flow(int id, xmlrpc_client *rpc_client)
+{
+        xmlrpc_value *resultP, *extra_options;
+        int i;
+
+        int listen_data_port;
+        DEBUG_MSG(LOG_WARNING, "prepare flow %d destination", id);
+
+        /* Contruct extra socket options array */
+        extra_options = xmlrpc_array_new(&rpc_env);
+        for (i = 0; i < flow[id].settings[DESTINATION].num_extra_socket_options; i++) {
+
+                xmlrpc_value *value;
+                xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
+                         "level", flow[id].settings[DESTINATION].extra_socket_options[i].level,
+                         "optname", flow[id].settings[DESTINATION].extra_socket_options[i].optname);
+
+                value = xmlrpc_base64_new(&rpc_env, flow[id].settings[DESTINATION].extra_socket_options[i].optlen, (unsigned char*)flow[id].settings[DESTINATION].extra_socket_options[i].optval);
+
+                xmlrpc_struct_set_value(&rpc_env, option, "value", value);
+
+                xmlrpc_array_append_item(&rpc_env, extra_options, option);
+                xmlrpc_DECREF(value);
+                xmlrpc_DECREF(option);
+        }
+        xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[DESTINATION].server_url, "add_flow_destination", &resultP,
+                "({"
+                "s:s,"
+                "s:d,s:d,s:d,s:d,s:d,"
+                "s:i,s:i,"
+                "s:i,s:i,"
+                "s:b,s:b,s:b,s:b,s:b,"
+                "s:i,s:i,s:d,s:d,s:i,"
+                "s:b,s:b,s:i,"
+                "s:s,"
+                "s:i,s:i,s:i,s:i,"
+                "s:i,s:A"
+                "})",
+
+                /* general flow settings */
+                "bind_address", flow[id].endpoint_options[DESTINATION].bind_address,
+
+                "write_delay", flow[id].settings[DESTINATION].delay[WRITE],
+                "write_duration", flow[id].settings[DESTINATION].duration[WRITE],
+                "read_delay", flow[id].settings[SOURCE].delay[WRITE],
+                "read_duration", flow[id].settings[SOURCE].duration[WRITE],
+                "reporting_interval", flow[id].summarize_only ? 0 : opt.reporting_interval,
+
+                "requested_send_buffer_size", flow[id].settings[DESTINATION].requested_send_buffer_size,
+                "requested_read_buffer_size", flow[id].settings[DESTINATION].requested_read_buffer_size,
+
+                "default_request_block_size", flow[id].settings[DESTINATION].default_request_block_size,
+                "default_response_block_size", flow[id].settings[DESTINATION].default_response_block_size,
+
+                "advstats", (int)opt.advstats,
+                "so_debug", flow[id].settings[DESTINATION].so_debug,
+                "route_record", (int)flow[id].settings[DESTINATION].route_record,
+                "pushy", flow[id].settings[DESTINATION].pushy,
+                "shutdown", (int)flow[id].shutdown,
+
+                "write_rate", flow[id].settings[DESTINATION].write_rate,
+                "traffic_generation_type", flow[id].settings[DESTINATION].traffic_generation_type,
+                "traffic_generation_parm_alpha", flow[id].settings[DESTINATION].traffic_generation_parm_alpha,
+                "traffic_generation_parm_beta", flow[id].settings[DESTINATION].traffic_generation_parm_beta,
+                "random_seed",flow[id].random_seed,
+
+                "flow_control", flow[id].settings[DESTINATION].flow_control,
+                "byte_counting", flow[id].byte_counting,
+                "cork", (int)flow[id].settings[DESTINATION].cork,
+
+                "cc_alg", flow[id].settings[DESTINATION].cc_alg,
+
+                "elcn", flow[id].settings[DESTINATION].elcn,
+                "icmp", flow[id].settings[DESTINATION].icmp,
+                "dscp", (int)flow[id].settings[DESTINATION].dscp,
+                "ipmtudiscover", flow[id].settings[DESTINATION].ipmtudiscover,
+
+                "num_extra_socket_options", flow[id].settings[DESTINATION].num_extra_socket_options,
+                "extra_socket_options", extra_options);
+
+        die_if_fault_occurred(&rpc_env);
+
+        xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,s:i,*}",
+                "flow_id", &flow[id].endpoint_id[DESTINATION],
+                "listen_data_port", &listen_data_port,
+                "real_listen_send_buffer_size", &flow[id].endpoint_options[DESTINATION].send_buffer_size_real,
+                "real_listen_read_buffer_size", &flow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
+        die_if_fault_occurred(&rpc_env);
+
+        if (resultP)
+                xmlrpc_DECREF(resultP);
+
+        /* Contruct extra socket options array */
+        extra_options = xmlrpc_array_new(&rpc_env);
+        for (i = 0; i < flow[id].settings[SOURCE].num_extra_socket_options; i++) {
+
+                xmlrpc_value *value;
+                xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
+                         "level", flow[id].settings[SOURCE].extra_socket_options[i].level,
+                         "optname", flow[id].settings[SOURCE].extra_socket_options[i].optname);
+
+                value = xmlrpc_base64_new(&rpc_env, flow[id].settings[SOURCE].extra_socket_options[i].optlen, (unsigned char*)flow[id].settings[SOURCE].extra_socket_options[i].optval);
+
+                xmlrpc_struct_set_value(&rpc_env, option, "value", value);
+
+                xmlrpc_array_append_item(&rpc_env, extra_options, option);
+                xmlrpc_DECREF(value);
+                xmlrpc_DECREF(option);
+        }
+        DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
+
+        xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[SOURCE].server_url, "add_flow_source", &resultP,
+                "({"
+                "s:s,"
+                "s:d,s:d,s:d,s:d,s:d,"
+                "s:i,s:i,"
+                "s:i,s:i,"
+                "s:b,s:b,s:b,s:b,s:b,"
+                "s:i,s:i,s:d,s:d,s:i,"
+                "s:b,s:b,s:i,"
+                "s:s,"
+                "s:i,s:i,s:i,s:i,"
+                "s:i,s:A,"
+                "s:s,s:i,s:i"
+                "})",
+
+                /* general flow settings */
+                "bind_address", flow[id].endpoint_options[SOURCE].bind_address,
+
+                "write_delay", flow[id].settings[SOURCE].delay[WRITE],
+                "write_duration", flow[id].settings[SOURCE].duration[WRITE],
+                "read_delay", flow[id].settings[DESTINATION].delay[WRITE],
+                "read_duration", flow[id].settings[DESTINATION].duration[WRITE],
+                "reporting_interval", flow[id].summarize_only ? 0 : opt.reporting_interval,
+
+                "requested_send_buffer_size", flow[id].settings[SOURCE].requested_send_buffer_size,
+                "requested_read_buffer_size", flow[id].settings[SOURCE].requested_read_buffer_size,
+
+                "default_request_block_size", flow[id].settings[SOURCE].default_request_block_size,
+                "default_response_block_size", flow[id].settings[SOURCE].default_response_block_size,
+
+                "advstats", (int)opt.advstats,
+                "so_debug", flow[id].settings[SOURCE].so_debug,
+                "route_record", (int)flow[id].settings[SOURCE].route_record,
+                "pushy", flow[id].settings[SOURCE].pushy,
+                "shutdown", (int)flow[id].shutdown,
+
+                "write_rate", flow[id].settings[SOURCE].write_rate,
+                "traffic_generation_type", flow[id].settings[SOURCE].traffic_generation_type,
+                "traffic_generation_parm_alpha", flow[id].settings[SOURCE].traffic_generation_parm_alpha,
+                "traffic_generation_parm_beta", flow[id].settings[SOURCE].traffic_generation_parm_beta,
+                "random_seed",flow[id].random_seed,
+
+                "flow_control", flow[id].settings[SOURCE].flow_control,
+                "byte_counting", flow[id].byte_counting,
+                "cork", (int)flow[id].settings[SOURCE].cork,
+
+                "cc_alg", flow[id].settings[SOURCE].cc_alg,
+
+                "elcn", flow[id].settings[SOURCE].elcn,
+                "icmp", flow[id].settings[SOURCE].icmp,
+                "dscp", (int)flow[id].settings[SOURCE].dscp,
+                "ipmtudiscover", flow[id].settings[SOURCE].ipmtudiscover,
+
+                "num_extra_socket_options", flow[id].settings[SOURCE].num_extra_socket_options,
+                "extra_socket_options", extra_options,
+
+                /* source settings */
+                "destination_address", flow[id].endpoint_options[DESTINATION].test_address,
+                "destination_port", listen_data_port,
+                "late_connect", (int)flow[id].late_connect);
+        die_if_fault_occurred(&rpc_env);
+
+        xmlrpc_DECREF(extra_options);
+
+        xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,*}",
+                "flow_id", &flow[id].endpoint_id[SOURCE],
+                "real_send_buffer_size", &flow[id].endpoint_options[SOURCE].send_buffer_size_real,
+                "real_read_buffer_size", &flow[id].endpoint_options[SOURCE].receive_buffer_size_real);
+        die_if_fault_occurred(&rpc_env);
+
+        if (resultP)
+                xmlrpc_DECREF(resultP);
+        DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
+}
+
+/* start flows */
+static void grind_flows(xmlrpc_client *rpc_client)
+{
+        unsigned j;
+        xmlrpc_value * resultP = 0;
+
+        struct timeval lastreport;
+        struct timeval now;
+        tsc_gettimeofday(&now);
+        tsc_gettimeofday(&lastreport);
+
+        for (j = 0; j < num_unique_servers; j++) {
+
+                if (sigint_caught)
+                        return;
+                DEBUG_MSG(LOG_ERR, "starting flow on server %d", j);
+                xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "start_flows", &resultP,
+                "({s:i})",
+                "start_timestamp", now.tv_sec + 2);
+                die_if_fault_occurred(&rpc_env);
+                if (resultP)
+                        xmlrpc_DECREF(resultP);
+        }
+
+        active_flows = opt.num_flows;
+
+        while (!sigint_caught) {
+
+                if ( time_diff_now(&lastreport) <  opt.reporting_interval ) {
+                        usleep(100);
+                        continue;
+                }
+                tsc_gettimeofday(&lastreport);
+
+                for (j = 0; j < num_unique_servers; j++) {
+
+                        int array_size, has_more;
+                        xmlrpc_value *rv = 0;
+
+has_more_reports:
+
+                        xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_reports", &resultP, "()");
+                        if (rpc_env.fault_occurred) {
+                                fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+                                rpc_env.fault_string, rpc_env.fault_code);
+                                continue;
+                        }
+
+                        if (!resultP)
+                                continue;
+
+                        array_size = xmlrpc_array_size(&rpc_env, resultP);
+                        if (!array_size) {
+                                fprintf(stderr, "Empty array in get_reports reply\n");
+                                continue;
+                        }
+
+                        xmlrpc_array_read_item(&rpc_env, resultP, 0, &rv);
+                        xmlrpc_read_int(&rpc_env, rv, &has_more);
+                        if (rpc_env.fault_occurred) {
+                                fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+                                rpc_env.fault_string, rpc_env.fault_code);
+                                xmlrpc_DECREF(rv);
+                                continue;
+                        }
+                        xmlrpc_DECREF(rv);
+
+                        for (int i = 1; i < array_size; i++) {
+                                xmlrpc_value *rv = 0;
+
+                                xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
+                                if (rv) {
+                                        struct _report report;
+                                        int begin_sec, begin_usec, end_sec, end_usec;
+
+                                        int tcpi_snd_cwnd;
+                                        int tcpi_snd_ssthresh;
+                                        int tcpi_unacked;
+                                        int tcpi_sacked;
+                                        int tcpi_lost;
+                                        int tcpi_retrans;
+                                        int tcpi_retransmits;
+                                        int tcpi_fackets;
+                                        int tcpi_reordering;
+                                        int tcpi_rtt;
+                                        int tcpi_rttvar;
+                                        int tcpi_rto;
+                                        int tcpi_last_data_sent;
+                                        int tcpi_last_ack_recv;
+                                        int tcpi_ca_state;
+                                        int bytes_read_low, bytes_read_high;
+                                        int bytes_written_low, bytes_written_high;
+
+                                        xmlrpc_decompose_value(&rpc_env, rv,
+                                                "({"
+                                                "s:i,s:i,s:i,s:i,s:i,s:i," /* timeval */
+                                                "s:i,s:i,s:i,s:i," /* bytes */
+                                                "s:i,s:i,s:i,s:i," /* blocks */
+                                                "s:d,s:d,s:d,s:d,s:d,s:d," /* RTT, IAT */
+                                                "s:i,s:i" /* MSS, MTU */
+                                                "s:i,s:i,s:i,s:i,s:i," /* TCP info */
+                                                "s:i,s:i,s:i,s:i,s:i," /* ...      */
+                                                "s:i,s:i,s:i,s:i,s:i," /* ...      */
+                                                "s:i,*"
+                                                "})",
+
+                                                "id", &report.id,
+                                                "type", &report.type,
+                                                "begin_tv_sec", &begin_sec,
+                                                "begin_tv_usec", &begin_usec,
+                                                "end_tv_sec", &end_sec,
+                                                "end_tv_usec", &end_usec,
+
+                                                "bytes_read_high", &bytes_read_high,
+                                                "bytes_read_low", &bytes_read_low,
+                                                "bytes_written_high", &bytes_written_high,
+                                                "bytes_written_low", &bytes_written_low,
+
+                                                "request_blocks_read", &report.request_blocks_read,
+                                                "request_blocks_written", &report.request_blocks_written,
+                                                "response_blocks_read", &report.response_blocks_read,
+                                                "response_blocks_written", &report.response_blocks_written,
+
+                                                "rtt_min", &report.rtt_min,
+                                                "rtt_max", &report.rtt_max,
+                                                "rtt_sum", &report.rtt_sum,
+                                                "iat_min", &report.iat_min,
+                                                "iat_max", &report.iat_max,
+                                                "iat_sum", &report.iat_sum,
+
+                                                "mss", &report.mss,
+                                                "mtu", &report.mtu,
+
+                                                "tcpi_snd_cwnd", &tcpi_snd_cwnd,
+                                                "tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
+                                                "tcpi_unacked", &tcpi_unacked,
+                                                "tcpi_sacked", &tcpi_sacked,
+                                                "tcpi_lost", &tcpi_lost,
+
+                                                "tcpi_retrans", &tcpi_retrans,
+                                                "tcpi_retransmits", &tcpi_retransmits,
+                                                "tcpi_fackets", &tcpi_fackets,
+                                                "tcpi_reordering", &tcpi_reordering,
+                                                "tcpi_rtt", &tcpi_rtt,
+
+                                                "tcpi_rttvar", &tcpi_rttvar,
+                                                "tcpi_rto", &tcpi_rto,
+                                                "tcpi_last_data_sent", &tcpi_last_data_sent,
+                                                "tcpi_last_ack_recv", &tcpi_last_ack_recv,
+                                                "tcpi_ca_state", &tcpi_ca_state,
+
+                                                "status", &report.status
+                                        );
+                                        xmlrpc_DECREF(rv);
+
+                                        report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
+                                        report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
+
+#ifdef __LINUX__
+                                        report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
+                                        report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
+                                        report.tcp_info.tcpi_unacked = tcpi_unacked;
+                                        report.tcp_info.tcpi_sacked = tcpi_sacked;
+                                        report.tcp_info.tcpi_lost = tcpi_lost;
+                                        report.tcp_info.tcpi_retrans = tcpi_retrans;
+                                        report.tcp_info.tcpi_retransmits = tcpi_retransmits;
+                                        report.tcp_info.tcpi_fackets = tcpi_fackets;
+                                        report.tcp_info.tcpi_reordering = tcpi_reordering;
+                                        report.tcp_info.tcpi_rtt = tcpi_rtt;
+                                        report.tcp_info.tcpi_rttvar = tcpi_rttvar;
+                                        report.tcp_info.tcpi_rto = tcpi_rto;
+                                        report.tcp_info.tcpi_last_data_sent = tcpi_last_data_sent;
+                                        report.tcp_info.tcpi_last_ack_recv = tcpi_last_ack_recv;
+                                        report.tcp_info.tcpi_ca_state = tcpi_ca_state;
+#endif
+                                        report.begin.tv_sec = begin_sec;
+                                        report.begin.tv_usec = begin_usec;
+                                        report.end.tv_sec = end_sec;
+                                        report.end.tv_usec = end_usec;
+
+                                        report_flow(unique_servers[j], &report);
+                                }
+                        }
+                        xmlrpc_DECREF(resultP);
+
+                        if (has_more)
+                        {
+                                /* Go back to beginning of loop */
+                                goto has_more_reports;
+                        }
+                }
+
+                if (!active_flows)
+                        /* All flows have ended */
+                        return;
+        }
+}
+
 
 int main(int argc, char *argv[])
 {
-	struct sigaction sa;
+        struct sigaction sa;
 
-	xmlrpc_client *rpc_client = 0;
+        xmlrpc_client *rpc_client = 0;
 
-	xmlrpc_env_init(&rpc_env);
-	xmlrpc_client_setup_global_const(&rpc_env);
+        xmlrpc_env_init(&rpc_env);
+        xmlrpc_client_setup_global_const(&rpc_env);
 
-	init_options_defaults();
-	init_flows_defaults();
-	parse_cmdline(argc, argv);
-	init_logfile();
-	init_random_numbers();
-	sa.sa_handler = sigint_handler;
-	sa.sa_flags = 0;
-	sigemptyset (&sa.sa_mask);
-	if (sigaction(SIGINT, &sa, NULL)) {
-		fprintf(stderr, "Error: Could not set handler for SIGINT\n");
-	}
-	DEBUG_MSG(LOG_WARNING, "prepare xmlrpc client");
-	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &rpc_client);
-	/* Check that all nodes run a compatible flowgrind version */
+        init_options_defaults();
+        init_flows_defaults();
+        parse_cmdline(argc, argv);
+        init_logfile();
+        sa.sa_handler = sigint_handler;
+        sa.sa_flags = 0;
+        sigemptyset (&sa.sa_mask);
+        if (sigaction(SIGINT, &sa, NULL)) {
+                fprintf(stderr, "Error: Could not set handler for SIGINT\n");
+        }
+        DEBUG_MSG(LOG_WARNING, "prepare xmlrpc client");
+        xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &rpc_client);
+        /* Check that all nodes run a compatible flowgrind version */
         DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
-	if (!sigint_caught)
-		check_version(rpc_client);
+        if (!sigint_caught)
+                check_version(rpc_client);
         DEBUG_MSG(LOG_WARNING, "check if flowgrindds are idle");
-	/* Check that all nodes are currently idle */
-	if (!sigint_caught)
-		check_idle(rpc_client);
+        /* Check that all nodes are currently idle */
+        if (!sigint_caught)
+                check_idle(rpc_client);
         DEBUG_MSG(LOG_WARNING, "prepare flows");
-	/* Setup flows */
-	if (!sigint_caught)
-		prepare_flows(rpc_client);
+        /* Setup flows */
+        if (!sigint_caught)
+                prepare_flows(rpc_client);
 
         DEBUG_MSG(LOG_WARNING, "start flows");
-	/* Start the test */
-	if (!sigint_caught)
-		grind_flows(rpc_client);
+        /* Start the test */
+        if (!sigint_caught)
+                grind_flows(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "report final");
-	if (!sigint_caught)
-		report_final();
+        DEBUG_MSG(LOG_WARNING, "report final");
+        if (!sigint_caught)
+                report_final();
 
-	close_flows();
+        close_flows();
 
-	shutdown_logfile();
+        shutdown_logfile();
 
-	xmlrpc_client_destroy(rpc_client);
-	xmlrpc_env_clean(&rpc_env);
+        xmlrpc_client_destroy(rpc_client);
+        xmlrpc_env_clean(&rpc_env);
 
-	xmlrpc_client_teardown_global_const();
+        xmlrpc_client_teardown_global_const();
 
         DEBUG_MSG(LOG_WARNING, "finished");
-	return 0;
+        return 0;
 }
+

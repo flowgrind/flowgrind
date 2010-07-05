@@ -35,7 +35,6 @@
 #include "fg_time.h"
 #include "fg_math.h"
 #include "log.h"
-#include "acl.h"
 #include "daemon.h"
 #include "source.h"
 #include "destination.h"
@@ -845,8 +844,10 @@ static int write_data(struct _flow *flow)
 			((struct _block *)flow->write_block)->this_block_size = htonl(flow->current_write_block_size); 
 			/* requested_block_size */  
 			((struct _block *)flow->write_block)->request_block_size = htonl(response_block_size);
+			/* erase rtt data (maybe leftover from response block) */
+			memset ( flow->write_block + 2 * (sizeof (int32_t) ), 0, sizeof(struct timeval) );
 			/* copy iat data */
-			tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
+			// tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
 			DEBUG_MSG(LOG_DEBUG, "wrote new request data to out buffer bs = %d, rqs = %d, on flow %d", 
 					ntohl(((struct _block *)flow->write_block)->this_block_size), 
 					ntohl(((struct _block *)flow->write_block)->request_block_size),

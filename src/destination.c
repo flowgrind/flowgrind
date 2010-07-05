@@ -33,7 +33,6 @@
 #include "fg_time.h"
 #include "fg_math.h"
 #include "log.h"
-#include "acl.h"
 #include "daemon.h"
 
 #ifdef HAVE_FLOAT_H

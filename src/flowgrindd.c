@@ -30,11 +30,12 @@
 #include "log.h"
 #include "fg_time.h"
 #include "debug.h"
-#include "acl.h"
 #include "fg_math.h"
 #if HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif
+
+unsigned port = DEFAULT_LISTEN_PORT;
 
 static char progname[50] = "flowgrindd";
 
@@ -42,7 +43,6 @@ static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
 		"Usage: %1$s [-a address ] [-w#] [-p#] [-D]\n"
-		"\t-a address\tadd address to list of allowed hosts (CIDR syntax)\n"
 		"\t-p#\t\tserver port\n"
 		"\t-d\t\tincrease debug verbosity (no daemon, log to stderr)\n"
 		"\t-v\t\tPrint version information and exit\n",
@@ -818,12 +818,59 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	/* xmlrpc_server_abyss() never returns */
 }
 
+void parse_option(int argc, char ** argv) {
+        int ch, rc;
+        int argcorig = argc;
+#if HAVE_GETOPT_LONG
+        // getopt_long isn't portable, it's GNU extension
+        struct option lo[] = {  {"help", 0, 0, 'h' },
+                                {"version", 0, 0, 'v'},
+                                {"debug", 0, 0, 'd'},
+                                {0, 0, 0, 0}
+                                };
+        while ((ch = getopt_long(argc, argv, "dDhp:vV", lo, 0)) != -1) {
+#else   
+        while ((ch = getopt(argc, argv, "dDhp:vV")) != -1) {
+#endif
+                switch (ch) {
+                case 'h':
+                        usage();
+                        break;
+
+                case 'd':
+                case 'D':
+                        log_type = LOGTYPE_STDERR;
+                        increase_debuglevel();
+                        break;
+
+                case 'p':
+                        rc = sscanf(optarg, "%u", &port);
+                        if (rc != 1) {
+                                fprintf(stderr, "failed to "
+                                        "parse port number.\n");
+                                usage();
+                        }
+                        break;
+
+                case 'v':
+                case 'V':
+                        fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
+                        exit(0);
+
+                default:
+                        usage();
+                }
+        }
+        argc = argcorig;
+
+        argc -= optind;
+
+        if (argc != 0)
+                usage();
+}
+
 int main(int argc, char ** argv)
 {
-	unsigned port = DEFAULT_LISTEN_PORT;
-	int rc;
-	int ch;
-	int argcorig = argc;
 	struct sigaction sa;
 
 	xmlrpc_env env;
@@ -858,63 +905,7 @@ int main(int argc, char ** argv)
 #if HAVE_LIBPCAP
 	fg_pcap_init();
 #endif
-
-#if HAVE_GETOPT_LONG
-	// getopt_long isn't portable, it's GNU extension
-	struct option lo[] = {	{"help", 0, 0, 'h' },
-				{"version", 0, 0, 'v'},
-				{"debug", 0, 0, 'd'},
-				{0, 0, 0, 0}
-				};
-	while ((ch = getopt_long(argc, argv, "a:dDhp:vV", lo, 0)) != -1) {
-#else
-	while ((ch = getopt(argc, argv, "a:dDhp:vV")) != -1) {
-#endif
-		switch (ch) {
-		case 'a':
-			if (acl_allow_add(optarg) == -1) {
-				fprintf(stderr, "unable to add host to ACL "
-						"list\n");
-				usage();
-			}
-			break;
-
-		case 'h':
-			usage();
-			break;
-
-		case 'd':
-		case 'D':
-			log_type = LOGTYPE_STDERR;
-			increase_debuglevel();
-			break;
-
-		case 'p':
-			rc = sscanf(optarg, "%u", &port);
-			if (rc != 1) {
-				fprintf(stderr, "failed to "
-					"parse port number.\n");
-				usage();
-			}
-			break;
-
-		case 'v':
-		case 'V':
-			fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
-			exit(0);
-
-		default:
-			usage();
-		}
-	}
-	argc = argcorig;
-
-	argc -= optind;
-	
-
-	if (argc != 0)
-		usage();
-
+	parse_option(argc, argv);
 	logging_init();
 	tsc_init();
 
