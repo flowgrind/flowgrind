@@ -44,6 +44,8 @@ char *log_filename = NULL;
 char sigint_caught = 0;
 char unique_servers[MAX_FLOWS * 2][1000];
 
+static char progname[50] = "flowgrind";
+
 struct _opt opt;
 static struct _flow flow[MAX_FLOWS];
 
@@ -124,7 +126,7 @@ int det_output_column_size(long value) {
 	return i;
 }
 
-// produces the string command for printf for the right number of digits and decimal part
+/* produces the string command for printf for the right number of digits and decimal part */
 char *outStringPart(int digits, int decimalPart) {
 	static char outstr[30] = {0};
 
@@ -182,9 +184,9 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	int column, double value, struct _column_state *column_state,
 	int numDigitsDecimalPart, int *columnWidthChanged)
 {
-	unsigned int maxTooLongColumns = opt.num_flows * 5; // Maximum number of rows with non-optimal column width
-	int lengthData = 0; // #digits of values
-	int lengthHead = 0; // Length of header string
+	unsigned int maxTooLongColumns = opt.num_flows * 5;
+	int lengthData = 0;
+	int lengthHead = 0;
 	unsigned int columnSize = 0;
 	char tempBuffer[50];
 	unsigned int a;
@@ -217,7 +219,7 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	lengthHead = MAX(strlen(header->first), strlen(header->second));
 	columnSize = MAX(lengthData, lengthHead);
 
-	// check if columnsize has changed
+	/* check if columnsize has changed */
 	if (column_state->last_width < columnSize) {
 		/* column too small */
 		*columnWidthChanged = 1;
@@ -240,9 +242,9 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 
 	number_formatstring = outStringPart(column_state->last_width, numDigitsDecimalPart);
 
-	// create columns
-	//
-	// output text for symbolic numbers
+	/* create columns
+	 *
+	 * output text for symbolic numbers */
         if (opt.symbolic) {
 		switch ((int)value) {
 			case INT_MAX:
@@ -266,12 +268,12 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
                 sprintf(tempBuffer, number_formatstring, value);
  		strcat(strDataRow, tempBuffer);
 	}
-	// 1st header row
+	/* 1st header row */
 	for (a = column_state->last_width; a > strlen(header->first); a--)
 		strcat(strHead1Row, " ");
 	strcat(strHead1Row, header->first);
 
-	// 2nd header Row
+	/* 2nd header Row */
 	for (a = column_state->last_width; a > strlen(header->second); a--)
 		strcat(strHead2Row, " ");
 	strcat(strHead2Row, header->second);
@@ -283,9 +285,9 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 	int column, char* value, struct _column_state *column_state,
 	int *columnWidthChanged) {
 
-	unsigned int maxTooLongColumns = opt.num_flows * 5; // Maximum number of rows with non-optimal column width
-	int lengthData = 0; // #digits of values
-	int lengthHead = 0; // Length of header string
+	unsigned int maxTooLongColumns = opt.num_flows * 5;
+	int lengthData = 0;
+	int lengthHead = 0;
 	unsigned int columnSize = 0;
 	unsigned int a;
 	const struct _header_info *header = &header_info[column];
@@ -293,12 +295,12 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 	if (!visible_columns[header->column_type])
 		return 0;
 
-	// get max columnsize
+	/* get max columnsize */
 	lengthData = strlen(value);
 	lengthHead = MAX(strlen(header->first), strlen(header->second));
 	columnSize = MAX(lengthData, lengthHead) + 2;
 
-	// check if columnsize has changed
+	/* check if columnsize has changed */
 	if (column_state->last_width < columnSize) {
 		/* column too small */
 		*columnWidthChanged = 1;
@@ -319,17 +321,17 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 	else /* This size was needed,keep it */
 		column_state->count_oversized = 0;
 
-	// create columns
+	/* create columns */
 	for (a = lengthData; a < columnSize; a++)
 		strcat(strDataRow, " ");
 	strcat(strDataRow, value);
 
-	// 1st header row
+	/* 1st header row */
 	for (a = column_state->last_width; a > strlen(header->first); a--)
 		strcat(strHead1Row, " ");
 	strcat(strHead1Row, header->first);
 
-	// 2nd header Row
+	/* 2nd header Row */
 	for (a = column_state->last_width; a > strlen(header->second); a--)
 		strcat(strHead2Row, " ");
 	strcat(strHead2Row, header->second);
@@ -345,20 +347,20 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		unsigned int fret, unsigned int tret, unsigned int fack, double linrtt, double linrttvar,
 		double linrto, int ca_state, int mss, int mtu, char* comment, int unit_byte)
 {
-	int columnWidthChanged = 0; //Flag: 0: column width has not changed
+	int columnWidthChanged = 0;
 
 	int i = 0;
 	static int counter = 0;
 
-	//Create Row + Header
-	char dataString[1000];
-	char headerString1[1000];
-	char headerString2[1000];
-	static char outputString[4000];
+	/* Create Row + Header */
+	char dataString[250];
+	char headerString1[250];
+	char headerString2[250];
+	static char outputString[1000];
 	char tmp[100];
 
-	//output string
-	//param # + flow_id
+	/* output string
+	param # + flow_id */
 	if (type == 0)
 		sprintf(dataString, "%cS%3d", hash, id);
 	else
@@ -367,95 +369,95 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	strcpy(headerString2, header_info[0].first);
 	i++;
 
-	//param begin
+	/* param begin */
 	createOutputColumn(headerString1, headerString2, dataString, i, begin, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
-	//param end
+	/* param end */
 	createOutputColumn(headerString1, headerString2, dataString,  i, end, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
-	//param throughput
+	/* param throughput */
 	if (unit_byte == 1)
 		createOutputColumn(headerString1, headerString2, dataString, i + 1, throughput, &column_states[i], 6, &columnWidthChanged);
 	else
 		createOutputColumn(headerString1, headerString2, dataString, i, throughput, &column_states[i], 6, &columnWidthChanged);
 	i += 2;
 
-	//param str_rttmin
+	/* param str_rttmin */
 	createOutputColumn(headerString1, headerString2, dataString, i, rttmin, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
-	//param str_rttavg
+	/* param str_rttavg */
 	createOutputColumn(headerString1, headerString2, dataString, i, rttavg, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
-	//param str_rttmax
+	/* param str_rttmax */
 	createOutputColumn(headerString1, headerString2, dataString, i, rttmax, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
-	//param str_iatmin
+	/* param str_iatmin */
 	createOutputColumn(headerString1, headerString2, dataString, i, iatmin, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
-	//param str_iatavg
+	/* param str_iatavg */
 	createOutputColumn(headerString1, headerString2, dataString, i, iatavg, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
-	//param str_iatmax
+	/* param str_iatmax */
 	createOutputColumn(headerString1, headerString2, dataString, i, iatmax, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
-	//linux kernel output
-	//param str_cwnd
+	/* linux kernel output */
+	/* param str_cwnd */
 	createOutputColumn(headerString1, headerString2, dataString, i, cwnd, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_ssth
+	/* param str_ssth */
 	createOutputColumn(headerString1, headerString2, dataString, i, ssth, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_uack
+	/* param str_uack */
 	createOutputColumn(headerString1, headerString2, dataString, i, uack, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_sack
+	/* param str_sack */
 	createOutputColumn(headerString1, headerString2, dataString, i, sack, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_lost
+	/* param str_lost */
 	createOutputColumn(headerString1, headerString2, dataString, i, lost, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_fret
+	/* param str_fret */
 	createOutputColumn(headerString1, headerString2, dataString, i, fret, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_tret
+	/* param str_tret */
 	createOutputColumn(headerString1, headerString2, dataString, i, tret, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_fack
+	/* param str_fack */
 	createOutputColumn(headerString1, headerString2, dataString, i, fack, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_reor
+	/* param str_reor */
 	createOutputColumn(headerString1, headerString2, dataString, i, reor, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	//param str_linrtt
+	/* param str_linrtt */
 	createOutputColumn(headerString1, headerString2, dataString, i, linrtt, &column_states[i], 1, &columnWidthChanged);
 	i++;
 
-	//param str_linrttvar
+	/* param str_linrttvar */
 	createOutputColumn(headerString1, headerString2, dataString, i, linrttvar, &column_states[i], 1, &columnWidthChanged);
 	i++;
 
-	//param str_linrto
+	/* param str_linrto */
 	createOutputColumn(headerString1, headerString2, dataString, i, linrto, &column_states[i], 1, &columnWidthChanged);
 	i++;
 
-	//param ca_state
+	/* param ca_state */
 	if (ca_state == TCP_CA_Open)
 		strcpy(tmp, "open");
 	else if (ca_state == TCP_CA_Disorder)
@@ -484,7 +486,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	strcat(headerString2, header_info[i].second);
 	strcat(dataString, comment);
 
-	//newline at the end of the string
+	/* newline */
 	strcat(headerString1, "\n");
 	strcat(headerString2, "\n");
 	strcat(dataString, "\n");
@@ -502,9 +504,6 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	return outputString;
 }
 /*New output end*/
-
-/* Program name. Can get updated from argv[0] in parse_cmdline */
-static char progname[50] = "flowgrind";
 
 static void usage(void)
 {
@@ -560,7 +559,7 @@ static void usage(void)
 		"  and 4096 at the destination.\n\n"
 
 		"  -A           Send response with minimal blocksize for RTT and IAT calculation\n"
-		"               (same as -V b=32)\n"
+		"               (same as -V 32)\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -572,7 +571,7 @@ static void usage(void)
                 "  -G x=[C|P],#,#\n"
 		"		Activate stochastic traffic generation and set parameters\n"
 		"		C = constant interpacket gap and blocksize\n"
-                "               P = poisson distributed\n"
+                "		P = poisson distributed\n"
 		"		W = weibull distributed (http emulation mode)\n"
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
 		"               Test from/to HOST. Optional argument is the address and port\n"
@@ -593,10 +592,10 @@ static void usage(void)
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
 		"               b = bits per second (default), y = bytes/second, B = blocks/s\n"
-		"  -U x=#       Set request block size  (default: b=8192)\n"
-		"  -V x=#	Set response block size (default: b=0)\n"
-		"               selected blocksizes denote maximum value if\n"
-		"               used with stochastic traffic generation (-G)\n"
+		"  -U #		Set request block size  (default: 8192)\n"
+		"  -V #		Set response block size (default: 0)\n"
+		"		selected blocksizes denote maximum value if\n"
+		"		used with stochastic traffic generation (-G)\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n",
@@ -642,7 +641,7 @@ static void usage_sockopt(void)
 
 		"Examples:\n"
 		"  flowgrind -H d=testhost -O s=TCP_CONG_MODULE=reno,d=SO_DEBUG\n"
-		//ToDo: write more examples and descriptions
+		/* ToDo: write more examples and descriptions */
 		);
 	exit(1);
 }
@@ -818,12 +817,12 @@ void print_tcp_report_line(char hash, int id,
 		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
 		strncat(comment_buffer, (s), sizeof(comment_buffer)-1); }while(0);
 
-	if (type == 0 && r->response_blocks_read > 0)
+	if (r->response_blocks_read > 0)
 		avg_rtt = r->rtt_sum / (double)(r->response_blocks_read);
 	else
 		min_rtt = max_rtt = avg_rtt = INFINITY;
 
-	if (type == 1 && r->request_blocks_read > 0)
+	if (r->request_blocks_read > 0)
 		avg_iat = r->iat_sum / (double)(r->request_blocks_read);
 	else
 		min_iat = max_iat = avg_iat = INFINITY;
@@ -877,7 +876,7 @@ void print_tcp_report_line(char hash, int id,
 
 	char rep_string[4000];
 #ifndef __LINUX__
-	// dont show linux kernel output if there is no linux OS
+	/* dont show linux kernel output if there is no linux OS */
 	column_type_kernel = 0;
 #endif
 	strcpy(rep_string, createOutput((hash ? '#' : ' '), id, type,
@@ -1003,14 +1002,6 @@ void report_final(void)
 					flow[id].final_report[endpoint]->response_blocks_written,
 					flow[id].final_report[endpoint]->response_blocks_read
 					);
-#ifdef DEBUG
-                                /*CATC("bytes_read = %lld", flow[id].final_report[endpoint]->bytes_read);
-                                CATC("bytes_written = %lld", flow[id].final_report[endpoint]->bytes_written);
-				CATC("reply_bytes_read = %lld", flow[id].final_report[endpoint]->reply_bytes_read);
-                                CATC("other reply_block_size = %i", flow[id].settings[!endpoint].reply_block_size);
-				CATC("reply_bytes_written = %lld", flow[id].final_report[endpoint]->reply_bytes_written);
-				CATC("own reply_block_size = %i", flow[id].settings[endpoint].reply_block_size);*/
-#endif
 			}
 
 			if (flow[id].endpoint_options[endpoint].rate_str)
@@ -1021,31 +1012,13 @@ void report_final(void)
 				CATC("TCP_CORK");
 			if (flow[id].settings[endpoint].pushy)
 				CATC("PUSHY");
-/*
-#ifdef __LINUX__
-		CATC("cc = \"%s\"", *flow[id].final_cc_alg ? flow[id].final_cc_alg :
-				"(failed)");
-		if (!flow[id].cc_alg)
-			CAT(" (default)");
-		else if (strcmp(flow[id].final_cc_alg, flow[id].cc_alg) != 0)
-			CAT(" (was set to \"%s\")", flow[id].cc_alg);
-#endif
-*/
+
 		if (flow[id].settings[endpoint].dscp)
 			CATC("dscp = 0x%02x", flow[id].settings[endpoint].dscp);
 		if (flow[id].late_connect)
 			CATC("late connecting");
 		if (flow[id].shutdown)
 			CATC("calling shutdown");
-/*		if (flow[id].congestion_counter > CONGESTION_LIMIT)
-			CAT(" (overcongested)");
-		else if (flow[id].congestion_counter > 0)
-			CAT(" (congested = %u)", flow[id].congestion_counter);
-		if (flow[id].stopped &&
-				flow[id].congestion_counter <= CONGESTION_LIMIT)
-			CAT(" (stopped)");
-*/
-
 			CAT("\n");
 
 			log_output(header_buffer);
@@ -1559,24 +1532,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				}
 				ASSIGN_ENDPOINT_FLOW_OPTION(rate_str, arg)
 				break;
-			case 'U':
-				rc = sscanf(arg, "%u", &optunsigned);
-				if (rc != 1) {
-					fprintf(stderr, "block size must be a positive "
-						"integer (in bytes)\n");
-					usage();
-				}
-				ASSIGN_COMMON_FLOW_SETTING(default_request_block_size, optunsigned)
-				break;
-			case 'V':
-                                rc = sscanf(arg, "%u", &optunsigned);
-                                if (rc != 1) {
-                                        fprintf(stderr, "block size must be a positive "
-                                                "integer (in bytes)\n");
-                                        usage();
-                                }
-                                ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, optunsigned)
-                                break;	
 			case 'T':
 			rc = sscanf(arg, "%lf", &optdouble);
 				if (rc != 1) {
@@ -1776,6 +1731,22 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'Q':
 			ASSIGN_FLOW_OPTION(summarize_only, 1)
 			break;
+                case 'U':
+                        rc = sscanf(optarg, "%d", &optint);
+                        if (rc != 1) {
+                                fprintf(stderr, "block size must be a positive integer");
+                                usage();
+                        }
+                        ASSIGN_COMMON_FLOW_SETTING(default_request_block_size, optint);
+                        break;
+                case 'V':
+                        rc = sscanf(optarg, "%d", &optint);
+                        if (rc != 1) {
+                                fprintf(stderr, "block size must be a positive integer");
+                                usage();
+                        }
+                        ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, optint);
+                        break;
 		case 'A':
 		case 'B':
 		case 'C':
@@ -1786,8 +1757,6 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'R':
 		case 'T':
 		case 'W':
-		case 'U':
-		case 'V':
 		case 'Y':
 			parse_flow_option(ch, optarg, current_flow_ids);
 			break;
