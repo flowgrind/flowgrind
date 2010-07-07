@@ -38,6 +38,7 @@
 #include "daemon.h"
 #include "source.h"
 #include "destination.h"
+#include "trafgen.h"
 
 #ifdef HAVE_FLOAT_H
 #include <float.h>
@@ -763,70 +764,6 @@ void init_flow(struct _flow* flow, int is_source)
 	DEBUG_MSG(LOG_NOTICE, "called init flow %d", flow->id);
 }
 
-static int next_request_block_size(struct _flow *flow)
-{
-	int bs = 0;
-	switch (flow->settings.traffic_generation_type)
-	{
-		case POISSON:
-		case WEIBULL:
-		case CONSTANT:
-		default:
-		bs = flow->settings.default_request_block_size;
-	}
-	DEBUG_MSG(LOG_NOTICE, "calculated request size %d for flow %d", bs, flow->id);
-	return bs;	
-}
-
-static int next_response_block_size(struct _flow *flow)
-{
-        int bs = 0;
-        switch (flow->settings.traffic_generation_type)
-        {	
-		case POISSON:
-		case WEIBULL:
-                case CONSTANT:
-                default:
-                bs = flow->settings.default_response_block_size;
-        }
-	
-	if (bs)
-        	DEBUG_MSG(LOG_NOTICE, "calculated next response size %d for flow %d", bs, flow->id);
-
-        return bs;
-}
-
-static double next_interpacket_gap(struct _flow *flow)
-{
-	double gap = 0;
-
-	/* old variant just for documentation.
-	 * see: http://portal.acm.org/citation.cfm?id=208389.208390 
-	
-	if (flow->settings.poisson_distributed) {
-		double urand = (double)((random()+1.0)/(RANDOM_MAX+1.0));
-		double erand = -log(urand) * 1/(double)flow->settings.write_rate;
-		delay = erand;
-	} else { 
-		delay = (double)1/flow->settings.write_rate;
-	}  */
-
-	switch (flow->settings.traffic_generation_type)
-	{
-		case POISSON:
-		case WEIBULL:
-		case CONSTANT:
-		default:
-		if (flow->settings.write_rate) {
-			gap = (double)1/flow->settings.write_rate;	
-			DEBUG_MSG(LOG_DEBUG, "flow %d has rate %u", flow->id, flow->settings.write_rate);
-		}
-	}
-	if (gap)
-		DEBUG_MSG(LOG_NOTICE, "calculated next interpacket gap %.6f for flow %d", gap, flow->id);
-	return gap;
-}
-
 static int write_data(struct _flow *flow)
 {
 	int rc = 0;
@@ -1085,8 +1022,6 @@ static void send_response(struct _flow* flow)
 		flow->current_block_bytes_written = 0;
                 ((struct _block *)flow->write_block)->this_block_size = htonl(requested_response_block_size);
 		((struct _block *)flow->write_block)->request_block_size = htonl(-1);
-		/* TODO: something is wrong here */
-		//memcpy(flow->write_block + 2*(sizeof (int32_t)), flow->read_block + 2*(sizeof (int32_t)), sizeof(struct timeval));
 		tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
 
                 DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, rqs = %d, on flow %d", 
@@ -1101,13 +1036,13 @@ static void send_response(struct _flow* flow)
 			if (rc == -1) {
 				if (errno == EAGAIN) {
 					logging_log(LOG_WARNING,
-						"congestion, "
-						"dropping response block");
+						"%s, still trying to send response block",
+						strerror(errno));
 					//break;
 				}
 				else {
 					logging_log(LOG_WARNING,
-						"Premature end of test: %s",
+						"Premature end of test: %s, dropping controlblock",
 						strerror(errno));
 					break;
 				}
