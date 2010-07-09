@@ -82,7 +82,7 @@ void prepare_flows(xmlrpc_client *rpc_client);
 void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void grind_flows(xmlrpc_client *rpc_client);
 
-void parse_visible_param(char *to_parse) {
+static void parse_visible_param(char *to_parse) {
 	// {begin, end, throughput, RTT, IAT, Kernel}
 	if (strstr(to_parse, "+begin"))
 		visible_columns[column_type_begin] = 1;
@@ -646,6 +646,14 @@ static void usage_sockopt(void)
 	exit(1);
 }
 
+static void usage_trafgenopt(void)
+{
+	fprintf(stderr,
+		"blablabla"
+	       );
+	exit(1);
+}
+
 static void usage_flowopt(void)
 {
 	fprintf(stderr,
@@ -660,7 +668,7 @@ static void usage_flowopt(void)
 	exit(1);
 }
 
-void init_options_defaults(void)
+static void init_options_defaults(void)
 {	
 	opt.num_flows = 1;
 	opt.reporting_interval = 0.05;
@@ -668,7 +676,7 @@ void init_options_defaults(void)
 	opt.dont_log_logfile = 1;
 }
 
-void init_adt_defaults(void)
+static void init_adt_defaults(void)
 {
         int i, j;
 	for (j = 0; j < 2; j++)
@@ -676,7 +684,7 @@ void init_adt_defaults(void)
                         ADT[i][j] = 0.05;
 }
 
-void init_flows_defaults(void)
+static void init_flows_defaults(void)
 {
 	int id = 1;
 
@@ -733,7 +741,7 @@ void init_flows_defaults(void)
 }
 
 
-void init_logfile(void)
+static void init_logfile(void)
 {
 	struct timeval now = {0, 0};
 	static char buf[60] = "";
@@ -774,7 +782,7 @@ void init_logfile(void)
 }
 
 
-void shutdown_logfile()
+static void shutdown_logfile()
 {
 	if (opt.dont_log_logfile)
 		return;
@@ -786,7 +794,7 @@ void shutdown_logfile()
 }
 
 
-void log_output(const char *msg)
+static void log_output(const char *msg)
 {
 	if (!opt.dont_log_stdout) {
 		printf("%s", msg);
@@ -1129,7 +1137,7 @@ exit_outer_loop:
 	print_report(id, endpoint, report);
 }
 
-void sigint_handler(int sig)
+static void sigint_handler(int sig)
 {
 	UNUSED_ARGUMENT(sig);
 
@@ -1249,7 +1257,7 @@ char *guess_topology (int mss, int mtu)
 	return "unknown";
 }
 
-int parse_Anderson_Test(char *params) {
+static int parse_Anderson_Test(char *params) {
 
 
 	init_adt_defaults();
@@ -1281,6 +1289,11 @@ int parse_Anderson_Test(char *params) {
 
 	return 1;
 }
+
+static int parse_trafgen_option(char *params) {
+	return 1;	
+}
+
 
 #define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
 			if (current_flow_ids[0] == -1) { \
@@ -1411,9 +1424,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 		}
 
 		switch (ch) {
-			case 'A':
-				ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, MIN_BLOCK_SIZE);
-				break;
 			case 'B':
 				rc = sscanf(arg, "%u", &optunsigned);
 				if (rc != 1) {
@@ -1600,9 +1610,9 @@ static void parse_cmdline(int argc, char **argv) {
 							{"version", 0, 0, 'v'},
 							{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:opqr:svwA:B:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
+	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:opqr:svwAB:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
 #else
-	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:opqr:svwA:B:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:opqr:svwAB:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:")) != -1)
 #endif
 		switch (ch) {
 
@@ -1719,15 +1729,19 @@ static void parse_cmdline(int argc, char **argv) {
 			}
 			current_flow_ids[id] = -1;
 			break;
+                case 'G':
+                        if (!parse_trafgen_option(optarg)) {
+                                fprintf(stderr, "Failed to parse traffic generation options\n");
+                               	usage_trafgenopt(); 
+                        }
+                        break;
 
 		case 'L':
 			ASSIGN_FLOW_OPTION(late_connect, 1)
 			break;
-
 		case 'N':
 			ASSIGN_FLOW_OPTION(shutdown, 1);
 			break;
-
 		case 'Q':
 			ASSIGN_FLOW_OPTION(summarize_only, 1)
 			break;
@@ -1747,7 +1761,10 @@ static void parse_cmdline(int argc, char **argv) {
                         }
                         ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, optint);
                         break;
-		case 'A':
+               case 'A':
+                        ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, MIN_BLOCK_SIZE);
+                        break;
+			
 		case 'B':
 		case 'C':
 		case 'D':

@@ -75,7 +75,7 @@ char started = 0;
 
 static void process_rtt(struct _flow* flow);
 static void process_iat(struct _flow* flow);
-static void send_response(struct _flow* flow);
+static void send_response(struct _flow* flow, int requested_response_block_size);
 
 void flow_error(struct _flow *flow, const char *fmt, ...)
 {
@@ -862,69 +862,120 @@ static int write_data(struct _flow *flow)
 	return 0;
 }
 
+static inline int read_n_bytes(struct _flow *flow, int bytes)
+{
+        int rc;
+        struct iovec iov;
+        struct msghdr msg;
+	/* we only read aux data for debugging purpose */
+#ifdef DEBUG
+        char cbuf[512];
+#else
+	char cbuf[16];
+#endif
+        struct cmsghdr *cmsg;
+	
+        iov.iov_base = flow->read_block +
+                       flow->current_block_bytes_read;
+        iov.iov_len = bytes;
+        // no name required
+         msg.msg_name = NULL;
+         msg.msg_namelen = 0;
+         msg.msg_iov = &iov;
+         msg.msg_iovlen = 1;
+         msg.msg_control = cbuf;
+         msg.msg_controllen = sizeof(cbuf);
+         rc = recvmsg(flow->fd, &msg, 0);
+
+         if (rc == -1) {
+         	if (errno == EAGAIN)
+                	flow_error(flow, "Premature end of test: %s",strerror(errno));
+                	return -1;
+                }
+
+         if (rc == 0) {
+         	DEBUG_MSG(LOG_ERR, "server shut down test socket of flow %d", flow->id);
+                if (!flow->finished[READ] || !flow->settings.shutdown)
+                	error(ERR_WARNING, "Premature shutdown of server flow");
+                	flow->finished[READ] = 1;
+                        if (flow->finished[WRITE]) {
+                                DEBUG_MSG(LOG_WARNING, "flow %u finished", flow->id);
+                                return -1;
+                        }
+                        return 0;
+                }
+
+
+                DEBUG_MSG(LOG_DEBUG, "flow %d received %u bytes", flow->id, rc);
+
+                flow->current_block_bytes_read += rc;
+                for (int i = 0; i < 2; i++) {
+                        flow->statistics[i].bytes_read += rc;
+                }
+#ifdef DEBUG
+        	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg;
+	     	     cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+               		DEBUG_MSG(LOG_DEBUG, "flow %d received cmsg: type = %u, len = %zu",
+              		  flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
+#endif
+	}
+	return rc;
+}
+
 static int read_data(struct _flow *flow)
 {
-	int rc;
-	int requested_response_block_size;
-	struct iovec iov;
-	struct msghdr msg;
-	char cbuf[512];
-	struct cmsghdr *cmsg;
+	int optint = 0;
+	int requested_response_block_size = 0;
 	
 	for (;;) {
-		iov.iov_base = flow->read_block +
-			       flow->current_block_bytes_read;
-		iov.iov_len = flow->current_read_block_size -
-			      flow->current_block_bytes_read;
-		// no name required
-		msg.msg_name = NULL;
-		msg.msg_namelen = 0;
-		msg.msg_iov = &iov;
-		msg.msg_iovlen = 1;
-		msg.msg_control = cbuf;
-		msg.msg_controllen = sizeof(cbuf);
-		rc = recvmsg(flow->fd, &msg, 0);
-
-		if (rc == -1) {
-			if (errno == EAGAIN)
+		/* read block header if started new block */
+		if (flow->current_block_bytes_read == 0)
+			if (read_n_bytes(flow,MIN_BLOCK_SIZE) == -1)
 				break;
-			flow_error(flow, "Premature end of test: %s",
-					strerror(errno));
-			return -1;
-		}
-
-		if (rc == 0) {
-			DEBUG_MSG(LOG_ERR, "server shut down test socket "
-					"of flow %d", flow->id);
-			if (!flow->finished[READ] ||
-					!flow->settings.shutdown)
-				error(ERR_WARNING, "Premature shutdown of "
-						"server flow");
-			flow->finished[READ] = 1;
-			if (flow->finished[WRITE]) {
-				DEBUG_MSG(LOG_WARNING, "flow %u finished", flow->id);
-				return -1;
-			}
-			return 0;
-		}
-
+		/* parse data and update status */
+		optint = ntohl( ((struct _block *)flow->read_block)->this_block_size );
+		if (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.default_request_block_size)
+			flow->current_read_block_size = optint;
 		
-		DEBUG_MSG(LOG_DEBUG, "flow %d received %u bytes", flow->id, rc);
+		optint = ntohl( ((struct _block *)flow->read_block)->request_block_size );	
+		if (optint == -1 || (optint >= MIN_BLOCK_SIZE 
+				  && optint <= flow->settings.default_response_block_size) )
+			requested_response_block_size = optint;
+
+		DEBUG_MSG(LOG_NOTICE, "flow %d parsed cbs: %d rqs: %d", 
+				      flow->id, 
+				      flow->current_read_block_size, 
+				      requested_response_block_size);
 		
-		flow->current_block_bytes_read += rc;			
-		for (int i = 0; i < 2; i++) {
-			flow->statistics[i].bytes_read += rc;
-		}
-
-		flow->current_read_block_size = ntohl( ((struct _block *)flow->read_block)->this_block_size );
-		requested_response_block_size = ntohl( ((struct _block *)flow->read_block)->request_block_size );
-
+		/* read rest of block, if we have more to read */
+		if (flow->current_block_bytes_read < flow->current_read_block_size)
+			if (read_n_bytes(flow,flow->current_read_block_size -
+			              flow->current_block_bytes_read) == -1)
+				break;
+		
 		if (flow->current_block_bytes_read >= flow->current_read_block_size ) {
-			/* We just finished to read a whole block */
-			flow->current_block_bytes_read = 0;
 
-                        DEBUG_MSG(LOG_NOTICE, "new read block on flow %d: cbs=%d, rqs=%d",
-                                        flow->id,flow->current_read_block_size,requested_response_block_size);
+			if (flow->current_block_bytes_read > flow->current_read_block_size) {
+				/* it used to happen that we read more bytes than we requested to receive. (wtf?)
+			 	 * in this rare case  we have to copy the bytes we read to much to the beginning
+			 	 * of the buffer, or else the transported data while be corrupted, and everything
+				 * while explode */
+				DEBUG_MSG(LOG_CRIT, "received to much data on flow %d: received=%d, expected=%d, difference=%d",
+						   flow->id,
+						   flow->current_block_bytes_read,
+						   flow->current_read_block_size,
+						   flow->current_block_bytes_read - flow->current_read_block_size);
+
+				memcpy(flow->read_block+flow->current_read_block_size,
+				       flow->read_block,
+				       flow->current_block_bytes_read - flow->current_read_block_size);
+				/* setting recv point after copied data */
+				flow->current_block_bytes_read = flow->current_block_bytes_read % flow->current_read_block_size;
+				assert(1);
+			} else {
+				//assert(flow->current_block_bytes_read == flow->current_read_block_size);
+                        	flow->current_block_bytes_read = 0;
+			}
 
 			if (requested_response_block_size == -1) {
 				/* This is a response block, consider DATA as RTT,  */
@@ -932,28 +983,20 @@ static int read_data(struct _flow *flow)
 					flow->statistics[i].response_blocks_read++;
 				}
 				process_rtt(flow); 
-		
+	
 			} else {
 				/* this is a request block, calculate IAT */
 				for (int i = 0; i < 2; i++) {
-                                	flow->statistics[i].request_blocks_read++;
-                                }
+                        	       	flow->statistics[i].request_blocks_read++;
+                	        }
 				process_iat(flow);
- 
+	 
 				/* send response if requested */
-				if ( requested_response_block_size > (signed)( (sizeof (struct _block)) ) )
-					send_response(flow);
+				if ( requested_response_block_size >= (signed)MIN_BLOCK_SIZE && !flow->finished[READ])
+					send_response(flow, requested_response_block_size);
 
 			}
-
-		}
-
-		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg;
-				cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-			DEBUG_MSG(LOG_DEBUG, "flow %d received cmsg: type = %u, len = %zu",
-					flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
-		}
-
+		}	
 		if (!flow->settings.pushy)
 			break;
 	}
@@ -971,7 +1014,9 @@ static void process_rtt(struct _flow* flow)
 
 	if (current_rtt < 0) {
 		current_rtt = NAN;
-		DEBUG_MSG(LOG_CRIT, "received malformed rtt block of flow %d (rtt = %.3lfms), ignoring", flow->id, current_rtt * 1e3);
+		DEBUG_MSG(LOG_CRIT, "received malformed rtt block of flow %d (rtt = %.3lfms), ignoring", 
+				     flow->id, 
+				     current_rtt * 1e3);
 	}
 
 	flow->last_block_read = now;
@@ -1014,10 +1059,9 @@ static void process_iat(struct _flow* flow)
 	DEBUG_MSG(LOG_WARNING, "calculated iat of flow %d (IAT = %.3lfms)", flow->id, current_iat * 1e3);
 }
 
-static void send_response(struct _flow* flow)
+static void send_response(struct _flow* flow, int requested_response_block_size)
 {		
-		int rc, requested_response_block_size;
-		requested_response_block_size = ntohl(((struct _block *)flow->read_block)->request_block_size);
+		int rc;
 		/* start new writeblock as response */
 		flow->current_block_bytes_written = 0;
                 ((struct _block *)flow->write_block)->this_block_size = htonl(requested_response_block_size);
@@ -1031,19 +1075,23 @@ static void send_response(struct _flow* flow)
 
 		/* send data out until block is finished */
 		for (;;) {
-			rc = write(flow->fd, flow->write_block, requested_response_block_size);
-			DEBUG_MSG(LOG_NOTICE, "send %d bytes response (rqs %d) on flow %d",rc,requested_response_block_size,flow->id);
+			rc = write(flow->fd, 
+				   flow->write_block + flow->current_block_bytes_written, 
+				   requested_response_block_size - flow->current_block_bytes_written);
+			DEBUG_MSG(LOG_NOTICE, "send %d bytes response (rqs %d) on flow %d",
+				              rc,
+					      requested_response_block_size,flow->id);
 			if (rc == -1) {
 				if (errno == EAGAIN) {
 					logging_log(LOG_WARNING,
 						"%s, still trying to send response block",
 						strerror(errno));
-					//break;
 				}
 				else {
 					logging_log(LOG_WARNING,
-						"Premature end of test: %s, dropping controlblock",
+						"Premature end of test: %s, abort flow",
 						strerror(errno));
+					flow->finished[READ] = 1;
 					break;
 				}
 			}

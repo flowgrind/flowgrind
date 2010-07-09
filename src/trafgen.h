@@ -1,12 +1,8 @@
-#ifndef _FLOWGRIND_H_
-#define _FLOWGRIND_H_
+#ifndef _TRAFGEN_H_
+#define _TRAFGEN_H_
 
-#include "daemon.h"
-#include "debug.h"
-#include "common.h"
-#include "fg_math.h"
+extern int next_request_block_size(struct _flow *);
+extern int next_response_block_size(struct _flow *);
+extern double next_interpacket_gap(struct _flow *);
 
-int next_request_block_size(struct _flow *);
-int next_response_block_size(struct _flow *);
-double next_interpacket_gap(struct _flow *);
 #endif
