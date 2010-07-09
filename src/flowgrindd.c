@@ -818,7 +818,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	/* xmlrpc_server_abyss() never returns */
 }
 
-void parse_option(int argc, char ** argv) {
+static void parse_option(int argc, char ** argv) {
         int ch, rc;
         int argcorig = argc;
 #if HAVE_GETOPT_LONG

@@ -67,6 +67,7 @@ enum _extra_socket_option_level
 enum _traffic_generation_types
 {
 	CONSTANT=0,
+	UNIFORM,
 	POISSON,
 	WEIBULL,
 };

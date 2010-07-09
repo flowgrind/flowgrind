@@ -13,9 +13,8 @@
 #include <fcntl.h>
 #include <syslog.h>
 
-#include "flowgrind.h"
-#include "debug.h"
 #include "common.h"
+#include "debug.h"
 #include "fg_math.h"
 
 #ifdef __SOLARIS__
@@ -26,13 +25,13 @@
 #define RANDOM_MAX              RAND_MAX        /* Linux, FreeBSD */
 #endif
 
-void
-rn_set_seed (const int i) {
+extern void
+rn_set_seed (int i) {
 	srand((unsigned)i);
 	DEBUG_MSG(LOG_WARNING, "initalizing random functions with seed %u",(unsigned)i);
 };
 
-int
+extern int
 rn_read_dev_random () {
 	int i, rc;
 	int data = open("/dev/urandom", O_RDONLY);
@@ -44,30 +43,36 @@ rn_read_dev_random () {
 	return i;
 }
 
-inline double
+static inline double
 rn_uniform() { return (rand()); }
 
-inline double
+static inline double
 rn_uniform_zero_to_one() { return (rn_uniform()/RANDOM_MAX+1.0); }
 
-inline double
+static inline double
 rn_exponential() { return (-log(rn_uniform())); }
 
 /* source english wikipedia articles */
 
-inline int
-dist_bernoulli(const double p) { return (rn_uniform_zero_to_one() <= p); }
+double
+dist_standard(const double mu, const double sigma_square) {
+	const double x = rn_uniform();
+	return 1 / sqrt(2.0*M_PI*sigma_square) * exp ( pow( (-x-mu), 2) / 2.0*sigma_square );
+}
 
-inline double
-dist_pareto (const double k, const double x_min) {
-        double x = rn_uniform();
+extern int
+dist_bernoulli(double p) { return (rn_uniform_zero_to_one() <= p); }
+
+extern double
+dist_pareto (double k, double x_min) {
+        const double x = rn_uniform();
         if (x < x_min) return 0;
         else return ( (k/x_min) * pow (x_min/rn_uniform(),k+1) );
 }
 
-inline double
-dist_weibull (const double alpha, const double beta) {
-        double x = rn_uniform();
-        return   alpha * beta * pow (x,beta-1) * exp( -alpha * pow(x,beta) );
+extern double
+dist_weibull (double alpha, double beta) {
+        const double x = rn_uniform();
+        return  alpha * beta * pow (x,beta-1.0) * exp( -alpha * pow(x,beta) );
 }
 
