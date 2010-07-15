@@ -24,7 +24,7 @@ int next_request_block_size(struct _flow *flow)
 {
         int bs = 0;
 
-        switch (flow->settings.traffic_generation_type)
+        switch (flow->settings.request_trafgen_options.distribution)
         {
 		case UNIFORM:
 			bs = (rand() % (flow->settings.default_request_block_size - MIN_BLOCK_SIZE) ) + MIN_BLOCK_SIZE;
@@ -46,7 +46,7 @@ int next_response_block_size(struct _flow *flow)
 {
         int bs = 0;
 
-        switch (flow->settings.traffic_generation_type)
+        switch (flow->settings.response_trafgen_options.distribution)
         {
 		case UNIFORM:
 			break;
@@ -69,7 +69,7 @@ double next_interpacket_gap(struct _flow *flow)
 {
         double gap = .0;
 
-        switch (flow->settings.traffic_generation_type)
+        switch (flow->settings.interpacket_gap_trafgen_options.distribution)
         {
 		case UNIFORM:
 			break;

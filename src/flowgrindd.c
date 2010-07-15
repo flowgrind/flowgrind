@@ -144,7 +144,10 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"s:d,s:d,s:d,s:d,s:d,"
 		"s:i,s:i,s:i,s:i,"
 		"s:b,s:b,s:b,s:b,s:b,"
-		"s:i,s:i,s:d,s:d,s:i,"
+		"s:i,s:i,"
+                "s:i,s:d,s:d," /* request */
+                "s:i,s:d,s:d," /* response */
+                "s:i,s:d,s:d," /* interpacket_gap */
 		"s:b,s:b,s:i,"
 		"s:s,"
 		"s:i,s:i,s:i,s:i,"
@@ -173,10 +176,19 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"shutdown", &settings.shutdown,
 
                 "write_rate", &settings.write_rate,
-                "traffic_generation_type", &settings.traffic_generation_type,
-                "traffic_generation_parm_alpha", &settings.traffic_generation_parm_alpha,
-                "traffic_generation_parm_beta", &settings.traffic_generation_parm_beta,
                 "random_seed",&settings.random_seed,
+
+                "traffic_generation_request_distribution", &settings.request_trafgen_options.distribution,
+                "traffic_generation_request_param_one", &settings.request_trafgen_options.param_one,
+                "traffic_generation_request_param_two", &settings.request_trafgen_options.param_two,
+
+                "traffic_generation_response_distribution", &settings.response_trafgen_options.distribution,
+                "traffic_generation_response_param_one", &settings.response_trafgen_options.param_one,
+                "traffic_generation_response_param_two", &settings.response_trafgen_options.param_two,
+
+                "traffic_generation_gap_distribution", &settings.interpacket_gap_trafgen_options.distribution,
+                "traffic_generation_gap_param_one", &settings.interpacket_gap_trafgen_options.param_one,
+                "traffic_generation_gap_param_two", &settings.interpacket_gap_trafgen_options.param_two,
 		
 		"flow_control", &settings.flow_control,
 		"byte_counting", &settings.byte_counting,
@@ -327,7 +339,10 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"s:d,s:d,s:d,s:d,s:d,"
 		"s:i,s:i,s:i,s:i,"
 		"s:b,s:b,s:b,s:b,s:b,"
-		"s:i,s:i,s:d,s:d,s:i,"
+		"s:i,s:i,"
+		"s:i,s:d,s:d," /* request */
+		"s:i,s:d,s:d," /* response */
+		"s:i,s:d,s:d," /* interpacket_gap */
 		"s:b,s:b,s:i,"
 		"s:s,"
 		"s:i,s:i,s:i,s:i,"
@@ -355,11 +370,20 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"shutdown", &settings.shutdown,
 		
                 "write_rate", &settings.write_rate,
-                "traffic_generation_type", &settings.traffic_generation_type,
-                "traffic_generation_parm_alpha", &settings.traffic_generation_parm_alpha,
-                "traffic_generation_parm_beta", &settings.traffic_generation_parm_beta,
                 "random_seed",&settings.random_seed,
 
+                "traffic_generation_request_distribution", &settings.request_trafgen_options.distribution,
+                "traffic_generation_request_param_one", &settings.request_trafgen_options.param_one,
+                "traffic_generation_request_param_two", &settings.request_trafgen_options.param_two,
+
+                "traffic_generation_response_distribution", &settings.response_trafgen_options.distribution,
+                "traffic_generation_response_param_one", &settings.response_trafgen_options.param_one,
+                "traffic_generation_response_param_two", &settings.response_trafgen_options.param_two,
+
+                "traffic_generation_gap_distribution", &settings.interpacket_gap_trafgen_options.distribution,
+                "traffic_generation_gap_param_one", &settings.interpacket_gap_trafgen_options.param_one,
+                "traffic_generation_gap_param_two", &settings.interpacket_gap_trafgen_options.param_two,
+		
 		"flow_control", &settings.flow_control,
 		"byte_counting", &settings.byte_counting,
 		"cork", &settings.cork,

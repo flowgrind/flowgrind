@@ -568,11 +568,10 @@ static void usage(void)
 		"               Useful in combination with -n to set specific options\n"
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
-                "  -G x=[C|P],#,#\n"
-		"               Activate stochastic traffic generation and set parameters\n"
-		"               C = constant interpacket gap and blocksize\n"
-                "               P = poisson distributed\n"
-		"               w = weibull distributed (http emulation mode)\n"
+                "  -G [q|p|g]=[C|P|W],#1,(#2):<multiple times>\n"
+                "               Activate stochastic traffic generation and set parameters\n"
+                "               according to the used distribution\n"
+                "		(call without parameters for more info)\n"	
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
@@ -649,7 +648,30 @@ static void usage_sockopt(void)
 static void usage_trafgenopt(void)
 {
 	fprintf(stderr,
-		"blablabla"
+                "Stochastic Traffic Generation Options:"
+                "\n"
+                "  -G [q|p|g]=[C|P|W],#1,(#2):<multiple times>\n"
+                "\n"
+                "               Activate stochastic traffic generation and set parameters\n"
+                "               for the choosen distribution\n"
+		"\n"
+                "               use distribution for the following flow parameter:\n"
+		"               q = request size (in bytes)\n"
+                "               p = response size (in bytes)\n"
+                "               g = request interpacket gap (in ms)\n"
+                "               \n"
+                "               possible distributions:\n"
+                "               C = constant (param 1: value, param 2: not used)\n"
+                "               N = normal (param 1: mu - mean value, param 2: sigma_square - variance)\n"
+                "               W = weibull distributed (param 1: lambda - scale, param 2: k - shape)\n"
+                "\n"
+                "example:\n"
+                "  -G q=C,40:p=W,200,50:g=N,500,100\n"
+                "\n"
+                "which means:\n"
+                "               q=C,40       use contant request size of 40 bytes\n"
+                "               p=W,200,50   use weibull distributed response size with lambda 200 bytes and k 5\n"
+                "               g=N,500,100  use normal distributed interpacket gap with mean 500ms and variance 100\n"
 	       );
 	exit(1);
 }
@@ -1290,7 +1312,82 @@ static int parse_Anderson_Test(char *params) {
 	return 1;
 }
 
-static int parse_trafgen_option(char *params) {
+#define ASSIGN_TRAFGEN_PARAMETER(TYPE, DISTRIBUTION, PARAM_ONE, PARAM_TWO) \
+                        if (current_flow_ids[0] == -1) { \
+                                int id; \
+                                for (id = 0; id < MAX_FLOWS; id++) { \
+                               		for (int i = 0; i < 2; i++) { \
+					        switch (TYPE) { \
+							case 'p': \
+							flow[id].settings[i].response_trafgen_options.distribution = DISTRIBUTION; \
+							flow[id].settings[i].response_trafgen_options.param_one = PARAM_ONE; \
+							flow[id].settings[i].response_trafgen_options.param_two = PARAM_TWO; \
+							break; \
+							case 'q': \
+                                                        flow[id].settings[i].request_trafgen_options.distribution = DISTRIBUTION; \
+                                                        flow[id].settings[i].request_trafgen_options.param_one = PARAM_ONE; \
+                                                        flow[id].settings[i].request_trafgen_options.param_two = PARAM_TWO; \
+                                                        break; \
+                                                        case 'g': \
+                                                        flow[id].settings[i].interpacket_gap_trafgen_options.distribution = DISTRIBUTION; \
+                                                        flow[id].settings[i].interpacket_gap_trafgen_options.param_one = PARAM_ONE; \
+                                                        flow[id].settings[i].interpacket_gap_trafgen_options.param_two = PARAM_TWO; \
+                                                        break; \
+                                		} \
+					} \
+				} \
+                        } else { \
+                                int id; \
+                                for (id = 0; id < MAX_FLOWS; id++) { \
+                                       for (int i = 0; i < 2; i++) { \
+                                                switch (TYPE) { \
+                                                        case 'p': \
+                                                        flow[id].settings[i].response_trafgen_options.distribution = DISTRIBUTION; \
+                                                        flow[id].settings[i].response_trafgen_options.param_one = PARAM_ONE; \
+                                                        flow[id].settings[i].response_trafgen_options.param_two = PARAM_TWO; \
+                                                        break; \
+                                                        case 'q': \
+                                                        flow[id].settings[i].request_trafgen_options.distribution = DISTRIBUTION; \
+                                                        flow[id].settings[i].request_trafgen_options.param_one = PARAM_ONE; \
+                                                        flow[id].settings[i].request_trafgen_options.param_two = PARAM_TWO; \
+                                                        break; \
+                                                        case 'g': \
+                                                        flow[id].settings[i].interpacket_gap_trafgen_options.distribution = DISTRIBUTION; \
+                                                        flow[id].settings[i].interpacket_gap_trafgen_options.param_one = PARAM_ONE; \
+                                                        flow[id].settings[i].interpacket_gap_trafgen_options.param_two = PARAM_TWO; \
+                                                        break; \
+                                                } \
+                                        } \
+                                } \
+                        } \
+
+
+static int parse_trafgen_option(char *params, int current_flow_ids[]) {
+	double param1, param2;
+	char type, distr;
+	int rc;
+	char * section;
+	char * arg;
+	
+	for (section = strtok(params, ":"); section; section = strtok(NULL, ":")) {
+			type = section[0];
+                	if (section[1] == '=')
+                        	arg = section + 2;
+                	else
+                        	arg = section + 1;
+
+                	if (type != 'p' && type != 'q' && type != 'g') {
+                        	fprintf(stderr, "Syntax error in traffic generation option: %c is not a type.\n", type);
+                        	usage_trafgenopt();
+                	}
+			rc = sscanf(arg, "%c,%lf,%lf", &distr, &param1, &param2);
+                                if (rc != 2 && rc != 3) {
+                                        fprintf(stderr, "malformed traffic generation parameters\n");
+                                        usage();
+                                }
+			ASSIGN_TRAFGEN_PARAMETER(type, distr, param1, param2);
+
+		}
 	return 1;	
 }
 
@@ -1730,8 +1827,8 @@ static void parse_cmdline(int argc, char **argv) {
 			current_flow_ids[id] = -1;
 			break;
                 case 'G':
-                        if (!parse_trafgen_option(optarg)) {
-                                fprintf(stderr, "Failed to parse traffic generation options\n");
+                        if (!parse_trafgen_option(optarg,current_flow_ids)) {
+                                fprintf(stderr, "Failed to parse traffic generation options\n\n");
                                	usage_trafgenopt(); 
                         }
                         break;
@@ -2120,7 +2217,10 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "s:i,s:i,"
                 "s:i,s:i,"
                 "s:b,s:b,s:b,s:b,s:b,"
-                "s:i,s:i,s:d,s:d,s:i,"
+                "s:i,s:i,"
+		"s:i,s:d,s:d," /* request */
+		"s:i,s:d,s:d," /* response */
+		"s:i,s:d,s:d," /* interpacket_gap */
                 "s:b,s:b,s:i,"
                 "s:s,"
                 "s:i,s:i,s:i,s:i,"
@@ -2149,10 +2249,19 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "shutdown", (int)flow[id].shutdown,
 
                 "write_rate", flow[id].settings[DESTINATION].write_rate,
-                "traffic_generation_type", flow[id].settings[DESTINATION].traffic_generation_type,
-                "traffic_generation_parm_alpha", flow[id].settings[DESTINATION].traffic_generation_parm_alpha,
-                "traffic_generation_parm_beta", flow[id].settings[DESTINATION].traffic_generation_parm_beta,
                 "random_seed",flow[id].random_seed,
+
+                "traffic_generation_request_distribution", flow[id].settings[DESTINATION].request_trafgen_options.distribution,
+		"traffic_generation_request_param_one", flow[id].settings[DESTINATION].request_trafgen_options.param_one,
+		"traffic_generation_request_param_two", flow[id].settings[DESTINATION].request_trafgen_options.param_two,
+
+                "traffic_generation_response_distribution", flow[id].settings[DESTINATION].response_trafgen_options.distribution,
+                "traffic_generation_response_param_one", flow[id].settings[DESTINATION].response_trafgen_options.param_one,
+                "traffic_generation_response_param_two", flow[id].settings[DESTINATION].response_trafgen_options.param_two,
+
+                "traffic_generation_gap_distribution", flow[id].settings[DESTINATION].interpacket_gap_trafgen_options.distribution,
+                "traffic_generation_gap_param_one", flow[id].settings[DESTINATION].interpacket_gap_trafgen_options.param_one,
+                "traffic_generation_gap_param_two", flow[id].settings[DESTINATION].interpacket_gap_trafgen_options.param_two,
 
                 "flow_control", flow[id].settings[DESTINATION].flow_control,
                 "byte_counting", flow[id].byte_counting,
@@ -2206,7 +2315,10 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "s:i,s:i,"
                 "s:i,s:i,"
                 "s:b,s:b,s:b,s:b,s:b,"
-                "s:i,s:i,s:d,s:d,s:i,"
+                "s:i,s:i,"
+                "s:i,s:d,s:d," /* request */
+                "s:i,s:d,s:d," /* response */
+                "s:i,s:d,s:d," /* interpacket_gap */
                 "s:b,s:b,s:i,"
                 "s:s,"
                 "s:i,s:i,s:i,s:i,"
@@ -2236,11 +2348,21 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "shutdown", (int)flow[id].shutdown,
 
                 "write_rate", flow[id].settings[SOURCE].write_rate,
-                "traffic_generation_type", flow[id].settings[SOURCE].traffic_generation_type,
-                "traffic_generation_parm_alpha", flow[id].settings[SOURCE].traffic_generation_parm_alpha,
-                "traffic_generation_parm_beta", flow[id].settings[SOURCE].traffic_generation_parm_beta,
                 "random_seed",flow[id].random_seed,
 
+                "traffic_generation_request_distribution", flow[id].settings[SOURCE].request_trafgen_options.distribution,
+                "traffic_generation_request_param_one", flow[id].settings[SOURCE].request_trafgen_options.param_one,
+                "traffic_generation_request_param_two", flow[id].settings[SOURCE].request_trafgen_options.param_two,
+
+                "traffic_generation_response_distribution", flow[id].settings[SOURCE].response_trafgen_options.distribution,
+                "traffic_generation_response_param_one", flow[id].settings[SOURCE].response_trafgen_options.param_one,
+                "traffic_generation_response_param_two", flow[id].settings[SOURCE].response_trafgen_options.param_two,
+
+                "traffic_generation_gap_distribution", flow[id].settings[SOURCE].interpacket_gap_trafgen_options.distribution,
+                "traffic_generation_gap_param_one", flow[id].settings[SOURCE].interpacket_gap_trafgen_options.param_one,
+                "traffic_generation_gap_param_two", flow[id].settings[SOURCE].interpacket_gap_trafgen_options.param_two,
+
+		
                 "flow_control", flow[id].settings[SOURCE].flow_control,
                 "byte_counting", flow[id].byte_counting,
                 "cork", (int)flow[id].settings[SOURCE].cork,

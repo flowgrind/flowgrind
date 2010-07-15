@@ -64,14 +64,6 @@ enum _extra_socket_option_level
 	level_ipproto_udp
 };
 
-enum _traffic_generation_types
-{
-	CONSTANT=0,
-	UNIFORM,
-	POISSON,
-	WEIBULL,
-};
-
 /* 
  * our data block has the following layout:
  *
@@ -95,6 +87,22 @@ struct _block
         int32_t this_block_size;
         int32_t request_block_size;
         struct timeval data;
+};
+
+enum _stochastic_distributions
+{
+        CONSTANT=0,
+        UNIFORM,
+        POISSON,
+        WEIBULL,
+};
+
+struct _trafgen_options
+{
+        enum _stochastic_distributions distribution;
+        double param_one;
+        double param_two;
+
 };
 
 /* Common to both endpoints */
@@ -121,9 +129,6 @@ struct _flow_settings
 	int shutdown;
 
 	int write_rate;
-	enum _traffic_generation_types traffic_generation_type;
-	double traffic_generation_parm_alpha;
-	double traffic_generation_parm_beta;
 	int random_seed;
 
 	int flow_control;
@@ -136,6 +141,10 @@ struct _flow_settings
 	int icmp;
 	int dscp;
 	int ipmtudiscover;
+
+        struct _trafgen_options request_trafgen_options;
+        struct _trafgen_options response_trafgen_options;
+        struct _trafgen_options interpacket_gap_trafgen_options;
 
 	struct _extra_socket_options {
 		int level;
