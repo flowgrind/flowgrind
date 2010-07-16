@@ -6,6 +6,8 @@ AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CPP
+AM_C_PROTOTYPES
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
 
@@ -27,6 +29,7 @@ case $host in
     AC_DEFINE([__SOLARIS__], [1], [Solaris])
     ;;
 esac
+
 
 AC_C_CONST
 AC_C_INLINE

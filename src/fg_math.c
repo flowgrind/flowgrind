@@ -29,7 +29,7 @@ extern void
 rn_set_seed (int i) {
 	srand((unsigned)i);
 	DEBUG_MSG(LOG_WARNING, "initalizing random functions with seed %u",(unsigned)i);
-};
+}
 
 extern int
 rn_read_dev_random () {

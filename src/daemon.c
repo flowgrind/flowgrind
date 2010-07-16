@@ -867,14 +867,13 @@ static inline int read_n_bytes(struct _flow *flow, int bytes)
         int rc;
         struct iovec iov;
         struct msghdr msg;
-	/* we only read aux data for debugging purpose */
+/* we only read aux data for debugging purpose */
 #ifdef DEBUG
         char cbuf[512];
+	struct cmsghdr *cmsg;
 #else
 	char cbuf[16];
 #endif
-        struct cmsghdr *cmsg;
-	
         iov.iov_base = flow->read_block +
                        flow->current_block_bytes_read;
         iov.iov_len = bytes;
@@ -917,8 +916,8 @@ static inline int read_n_bytes(struct _flow *flow, int bytes)
 	     	     cmsg = CMSG_NXTHDR(&msg, cmsg)) {
                		DEBUG_MSG(LOG_DEBUG, "flow %d received cmsg: type = %u, len = %zu",
               		  flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
+		}	
 #endif
-	}
 	return rc;
 }
 
