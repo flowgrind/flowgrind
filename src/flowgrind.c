@@ -1415,7 +1415,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 	char* arg;
 	char type;
 	int rc = 0;
-	int optint;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
 
@@ -1534,13 +1533,13 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				ASSIGN_COMMON_FLOW_SETTING(flow_control, 1)
 				break;
 			case 'D':
-				rc = sscanf(arg, "%x", &optint);
-				if (rc != 1 || (optint & ~0x3f)) {
+				rc = sscanf(arg, "%x", &optunsigned);
+				if (rc != 1 || (optunsigned & ~0x3f)) {
 					fprintf(stderr, "malformed differentiated "
 							"service code point.\n");
 					usage();
 				}
-				ASSIGN_COMMON_FLOW_SETTING(dscp, optint);
+				ASSIGN_COMMON_FLOW_SETTING(dscp, optunsigned);
 			break;
 
 			case 'H':
