@@ -91,10 +91,9 @@ struct _block
 
 enum _stochastic_distributions
 {
-        CONSTANT=0,
-        UNIFORM,
-        POISSON,
-        WEIBULL,
+        CONSTANT='C',
+        NORMAL='N',
+        WEIBULL='W',
 };
 
 struct _trafgen_options
