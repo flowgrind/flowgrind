@@ -161,7 +161,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 	if (flow->settings.byte_counting) {
 		int byte_idx;
-		for (byte_idx = 0; byte_idx < flow->settings.default_response_block_size; byte_idx++)
+		for (byte_idx = 0; byte_idx < buffersize; byte_idx++)
 			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
 	}
 

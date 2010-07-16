@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <float.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/time.h>
@@ -20,70 +21,78 @@
 #include "fg_math.h"
 #include "trafgen.h"
 
+inline static double calculate(int type, double param_one, double param_two, int minval, int maxval, double defaultval) {
+	
+	double val = 0;
+	
+        switch (type) {
+		case NORMAL:
+		
+		break;
+
+		case WEIBULL:
+
+		break;
+
+		case CONSTANT:
+		/* constant is default */	
+		default:
+			val = defaultval;
+
+	}
+
+	if (val && val < minval)
+		val = minval;
+
+	if (val > maxval)
+		val = maxval;
+
+	return val;
+
+}	
 int next_request_block_size(struct _flow *flow)
 {
-        int bs = 0;
-
-        switch (flow->settings.request_trafgen_options.distribution)
-        {
-		case UNIFORM:
-			bs = (rand() % (flow->settings.default_request_block_size - MIN_BLOCK_SIZE) ) + MIN_BLOCK_SIZE;
-			break;
-		case POISSON:
-			break;
-                case WEIBULL:
-			break;
-                case CONSTANT:
-                default:
-                bs = flow->settings.default_request_block_size;
-        }
-        DEBUG_MSG(LOG_NOTICE, "calculated request size %d for flow %d", bs, flow->id);
-	assert(bs >= MIN_BLOCK_SIZE && bs <= flow->settings.default_request_block_size);
-        return bs;
+	int bs = calculate(flow->settings.request_trafgen_options.distribution, 
+			   flow->settings.request_trafgen_options.param_one,
+			   flow->settings.request_trafgen_options.param_two,
+			   MIN_BLOCK_SIZE,
+		 	   flow->settings.default_request_block_size,
+			   flow->settings.default_request_block_size
+			   );
+	
+	DEBUG_MSG(LOG_NOTICE, "calculated request size %d for flow %d", bs, flow->id);
+	
+	return bs;
 }
 
 int next_response_block_size(struct _flow *flow)
 {
-        int bs = 0;
-
-        switch (flow->settings.response_trafgen_options.distribution)
-        {
-		case UNIFORM:
-			break;
-                case POISSON:
-			break;
-                case WEIBULL:
-			break;
-                case CONSTANT:
-                default:
-                bs = flow->settings.default_response_block_size;
-        }
-
+        int bs = calculate(flow->settings.response_trafgen_options.distribution, 
+                           flow->settings.response_trafgen_options.param_one,
+                           flow->settings.response_trafgen_options.param_two,
+                           MIN_BLOCK_SIZE,
+                           flow->settings.default_response_block_size,
+			   flow->settings.default_response_block_size
+                           );
         if (bs)
-                DEBUG_MSG(LOG_NOTICE, "calculated next response size %d for flow %d", bs, flow->id);
-	assert(bs == 0 || (bs >= MIN_BLOCK_SIZE && bs <= flow->settings.default_response_block_size) );
+		DEBUG_MSG(LOG_NOTICE, "calculated response size %d for flow %d", bs, flow->id);
+
         return bs;
+
 }
 
 double next_interpacket_gap(struct _flow *flow)
 {
-        double gap = .0;
+        double gap = calculate(flow->settings.interpacket_gap_trafgen_options.distribution, 
+			       flow->settings.interpacket_gap_trafgen_options.param_one,
+                               flow->settings.interpacket_gap_trafgen_options.param_two,
+                               0,
+                               60000,
+			       0
+                               );
 
-        switch (flow->settings.interpacket_gap_trafgen_options.distribution)
-        {
-		case UNIFORM:
-			break;
-                case POISSON:
-			break;
-                case WEIBULL:
-			break;
-                case CONSTANT:
-                default:
-                if (flow->settings.write_rate) {
-                        gap = (double)1/flow->settings.write_rate;
-                }
-        }
-        if (gap)
+	if (gap)
                 DEBUG_MSG(LOG_NOTICE, "calculated next interpacket gap %.6fms for flow %d", gap, flow->id);
-        return gap;
+        
+	return gap;
 }
