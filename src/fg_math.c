@@ -17,6 +17,10 @@
 #include "debug.h"
 #include "fg_math.h"
 
+#ifdef HAVE_FLOAT_H
+#include <float.h>
+#endif
+
 #ifdef __SOLARIS__
 #define RANDOM_MAX              4294967295UL    /* 2**32-1 */
 #elif __DARWIN__
@@ -47,17 +51,27 @@ static inline double
 rn_uniform() { return (rand()); }
 
 static inline double
-rn_uniform_zero_to_one() { return (rn_uniform()/RANDOM_MAX+1.0); }
+rn_uniform_zero_to_one() { return (rn_uniform()/(RANDOM_MAX)); }
 
+static inline double
+rn_uniform_minusone_to_one() { return (rn_uniform()/(RANDOM_MAX/2.0)-1.0); }
+		
 static inline double
 rn_exponential() { return (-log(rn_uniform())); }
 
 /* source english wikipedia articles */
 
 double
-dist_standard(const double mu, const double sigma_square) {
+dist_uniform(const double minval, const double maxval) {
 	const double x = rn_uniform();
-	return 1 / sqrt(2.0*M_PI*sigma_square) * exp ( pow( (-x-mu), 2) / 2.0*sigma_square );
+	
+	return ((int) x % (int)(maxval-minval)) + minval;
+}
+double
+dist_normal(const double mu, const double sigma_square) {
+	const double x = rn_uniform_minusone_to_one();
+	DEBUG_MSG(LOG_DEBUG, "calculated random number %f", x);
+	return ( 1.0 / sqrt(2.0*M_PI*sigma_square) ) * exp( (-pow ((x-mu),2) ) / ( 2 * sigma_square) );
 }
 
 extern int
@@ -72,7 +86,8 @@ dist_pareto (double k, double x_min) {
 
 extern double
 dist_weibull (double alpha, double beta) {
-        const double x = rn_uniform();
+        const double x = rn_uniform_zero_to_one();
+	DEBUG_MSG(LOG_DEBUG, "calculated random number %f", x);
         return  alpha * beta * pow (x,beta-1.0) * exp( -alpha * pow(x,beta) );
 }
 

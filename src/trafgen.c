@@ -21,17 +21,24 @@
 #include "fg_math.h"
 #include "trafgen.h"
 
-inline static double calculate(int type, double param_one, double param_two, int minval, int maxval, double defaultval) {
+inline static double calculate(enum _stochastic_distributions type, double param_one, double param_two, int minval, int maxval, double defaultval) {
 	
 	double val = 0;
 	
         switch (type) {
 		case NORMAL:
-		
+			val = dist_normal ( param_one, param_two );
+			DEBUG_MSG(LOG_DEBUG, "calculated normal distribution value %f for parameters %f,%f", val, param_one, param_two);
 		break;
 
 		case WEIBULL:
+			val = dist_weibull ( param_one, param_two );
+			DEBUG_MSG(LOG_DEBUG, "calculated weibull distribution value %f for parameters %f,%f", val, param_one, param_two);
+		break;
 
+		case UNIFORM:
+			val = dist_uniform ( param_one, param_two ); 
+			DEBUG_MSG(LOG_DEBUG, "calculated uniform distribution value %f", val);
 		break;
 
 		case CONSTANT:
