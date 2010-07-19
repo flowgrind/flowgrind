@@ -568,10 +568,10 @@ static void usage(void)
 		"               Useful in combination with -n to set specific options\n"
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
-                "  -G [q|p|g]=[C|P|W],#1,(#2):<multiple times>\n"
+                "  -G [q|p|g]=[C|P|W|U],#1,(#2):<multiple times>\n"
                 "               Activate stochastic traffic generation and set parameters\n"
                 "               according to the used distribution\n"
-                "		(call without parameters for more info)\n"	
+                "		(call with -G help more info)\n"	
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
@@ -650,7 +650,7 @@ static void usage_trafgenopt(void)
 	fprintf(stderr,
                 "Stochastic Traffic Generation Options:"
                 "\n"
-                "  -G [q|p|g]=[C|P|W],#1,(#2):<multiple times> -U # -V #\n"
+                "  -G [q|p|g]=[C|U|P|W],#1,(#2):<multiple times> -U # -V #\n"
                 "\n"
                 "               Activate stochastic traffic generation and set parameters\n"
                 "               for the choosen distribution\n"
@@ -662,12 +662,12 @@ static void usage_trafgenopt(void)
                 "               \n"
                 "               possible distributions:\n"
                 "               C = constant (param 1: value, param 2: not used)\n"
+		"               U = uniform (param 1: min, param 2: max)\n"
                 "               N = normal (param 1: mu - mean value, param 2: sigma_square - variance)\n"
                 "               W = weibull distributed (param 1: lambda - scale, param 2: k - shape)\n"
                 "\n"
 		"               -U # and -V # specify a cap for the calculated values for request and\n"
-		"               response sizes (used to initalize a buffer of approciated length,\n"
-		"               not needed for constant values\n"
+		"               response sizes (not needed for constant values or uniform distribution)\n"
                 "\n"
                 "example:\n"
                 "  -G q=C,40:p=W,200,50:g=N,500,100 -U 40 -V 100000\n"
@@ -676,8 +676,7 @@ static void usage_trafgenopt(void)
                 "               q=C,40       use contant request size of 40 bytes\n"
                 "               p=W,200,50   use weibull distributed response size with lambda 200 bytes and k 5\n"
                 "               g=N,500,100  use normal distributed interpacket gap with mean 500ms and variance 100\n"
-		"               -U 40	     define maximum request size as 40 bytes (not needed here though)\n"
-		"		-V 32000     cap response size at 32 kbytes\n"
+		"               -V 32000     cap response size at 32 kbytes (needed for weibull)\n"
 					       
 		);
 	exit(1);
@@ -1320,9 +1319,10 @@ static int parse_Anderson_Test(char *params) {
 }
 
 
-static int parse_trafgen_option(char *params, int current_flow_ids[]) {
+static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 	double param1, param2, unused;
-	char type, distr;
+	char type, optchar;
+	enum _stochastic_distributions distr = 0;
 	int rc;
 	char * section;
 	char * arg;
@@ -1335,15 +1335,33 @@ static int parse_trafgen_option(char *params, int current_flow_ids[]) {
                         	arg = section + 1;
 
                 	if (type != 'p' && type != 'q' && type != 'g') {
-                        	fprintf(stderr, "Syntax error in traffic generation option: %c is not a type.\n", type);
+                        	if (type != 'h')
+					fprintf(stderr, "Syntax error in traffic generation option: %c is not a type.\n", type);
                         	usage_trafgenopt();
                 	}
-			rc = sscanf(arg, "%c,%lf,%lf,%lf", &distr, &param1, &param2, &unused);
+			rc = sscanf(arg, "%c,%lf,%lf,%lf", &optchar, &param1, &param2, &unused);
                                 if (rc != 2 && rc != 3) {
                                         fprintf(stderr, "malformed traffic generation parameters\n");
-                                        usage();
+                                        usage_trafgenopt();
                                 }
-			
+			switch (optchar) {
+				case 'N':
+					distr = NORMAL;
+					break;
+				case 'W':
+					distr = WEIBULL;
+					break;
+				case 'C':
+					distr = CONSTANT;
+					break;
+				case 'U':
+					distr = UNIFORM;
+					break;
+				default:
+					usage_trafgenopt();
+			}
+
+				
 			if (current_flow_ids[0] == -1) {
                                 int id;
                                 for (id = 0; id < MAX_FLOWS; id++) {
@@ -1353,16 +1371,20 @@ static int parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                         flow[id].settings[i].response_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].response_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].response_trafgen_options.param_two = param2;
-							if (distr == 'C')
+							if (distr == CONSTANT)
 								flow[id].settings[i].default_response_block_size = param1;
+							if (distr == UNIFORM)
+								flow[id].settings[i].default_response_block_size = param2;
                                                         break;
                                                         case 'q': 
                                                         flow[id].settings[i].request_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].request_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].request_trafgen_options.param_two = param2;
-                                                        if (distr == 'C')
-                                                                flow[id].settings[i].default_request_block_size = param1;							
-                                                        break;
+                                                        if (distr == CONSTANT)
+                                                                flow[id].settings[i].default_request_block_size = param1;
+							if (distr == UNIFORM)
+                                                                flow[id].settings[i].default_request_block_size = param2;
+							 break;
                                                         case 'g':
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
@@ -1380,15 +1402,19 @@ static int parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                         flow[id].settings[i].response_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].response_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].response_trafgen_options.param_two = param2;
-                                                        if (distr == 'C')
+                                                        if (distr == CONSTANT)
                                                                 flow[id].settings[i].default_response_block_size = param1;
+							if (distr == UNIFORM)
+                                                                flow[id].settings[i].default_response_block_size = param2;
                                                         break;
                                                         case 'q':
                                                         flow[id].settings[i].request_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].request_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].request_trafgen_options.param_two = param2;
-                                                        if (distr == 'C')
+                                                        if (distr == CONSTANT)
                                                                 flow[id].settings[i].default_request_block_size = param1;
+							if (distr == UNIFORM)
+                                                                flow[id].settings[i].default_request_block_size = param2;
                                                         break;
                                                         case 'g':
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
@@ -1401,7 +1427,6 @@ static int parse_trafgen_option(char *params, int current_flow_ids[]) {
                         }
 
 		}
-	return 1;	
 }
 
 
@@ -1839,10 +1864,7 @@ static void parse_cmdline(int argc, char **argv) {
 			current_flow_ids[id] = -1;
 			break;
                 case 'G':
-                        if (!parse_trafgen_option(optarg,current_flow_ids)) {
-                                fprintf(stderr, "Failed to parse traffic generation options\n\n");
-                               	usage_trafgenopt(); 
-                        }
+                        parse_trafgen_option(optarg, current_flow_ids);
                         break;
 
 		case 'L':

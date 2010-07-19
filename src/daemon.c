@@ -953,7 +953,7 @@ static int read_data(struct _flow *flow)
 				break;
 		
 		if (flow->current_block_bytes_read >= flow->current_read_block_size ) {
-
+#if 0
 			if (flow->current_block_bytes_read > flow->current_read_block_size) {
 				/* it used to happen that we read more bytes than we requested to receive. (wtf?)
 			 	 * in this rare case  we have to copy the bytes we read to much to the beginning
@@ -975,6 +975,8 @@ static int read_data(struct _flow *flow)
 				//assert(flow->current_block_bytes_read == flow->current_read_block_size);
                         	flow->current_block_bytes_read = 0;
 			}
+#endif
+			flow->current_block_bytes_read = 0;
 
 			if (requested_response_block_size == -1) {
 				/* This is a response block, consider DATA as RTT,  */
