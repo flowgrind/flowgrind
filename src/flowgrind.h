@@ -18,7 +18,6 @@
 struct _opt {
 	unsigned short num_flows;
 	double reporting_interval;
-	char advstats;
 	char dont_log_stdout;
 	char dont_log_logfile;
 	char *log_filename;

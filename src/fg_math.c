@@ -51,7 +51,7 @@ static inline double
 rn_uniform() { return (rand()); }
 
 static inline double
-rn_uniform_zero_to_one() { return (rn_uniform()/(RANDOM_MAX)); }
+rn_uniform_zero_to_one() { return (rn_uniform()/(RANDOM_MAX+1.0) ); }
 
 static inline double
 rn_uniform_minusone_to_one() { return (rn_uniform()/(RANDOM_MAX/2.0)-1.0); }
@@ -63,14 +63,12 @@ rn_exponential() { return (-log(rn_uniform())); }
 
 double
 dist_uniform(const double minval, const double maxval) {
-	const double x = rn_uniform();
-	
-	return ((int) x % (int)(maxval-minval)) + minval;
+	const double x = rn_uniform_zero_to_one();
+	return ((maxval-minval) * x) + minval;
 }
 double
 dist_normal(const double mu, const double sigma_square) {
 	const double x = rn_uniform_minusone_to_one();
-	DEBUG_MSG(LOG_DEBUG, "calculated random number %f", x);
 	return ( 1.0 / sqrt(2.0*M_PI*sigma_square) ) * exp( (-pow ((x-mu),2) ) / ( 2 * sigma_square) );
 }
 
@@ -87,7 +85,6 @@ dist_pareto (double k, double x_min) {
 extern double
 dist_weibull (double alpha, double beta) {
         const double x = rn_uniform_zero_to_one();
-	DEBUG_MSG(LOG_DEBUG, "calculated random number %f", x);
         return  alpha * beta * pow (x,beta-1.0) * exp( -alpha * pow(x,beta) );
 }
 

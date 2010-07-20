@@ -518,10 +518,8 @@ static void usage(void)
 		"  -s           show help for socket options and exit\n"
 		"  -v           print version information and exit\n\n"
 
-		"General options:\n"
-#if HAVE_LIBPCAP
-		"  -a           advanced statistics (pcap)\n"
-#endif
+		"General options:\n\n"
+		
 		"  -b mean1,mean2,mean3\n"
 		"               means for computing Anderson-Darling Test for exponential\n"
 		"               distribution\n"
@@ -537,7 +535,7 @@ static void usage(void)
 		"  -d           increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
 #endif
-		"  -e PRE       prepend prefix PRE to log filename (default: \"%1$s\")\n"
+		"  -e PRE       prepend prefix PRE to log and dump filename (default: \"%1$s\")\n"
 		"  -i #.#       reporting interval in seconds (default: 0.05s)\n"
 		"  -l NAME      use log filename NAME (default: timestamp)\n"
 		"  -m           report throughput in 2**20 bytes/second\n"
@@ -559,7 +557,7 @@ static void usage(void)
 		"  and 4096 at the destination.\n\n"
 
 		"  -A           Send response with minimal blocksize for RTT and IAT calculation\n"
-		"               (same as -V 32)\n"
+		"               (same as -V %3$u)\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -580,6 +578,9 @@ static void usage(void)
 		"               data (late connect). If not specified the test connection is\n"
 		"               established in the preparation phase before the test starts.\n"
 		"  -N x         shutdown() each socket direction after test flow\n"
+#if HAVE_LIBPCAP
+                "  -M x         dump traffic using libcap\n"
+#endif
 		"  -O x=OPT     Set specific socket options on test socket.\n"
 		"               For a list of supported socket options see '%2$s -s'.\n"
 		"               It is possible to repeatedly pass the same endpoint in order to\n"
@@ -599,7 +600,8 @@ static void usage(void)
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n",
 		opt.log_filename_prefix,
-		progname
+		progname,
+		MIN_BLOCK_SIZE
 	);
 	exit(1);
 }
@@ -658,7 +660,7 @@ static void usage_trafgenopt(void)
                 "               use distribution for the following flow parameter:\n"
 		"               q = request size (in bytes)\n"
                 "               p = response size (in bytes)\n"
-                "               g = request interpacket gap (in ms)\n"
+                "               g = request interpacket gap (in s)\n"
                 "               \n"
                 "               possible distributions:\n"
                 "               C = constant (param 1: value, param 2: not used)\n"
@@ -670,13 +672,13 @@ static void usage_trafgenopt(void)
 		"               response sizes (not needed for constant values or uniform distribution)\n"
                 "\n"
                 "example:\n"
-                "  -G q=C,40:p=W,200,50:g=N,500,100 -V 32000\n"
+                "  -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -V 32000\n"
                 "\n"
                 "which means:\n"
-                "               q=C,40       use contant request size of 40 bytes\n"
-                "               p=W,200,50   use weibull distributed response size with lambda 200 bytes and k 5\n"
-                "               g=N,500,100  use normal distributed interpacket gap with mean 500ms and variance 100\n"
-		"               -V 32000     cap response size at 32 kbytes (needed for weibull)\n"
+                "               q=C,40         use contant request size of 40 bytes\n"
+                "               p=N,2000,50    use normal distributed response size with mean 2000 bytes and variance 50\n"
+                "               g=U,0.005,0.01 use uniform distributed interpacket gap with min 0.005s and and max 10ms\n"
+		"               -V 32000       cap response size at 32 kbytes (needed for normal distribution)\n"
 					       
 		);
 	exit(1);
@@ -1358,6 +1360,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 					distr = UNIFORM;
 					break;
 				default:
+					fprintf(stderr, "Syntax error in traffic generation option: %c is not a distribution.\n", optchar);
 					usage_trafgenopt();
 			}
 
@@ -1376,6 +1379,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							if (distr == UNIFORM)
 								flow[id].settings[i].default_response_block_size = param2;
                                                         break;
+
                                                         case 'q': 
                                                         flow[id].settings[i].request_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].request_trafgen_options.param_one = param1;
@@ -1384,7 +1388,8 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                                 flow[id].settings[i].default_request_block_size = param1;
 							if (distr == UNIFORM)
                                                                 flow[id].settings[i].default_request_block_size = param2;
-							 break;
+							break;
+
                                                         case 'g':
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
@@ -1407,6 +1412,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							if (distr == UNIFORM)
                                                                 flow[id].settings[i].default_response_block_size = param2;
                                                         break;
+
                                                         case 'q':
                                                         flow[id].settings[i].request_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].request_trafgen_options.param_one = param1;
@@ -1416,6 +1422,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							if (distr == UNIFORM)
                                                                 flow[id].settings[i].default_request_block_size = param2;
                                                         break;
+
                                                         case 'g':
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
@@ -1629,6 +1636,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					ASSIGN_ENDPOINT_FLOW_OPTION(server_port, port);
 				}
 				break;
+
+			case 'M':
+			/* TODO */
+				break;
 			case 'O':
 				if (!*arg) {
 					fprintf(stderr, "-O requires a value for each given endpoint\n");
@@ -1744,17 +1755,11 @@ static void parse_cmdline(int argc, char **argv) {
 							{"version", 0, 0, 'v'},
 							{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "ab:c:de:hi:l:mn:opqr:svwAB:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
+	while ((ch = getopt_long(argc, argv, "b:c:de:hi:l:mn:opqr:svwAB:CD:EF:G:H:LNM:O:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
 #else
-	while ((ch = getopt(argc, argv, "ab:c:de:hi:l:mn:opqr:svwAB:CD:EF:G:H:LNO:P:QR:T:U:V:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "b:c:de:hi:l:mn:opqr:svwAB:CD:EF:G:H:LNM:O:P:QR:T:U:V:W:Y:")) != -1)
 #endif
 		switch (ch) {
-
-#if HAVE_LIBPCAP
-		case 'a':
-			opt.advstats = 1;
-			break;
-#endif
 
 		case 'b':
 			if (!parse_Anderson_Test(optarg)) {
@@ -1901,6 +1906,7 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'D':
 		case 'H':
 		case 'O':
+		case 'M':
 		case 'P':
 		case 'R':
 		case 'T':
@@ -2276,7 +2282,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "default_request_block_size", flow[id].settings[DESTINATION].default_request_block_size,
                 "default_response_block_size", flow[id].settings[DESTINATION].default_response_block_size,
 
-                "advstats", (int)opt.advstats,
+                "trafficdump", flow[id].settings[DESTINATION].trafficdump,
                 "so_debug", flow[id].settings[DESTINATION].so_debug,
                 "route_record", (int)flow[id].settings[DESTINATION].route_record,
                 "pushy", flow[id].settings[DESTINATION].pushy,
@@ -2375,7 +2381,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "default_request_block_size", flow[id].settings[SOURCE].default_request_block_size,
                 "default_response_block_size", flow[id].settings[SOURCE].default_response_block_size,
 
-                "advstats", (int)opt.advstats,
+                "trafficdump", flow[id].settings[SOURCE].trafficdump,
                 "so_debug", flow[id].settings[SOURCE].so_debug,
                 "route_record", (int)flow[id].settings[SOURCE].route_record,
                 "pushy", flow[id].settings[SOURCE].pushy,

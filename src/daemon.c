@@ -171,9 +171,6 @@ static void prepare_wfds(struct timeval *now, struct _flow *flow, fd_set *wfds)
 				error(ERR_WARNING, "shutdown() SHUT_WR failed: %s",
 						strerror(errno));
 			}
-#if HAVE_LIBPCAP
-			fg_pcap_dispatch();
-#endif
 		}
 	}
 
@@ -727,7 +724,7 @@ void init_flow(struct _flow* flow, int is_source)
 
 	flow->current_block_bytes_read = 0;
 	flow->current_block_bytes_written = 0;
-	/* TODO */
+	
 	flow->current_read_block_size = MIN_BLOCK_SIZE;
 	flow->current_write_block_size = MIN_BLOCK_SIZE;
 
@@ -775,16 +772,13 @@ static int write_data(struct _flow *flow)
 		if (flow->current_block_bytes_written == 0) {
 			flow->current_write_block_size = next_request_block_size(flow);
 			response_block_size = next_response_block_size(flow);
-			interpacket_gap = next_interpacket_gap(flow);	
 			/* serialize data:
 			 * this_block_size */
 			((struct _block *)flow->write_block)->this_block_size = htonl(flow->current_write_block_size); 
 			/* requested_block_size */  
 			((struct _block *)flow->write_block)->request_block_size = htonl(response_block_size);
-			/* erase rtt data (maybe leftover from response block) */
+			/* erase rtt data (maybe leftovers from response block) */
 			memset ( flow->write_block + 2 * (sizeof (int32_t) ), 0, sizeof(struct timeval) );
-			/* copy iat data */
-			// tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
 			DEBUG_MSG(LOG_DEBUG, "wrote new request data to out buffer bs = %d, rqs = %d, on flow %d", 
 					ntohl(((struct _block *)flow->write_block)->this_block_size), 
 					ntohl(((struct _block *)flow->write_block)->request_block_size),
@@ -816,6 +810,7 @@ static int write_data(struct _flow *flow)
 		DEBUG_MSG(LOG_DEBUG, "flow %d sent %d request bytes of %u (before = %u)", flow->id, rc,
 				flow->current_write_block_size,
 				flow->current_block_bytes_written);
+		
 		for (int i = 0; i < 2; i++) {
 			flow->statistics[i].bytes_written += rc;
 		}
@@ -828,7 +823,7 @@ static int write_data(struct _flow *flow)
 			for (int i = 0; i < 2; i++) {
 				flow->statistics[i].request_blocks_written++;
 			}
-			
+			interpacket_gap = next_interpacket_gap(flow);
 			if (interpacket_gap) {
 				time_add(&flow->next_write_block_timestamp,
 						interpacket_gap);
@@ -914,7 +909,7 @@ static inline int read_n_bytes(struct _flow *flow, int bytes)
 #ifdef DEBUG
         	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg;
 	     	     cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-               		DEBUG_MSG(LOG_DEBUG, "flow %d received cmsg: type = %u, len = %zu",
+               		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, len = %zu",
               		  flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
 		}	
 #endif
@@ -931,15 +926,23 @@ static int read_data(struct _flow *flow)
 		if (flow->current_block_bytes_read == 0)
 			if (read_n_bytes(flow,MIN_BLOCK_SIZE) == -1)
 				break;
+
 		/* parse data and update status */
+
+		/* parse and check current block size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->this_block_size );
 		if (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.default_request_block_size)
 			flow->current_read_block_size = optint;
+		else
+			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring incomplete block", flow->id, optint);
 		
+		/* parse and check current request size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->request_block_size );	
-		if (optint == -1 || (optint >= MIN_BLOCK_SIZE 
-				  && optint <= flow->settings.default_response_block_size) )
+		if (optint == -1 || optint == 0 || (optint >= MIN_BLOCK_SIZE 
+				                 && optint <= flow->settings.default_response_block_size) ) 
 			requested_response_block_size = optint;
+		else 
+			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring incomplete block", flow->id, optint);
 
 		DEBUG_MSG(LOG_NOTICE, "flow %d parsed cbs: %d rqs: %d", 
 				      flow->id, 
@@ -953,29 +956,8 @@ static int read_data(struct _flow *flow)
 				break;
 		
 		if (flow->current_block_bytes_read >= flow->current_read_block_size ) {
-#if 0
-			if (flow->current_block_bytes_read > flow->current_read_block_size) {
-				/* it used to happen that we read more bytes than we requested to receive. (wtf?)
-			 	 * in this rare case  we have to copy the bytes we read to much to the beginning
-			 	 * of the buffer, or else the transported data while be corrupted, and everything
-				 * while explode */
-				DEBUG_MSG(LOG_CRIT, "received to much data on flow %d: received=%d, expected=%d, difference=%d",
-						   flow->id,
-						   flow->current_block_bytes_read,
-						   flow->current_read_block_size,
-						   flow->current_block_bytes_read - flow->current_read_block_size);
-
-				memcpy(flow->read_block+flow->current_read_block_size,
-				       flow->read_block,
-				       flow->current_block_bytes_read - flow->current_read_block_size);
-				/* setting recv point after copied data */
-				flow->current_block_bytes_read = flow->current_block_bytes_read % flow->current_read_block_size;
-				assert(1);
-			} else {
-				//assert(flow->current_block_bytes_read == flow->current_read_block_size);
-                        	flow->current_block_bytes_read = 0;
-			}
-#endif
+			
+			assert(flow->current_block_bytes_read == flow->current_read_block_size);
 			flow->current_block_bytes_read = 0;
 
 			if (requested_response_block_size == -1) {
@@ -1030,7 +1012,7 @@ static void process_rtt(struct _flow* flow)
                 }
 	}	
 
-	DEBUG_MSG(LOG_WARNING, "processed response block of flow %d (RTT = %.3lfms)", flow->id, current_rtt * 1e3);
+	DEBUG_MSG(LOG_NOTICE, "processed response block of flow %d (RTT = %.3lfms)", flow->id, current_rtt * 1e3);
 }
 
 
@@ -1057,7 +1039,7 @@ static void process_iat(struct _flow* flow)
                         flow->statistics[i].iat_sum += current_iat;
                 }
 	}
-	DEBUG_MSG(LOG_WARNING, "calculated iat of flow %d (IAT = %.3lfms)", flow->id, current_iat * 1e3);
+	DEBUG_MSG(LOG_NOTICE, "calculated iat of flow %d (IAT = %.3lfms)", flow->id, current_iat * 1e3);
 }
 
 static void send_response(struct _flow* flow, int requested_response_block_size)
@@ -1103,6 +1085,7 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 				}
 	               		if (flow->current_block_bytes_written >=
                                	    (unsigned int)requested_response_block_size) {
+					assert(flow->current_block_bytes_written == (unsigned int)requested_response_block_size);
 					/* just finish sending response block */
                 	       		flow->current_block_bytes_written = 0;
 					tsc_gettimeofday(&flow->last_block_written);
@@ -1189,11 +1172,6 @@ int set_flow_tcp_options(struct _flow *flow)
 			strerror(errno));
 		return -1;
 	}
-
-#if HAVE_LIBPCAP
-	if (flow->settings.advstats)
-		fg_pcap_go(flow->fd);
-#endif
 
 	if (flow->settings.so_debug && set_so_debug(flow->fd) == -1) {
 		flow_error(flow, "Unable to set SO_DEBUG: %s",
