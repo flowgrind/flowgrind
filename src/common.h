@@ -81,7 +81,7 @@ enum _extra_socket_option_level
  * trail:               trailing garbage to fill up the blocksize (not used)
  */
 
-#define MIN_BLOCK_SIZE 32
+#define MIN_BLOCK_SIZE (signed) sizeof (struct _block) 
 struct _block
 {
         int32_t this_block_size;
@@ -122,7 +122,7 @@ struct _flow_settings
 	int default_request_block_size;
 	int default_response_block_size;
 
-	int advstats;
+	int trafficdump;
 	int so_debug;
 	int route_record;
 	int pushy;

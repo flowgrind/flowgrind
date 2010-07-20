@@ -21,7 +21,7 @@
 #include "fg_math.h"
 #include "trafgen.h"
 
-inline static double calculate(enum _stochastic_distributions type, double param_one, double param_two, int minval, int maxval, double defaultval) {
+inline static double calculate(enum _stochastic_distributions type, double param_one, double param_two) {
 	
 	double val = 0;
 	
@@ -44,15 +44,10 @@ inline static double calculate(enum _stochastic_distributions type, double param
 		case CONSTANT:
 		/* constant is default */	
 		default:
-			val = defaultval;
+			val = param_one;
+			DEBUG_MSG(LOG_DEBUG, "default value %f", val);
 
 	}
-
-	if (val && val < minval)
-		val = minval;
-
-	if (val > maxval)
-		val = maxval;
 
 	return val;
 
@@ -61,12 +56,20 @@ int next_request_block_size(struct _flow *flow)
 {
 	int bs = calculate(flow->settings.request_trafgen_options.distribution, 
 			   flow->settings.request_trafgen_options.param_one,
-			   flow->settings.request_trafgen_options.param_two,
-			   MIN_BLOCK_SIZE,
-		 	   flow->settings.default_request_block_size,
-			   flow->settings.default_request_block_size
+			   flow->settings.request_trafgen_options.param_two
 			   );
-	
+
+	if (bs < MIN_BLOCK_SIZE) {
+                bs = MIN_BLOCK_SIZE;
+		DEBUG_MSG(LOG_WARNING, "applied minimal request size limit %d for flow %d", bs, flow->id);
+	}
+
+	if (bs > flow->settings.default_request_block_size) {
+                bs = flow->settings.default_request_block_size;
+		DEBUG_MSG(LOG_WARNING, "applied maximal request size limit %d for flow %d", bs, flow->id);
+
+	}
+
 	DEBUG_MSG(LOG_NOTICE, "calculated request size %d for flow %d", bs, flow->id);
 	
 	return bs;
@@ -76,11 +79,19 @@ int next_response_block_size(struct _flow *flow)
 {
         int bs = calculate(flow->settings.response_trafgen_options.distribution, 
                            flow->settings.response_trafgen_options.param_one,
-                           flow->settings.response_trafgen_options.param_two,
-                           MIN_BLOCK_SIZE,
-                           flow->settings.default_response_block_size,
-			   flow->settings.default_response_block_size
+                           flow->settings.response_trafgen_options.param_two
                            );
+
+        if (bs && bs < MIN_BLOCK_SIZE) {
+                bs = MIN_BLOCK_SIZE;
+                DEBUG_MSG(LOG_WARNING, "applied minimal request size limit %d for flow %d", bs, flow->id);
+        }
+        if (bs > flow->settings.default_request_block_size) {
+                bs = flow->settings.default_request_block_size;
+                DEBUG_MSG(LOG_WARNING, "applied maximal request size limit %d for flow %d", bs, flow->id);
+        
+        }
+
         if (bs)
 		DEBUG_MSG(LOG_NOTICE, "calculated response size %d for flow %d", bs, flow->id);
 
@@ -88,18 +99,19 @@ int next_response_block_size(struct _flow *flow)
 
 }
 
-double next_interpacket_gap(struct _flow *flow)
-{
-        double gap = calculate(flow->settings.interpacket_gap_trafgen_options.distribution, 
-			       flow->settings.interpacket_gap_trafgen_options.param_one,
-                               flow->settings.interpacket_gap_trafgen_options.param_two,
-                               0,
-                               60000,
-			       0
-                               );
+double next_interpacket_gap(struct _flow *flow) {
+
+	double gap = 0.0;
+	if (flow->settings.write_rate)
+		gap = (double)1/flow->settings.write_rate;
+	else
+		gap = calculate(flow->settings.interpacket_gap_trafgen_options.distribution,
+                	               flow->settings.interpacket_gap_trafgen_options.param_one,
+                        	       flow->settings.interpacket_gap_trafgen_options.param_two
+                               	      );
 
 	if (gap)
-                DEBUG_MSG(LOG_NOTICE, "calculated next interpacket gap %.6fms for flow %d", gap, flow->id);
+                DEBUG_MSG(LOG_NOTICE, "calculated next interpacket gap %.6fs for flow %d", gap, flow->id);
         
 	return gap;
 }

@@ -42,7 +42,7 @@ static char progname[50] = "flowgrindd";
 static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
-		"Usage: %1$s [-a address ] [-w#] [-p#] [-D]\n"
+		"Usage: %1$s [-p#] [-d] [-v]\n"
 		"\t-p#\t\tserver port\n"
 		"\t-d\t\tincrease debug verbosity (no daemon, log to stderr)\n"
 		"\t-v\t\tPrint version information and exit\n",
@@ -169,7 +169,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"default_request_block_size", &settings.default_request_block_size,
 		"default_response_block_size", &settings.default_response_block_size,
 
-		"advstats", &settings.advstats,
+		"trafficdump", &settings.trafficdump,
 		"so_debug", &settings.so_debug,
 		"route_record", &settings.route_record,
 		"pushy", &settings.pushy,
@@ -363,7 +363,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"default_request_block_size", &settings.default_request_block_size,
 		"default_response_block_size", &settings.default_response_block_size,
 
-		"advstats", &settings.advstats,
+		"trafficdump", &settings.trafficdump,
 		"so_debug", &settings.so_debug,
 		"route_record", &settings.route_record,
 		"pushy", &settings.pushy,
@@ -926,9 +926,6 @@ int main(int argc, char ** argv)
 	sigaction (SIGALRM, &sa, NULL);
 	sigaction (SIGCHLD, &sa, NULL);
 
-#if HAVE_LIBPCAP
-	fg_pcap_init();
-#endif
 	parse_option(argc, argv);
 	logging_init();
 	tsc_init();
