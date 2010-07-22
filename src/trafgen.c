@@ -81,7 +81,8 @@ int next_response_block_size(struct _flow *flow)
                            flow->settings.response_trafgen_options.param_one,
                            flow->settings.response_trafgen_options.param_two
                            );
-
+	if (!bs && flow->settings.default_response_block_size)
+		bs = flow->settings.default_response_block_size;
         if (bs && bs < MIN_BLOCK_SIZE) {
                 bs = MIN_BLOCK_SIZE;
                 DEBUG_MSG(LOG_WARNING, "applied minimal request size limit %d for flow %d", bs, flow->id);

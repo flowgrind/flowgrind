@@ -728,7 +728,9 @@ static void init_flows_defaults(void)
 			flow[id].settings[i].requested_read_buffer_size = 0;
 			flow[id].settings[i].delay[WRITE] = 0;
 			flow[id].settings[i].default_request_block_size = 8192;
+			flow[id].settings[i].request_trafgen_options.param_one = 8192;
 			flow[id].settings[i].default_response_block_size = 0;
+			flow[id].settings[i].response_trafgen_options.param_one = 0;
 			flow[id].settings[i].route_record = 0;
 			strcpy(flow[id].endpoint_options[i].server_url, "http://localhost:5999/RPC2");
 			strcpy(flow[id].endpoint_options[i].server_address, "localhost");
@@ -1250,7 +1252,7 @@ struct _mtu_info {
 	{ 4464,		"4 MB/s Token Ring" },
 	{ 4352,		"FDDI" },			/* RFC1390 */
 	{ 1500,		"Ethernet/PPP" },		/* RFC894, RFC1548 */
-	{ 1492,		"IEEE 802.3" },
+	{ 1492,		"PPPoE" },			/* RFC2516 */
 	{ 1006,		"SLIP" },			/* RFC1055 */
 	{ 576,		"X.25 & ISDN" },		/* RFC1356 */
 	{ 296,		"PPP (low delay)" },
