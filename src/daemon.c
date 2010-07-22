@@ -633,7 +633,7 @@ void* daemon_main(void* ptr __attribute__((unused)))
 		int need_timeout = prepare_fds();
 
 		timeout.tv_sec = 0;
-		timeout.tv_usec = 10000;
+		timeout.tv_usec = 1000;
 
 		int rc = select(maxfd + 1, &rfds, &wfds, &efds, need_timeout ? &timeout : 0);
 		if (rc < 0) {
@@ -1045,8 +1045,9 @@ static void process_iat(struct _flow* flow)
 static void send_response(struct _flow* flow, int requested_response_block_size)
 {		
 		int rc;
-		/* start new writeblock as response */
-		flow->current_block_bytes_written = 0;
+		if (flow->current_block_bytes_written > 0)
+			DEBUG_MSG(LOG_WARNING, "continuing sending defered response block on flow %d (already %d)",
+					flow->id, flow->current_block_bytes_written);
                 ((struct _block *)flow->write_block)->this_block_size = htonl(requested_response_block_size);
 		((struct _block *)flow->write_block)->request_block_size = htonl(-1);
 		tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
