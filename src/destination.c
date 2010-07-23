@@ -2,7 +2,6 @@
 #include <config.h>
 #endif
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -204,8 +203,8 @@ int accept_data(struct _flow *flow)
 	if (flow->fd == -1) {
 		if (errno == EINTR || errno == EAGAIN)
 		{
-			// TODO: Accept timeout
-			// logging_log(LOG_ALERT, "client did not connect().");
+			/* TODO: Accept timeout
+			 logging_log(LOG_ALERT, "client did not connect()."); */
 			return 0;
 		}
 

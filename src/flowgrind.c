@@ -67,13 +67,13 @@ enum _column_types
 	column_type_other
 };
 
-// Array for the dynamical output, show all by default
+/* Array for the dynamical output, show all by default */
 int visible_columns[7] = {1, 1, 1, 1, 1, 1, 1};
 
-// these are the 2 parameters for the ADT test. If the user wants to test for
-// Exponential only ADT1 will be used and will represent the mean if the user
-// wants to test for the uniform then ADT1 is the lower bound and ADT2 the
-// upper bound
+/* these are the 2 parameters for the ADT test. If the user wants to test for
+ * Exponential only ADT1 will be used and will represent the mean if the user
+ * wants to test for the uniform then ADT1 is the lower bound and ADT2 the
+ * upper bound */
 double ADT[adt_type_max][2];
 
 xmlrpc_env rpc_env;
@@ -85,7 +85,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void grind_flows(xmlrpc_client *rpc_client);
 
 static void parse_visible_param(char *to_parse) {
-	// {begin, end, throughput, RTT, IAT, Kernel}
+	/* {begin, end, throughput, RTT, IAT, Kernel} */
 	if (strstr(to_parse, "+begin"))
 		visible_columns[column_type_begin] = 1;
 	if (strstr(to_parse, "-begin"))
@@ -199,7 +199,7 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	if (!visible_columns[header->column_type])
 		return 0;
 
-	// get max columnsize
+	/* get max columnsize */
 	if (opt.symbolic) {
 		switch ((int)value) {
 			case INT_MAX:
@@ -492,7 +492,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	strcat(headerString1, "\n");
 	strcat(headerString2, "\n");
 	strcat(dataString, "\n");
-	//output string end
+	/* output string end */
 	if (columnWidthChanged > 0 || (counter % 25) == 0) {
 		strcpy(outputString, headerString1);
 		strcat(outputString, headerString2);
@@ -617,7 +617,7 @@ static void usage_sockopt(void)
 		"  s=TCP_CONG_MODULE=ALG\n"
 		"               set congestion control algorithm ALG.\n");
 
-		// Read and print available congestion control algorithms
+		/* Read and print available congestion control algorithms */
 		fd = open("/proc/sys/net/ipv4/tcp_available_congestion_control/", O_RDONLY);
 		if (fd != -1) {
 			fprintf(stderr, "               The following list contains possible values for ALG:\n"
@@ -874,7 +874,7 @@ void print_tcp_report_line(char hash, int id,
 	else {
 		char tmp[2];
 
-		// Write status
+		/* Write status */
 		switch (r->status & 0xFF)
 		{
 			case 'd':
@@ -892,7 +892,7 @@ void print_tcp_report_line(char hash, int id,
 				break;
 		}
 
-		// Read status
+		/* Read status */
 		switch (r->status >> 8)
 		{
 			case 'd':
@@ -1776,7 +1776,7 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 
 #if HAVE_GETOPT_LONG
-	// getopt_long isn't portable, it's GNU extension
+	/* getopt_long isn't portable, it's GNU extension */
 	struct option lo[] = {	{"help", 0, 0, 'h' },
 							{"version", 0, 0, 'v'},
 							{0, 0, 0, 0}
@@ -2096,7 +2096,7 @@ static void parse_cmdline(int argc, char **argv) {
 
 				if (optdouble > 5e5)
 					fprintf(stderr, "rate of flow %d too high.\n", id);
-				// TODO: Is this dependend on the destination's rate at all?
+				/* TODO: Is this dependend on the destination's rate at all? */
 				if (optdouble > max_flow_rate)
 					max_flow_rate = optdouble;
 				flow[id].settings[i].write_rate = optdouble;
