@@ -1,7 +1,9 @@
 #ifndef HAVE_CONFIG_H
 #include <config.h>
 #endif
+#ifdef DEBUG
 #include <assert.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -85,11 +87,11 @@ int next_response_block_size(struct _flow *flow)
 		bs = flow->settings.default_response_block_size;
         if (bs && bs < MIN_BLOCK_SIZE) {
                 bs = MIN_BLOCK_SIZE;
-                DEBUG_MSG(LOG_WARNING, "applied minimal request size limit %d for flow %d", bs, flow->id);
+                DEBUG_MSG(LOG_WARNING, "applied minimal response size limit %d for flow %d", bs, flow->id);
         }
         if (bs > flow->settings.default_request_block_size) {
-                bs = flow->settings.default_request_block_size;
-                DEBUG_MSG(LOG_WARNING, "applied maximal request size limit %d for flow %d", bs, flow->id);
+                bs = flow->settings.default_response_block_size;
+                DEBUG_MSG(LOG_WARNING, "applied maximal response size limit %d for flow %d", bs, flow->id);
         
         }
 
