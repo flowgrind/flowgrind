@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 	}
 
 #if HAVE_GETOPT_LONG
-	// getopt_long isn't portable, it's GNU extension
+	/* getopt_long isn't portable, it's GNU extension */
 	struct option lo[] = {	{"help", 0, 0, 'h' },
 							{"version", 0, 0, 'v'},
 							{0, 0, 0, 0}

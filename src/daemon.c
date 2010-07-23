@@ -613,7 +613,6 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 		i++;
 		continue;
 remove:
-		// Flow has ended
 #ifdef __LINUX__
 		if (flow->fd != -1) {
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
@@ -661,7 +660,7 @@ void add_report(struct _report* report)
 {
 	pthread_mutex_lock(&mutex);
 
-	// Do not keep too much data
+	/* Do not keep too much data */
 	if (pending_reports >= 100 && report->type != TOTAL) {
 		free(report);
 		pthread_mutex_unlock(&mutex);
@@ -781,8 +780,7 @@ static int write_data(struct _flow *flow)
 			((struct _block *)flow->write_block)->this_block_size = htonl(flow->current_write_block_size); 
 			/* requested_block_size */  
 			((struct _block *)flow->write_block)->request_block_size = htonl(response_block_size);
-			/* erase rtt data (maybe leftovers from response block) */
-			// memset ( flow->write_block + 2 * (sizeof (int32_t) ), 0, sizeof(struct timeval) );
+			/* write rtt data (will be echoed back by the receiver in the response packet) */
 			tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
 
 			DEBUG_MSG(LOG_DEBUG, "wrote new request data to out buffer bs = %d, rqs = %d, on flow %d", 
@@ -824,7 +822,7 @@ static int write_data(struct _flow *flow)
 
 		if (flow->current_block_bytes_written >= flow->current_write_block_size) {
 #ifdef DEBUG
-			assert (flow->current_block_bytes_written == flow->current_write_block_size);
+			assert(flow->current_block_bytes_written == flow->current_write_block_size);
 #endif
 			/* we just finished writing a block */
 			flow->current_block_bytes_written = 0;
@@ -881,22 +879,22 @@ static inline int read_n_bytes(struct _flow *flow, int bytes)
         iov.iov_base = flow->read_block +
                        flow->current_block_bytes_read;
         iov.iov_len = bytes;
-        // no name required
-         msg.msg_name = NULL;
-         msg.msg_namelen = 0;
-         msg.msg_iov = &iov;
-         msg.msg_iovlen = 1;
-         msg.msg_control = cbuf;
-         msg.msg_controllen = sizeof(cbuf);
-         rc = recvmsg(flow->fd, &msg, 0);
+        /* no name required */
+        msg.msg_name = NULL;
+        msg.msg_namelen = 0;
+        msg.msg_iov = &iov;
+        msg.msg_iovlen = 1;
+        msg.msg_control = cbuf;
+        msg.msg_controllen = sizeof(cbuf);
+        rc = recvmsg(flow->fd, &msg, 0);
 
-         if (rc == -1) {
+	if (rc == -1) {
          	if (errno == EAGAIN)
                 	flow_error(flow, "Premature end of test: %s",strerror(errno));
                 	return -1;
                 }
 
-         if (rc == 0) {
+	if (rc == 0) {
          	DEBUG_MSG(LOG_ERR, "server shut down test socket of flow %d", flow->id);
                 if (!flow->finished[READ] || !flow->settings.shutdown)
                 	error(ERR_WARNING, "Premature shutdown of server flow");

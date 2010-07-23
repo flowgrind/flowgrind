@@ -850,7 +850,7 @@ static void parse_option(int argc, char ** argv) {
         int ch, rc;
         int argcorig = argc;
 #if HAVE_GETOPT_LONG
-        // getopt_long isn't portable, it's GNU extension
+        /* getopt_long isn't portable, it's GNU extension */
         struct option lo[] = {  {"help", 0, 0, 'h' },
                                 {"version", 0, 0, 'v'},
                                 {"debug", 0, 0, 'd'},
