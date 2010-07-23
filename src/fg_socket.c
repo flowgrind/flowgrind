@@ -3,7 +3,9 @@
 #endif
 
 #include <arpa/inet.h>
+#ifdef DEBUG
 #include <assert.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -295,9 +297,10 @@ const char *fg_nameinfo(const struct sockaddr *sa, socklen_t salen)
 
 char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 {
+#ifdef DEBUG
 	assert(a != NULL);
 	assert(b != NULL);
-
+#endif
 	if (a->sa_family != b->sa_family)
 		return 0;
 

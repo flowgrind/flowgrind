@@ -1,7 +1,9 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+#ifdef DEBUG
 #include <assert.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -155,7 +157,9 @@ static void prepare_wfds(struct timeval *now, struct _flow *flow, fd_set *wfds)
 	}
 
 	if (flow_sending(now, flow, WRITE)) {
+#ifdef DEBUG
 		assert(!flow->finished[WRITE]);
+#endif
 		if (flow_block_scheduled(now, flow)) {
 			DEBUG_MSG(LOG_DEBUG, "adding sock of flow %d to wfds", flow->id);
 			FD_SET(flow->fd, wfds);
@@ -778,7 +782,9 @@ static int write_data(struct _flow *flow)
 			/* requested_block_size */  
 			((struct _block *)flow->write_block)->request_block_size = htonl(response_block_size);
 			/* erase rtt data (maybe leftovers from response block) */
-			memset ( flow->write_block + 2 * (sizeof (int32_t) ), 0, sizeof(struct timeval) );
+			// memset ( flow->write_block + 2 * (sizeof (int32_t) ), 0, sizeof(struct timeval) );
+			tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
+
 			DEBUG_MSG(LOG_DEBUG, "wrote new request data to out buffer bs = %d, rqs = %d, on flow %d", 
 					ntohl(((struct _block *)flow->write_block)->this_block_size), 
 					ntohl(((struct _block *)flow->write_block)->request_block_size),
@@ -817,6 +823,9 @@ static int write_data(struct _flow *flow)
 		flow->current_block_bytes_written += rc;
 
 		if (flow->current_block_bytes_written >= flow->current_write_block_size) {
+#ifdef DEBUG
+			assert (flow->current_block_bytes_written == flow->current_write_block_size);
+#endif
 			/* we just finished writing a block */
 			flow->current_block_bytes_written = 0;
 			tsc_gettimeofday(&flow->last_block_written);
@@ -934,7 +943,7 @@ static int read_data(struct _flow *flow)
 		if (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.default_request_block_size)
 			flow->current_read_block_size = optint;
 		else
-			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring incomplete block", flow->id, optint);
+			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring", flow->id, optint);
 		
 		/* parse and check current request size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->request_block_size );	
@@ -942,7 +951,7 @@ static int read_data(struct _flow *flow)
 				                 && optint <= flow->settings.default_response_block_size) ) 
 			requested_response_block_size = optint;
 		else 
-			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring incomplete block", flow->id, optint);
+			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring", flow->id, optint);
 
 		DEBUG_MSG(LOG_NOTICE, "flow %d parsed cbs: %d rqs: %d", 
 				      flow->id, 
@@ -956,8 +965,9 @@ static int read_data(struct _flow *flow)
 				break;
 		
 		if (flow->current_block_bytes_read >= flow->current_read_block_size ) {
-			
+#ifdef DEBUG			
 			assert(flow->current_block_bytes_read == flow->current_read_block_size);
+#endif
 			flow->current_block_bytes_read = 0;
 
 			if (requested_response_block_size == -1) {
@@ -1045,20 +1055,29 @@ static void process_iat(struct _flow* flow)
 static void send_response(struct _flow* flow, int requested_response_block_size)
 {		
 		int rc;
-		if (flow->current_block_bytes_written > 0)
+		if (flow->current_block_bytes_written > 0) {
 			DEBUG_MSG(LOG_WARNING, "continuing sending defered response block on flow %d (already %d)",
 					flow->id, flow->current_block_bytes_written);
-                ((struct _block *)flow->write_block)->this_block_size = htonl(requested_response_block_size);
-		((struct _block *)flow->write_block)->request_block_size = htonl(-1);
-		tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
+		} else {
+			/* write new data to write block as response
+			 * 
+			 * write requested block size as current size
+			 */ 
+                	((struct _block *)flow->write_block)->this_block_size = htonl(requested_response_block_size);
+			/* rqs = -1 indicates response block */
+			((struct _block *)flow->write_block)->request_block_size = htonl(-1);
+			/* copy rtt data from received block to response block (echo back) */
 
-                DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, rqs = %d, on flow %d", 
-	                ntohl(((struct _block *)flow->write_block)->this_block_size),
+	                ((struct _block *)flow->write_block)->data = ((struct _block *)flow->read_block)->data;
+			DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, rqs = %d, on flow %d",
+                        ntohl(((struct _block *)flow->write_block)->this_block_size),
                         ntohl(((struct _block *)flow->write_block)->request_block_size),
                         flow->id);
+		}
 
 		/* send data out until block is finished */
 		for (;;) {
+			int try = 0;
 			rc = write(flow->fd, 
 				   flow->write_block + flow->current_block_bytes_written, 
 				   requested_response_block_size - flow->current_block_bytes_written);
@@ -1068,8 +1087,13 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 			if (rc == -1) {
 				if (errno == EAGAIN) {
 					logging_log(LOG_WARNING,
-						"%s, still trying to send response block",
+						"%s, still trying to send response block (write queue hit limit)",
 						strerror(errno));
+					try++;
+					if (try >= CONGESTION_LIMIT) {
+					        logging_log(LOG_WARNING,
+                                                "tried to send response block %d times without success, aborting");
+					}	
 				}
 				else {
 					logging_log(LOG_WARNING,
@@ -1086,7 +1110,9 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 				}
 	               		if (flow->current_block_bytes_written >=
                                	    (unsigned int)requested_response_block_size) {
+#ifdef DEBUG
 					assert(flow->current_block_bytes_written == (unsigned int)requested_response_block_size);
+#endif
 					/* just finish sending response block */
                 	       		flow->current_block_bytes_written = 0;
 					tsc_gettimeofday(&flow->last_block_written);

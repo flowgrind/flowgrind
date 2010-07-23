@@ -3,7 +3,9 @@
 #endif
 
 #include <arpa/inet.h>
+#ifdef DEBUG
 #include <assert.h>
+#endif
 #include <errno.h>
 #include <float.h>
 #include <limits.h>
@@ -1160,7 +1162,9 @@ exit_outer_loop:
 
 			if (f->finished[1 - endpoint]) {
 				active_flows--;
+#ifdef DEBUG
 				assert(active_flows >= 0);
+#endif
 			}
 		}
 		return;
@@ -1351,15 +1355,35 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 			switch (optchar) {
 				case 'N':
 					distr = NORMAL;
+					if (!param1 || !param2)
+					{
+						fprintf(stderr, "normal distribution needs two non-zero parameters");
+						usage_trafgenopt();
+					}
 					break;
 				case 'W':
 					distr = WEIBULL;
-					break;
-				case 'C':
-					distr = CONSTANT;
+                                        if (!param1 || !param2)
+					{
+						fprintf(stderr, "weibull distribution needs two non-zero paramters\n");
+                                                usage_trafgenopt();
+					}
 					break;
 				case 'U':
 					distr = UNIFORM;
+                                        if (!param1 || !param2)
+					{
+						fprintf(stderr, "uniform distribution needs two non-zero paramters\n");
+                                       		usage_trafgenopt();
+					}
+					break;
+                                case 'C':
+                                        distr = CONSTANT;
+					if (!param1)
+					{
+						fprintf(stderr, "constant value needs one non-zero paramters\n");
+						usage_trafgenopt();
+					}
 					break;
 				default:
 					fprintf(stderr, "Syntax error in traffic generation option: %c is not a distribution.\n", optchar);
