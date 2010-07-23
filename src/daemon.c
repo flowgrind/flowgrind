@@ -792,10 +792,10 @@ static int write_data(struct _flow *flow)
 		}
 
 		rc = write(flow->fd,
-				flow->write_block +
-				flow->current_block_bytes_written,
-				flow->current_write_block_size -
-				flow->current_block_bytes_written);
+			   flow->write_block +
+			   flow->current_block_bytes_written,
+			   flow->current_write_block_size -
+			   flow->current_block_bytes_written);
 
 		if (rc == -1) {
 			if (errno == EAGAIN) {
@@ -926,34 +926,39 @@ static inline int read_n_bytes(struct _flow *flow, int bytes)
 }
 
 static int read_data(struct _flow *flow)
-{
+{	int rc = 0;
 	int optint = 0;
 	int requested_response_block_size = 0;
 	
 	for (;;) {
-		/* read block header if started new block */
-		if (flow->current_block_bytes_read == 0)
-			if (read_n_bytes(flow,MIN_BLOCK_SIZE) == -1)
+		/* make sure to read block header for new block */
+		if (flow->current_block_bytes_read < MIN_BLOCK_SIZE)
+			rc = read_n_bytes(flow,MIN_BLOCK_SIZE-flow->current_block_bytes_read);
+			if (rc == -1)
 				break;
+			if (flow->current_block_bytes_read < MIN_BLOCK_SIZE)
+				continue;
 
 		/* parse data and update status */
 
 		/* parse and check current block size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->this_block_size );
-		if (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.default_request_block_size)
+		if (optint >= MIN_BLOCK_SIZE && ( optint <= flow->settings.default_request_block_size
+						||optint <= flow->settings.default_response_block_size ) )
 			flow->current_read_block_size = optint;
 		else
 			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring", flow->id, optint);
 		
 		/* parse and check current request size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->request_block_size );	
-		if (optint == -1 || optint == 0 || (optint >= MIN_BLOCK_SIZE 
-				                 && optint <= flow->settings.default_response_block_size) ) 
+		if (optint == -1 || optint == 0  || (optint >= MIN_BLOCK_SIZE 
+				                 && (optint <= flow->settings.default_response_block_size
+						 ||  optint <= flow->settings.default_request_block_size ) ) ) 
 			requested_response_block_size = optint;
 		else 
 			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring", flow->id, optint);
 
-		DEBUG_MSG(LOG_NOTICE, "flow %d parsed cbs: %d rqs: %d", 
+		DEBUG_MSG(LOG_NOTICE, "flow %d current cbs: %d rqs: %d", 
 				      flow->id, 
 				      flow->current_read_block_size, 
 				      requested_response_block_size);
@@ -1055,25 +1060,20 @@ static void process_iat(struct _flow* flow)
 static void send_response(struct _flow* flow, int requested_response_block_size)
 {		
 		int rc;
-		if (flow->current_block_bytes_written > 0) {
-			DEBUG_MSG(LOG_WARNING, "continuing sending defered response block on flow %d (already %d)",
-					flow->id, flow->current_block_bytes_written);
-		} else {
-			/* write new data to write block as response
-			 * 
-			 * write requested block size as current size
-			 */ 
-                	((struct _block *)flow->write_block)->this_block_size = htonl(requested_response_block_size);
-			/* rqs = -1 indicates response block */
-			((struct _block *)flow->write_block)->request_block_size = htonl(-1);
-			/* copy rtt data from received block to response block (echo back) */
-
-	                ((struct _block *)flow->write_block)->data = ((struct _block *)flow->read_block)->data;
-			DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, rqs = %d, on flow %d",
+#ifdef DEBUG
+		assert(!flow->current_block_bytes_written);
+#endif
+		 /* write requested block size as current size */ 
+                ((struct _block *)flow->write_block)->this_block_size = htonl(requested_response_block_size);
+		/* rqs = -1 indicates response block */
+		((struct _block *)flow->write_block)->request_block_size = htonl(-1);
+		/* copy rtt data from received block to response block (echo back) */
+		((struct _block *)flow->write_block)->data = ((struct _block *)flow->read_block)->data;
+		
+		DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, rqs = %d, on flow %d",
                         ntohl(((struct _block *)flow->write_block)->this_block_size),
                         ntohl(((struct _block *)flow->write_block)->request_block_size),
                         flow->id);
-		}
 
 		/* send data out until block is finished */
 		for (;;) {
@@ -1081,9 +1081,11 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 			rc = write(flow->fd, 
 				   flow->write_block + flow->current_block_bytes_written, 
 				   requested_response_block_size - flow->current_block_bytes_written);
+			
 			DEBUG_MSG(LOG_NOTICE, "send %d bytes response (rqs %d) on flow %d",
 				              rc,
 					      requested_response_block_size,flow->id);
+			
 			if (rc == -1) {
 				if (errno == EAGAIN) {
 					logging_log(LOG_WARNING,
