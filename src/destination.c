@@ -138,7 +138,6 @@ static int create_listen_socket(struct _flow *flow, char *bind_addr, unsigned sh
 void add_flow_destination(struct _request_add_flow_destination *request)
 {
 	struct _flow *flow;
-	int buffersize;
 	unsigned short server_data_port;
 
 	if (num_flows >= MAX_FLOWS) {
@@ -151,9 +150,8 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	init_flow(flow, 0);
 
 	flow->settings = request->settings;
-	buffersize=MAX(flow->settings.default_request_block_size,flow->settings.default_response_block_size);
-	flow->write_block = calloc(1, buffersize );
-	flow->read_block = calloc(1, buffersize );
+	flow->write_block = calloc(1, flow->settings.maximum_block_size );
+	flow->read_block = calloc(1, flow->settings.maximum_block_size );
 	if (flow->write_block == NULL || flow->read_block == NULL) {
 		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");
@@ -161,9 +159,10 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		num_flows--;
 		return;
 	}
+
 	if (flow->settings.byte_counting) {
 		int byte_idx;
-		for (byte_idx = 0; byte_idx < flow->settings.default_request_block_size; byte_idx++)
+		for (byte_idx = 0; byte_idx < flow->settings.maximum_block_size; byte_idx++)
 			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
 	}
 

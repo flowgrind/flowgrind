@@ -119,8 +119,7 @@ struct _flow_settings
 	int requested_send_buffer_size;
 	int requested_read_buffer_size;
 
-	int default_request_block_size;
-	int default_response_block_size;
+	int maximum_block_size;
 
 	int trafficdump;
 	int so_debug;
