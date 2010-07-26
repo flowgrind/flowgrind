@@ -12,26 +12,28 @@ extern int daemon_pipe[2];
 
 extern pthread_mutex_t mutex;
 
+enum flow_endpoint
+{
+	SOURCE,
+	DESTINATION,
+};
+
 enum flow_state
 {
-	/* SOURCE */
-	WAIT_CONNECT_REPLY,
-	GRIND_WAIT_CONNECT,
+        /* SOURCE */
+        GRIND_WAIT_CONNECT,
 
-	/* DESTINATION */
-	WAIT_ACCEPT_REPLY,
-	GRIND_WAIT_ACCEPT,
+        /* DESTINATION */
+        GRIND_WAIT_ACCEPT,
 
-	/* BOTH */
+	/* RUN */
 	GRIND
 };
 
 struct _flow_source_settings
 {
 	char destination_host[256];
-	char destination_host_reply[256];
 	int destination_port;
-	int destination_port_reply;
 
 	int late_connect;
 
@@ -43,11 +45,9 @@ struct _flow
 	int id;
 
 	enum flow_state state;
+	enum flow_endpoint endpoint;
 
-	int fd_reply;
 	int fd;
-
-	int listenfd_reply;
 	int listenfd_data;
 
 	struct _flow_settings settings;
@@ -65,15 +65,13 @@ struct _flow
 	struct timeval next_write_block_timestamp;
 
 	char *read_block;
-	unsigned read_block_bytes_read;
-	uint64_t read_block_count;
-
 	char *write_block;
-	unsigned write_block_bytes_written;
-	uint64_t write_block_count;
 
-	char reply_block[sizeof(struct timeval) + sizeof(double) + 1];
-	unsigned int reply_block_bytes_read;
+	unsigned int current_write_block_size;
+	unsigned int current_read_block_size;
+
+	unsigned int current_block_bytes_read;
+	unsigned int current_block_bytes_written;
 
 	unsigned short requested_server_test_port;
 
@@ -88,14 +86,6 @@ struct _flow
 
 	unsigned congestion_counter;
 
-	/* here we use current_mss and current_mtu to store the most current
-	   values of get_mss and get_mtu. The problem encountered was that at the
-	   very end when guess_topology was called get_mss and get_mtu returned
-	   some bogus value because the call to getsockopt failed.
-	*/
-	/*int current_mss;
-	int current_mtu;*/
-
 	/* Used for late_connect */
 	struct sockaddr *addr;
 	socklen_t addr_len;
@@ -103,10 +93,14 @@ struct _flow
 	struct _statistics {
 		long long bytes_read;
 		long long bytes_written;
-		long reply_blocks_read;
 
-		double rtt_min, rtt_max, rtt_sum;
+		int request_blocks_read;
+		int request_blocks_written;
+		int response_blocks_read;
+		int response_blocks_written;
+
 		double iat_min, iat_max, iat_sum;
+		double rtt_min, rtt_max, rtt_sum;
 
 #ifdef __LINUX__
 		int has_tcp_info;
@@ -129,7 +123,7 @@ extern unsigned int pending_reports;
 
 void add_report(struct _report* report);
 
-/* Gets 50 reports. There may be more pending but there's a limit on how 
+/* Gets 50 reports. There may be more pending but there's a limit on how
  * large a reply can get */
 struct _report* get_reports(int *has_more);
 
@@ -163,7 +157,6 @@ struct _request_add_flow_destination
 	/* The request reply */
 	int flow_id;
 	int listen_data_port;
-	int listen_reply_port;
 	int real_listen_send_buffer_size;
 	int real_listen_read_buffer_size;
 };

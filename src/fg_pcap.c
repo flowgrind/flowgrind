@@ -43,11 +43,11 @@ void fg_pcap_init()
 			if (!a->addr)
 				continue;
 			snprintf(addr, sizeof(addr), "a=%s", fg_nameinfo(a->addr, sizeof(struct sockaddr)));
-			strncat(devdes, addr, sizeof(devdes));
+			strncat(devdes, addr, sizeof(devdes)-1);
 			if (a->next)
 				strncat(devdes, ", ", sizeof(devdes));
 		}
-		DEBUG_MSG(3, "found pcapabple device (%s)", devdes);
+		DEBUG_MSG(LOG_ERR, "found pcapabple device (%s)", devdes);
 	}
 
 	return;
@@ -71,7 +71,7 @@ void fg_pcap_go(int fd)
 			if (!a->addr)
 				continue;
 			if (sockaddr_compare(a->addr, (struct sockaddr *)&sa)) {
-				DEBUG_MSG(2, "pcap: data connection inbound "
+				DEBUG_MSG(LOG_NOTICE, "pcap: data connection inbound "
 						"from %s (%s)", d->name, 
 						fg_nameinfo(a->addr, sizeof(struct sockaddr)));
 				found = 1;
@@ -110,7 +110,7 @@ void fg_pcap_go(int fd)
 		return;
 	}
 
-	DEBUG_MSG(3, "pcap: inbound device %s has link layer type "
+	DEBUG_MSG(LOG_NOTICE, "pcap: inbound device %s has link layer type "
 			"\"%s\" (%u).", d->name, 
 			pcap_datalink_val_to_name(pcap_ll_type), 
 			pcap_ll_type);
@@ -134,7 +134,7 @@ void fg_pcap_go(int fd)
 	}
 
 	/* XXX: compile a pcap expression to match the inbound port. */
-	DEBUG_MSG(1, "pcap init done.");
+	DEBUG_MSG(LOG_ERR, "pcap init done.");
 	pcap_init_done = 1;
 	return;
 }
@@ -146,7 +146,7 @@ fg_pcap_handler(u_char *arg, const struct pcap_pkthdr *h, const u_char *packet)
 	UNUSED_ARGUMENT(h);
 	UNUSED_ARGUMENT(packet);
 
-	DEBUG_MSG(5, "pcap: processing packet, ts = %lu.%lu, %hhu bytes.",
+	DEBUG_MSG(LOG_DEBUG, "pcap: processing packet, ts = %lu.%lu, %hhu bytes.",
 			h->ts.tv_sec, h->ts.tv_usec, h->caplen);
 
 	/* XXX: do something about it! */
@@ -167,7 +167,7 @@ void fg_pcap_dispatch(void)
                 pcap_init_done = 0;
                 return;
         } 
-        DEBUG_MSG(4, "pcap: finished processing %u packets.", rc);
+        DEBUG_MSG(LOG_NOTICE, "pcap: finished processing %u packets.", rc);
 
 	return;
 }

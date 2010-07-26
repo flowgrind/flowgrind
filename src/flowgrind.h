@@ -7,6 +7,9 @@
 
 #include "common.h"
 #include "fg_time.h"
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/client.h>
+
 
 #define	MAX_FLOWS		256
 #define CONGESTION_LIMIT 	10000
@@ -15,13 +18,14 @@
 struct _opt {
 	unsigned short num_flows;
 	double reporting_interval;
-	char advstats;
 	char dont_log_stdout;
 	char dont_log_logfile;
 	char *log_filename;
 	char *log_filename_prefix;
 	char clobber;
 	char mbyte;
+	char symbolic;
+	char doAnderson;
 	unsigned short base_port;
 };
 extern struct _opt opt;
@@ -56,7 +60,6 @@ struct _flow_endpoint {
 	char server_address[1000];
 	unsigned server_port;
 	char test_address[1000];
-	char reply_address[1000];
 	char bind_address[1000];
 };
 
@@ -68,6 +71,8 @@ struct _flow {
 	char shutdown;
 	char summarize_only;
 	char byte_counting;
+
+	int random_seed;
 
 	int endpoint_id[2];
 
@@ -90,4 +95,5 @@ inline static double scale_thruput(double thruput)
 		return thruput / (1<<20);
 	return thruput / 1e6 *(1<<3);
 }
+
 #endif

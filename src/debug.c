@@ -9,6 +9,10 @@
 
 #ifdef DEBUG
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 inline void decrease_debuglevel()
 {
 	debug_level--;
