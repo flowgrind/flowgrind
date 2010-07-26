@@ -1,8 +1,9 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-
+#ifdef DEBUG
 #include <assert.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -31,8 +32,8 @@
 #include "fg_pcap.h"
 #include "fg_socket.h"
 #include "fg_time.h"
+#include "fg_math.h"
 #include "log.h"
-#include "acl.h"
 #include "daemon.h"
 
 #ifdef HAVE_FLOAT_H
@@ -146,9 +147,10 @@ int add_flow_source(struct _request_add_flow_source *request)
 
 	flow->settings = request->settings;
 	flow->source_settings = request->source_settings;
+	/* be greedy with buffer sizes */
+	flow->write_block = calloc(1, flow->settings.maximum_block_size);
+	flow->read_block = calloc(1, flow->settings.maximum_block_size);
 
-	flow->write_block = calloc(1, flow->settings.write_block_size);
-	flow->read_block = calloc(1, flow->settings.read_block_size);
 	if (flow->write_block == NULL || flow->read_block == NULL) {
 		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");
@@ -158,19 +160,10 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 	if (flow->settings.byte_counting) {
 		int byte_idx;
-		for (byte_idx = 0; byte_idx < flow->settings.write_block_size; byte_idx++)
+		for (byte_idx = 0; byte_idx < flow->settings.maximum_block_size; byte_idx++)
 			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
 	}
 
-	flow->fd_reply = name2socket(flow, flow->source_settings.destination_host_reply,
-				flow->source_settings.destination_port_reply, NULL, NULL, 1, 0, NULL, 0, NULL);
-	if (flow->fd_reply == -1) {
-		logging_log(LOG_ALERT, "Could not connect reply socket: %s", flow->error);
-		request_error(&request->r, "Could not connect reply socket: %s", flow->error);
-		uninit_flow(flow);
-		num_flows--;
-		return -1;
-	}
 	flow->state = GRIND_WAIT_CONNECT;
 	flow->fd = name2socket(flow, flow->source_settings.destination_host,
 			flow->source_settings.destination_port,
@@ -184,8 +177,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		num_flows--;
 		return -1;
 	}
-
-	set_non_blocking(flow->fd_reply);
 
 	if (set_flow_tcp_options(flow) == -1) {
 		request->r.error = flow->error;

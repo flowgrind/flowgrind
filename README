@@ -19,32 +19,29 @@ Example
 
 Assume we have 4 machines, host0, host1, host2 and host3 and flowgrind has
 been installed on all of them.
-We want to measure flows from host1 to host2 and from host1 to host2 in
-parallel. First start flowgrindd on host1-host3. One some machine we then
-execute the following command, for example host0:
+We want to measure flows from host1 to host2 and from host1 to host3 in
+parallel, controlled from host0.
+First start flowgrindd on host1-host3. 
+On host0 we execute:
 
-# flowgrind -n 2 -F 0 -H s=host1,d=host2 -F 1 s=host1,d=host3
+# flowgrind -n 2 -F 0 -H s=host1,d=host2 -F 1 -H s=host1,d=host3
 
 Host argument
 =============
 
-There are three types of connections flowgrind uses:
+Flowgrind uses two connections:
 - The test connection for the flows
-- The reply connection for the flows where the block IAT and RTT information
-  get sent back
 - The RPC connections for the communication between flowgrind and flowgrindd
 
-In order not to influence the test connection, the other two connection types
-can be sent over different interfaces/routes. There are three addresses: The
-test address, the RPC address and the reply address. An unspecified RPC
-address falls back to the test address and an unspecified reply address falls
-back to the RPC address.
+In order not to influence the test connection, the RPC control connection 
+can be sent over different interfaces/routes. typical scenario: Test WiFi 
+connection and control over wired connection.
+Therefore there are two addresses:
+The test address and the control address. An unspecified control address
+address falls back to the test address.
 
 This is important for the host argument:
-  -H x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]
-
-Specifying a reply address is only needed for the destination, it has no
-effect on the source endpoint.
+  -H x=HOST[/CONTROL[:PORT]]
 
 Example
 -------
@@ -59,8 +56,7 @@ So our host argument will be this:
   -H s=192.168.0.1/10.0.0.1,d=192.168.0.2/10.0.0.2
 
 In words: Test from 192.168.0.1 to 192.168.0.2 on the nodes identified by
-10.0.0.1 and 10.0.0.2 respectively. Since we didn't specify a reply address,
-the reply connection will also use 10.0.0.2
+10.0.0.1 and 10.0.0.2 respectively. 
 
 Colums
 ======

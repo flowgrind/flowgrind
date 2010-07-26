@@ -64,6 +64,47 @@ enum _extra_socket_option_level
 	level_ipproto_udp
 };
 
+/* 
+ * our data block has the following layout:
+ *
+ * this_block_size (int32_t), request_block_size (int32_t), data (timeval), trail 
+ *
+ * this_block_size:     the size of our request or response block (we generate 
+ *                      a request block here)
+ *
+ * request_block_size:  the size of the response block we request
+ *                      0 if we dont request a response block
+ *                     -1 indicates this is a response block (needed for parsing data)
+ *
+ * data                 RTT data if this is a response block
+ *                     
+ * trail:               trailing garbage to fill up the blocksize (not used)
+ */
+
+#define MIN_BLOCK_SIZE (signed) sizeof (struct _block) 
+struct _block
+{
+        int32_t this_block_size;
+        int32_t request_block_size;
+        struct timeval data;
+};
+
+enum _stochastic_distributions
+{
+        CONSTANT='0',
+        NORMAL,
+        WEIBULL,
+        UNIFORM,
+};
+
+struct _trafgen_options
+{
+        enum _stochastic_distributions distribution;
+        double param_one;
+        double param_two;
+
+};
+
 /* Common to both endpoints */
 struct _flow_settings
 {
@@ -73,21 +114,22 @@ struct _flow_settings
 	double duration[2];
 
 	double reporting_interval;
+	double interleave_time;
 
 	int requested_send_buffer_size;
 	int requested_read_buffer_size;
 
-	int write_block_size;
-	int read_block_size;
+	int maximum_block_size;
 
-	int advstats;
+	int trafficdump;
 	int so_debug;
 	int route_record;
 	int pushy;
 	int shutdown;
 
 	int write_rate;
-	int poisson_distributed;
+	int random_seed;
+
 	int flow_control;
 
 	int byte_counting;
@@ -98,6 +140,10 @@ struct _flow_settings
 	int icmp;
 	int dscp;
 	int ipmtudiscover;
+
+        struct _trafgen_options request_trafgen_options;
+        struct _trafgen_options response_trafgen_options;
+        struct _trafgen_options interpacket_gap_trafgen_options;
 
 	struct _extra_socket_options {
 		int level;
@@ -116,9 +162,12 @@ struct _report
 	struct timeval begin;
 	struct timeval end;
 
-	long long bytes_read;
-	long long bytes_written;
-	int reply_blocks_read;
+	unsigned long long bytes_read;
+	unsigned long long bytes_written;
+	unsigned long request_blocks_read;
+	unsigned long request_blocks_written;
+	unsigned long response_blocks_read;
+	unsigned long response_blocks_written;
 
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;

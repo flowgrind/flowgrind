@@ -1,11 +1,13 @@
 AC_PREREQ(2.59)
-AC_INIT([flowgrind],[0.2.1],[tim.kosse@gmx.de])
+AC_INIT([flowgrind],[0.3],[flowgrind@umic-mesh.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
 
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CPP
+AM_C_PROTOTYPES
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
 
@@ -28,6 +30,7 @@ case $host in
     ;;
 esac
 
+
 AC_C_CONST
 AC_C_INLINE
 
@@ -43,9 +46,10 @@ AC_STRUCT_TM
 AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
+AC_TYPE_INT8_T
 AC_TYPE_UINT32_T
-AC_TYPE_UINT64_T
-AC_TYPE_UINT8_T
+AC_TYPE_INT32_T
+AC_TYPE_UNSIGNED_LONG_LONG_INT
 
 AC_CHECK_FUNCS([ \
 	bzero \
@@ -66,6 +70,20 @@ AC_CHECK_LIB([resolv], [herror])
 AC_CHECK_LIB([rt], [nanosleep])
 AC_CHECK_LIB([fasttime], [fasttime_init_context])
 AC_CHECK_LIB([tsci2], [tsci2_init])
+
+# check if DEBUG to be set
+AC_ARG_ENABLE(debug,
+[  --enable-debug          enable internal debugging output and debugging symbols [[default=no]]],
+[
+enable_debug=yes
+],[
+enable_debug=no
+])
+
+if test "$enable_debug" = yes ; then
+	AC_DEFINE(DEBUG, [1], [Use debugging])
+	CFLAGS="-ggdb $CFLAGS"
+fi
 
 AC_ARG_WITH(pcap,
 [  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=no]]],

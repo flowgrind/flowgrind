@@ -30,20 +30,25 @@
 #include "log.h"
 #include "fg_time.h"
 #include "debug.h"
-#include "acl.h"
+#include "fg_math.h"
 #if HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif
+
+unsigned port = DEFAULT_LISTEN_PORT;
 
 static char progname[50] = "flowgrindd";
 
 static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
-		"Usage: %1$s [-a address ] [-w#] [-p#] [-d]\n"
-		"\t-a address\tadd address to list of allowed hosts (CIDR syntax)\n"
+		"Usage: %1$s [-p#] [-d] [-v]\n"
 		"\t-p#\t\tserver port\n"
-		"\t-D \t\tincrease debug verbosity (no daemon, log to stderr)\n"
+#ifdef DEBUG
+		"\t-d\t\tincrease debug verbosity, add multiple times (no daemon, log to stderr)\n"
+#else
+		"\t-d\t\tdon't fork into background\n"
+#endif
 		"\t-v\t\tPrint version information and exit\n",
 		progname);
 	exit(1);
@@ -61,11 +66,11 @@ static void sighandler(int sig)
 		break;
 
 	case SIGHUP:
-		logging_log(LOG_NOTICE, "got SIGHUP, don't know what do do.");
+		logging_log(LOG_NOTICE, "got SIGHUP, don't know what to do.");
 		break;
 
 	case SIGALRM:
-		DEBUG_MSG(1, "Caught SIGALRM.");
+		logging_log(LOG_NOTICE, "Caught SIGALRM. don't know what to do.");
 		break;
 
 	case SIGPIPE:
@@ -103,9 +108,8 @@ static int dispatch_request(struct _request *request, int type)
 		requests_last->next = request;
 		requests_last = request;
 	}
-
-	write(daemon_pipe[1], &type, 1); /* Doesn't matter what we write */
-
+	if ( write(daemon_pipe[1], &type, 1) != 1 ) /* Doesn't matter what we write */
+		return -1;
 	/* Wait until the daemon thread has processed the request */
 	pthread_cond_wait(&cond, &mutex);
 
@@ -126,7 +130,6 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	int rc, i;
 	xmlrpc_value *ret = 0;
 	char* destination_host = 0;
-	char* destination_host_reply = 0;
 	char* cc_alg = 0;
 	char* bind_address = 0;
 	xmlrpc_value* extra_options = 0;
@@ -136,61 +139,91 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 	struct _request_add_flow_source* request = 0;
 
-	DEBUG_MSG(1, "Method add_flow_source called");
+	DEBUG_MSG(LOG_WARNING, "Method add_flow_source called");
 
 	/* Parse our argument array. */
-	xmlrpc_decompose_value(env, param_array, "("
-			"{s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A,*}"
-			"{s:s,s:s,s:i,s:i,s:i,*}"
-			")",
+	xmlrpc_decompose_value(env, param_array, 
+		"({"
+		"s:s,"
+		"s:d,s:d,s:d,s:d,s:d,"
+		"s:i,s:i,"
+		"s:i,"
+		"s:b,s:b,s:b,s:b,s:b,"
+		"s:i,s:i,"
+                "s:i,s:d,s:d," /* request */
+                "s:i,s:d,s:d," /* response */
+                "s:i,s:d,s:d," /* interpacket_gap */
+		"s:b,s:b,s:i,"
+		"s:s,"
+		"s:i,s:i,s:i,s:i,"
+		"s:i,s:A,"
+		"s:s,s:i,s:i,*"
+		"})",
 
 		/* general settings */
 		"bind_address", &bind_address,
+
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
 		"read_delay", &settings.delay[READ],
 		"read_duration", &settings.duration[READ],
 		"reporting_interval", &settings.reporting_interval,
+
 		"requested_send_buffer_size", &settings.requested_send_buffer_size,
 		"requested_read_buffer_size", &settings.requested_read_buffer_size,
-		"write_block_size", &settings.write_block_size,
-		"read_block_size", &settings.read_block_size,
-		"advstats", &settings.advstats,
+		
+		"maximum_block_size", &settings.maximum_block_size,
+
+		"trafficdump", &settings.trafficdump,
 		"so_debug", &settings.so_debug,
 		"route_record", &settings.route_record,
 		"pushy", &settings.pushy,
 		"shutdown", &settings.shutdown,
-		"write_rate", &settings.write_rate,
-		"poisson_distributed", &settings.poisson_distributed,
+
+                "write_rate", &settings.write_rate,
+                "random_seed",&settings.random_seed,
+
+                "traffic_generation_request_distribution", &settings.request_trafgen_options.distribution,
+                "traffic_generation_request_param_one", &settings.request_trafgen_options.param_one,
+                "traffic_generation_request_param_two", &settings.request_trafgen_options.param_two,
+
+                "traffic_generation_response_distribution", &settings.response_trafgen_options.distribution,
+                "traffic_generation_response_param_one", &settings.response_trafgen_options.param_one,
+                "traffic_generation_response_param_two", &settings.response_trafgen_options.param_two,
+
+                "traffic_generation_gap_distribution", &settings.interpacket_gap_trafgen_options.distribution,
+                "traffic_generation_gap_param_one", &settings.interpacket_gap_trafgen_options.param_one,
+                "traffic_generation_gap_param_two", &settings.interpacket_gap_trafgen_options.param_two,
+		
 		"flow_control", &settings.flow_control,
 		"byte_counting", &settings.byte_counting,
 		"cork", &settings.cork,
+
 		"cc_alg", &cc_alg,
+
 		"elcn", &settings.elcn,
 		"icmp", &settings.icmp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
+
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options,
 
 		/* source settings */
 		"destination_address", &destination_host,
-		"destination_address_reply", &destination_host_reply,
 		"destination_port", &source_settings.destination_port,
-		"destination_port_reply", &source_settings.destination_port_reply,
 		"late_connect", &source_settings.late_connect);
 
 	if (env->fault_occurred)
 		goto cleanup;
 
-	/* Check for sanity */
+	/* Check for sanity TODO: add traffic generation checks */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
 		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
-		settings.write_block_size <= 0 || settings.read_block_size <= 0 ||
+		settings.maximum_block_size < MIN_BLOCK_SIZE ||
 		strlen(destination_host) >= sizeof(source_settings.destination_host) - 1||
-		strlen(destination_host_reply) >= sizeof(source_settings.destination_host_reply) - 1 ||
 		source_settings.destination_port <= 0 || source_settings.destination_port > 65535 ||
 		strlen(cc_alg) > 255 ||
 		settings.num_extra_socket_options < 0 || settings.num_extra_socket_options > MAX_EXTRA_SOCKET_OPTIONS ||
@@ -200,7 +233,11 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		settings.reporting_interval < 0) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
-
+	/* initalize random number generator (use cmdline option if given, else use random data) */
+	if (settings.random_seed)
+		rn_set_seed(settings.random_seed);
+	else
+		rn_set_seed(rn_read_dev_random());
 	/* Parse extra socket options */
 	for (i = 0; i < settings.num_extra_socket_options; i++) {
 
@@ -241,7 +278,6 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	}
 
 	strcpy(source_settings.destination_host, destination_host);
-	strcpy(source_settings.destination_host_reply, destination_host_reply);
 	strcpy(settings.cc_alg, cc_alg);
 	strcpy(settings.bind_address, bind_address);
 
@@ -267,7 +303,6 @@ cleanup:
 		free(request);
 	}
 	free(destination_host);
-	free(destination_host_reply);
 	free(cc_alg);
 	free(bind_address);
 
@@ -277,7 +312,7 @@ cleanup:
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_source failed: %s", env->fault_string);
 	else {
-		DEBUG_MSG(1, "Method add_flow_source successful");
+		DEBUG_MSG(LOG_WARNING, "Method add_flow_source successful");
 	}
 
 	return ret;
@@ -299,56 +334,98 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 
 	struct _request_add_flow_destination* request = 0;
 
-	DEBUG_MSG(1, "Method add_flow_destination called");
+	DEBUG_MSG(LOG_WARNING, "Method add_flow_destination called");
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array,
-		"({s:s,s:d,s:d,s:d,s:d,s:d,s:i,s:i,s:i,s:i,s:b,s:b,s:b,s:b,s:b,s:i,s:b,s:b,s:i,s:i,s:s,s:i,s:i,s:i,s:i,s:i,s:A,*})",
+		"({"
+		"s:s,"
+		"s:d,s:d,s:d,s:d,s:d,"
+		"s:i,s:i,"
+		"s:i,"
+		"s:b,s:b,s:b,s:b,s:b,"
+		"s:i,s:i,"
+		"s:i,s:d,s:d," /* request */
+		"s:i,s:d,s:d," /* response */
+		"s:i,s:d,s:d," /* interpacket_gap */
+		"s:b,s:b,s:i,"
+		"s:s,"
+		"s:i,s:i,s:i,s:i,"
+		"s:i,s:A,*"
+		"})",
 
 		/* general settings */
 		"bind_address", &bind_address,
+		
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
 		"read_delay", &settings.delay[READ],
 		"read_duration", &settings.duration[READ],
 		"reporting_interval", &settings.reporting_interval,
+		
 		"requested_send_buffer_size", &settings.requested_send_buffer_size,
 		"requested_read_buffer_size", &settings.requested_read_buffer_size,
-		"write_block_size", &settings.write_block_size,
-		"read_block_size", &settings.read_block_size,
-		"advstats", &settings.advstats,
+		
+		"maximum_block_size", &settings.maximum_block_size,
+
+		"trafficdump", &settings.trafficdump,
 		"so_debug", &settings.so_debug,
 		"route_record", &settings.route_record,
 		"pushy", &settings.pushy,
 		"shutdown", &settings.shutdown,
-		"write_rate", &settings.write_rate,
-		"poisson_distributed", &settings.poisson_distributed,
+		
+                "write_rate", &settings.write_rate,
+                "random_seed",&settings.random_seed,
+
+                "traffic_generation_request_distribution", &settings.request_trafgen_options.distribution,
+                "traffic_generation_request_param_one", &settings.request_trafgen_options.param_one,
+                "traffic_generation_request_param_two", &settings.request_trafgen_options.param_two,
+
+                "traffic_generation_response_distribution", &settings.response_trafgen_options.distribution,
+                "traffic_generation_response_param_one", &settings.response_trafgen_options.param_one,
+                "traffic_generation_response_param_two", &settings.response_trafgen_options.param_two,
+
+                "traffic_generation_gap_distribution", &settings.interpacket_gap_trafgen_options.distribution,
+                "traffic_generation_gap_param_one", &settings.interpacket_gap_trafgen_options.param_one,
+                "traffic_generation_gap_param_two", &settings.interpacket_gap_trafgen_options.param_two,
+		
 		"flow_control", &settings.flow_control,
 		"byte_counting", &settings.byte_counting,
 		"cork", &settings.cork,
+
 		"cc_alg", &cc_alg,
+
 		"elcn", &settings.elcn,
 		"icmp", &settings.icmp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
+		
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options);
 
 	if (env->fault_occurred)
 		goto cleanup;
 
-	/* Check for sanity */
+	/* Check for sanity TODO: checks  */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
 		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
-		settings.write_block_size <= 0 || settings.read_block_size <= 0 ||
+                settings.maximum_block_size < MIN_BLOCK_SIZE ||
 		settings.write_rate < 0 ||
 		strlen(cc_alg) > 255 ||
 		settings.num_extra_socket_options < 0 || settings.num_extra_socket_options > MAX_EXTRA_SOCKET_OPTIONS ||
 		xmlrpc_array_size(env, extra_options) != settings.num_extra_socket_options) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
+
+	 /* initalize random number generator (use cmdline option if given, else use random data) 
+	  * (currently not used for flow_destination, but added for future use)
+	  */
+        if (settings.random_seed)
+                rn_set_seed(settings.random_seed);
+        else
+                rn_set_seed(rn_read_dev_random());
 
 	/* Parse extra socket options */
 	for (i = 0; i < settings.num_extra_socket_options; i++) {
@@ -400,10 +477,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	}
 
 	/* Return our result. */
-	ret = xmlrpc_build_value(env, "{s:i,s:i,s:i,s:i,s:i}",
+	ret = xmlrpc_build_value(env, "{s:i,s:i,s:i,s:i}",
 		"flow_id", request->flow_id,
 		"listen_data_port", request->listen_data_port,
-		"listen_reply_port", request->listen_reply_port,
 		"real_listen_send_buffer_size", request->real_listen_send_buffer_size,
 		"real_listen_read_buffer_size", request->real_listen_read_buffer_size);
 
@@ -421,7 +497,7 @@ cleanup:
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_destination failed: %s", env->fault_string);
 	else {
-		DEBUG_MSG(1, "Method add_flow_destination successful");
+		DEBUG_MSG(LOG_WARNING, "Method add_flow_destination successful");
 	}
 
 	return ret;
@@ -438,7 +514,7 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	int start_timestamp;
 	struct _request_start_flows *request = 0;
 
-	DEBUG_MSG(1, "Method start_flows called");
+	DEBUG_MSG(LOG_WARNING, "Method start_flows called");
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array, "({s:i,*})",
@@ -469,7 +545,7 @@ cleanup:
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method start_flows failed: %s", env->fault_string);
 	else {
-		DEBUG_MSG(1, "Method start_flows successful");
+		DEBUG_MSG(LOG_WARNING, "Method start_flows successful");
 	}
 
 	return ret;
@@ -485,10 +561,10 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	UNUSED_ARGUMENT(param_array);
 	UNUSED_ARGUMENT(user_data);
 
-	DEBUG_MSG(2, "Method get_reports called");
+	DEBUG_MSG(LOG_NOTICE, "Method get_reports called");
 
 	struct _report *report = get_reports(&has_more);
-	
+
 	ret = xmlrpc_array_new(env);
 
 	/* Add information if there's more reports pending */
@@ -497,10 +573,18 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	xmlrpc_DECREF(item);
 
 	while (report) {
-		xmlrpc_value *rv = xmlrpc_build_value(env, "{"
-			"s:i,s:i,s:i,s:i,s:i,s:i," "s:i,s:i,s:i,s:i,s:i," "s:d,s:d,s:d,s:d,s:d,s:d," "s:i,s:i,"
-			"s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i," /* TCP info */
-			"s:i}",
+		xmlrpc_value *rv = xmlrpc_build_value(env, 
+			"({"
+			"s:i,s:i,s:i,s:i,s:i,s:i," /* timeval */
+			"s:i,s:i,s:i,s:i," /* bytes */
+			"s:i,s:i,s:i,s:i," /* block counts */
+			"s:d,s:d,s:d,s:d,s:d,s:d," /* RTT, IAT */
+			"s:i,s:i," /* MSS, MTU */
+			"s:i,s:i,s:i,s:i,s:i," /* TCP info */
+			"s:i,s:i,s:i,s:i,s:i," /* ...      */
+			"s:i,s:i,s:i,s:i,s:i," /* ...      */
+			"s:i"
+			"})",
 
 			"id", report->id,
 			"type", report->type,
@@ -513,7 +597,11 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"bytes_read_low", (int32_t)(report->bytes_read & 0xFFFFFFFF),
 			"bytes_written_high", (int32_t)(report->bytes_written >> 32),
 			"bytes_written_low", (int32_t)(report->bytes_written & 0xFFFFFFFF),
-			"reply_blocks_read", report->reply_blocks_read,
+			
+			"request_blocks_read", report->request_blocks_read,
+			"request_blocks_written", report->request_blocks_written,
+			"response_blocks_read", report->response_blocks_read,
+			"response_blocks_written", report->response_blocks_written,
 
 			"rtt_min", report->rtt_min,
 			"rtt_max", report->rtt_max,
@@ -530,11 +618,13 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"tcpi_unacked", (int)report->tcp_info.tcpi_unacked,
 			"tcpi_sacked", (int)report->tcp_info.tcpi_sacked,
 			"tcpi_lost", (int)report->tcp_info.tcpi_lost,
+
 			"tcpi_retrans", (int)report->tcp_info.tcpi_retrans,
 			"tcpi_retransmits", (int)report->tcp_info.tcpi_retransmits,
 			"tcpi_fackets", (int)report->tcp_info.tcpi_fackets,
 			"tcpi_reordering", (int)report->tcp_info.tcpi_reordering,
 			"tcpi_rtt", (int)report->tcp_info.tcpi_rtt,
+
 			"tcpi_rttvar", (int)report->tcp_info.tcpi_rttvar,
 			"tcpi_rto", (int)report->tcp_info.tcpi_rto,
 			"tcpi_last_data_sent", (int)report->tcp_info.tcpi_last_data_sent,
@@ -560,7 +650,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 			"status", report->status
 		);
-		
+
 		xmlrpc_array_append_item(env, ret, rv);
 
 		xmlrpc_DECREF(rv);
@@ -573,7 +663,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_reports failed: %s", env->fault_string);
 	else {
-		DEBUG_MSG(2, "Method get_reports successful");
+		DEBUG_MSG(LOG_WARNING, "Method get_reports successful");
 	}
 
 	return ret;
@@ -590,7 +680,7 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	int flow_id;
 	struct _request_stop_flow *request = 0;
 
-	DEBUG_MSG(2, "Method stop_flow called");
+	DEBUG_MSG(LOG_WARNING, "Method stop_flow called");
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array, "({s:i,*})",
@@ -621,7 +711,7 @@ cleanup:
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method stop_flow failed: %s", env->fault_string);
 	else {
-		DEBUG_MSG(2, "Method stop_flow successful");
+		DEBUG_MSG(LOG_WARNING, "Method stop_flow successful");
 	}
 
 	return ret;
@@ -637,7 +727,7 @@ static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 
 	xmlrpc_value *ret = 0;
 
-	DEBUG_MSG(2, "Method get_version called");
+	DEBUG_MSG(LOG_WARNING, "Method get_version called");
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "s", FLOWGRIND_VERSION);
@@ -645,7 +735,7 @@ static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_version failed: %s", env->fault_string);
 	else {
-		DEBUG_MSG(2, "Method get_version successful");
+		DEBUG_MSG(LOG_WARNING, "Method get_version successful");
 	}
 
 	return ret;
@@ -663,7 +753,7 @@ static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 	xmlrpc_value *ret = 0;
 	struct _request_get_status *request = 0;
 
-	DEBUG_MSG(2, "Method get_status called");
+	DEBUG_MSG(LOG_WARNING, "Method get_status called");
 
 	request = malloc(sizeof(struct _request_get_status));
 	rc = dispatch_request((struct _request*)request, REQUEST_GET_STATUS);
@@ -686,7 +776,7 @@ cleanup:
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_status failed: %s", env->fault_string);
 	else {
-		DEBUG_MSG(2, "Method get_status successful");
+		DEBUG_MSG(LOG_WARNING, "Method get_status successful");
 	}
 
 	return ret;
@@ -731,7 +821,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 
 	/* In the modern form of the Abyss API, we supply parameters in memory
 	   like a normal API.  We select the modern form by setting
-	   config_file_name to NULL: 
+	   config_file_name to NULL:
 	*/
 	serverparm.config_file_name = NULL;
 	serverparm.registryP		= registryP;
@@ -742,7 +832,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	 * sockets in TIME_WAIT state would become too high.
 	 */
 	serverparm.keepalive_timeout = 60;
-	serverparm.keepalive_max_conn = 1000;	
+	serverparm.keepalive_max_conn = 1000;
 
 	logging_log(LOG_NOTICE, "Running XML-RPC server on port %u", port);
 	printf("Running XML-RPC server...\n");
@@ -756,12 +846,59 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	/* xmlrpc_server_abyss() never returns */
 }
 
+static void parse_option(int argc, char ** argv) {
+        int ch, rc;
+        int argcorig = argc;
+#if HAVE_GETOPT_LONG
+        /* getopt_long isn't portable, it's GNU extension */
+        struct option lo[] = {  {"help", 0, 0, 'h' },
+                                {"version", 0, 0, 'v'},
+                                {"debug", 0, 0, 'd'},
+                                {0, 0, 0, 0}
+                                };
+        while ((ch = getopt_long(argc, argv, "dDhp:vV", lo, 0)) != -1) {
+#else   
+        while ((ch = getopt(argc, argv, "dDhp:vV")) != -1) {
+#endif
+                switch (ch) {
+                case 'h':
+                        usage();
+                        break;
+
+                case 'd':
+                case 'D':
+                        log_type = LOGTYPE_STDERR;
+                        increase_debuglevel();
+                        break;
+
+                case 'p':
+                        rc = sscanf(optarg, "%u", &port);
+                        if (rc != 1) {
+                                fprintf(stderr, "failed to "
+                                        "parse port number.\n");
+                                usage();
+                        }
+                        break;
+
+                case 'v':
+                case 'V':
+                        fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
+                        exit(0);
+
+                default:
+                        usage();
+                }
+        }
+        argc = argcorig;
+
+        argc -= optind;
+
+        if (argc != 0)
+                usage();
+}
+
 int main(int argc, char ** argv)
 {
-	unsigned port = DEFAULT_LISTEN_PORT;
-	int rc;
-	int ch;
-	int argcorig = argc;
 	struct sigaction sa;
 
 	xmlrpc_env env;
@@ -793,64 +930,7 @@ int main(int argc, char ** argv)
 	sigaction (SIGALRM, &sa, NULL);
 	sigaction (SIGCHLD, &sa, NULL);
 
-#if HAVE_LIBPCAP
-	fg_pcap_init();
-#endif
-
-#if HAVE_GETOPT_LONG
-	// getopt_long isn't portable, it's GNU extension
-	struct option lo[] = {	{"help", 0, 0, 'h' },
-							{"version", 0, 0, 'v'},
-							{0, 0, 0, 0}
-				};
-	while ((ch = getopt_long(argc, argv, "a:Dhp:vV", lo, 0)) != -1) {
-#else
-	while ((ch = getopt(argc, argv, "a:Dhp:vV")) != -1) {
-#endif
-		switch (ch) {
-		case 'a':
-			if (acl_allow_add(optarg) == -1) {
-				fprintf(stderr, "unable to add host to ACL "
-						"list\n");
-				usage();
-			}
-			break;
-
-		case 'h':
-			usage();
-			break;
-
-		case 'D':
-			log_type = LOGTYPE_STDERR;
-			increase_debuglevel();
-			break;
-
-		case 'p':
-			rc = sscanf(optarg, "%u", &port);
-			if (rc != 1) {
-				fprintf(stderr, "failed to "
-					"parse port number.\n");
-				usage();
-			}
-			break;
-
-		case 'v':
-		case 'V':
-			fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
-			exit(0);
-
-		default:
-			usage();
-		}
-	}
-	argc = argcorig;
-
-	argc -= optind;
-	argv += optind;
-
-	if (argc != 0)
-		usage();
-
+	parse_option(argc, argv);
 	logging_init();
 	tsc_init();
 
@@ -866,7 +946,7 @@ int main(int argc, char ** argv)
 	create_daemon_thread();
 
 	xmlrpc_env_init(&env);
-	
+
 	run_rpc_server(&env, port);
 
 	fprintf(stderr, "Control should never reach end of main()\n");
