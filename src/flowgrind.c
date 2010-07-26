@@ -558,12 +558,10 @@ static void usage(void)
 		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
 
-		"  -A           Send response with minimal blocksize for RTT and IAT calculation\n"
-		"               (same as -V %3$u)\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
-		"  -E x         Enumerate bytes in payload (default: don't)\n"
+		"  -E           Enumerate bytes in payload instead of sending zeros (default: don't)\n"
 		"  -F #{,#}     Flow options following this option apply only to flow #{,#}.\n"
 		"               Useful in combination with -n to set specific options\n"
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
@@ -571,7 +569,7 @@ static void usage(void)
                 "  -G [q|p|g]=[C|P|W|U],#1,(#2):<multiple times>\n"
                 "               Activate stochastic traffic generation and set parameters\n"
                 "               according to the used distribution\n"
-                "		(call with -G help more info)\n"	
+                "               (call with -G help more info)\n"	
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
@@ -594,16 +592,13 @@ static void usage(void)
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
 		"               b = bits per second (default), y = bytes/second, B = blocks/s\n"
-		"  -U #         Set request block size  (default: 8192)\n"
-		"  -V #         Set response block size (default: 0)\n"
-		"               selected blocksizes denote maximum value if\n"
+		"  -U #         Set application buffer size (default: 8192)\n"
 		"               used with stochastic traffic generation (-G)\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
-		"  -Y x=#.#     Set initial delay before the host starts to send data\n",
+		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n",
 		opt.log_filename_prefix,
-		progname,
-		MIN_BLOCK_SIZE
+		progname
 	);
 	exit(1);
 }
@@ -674,13 +669,13 @@ static void usage_trafgenopt(void)
 		"               response sizes (not needed for constant values or uniform distribution)\n"
                 "\n"
                 "example:\n"
-                "  -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -V 32000\n"
+                "  -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -U 32000\n"
                 "\n"
                 "which means:\n"
                 "               q=C,40         use contant request size of 40 bytes\n"
                 "               p=N,2000,50    use normal distributed response size with mean 2000 bytes and variance 50\n"
                 "               g=U,0.005,0.01 use uniform distributed interpacket gap with min 0.005s and and max 10ms\n"
-		"               -V 32000       cap response size at 32 kbytes (needed for normal distribution)\n"
+		"               -U 32000       cap block sizes at 32 kbytes (needed for normal distribution)\n"
 					       
 		);
 	exit(1);
@@ -729,9 +724,8 @@ static void init_flows_defaults(void)
 			flow[id].settings[i].requested_send_buffer_size = 0;
 			flow[id].settings[i].requested_read_buffer_size = 0;
 			flow[id].settings[i].delay[WRITE] = 0;
-			flow[id].settings[i].default_request_block_size = 8192;
+			flow[id].settings[i].maximum_block_size = 8192;
 			flow[id].settings[i].request_trafgen_options.param_one = 8192;
-			flow[id].settings[i].default_response_block_size = 0;
 			flow[id].settings[i].response_trafgen_options.param_one = 0;
 			flow[id].settings[i].route_record = 0;
 			strcpy(flow[id].endpoint_options[i].server_url, "http://localhost:5999/RPC2");
@@ -1401,9 +1395,9 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                         flow[id].settings[i].response_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].response_trafgen_options.param_two = param2;
 							if (distr == CONSTANT)
-								flow[id].settings[i].default_response_block_size = param1;
+								flow[id].settings[i].maximum_block_size = param1;
 							if (distr == UNIFORM)
-								flow[id].settings[i].default_response_block_size = param2;
+								flow[id].settings[i].maximum_block_size = param2;
                                                         break;
 
                                                         case 'q': 
@@ -1411,9 +1405,9 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                         flow[id].settings[i].request_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].request_trafgen_options.param_two = param2;
                                                         if (distr == CONSTANT)
-                                                                flow[id].settings[i].default_request_block_size = param1;
+                                                                flow[id].settings[i].maximum_block_size = param1;
 							if (distr == UNIFORM)
-                                                                flow[id].settings[i].default_request_block_size = param2;
+                                                                flow[id].settings[i].maximum_block_size = param2;
 							break;
 
                                                         case 'g':
@@ -1434,9 +1428,9 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                         flow[id].settings[i].response_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].response_trafgen_options.param_two = param2;
                                                         if (distr == CONSTANT)
-                                                                flow[id].settings[i].default_response_block_size = param1;
+                                                                flow[id].settings[i].maximum_block_size = param1;
 							if (distr == UNIFORM)
-                                                                flow[id].settings[i].default_response_block_size = param2;
+                                                                flow[id].settings[i].maximum_block_size = param2;
                                                         break;
 
                                                         case 'q':
@@ -1444,9 +1438,9 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                         flow[id].settings[i].request_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].request_trafgen_options.param_two = param2;
                                                         if (distr == CONSTANT)
-                                                                flow[id].settings[i].default_request_block_size = param1;
+                                                                flow[id].settings[i].maximum_block_size = param1;
 							if (distr == UNIFORM)
-                                                                flow[id].settings[i].default_request_block_size = param2;
+                                                                flow[id].settings[i].maximum_block_size = param2;
                                                         break;
 
                                                         case 'g':
@@ -1781,9 +1775,9 @@ static void parse_cmdline(int argc, char **argv) {
 							{"version", 0, 0, 'v'},
 							{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "b:c:de:hi:l:mn:opqr:svwAB:CD:EF:G:H:LNM:O:P:QR:T:U:V:W:Y:", lo, 0)) != -1)
+	while ((ch = getopt_long(argc, argv, "b:c:de:hi:l:mn:opqr:svwB:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:", lo, 0)) != -1)
 #else
-	while ((ch = getopt(argc, argv, "b:c:de:hi:l:mn:opqr:svwAB:CD:EF:G:H:LNM:O:P:QR:T:U:V:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "b:c:de:hi:l:mn:opqr:svwB:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:")) != -1)
 #endif
 		switch (ch) {
 
@@ -1913,20 +1907,8 @@ static void parse_cmdline(int argc, char **argv) {
                                 fprintf(stderr, "block size must be a positive integer");
                                 usage();
                         }
-                        ASSIGN_COMMON_FLOW_SETTING(default_request_block_size, optint);
+                        ASSIGN_COMMON_FLOW_SETTING(maximum_block_size, optint);
                         break;
-                case 'V':
-                        rc = sscanf(optarg, "%d", &optint);
-                        if (rc != 1) {
-                                fprintf(stderr, "block size must be a positive integer");
-                                usage();
-                        }
-                        ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, optint);
-                        break;
-               case 'A':
-                        ASSIGN_COMMON_FLOW_SETTING(default_response_block_size, MIN_BLOCK_SIZE);
-                        break;
-			
 		case 'B':
 		case 'C':
 		case 'D':
@@ -2063,7 +2045,7 @@ static void parse_cmdline(int argc, char **argv) {
 				switch (type) {
 				case 0:
 				case 'b':
-					optdouble /= flow[id].settings[SOURCE].default_request_block_size * 8;
+					optdouble /= flow[id].settings[SOURCE].maximum_block_size * 8;
 					if (optdouble < 1) {
 						fprintf(stderr, "client block size "
 								"for flow %u is too "
@@ -2074,7 +2056,7 @@ static void parse_cmdline(int argc, char **argv) {
 					break;
 
 				case 'y':
-					optdouble /= flow[id].settings[SOURCE].default_request_block_size;
+					optdouble /= flow[id].settings[SOURCE].maximum_block_size;
 					if (optdouble < 1) {
 						fprintf(stderr, "client block size "
 								"for flow %u is too "
@@ -2281,7 +2263,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "s:s,"
                 "s:d,s:d,s:d,s:d,s:d,"
                 "s:i,s:i,"
-                "s:i,s:i,"
+                "s:i,"
                 "s:b,s:b,s:b,s:b,s:b,"
                 "s:i,s:i,"
 		"s:i,s:d,s:d," /* request */
@@ -2305,8 +2287,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "requested_send_buffer_size", flow[id].settings[DESTINATION].requested_send_buffer_size,
                 "requested_read_buffer_size", flow[id].settings[DESTINATION].requested_read_buffer_size,
 
-                "default_request_block_size", flow[id].settings[DESTINATION].default_request_block_size,
-                "default_response_block_size", flow[id].settings[DESTINATION].default_response_block_size,
+                "maximum_block_size", flow[id].settings[DESTINATION].maximum_block_size,
 
                 "trafficdump", flow[id].settings[DESTINATION].trafficdump,
                 "so_debug", flow[id].settings[DESTINATION].so_debug,
@@ -2379,7 +2360,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "s:s,"
                 "s:d,s:d,s:d,s:d,s:d,"
                 "s:i,s:i,"
-                "s:i,s:i,"
+                "s:i,"
                 "s:b,s:b,s:b,s:b,s:b,"
                 "s:i,s:i,"
                 "s:i,s:d,s:d," /* request */
@@ -2404,8 +2385,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 "requested_send_buffer_size", flow[id].settings[SOURCE].requested_send_buffer_size,
                 "requested_read_buffer_size", flow[id].settings[SOURCE].requested_read_buffer_size,
 
-                "default_request_block_size", flow[id].settings[SOURCE].default_request_block_size,
-                "default_response_block_size", flow[id].settings[SOURCE].default_response_block_size,
+                "maximum_block_size", flow[id].settings[SOURCE].maximum_block_size,
 
                 "trafficdump", flow[id].settings[SOURCE].trafficdump,
                 "so_debug", flow[id].settings[SOURCE].so_debug,

@@ -66,8 +66,8 @@ int next_request_block_size(struct _flow *flow)
 		DEBUG_MSG(LOG_WARNING, "applied minimal request size limit %d for flow %d", bs, flow->id);
 	}
 
-	if (bs > flow->settings.default_request_block_size) {
-                bs = flow->settings.default_request_block_size;
+	if (bs > flow->settings.maximum_block_size) {
+                bs = flow->settings.maximum_block_size;
 		DEBUG_MSG(LOG_WARNING, "applied maximal request size limit %d for flow %d", bs, flow->id);
 
 	}
@@ -83,15 +83,13 @@ int next_response_block_size(struct _flow *flow)
                            flow->settings.response_trafgen_options.param_one,
                            flow->settings.response_trafgen_options.param_two
                            );
-	if (!bs && flow->settings.default_response_block_size)
-		bs = flow->settings.default_response_block_size;
 
 	if (bs && bs < MIN_BLOCK_SIZE) {
                 bs = MIN_BLOCK_SIZE;
                 DEBUG_MSG(LOG_WARNING, "applied minimal response size limit %d for flow %d", bs, flow->id);
         }
-        if (bs > flow->settings.default_response_block_size) {
-                bs = flow->settings.default_response_block_size;
+        if (bs > flow->settings.maximum_block_size) {
+                bs = flow->settings.maximum_block_size;
                 DEBUG_MSG(LOG_WARNING, "applied maximal response size limit %d for flow %d", bs, flow->id);
         
         }
