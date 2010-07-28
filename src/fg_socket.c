@@ -110,7 +110,6 @@ int set_dscp(int fd, uint8_t dscp)
 
 	dscp <<= 2;
 
-	/* XXX: This needs some tweaking/testing for IPng. */
 	return setsockopt(fd, optlevel, optname, &dscp, sizeof(dscp));
 }
 

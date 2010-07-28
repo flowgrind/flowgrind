@@ -2078,7 +2078,6 @@ static void parse_cmdline(int argc, char **argv) {
 
 				if (optdouble > 5e5)
 					fprintf(stderr, "rate of flow %d too high.\n", id);
-				/* TODO: Is this dependend on the destination's rate at all? */
 				if (optdouble > max_flow_rate)
 					max_flow_rate = optdouble;
 				flow[id].settings[i].write_rate = optdouble;
