@@ -217,7 +217,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	if (env->fault_occurred)
 		goto cleanup;
 
-	/* Check for sanity TODO: add traffic generation checks */
+	/* Check for sanity */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
 		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||
@@ -406,7 +406,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	if (env->fault_occurred)
 		goto cleanup;
 
-	/* Check for sanity TODO: checks  */
+	/* Check for sanity */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
 		settings.delay[WRITE] < 0 || settings.duration[WRITE] < 0 ||
 		settings.delay[READ] < 0 || settings.duration[READ] < 0 ||

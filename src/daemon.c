@@ -116,9 +116,8 @@ static int flow_in_delay(struct timeval *now, struct _flow *flow, int direction)
 
 static int flow_sending(struct timeval *now, struct _flow *flow, int direction)
 {
-	return !flow_in_delay(now, flow, direction) &&
-		(flow->settings.duration[direction] < 0 ||
-		 time_diff(&flow->stop_timestamp[direction], now) < 0.0);
+	return !flow_in_delay(now, flow, direction) && (flow->settings.duration[direction] <= 0 ||
+                 time_diff(&flow->stop_timestamp[direction], now) < 0.0);
 }
 static int flow_block_scheduled(struct timeval *now, struct _flow *flow)
 {
@@ -633,8 +632,8 @@ void* daemon_main(void* ptr __attribute__((unused)))
 	for (;;) {
 		int need_timeout = prepare_fds();
 
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 1000;
+		timeout.tv_sec = 2;
+		timeout.tv_usec = 0;
 
 		int rc = select(maxfd + 1, &rfds, &wfds, &efds, need_timeout ? &timeout : 0);
 		if (rc < 0) {
@@ -806,6 +805,7 @@ static int write_data(struct _flow *flow)
 
 		if (rc == 0) {
 			DEBUG_MSG(LOG_CRIT, "flow %d sent zero bytes. what does that mean?", flow->id);
+			return -1;
 			break;
 		}
 
@@ -831,12 +831,12 @@ static int write_data(struct _flow *flow)
 
 			interpacket_gap = next_interpacket_gap(flow);
 			
+			/* if we calculated a non-zero packet add relative time to the next write stamp
+			 * which is then checked in the select call */
 			if (interpacket_gap) {
 				time_add(&flow->next_write_block_timestamp,
 						interpacket_gap);
 				if (time_is_after(&flow->last_block_written, &flow->next_write_block_timestamp)) {
-					/* TODO: log time_diff and check if
-					 * it's growing (queue build up) */
 					DEBUG_MSG(LOG_WARNING, "incipient congestion on "
 							"flow %u new block scheduled "
 							"for %s, %.6lfs before now.",

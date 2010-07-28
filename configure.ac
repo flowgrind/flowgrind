@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([flowgrind],[0.3],[flowgrind@umic-mesh.net])
+AC_INIT([flowgrind],[0.4],[flowgrind@umic-mesh.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
 
