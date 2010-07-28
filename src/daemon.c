@@ -116,7 +116,7 @@ static int flow_in_delay(struct timeval *now, struct _flow *flow, int direction)
 
 static int flow_sending(struct timeval *now, struct _flow *flow, int direction)
 {
-	return !flow_in_delay(now, flow, direction) && (flow->settings.duration[direction] <= 0 ||
+	return !flow_in_delay(now, flow, direction) && (flow->settings.duration[direction] < 0 ||
                  time_diff(&flow->stop_timestamp[direction], now) < 0.0);
 }
 static int flow_block_scheduled(struct timeval *now, struct _flow *flow)
