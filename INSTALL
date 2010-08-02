@@ -6,17 +6,20 @@ Dependencies
 
 Flowgrind depends on the following tools and libraries:
 - libxmlrpc-c with curl transport and abyss server
-- libpcap (currently not used)
+- libpcap (currently not used, therefore disabled by default)
+- TSC-I2 (optional, seems to be unmaintained, will be removed soon)
 - GNU Autotools (autoconf, automake and friends) if using source from 
   the SVN repository
 
-These libraries as well as their headers and tools need to be installed.
+These libraries as well as their headers and tools need to be installed 
+(install approciate -dev packages too).
 
 Building flowgrind
 ==================
 
 1. a) Extract source tarball OR
    b) Checkout flowgrind from the SVN repository
+      (e.g. svn co svn://svn.umic-mesh.net/flowgrind/trunk)
 
 2. cd into the flowgrind directory
 
@@ -30,4 +33,4 @@ Building flowgrind
 
 5. Run  make  to compile flowgrind. This creates src/flowgrind and src/flowgrindd
 
-6. Optionally run  make install  to copy the binaries to the installation prefix.
+6. Optionally run (sudo)  make install  to copy the binaries to the installation prefix.
