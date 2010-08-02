@@ -1,14 +1,13 @@
-.TH flowgrindd 1 "June 2009" "" "Flowgrind Manual"
-
-.SH NAME
+.TH "flowgrindd" "1" "July 2010" "" "Flowgrind Manual"
+.SH "NAME"
 flowgrindd \- network performance measurement tool daemon
-.SH SYNOPSIS
+.SH "SYNOPSIS"
 flowgrindd
-.B -h|-v
-.br
+.B \-h|\-v|\-d
+.br 
 flowgrindd [options]
 
-.SH DESCRIPTION
+.SH "DESCRIPTION"
 .B flowgrindd
 is the daemon for the flowgrind distributed network performance measurement tool. Using the
 .B flowgrind
@@ -20,29 +19,24 @@ Flowgrind performs extensive TCP tests. On systems running the Linux kernel flow
 
 The flowgrind daemon needs to be running on every host that is supposed to be endpoint of a flow.
 
-.SH OPTIONS
-
-.TP
-.BR -a " addresses"
-Comma-separated list of hosts allowed to connect to the daemon, in CIDR syntax.
-
-.TP
-.B -h
+.SH "OPTIONS"
+.TP 
+.B \-h
 Show help and exit.
 
-.TP
-.BR -p " #"
-Port the server should listen on.
+.TP 
+.BR \-p " #"
+Port the XML\-RPC server should listen on.
 
-.TP
-.B -v
+.TP 
+.B \-v
 Show version and exit.
 
-.TP
-.B -D
+.TP 
+.B \-d
 Do not daemonize, increase debug verbosity. Add multiple times to increase debug verbosity further.
 
-.SH SEE ALSO
+.SH "SEE ALSO"
 flowgrind(1),
-flowgrind-stop(1)
+flowgrind\-stop(1)
 
