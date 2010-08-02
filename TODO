@@ -1,6 +1,8 @@
-+allow setsockopt of SO_DEBUG, TCP_ICMP etc.. independently on server and client
++allow setsockopt of SO_DEBUG, TCP_ICMP etc.. independently on server and client, make it easier to define arbitary socket options
 +recover UDP option
++make traffic ports configureable (again)
++xml style output
 +(try to)track route changes (IP route record option)
 +allow send volume to be specified (instead of duration/rate)
 +meet more the spirit of IPPM (connectivity test, etc.)
-+finish capture option
++finish automatic traffic capture option

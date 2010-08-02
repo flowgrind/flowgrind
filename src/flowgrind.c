@@ -557,7 +557,8 @@ static void usage(void)
 		"  specify different values for each endpoints, separate them by comma.\n"
 		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
-		"  -A x         Use minimal response size to activate RTT calculation\n"
+		"  -A x         Use minimal response size for RTT calculation,\n"
+		"               same as -G p=C,16:q=C,16."
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -1586,8 +1587,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 		switch (ch) {
 			case 'A':
-				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
-				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
+                                ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.distribution, CONSTANT);
+                                ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.param_one, MIN_BLOCK_SIZE);
+                                ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
+                                ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
 				break;
 			case 'B':
 				rc = sscanf(arg, "%u", &optunsigned);

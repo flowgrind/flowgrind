@@ -18,7 +18,7 @@ Each test connection is called a flow and
 .B flowgrindd
 has to be running on every host that supped to be a flow endpoint. The 
 .B flowgrind
-controller only sets up the flows as well as gathers and prints the results. The controller does however not actually participate in the test.
+controller only sets up the flows as well as gathers and prints the results. The controller does however not actually participate in the test. However, mixing 32bit and 64bit systems can potentially lead to unexpected results and is therefore not recommended.
 
 .SH "OPTIONS"
 .SS General information
@@ -108,7 +108,7 @@ Example: \-T s=5,d=10
 
 .TP
 .BR \-A " x"
-activate minimal response size for RTT calculation. (same as -G p=C,16)
+activate minimal request and response size for RTT calculation. (same as -G p=C,16,q=C,16)
 
 .TP 
 .BR \-B " x=#"
@@ -129,8 +129,7 @@ Enumerate bytes in payload (default: don't).
 .TP 
 .BR \-F " #[,#]*"
 Comma\-separated list of flows.
-Flow options following this option apply only to the specified flows.
-Useful in combination with
+Flow options following this option apply only to the specified flows. Useful in combination with
 .B \-n
 to set specific options for certain flows.
 Numbering starts with 0, so \-F 1 refers to the second flow.
@@ -138,8 +137,7 @@ All flow options before the first \-F apply to all flows.
 
 .TP 
 .B "-G [q|p|g]=[C|P|W|U],#1,(#2):<multiple times>"
-Activate stochastic traffic generation and set parameters
-according to the used distribution
+Activate stochastic traffic generation and set parameters according to the used distribution.
 
 .TP 
 .BR \-H " x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]"
@@ -272,11 +270,11 @@ The endpoint, either S for source or R for destination.
 
 .TP 
 .B ID
-The flow identifier.
+The numerical low identifier.
 
 .TP 
 .BR begin " and " end
-The boundaries of the measuring interval in seconds. The time shown is the elapsed time since receiving the RPC message to start the test from the daemon’s point of view.
+The boundaries of the measuring interval in seconds. The time shown is the elapsed time since receiving the RPC message to start the test from the daemons point of view.
 
 .TP 
 .B through
@@ -284,7 +282,7 @@ The transmitting goodput of the flow endpoint during this measurement interval, 
 
 .TP 
 .BR IAT " and " RTT
-The 1\-way and 2\-way block delays respectively block IAT and block RTT. For both delays the minimum and maximum encoutered values in that interval are displayed in addition to the artihmetic mean. If no block acknowledgement arrived during that report interval, inf is displayed (for example when no responses are send, if in doubt try -A s)
+The 1\-way and 2\-way block (application layer) delays respectively block IAT and block RTT. For both delays the minimum and maximum encoutered values in that interval are displayed in addition to the artihmetic mean. If no block acknowledgement arrived during that report interval, inf is displayed (for example when no responses are send, if in doubt try -A s)
 
 .TP 
 .B cwnd
@@ -320,7 +318,7 @@ The retransmission timeout given in ms.
 
 .TP 
 .B castate
-Internal state of congestion control state machine as implemented in the Linux kernel. Can be one of open, disorder, cwr, recovery or loss:
+Internal state of congestion control state machine as implemented in the Linux kernel. Can be one of open, disorder, cwr, recovery or loss.
 
 .RS 8
 
