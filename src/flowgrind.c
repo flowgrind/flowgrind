@@ -544,7 +544,7 @@ static void usage(void)
 		"               (default: 10**6 bit/sec)\n"
 		"  -n #         number of test flows (default: 1)\n"
 		"  -o           overwrite existing log files (default: don't)\n"
-                "  -p           print real numbers instead of symbolic values (like INT_MAX)\n"		
+                "  -p           print symbolic values (like INT_MAX) instead of numbers.\n"		
 		"  -q           be quiet, do not log to screen (default: off)\n"
 		"  -r #         use random seed # (default: read /dev/urandom)\n"
 		"  -w           write output to logfile (default: off)\n\n"
@@ -557,7 +557,7 @@ static void usage(void)
 		"  specify different values for each endpoints, separate them by comma.\n"
 		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
-
+		"  -A x         Use minimal response size to activate RTT calculation\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -649,7 +649,7 @@ static void usage_trafgenopt(void)
 	fprintf(stderr,
                 "Stochastic Traffic Generation Options:"
                 "\n"
-                "  -G [q|p|g]=[C|U|P|W],#1,(#2):<multiple times> -U # -V #\n"
+                "  -G [q|p|g]=[C|U|P|W],#1,(#2):<multiple times> -U #\n"
                 "\n"
                 "               Activate stochastic traffic generation and set parameters\n"
                 "               for the choosen distribution.\n"
@@ -1394,9 +1394,9 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                         flow[id].settings[i].response_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].response_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].response_trafgen_options.param_two = param2;
-							if (distr == CONSTANT)
+							if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
 								flow[id].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM)
+							if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
 								flow[id].settings[i].maximum_block_size = param2;
                                                         break;
 
@@ -1404,9 +1404,9 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                         flow[id].settings[i].request_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].request_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].request_trafgen_options.param_two = param2;
-                                                        if (distr == CONSTANT)
+                                                        if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
                                                                 flow[id].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM)
+							if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
                                                                 flow[id].settings[i].maximum_block_size = param2;
 							break;
 
@@ -1585,6 +1585,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 		}
 
 		switch (ch) {
+			case 'A':
+				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
+				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
+				break;
 			case 'B':
 				rc = sscanf(arg, "%u", &optunsigned);
 				if (rc != 1) {
@@ -1775,9 +1779,9 @@ static void parse_cmdline(int argc, char **argv) {
 							{"version", 0, 0, 'v'},
 							{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "b:c:de:hi:l:mn:opqr:svwB:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:", lo, 0)) != -1)
+	while ((ch = getopt_long(argc, argv, "b:c:de:hi:l:mn:opqr:svwA:B:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:", lo, 0)) != -1)
 #else
-	while ((ch = getopt(argc, argv, "b:c:de:hi:l:mn:opqr:svwB:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "b:c:de:hi:l:mn:opqr:svwA:B:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:")) != -1)
 #endif
 		switch (ch) {
 
@@ -1864,7 +1868,6 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'w':
 			opt.dont_log_logfile = 0;
 			break;
-
 		case 'E':
 			ASSIGN_FLOW_OPTION(byte_counting, 1);
 			break;
@@ -1909,6 +1912,7 @@ static void parse_cmdline(int argc, char **argv) {
                         }
                         ASSIGN_COMMON_FLOW_SETTING(maximum_block_size, optint);
                         break;
+		case 'A':
 		case 'B':
 		case 'C':
 		case 'D':

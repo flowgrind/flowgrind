@@ -59,6 +59,8 @@ void fg_pcap_go(int fd)
 	struct sockaddr_storage sa;
 	socklen_t sl = sizeof(sa);
 	char found = 0;
+	char* pcap_expression;
+	struct bpf_program pcap_programm;
 
 	if (getsockname(fd, (struct sockaddr *)&sa, &sl) == -1) {
 		logging_log(LOG_WARNING, "getsockname() failed. Eliding packet "
@@ -132,8 +134,11 @@ void fg_pcap_go(int fd)
 				 errbuf);
 		return;
 	}
+	
+	/* compile a pcap expression to match the inbound port. */
+	if(pcap_compile(pcap_handle,&pcap_program,pcap_expression,0,0) == -1)
+		        { logging_log(LOG_ALERT,"Error calling pcap_compile\n"); exit(1); }
 
-	/* XXX: compile a pcap expression to match the inbound port. */
 	DEBUG_MSG(LOG_ERR, "pcap init done.");
 	pcap_init_done = 1;
 	return;
