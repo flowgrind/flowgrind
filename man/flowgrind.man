@@ -108,7 +108,7 @@ Example: \-T s=5,d=10
 
 .TP
 .BR \-A " x"
-activate minimal request and response size for RTT calculation. (same as -G p=C,16,q=C,16)
+activate minimal request and response size for RTT calculation. (same as -G p=C,16)
 
 .TP 
 .BR \-B " x=#"
