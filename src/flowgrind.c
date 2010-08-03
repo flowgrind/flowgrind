@@ -1422,32 +1422,35 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                         } else {
                                 int id;
                                 for (id = 0; id < MAX_FLOWS; id++) {
+                                       if (current_flow_ids[id] == -1)
+                                                break;
+
                                        for (int i = 0; i < 2; i++) {
                                                 switch (type) {
                                                         case 'p':
-                                                        flow[id].settings[i].response_trafgen_options.distribution = distr;
-                                                        flow[id].settings[i].response_trafgen_options.param_one = param1;
-                                                        flow[id].settings[i].response_trafgen_options.param_two = param2;
+                                                        flow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
+                                                        flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
+                                                        flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
                                                         if (distr == CONSTANT)
-                                                                flow[id].settings[i].maximum_block_size = param1;
+                                                                flow[current_flow_ids[id]].settings[i].maximum_block_size = param1;
 							if (distr == UNIFORM)
-                                                                flow[id].settings[i].maximum_block_size = param2;
+                                                                flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
                                                         break;
 
                                                         case 'q':
-                                                        flow[id].settings[i].request_trafgen_options.distribution = distr;
-                                                        flow[id].settings[i].request_trafgen_options.param_one = param1;
-                                                        flow[id].settings[i].request_trafgen_options.param_two = param2;
+                                                        flow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
+                                                        flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
+                                                        flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
                                                         if (distr == CONSTANT)
-                                                                flow[id].settings[i].maximum_block_size = param1;
+                                                                flow[current_flow_ids[id]].settings[i].maximum_block_size = param1;
 							if (distr == UNIFORM)
-                                                                flow[id].settings[i].maximum_block_size = param2;
+                                                                flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
                                                         break;
 
                                                         case 'g':
-                                                        flow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
-                                                        flow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
-                                                        flow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
+                                                        flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.distribution = distr;
+                                                        flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_one = param1;
+                                                        flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_two = param2;
                                                         break;
                                                 }
                                         }
