@@ -1080,7 +1080,7 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
                         ntohl(((struct _block *)flow->write_block)->request_block_size),
                         flow->id);
 
-		/* send data out until block is finished */
+		/* send data out until block is finished (or abort if 0 zero bytes are send CONGESTION_LIMIT times) */
 		for (;;) {
 			rc = write(flow->fd, 
 				   flow->write_block + flow->current_block_bytes_written, 
@@ -1092,13 +1092,17 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 			
 			if (rc == -1) {
 				if (errno == EAGAIN) {
-					DEBUG_MSG(LOG_NOTICE,
+					DEBUG_MSG(LOG_DEBUG,
 						"%s, still trying to send response block (write queue hit limit)",
 						strerror(errno));
 					try++;
-					if (try >= CONGESTION_LIMIT) {
+					if (try >= CONGESTION_LIMIT && !flow->current_block_bytes_written) {
 					        logging_log(LOG_WARNING,
-                                                "tried to send response block %d times without success, aborting", try);
+                                                	    "tried to send response block %d times without success, dropping (%s)", 
+						            try,
+						            strerror(errno));
+
+						break;
 					}	
 				}
 				else {
