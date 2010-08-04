@@ -43,7 +43,7 @@ static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
 		"Usage: %1$s [-p#] [-d] [-v]\n"
-		"\t-p#\t\tserver port\n"
+		"\t-p#\t\tXML-RPC server port\n"
 #ifdef DEBUG
 		"\t-d\t\tincrease debug verbosity, add multiple times (no daemon, log to stderr)\n"
 #else
