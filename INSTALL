@@ -7,7 +7,8 @@ Dependencies
 Flowgrind depends on the following tools and libraries:
 - libxmlrpc-c with curl transport and abyss server
 - libpcap (currently not used, therefore disabled by default)
-- TSC-I2 Libary or libfasttime (both optional and seem to be unmaintained, will be removed soon)
+- TSC-I2 Libary or libfasttime (both optional and seem to be unmaintained, 
+  therefore support will be removed soon)
 - GNU Autotools (autoconf, automake and friends) if using source from 
   the SVN repository
 
