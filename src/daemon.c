@@ -794,7 +794,7 @@ static int write_data(struct _flow *flow)
 
 		if (rc == -1) {
 			if (errno == EAGAIN) {
-				DEBUG_MSG(LOG_WARNING, "write queue limit hit "
+				logging_log(LOG_WARNING, "write queue limit hit "
 						"for flow %d", flow->id);
 				break;
 			}
@@ -946,14 +946,14 @@ static int read_data(struct _flow *flow)
 		if (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.maximum_block_size )
 			flow->current_read_block_size = optint;
 		else
-			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring", flow->id, optint);
+			logging_log(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring", flow->id, optint);
 		
 		/* parse and check current request size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->request_block_size );	
 		if (optint == -1 || optint == 0  || (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.maximum_block_size ) )
 			requested_response_block_size = optint;
 		else 
-			DEBUG_MSG(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring", flow->id, optint);
+			logging_log(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring", flow->id, optint);
 
 		DEBUG_MSG(LOG_NOTICE, "flow %d current cbs: %d rqs: %d", 
 				      flow->id, 
@@ -1008,7 +1008,7 @@ static void process_rtt(struct _flow* flow)
 	current_rtt = time_diff(data, &now);
 
 	if (current_rtt < 0) {
-		DEBUG_MSG(LOG_CRIT, "received malformed rtt block of flow %d (rtt = %.3lfms), ignoring", 
+		logging_log(LOG_CRIT, "received malformed rtt block of flow %d (rtt = %.3lfms), ignoring", 
 				     flow->id, 
 				     current_rtt * 1e3);
                 current_rtt = NAN;
@@ -1043,7 +1043,7 @@ static void process_iat(struct _flow* flow)
 	}
 
         if (current_iat < 0) {
-                DEBUG_MSG(LOG_CRIT, "calculated malformed iat of flow %d (iat = %.3lfms), ignoring",
+                logging_log(LOG_CRIT, "calculated malformed iat of flow %d (iat = %.3lfms) (clock skew?), ignoring",
                                      flow->id,
                                      current_iat * 1e3);
 		current_iat = NAN;
@@ -1064,6 +1064,7 @@ static void process_iat(struct _flow* flow)
 static void send_response(struct _flow* flow, int requested_response_block_size)
 {		
 		int rc;
+		int try = 0;
 #ifdef DEBUG
 		assert(!flow->current_block_bytes_written);
 #endif
@@ -1081,7 +1082,6 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 
 		/* send data out until block is finished */
 		for (;;) {
-			int try = 0;
 			rc = write(flow->fd, 
 				   flow->write_block + flow->current_block_bytes_written, 
 				   requested_response_block_size - flow->current_block_bytes_written);
@@ -1092,13 +1092,13 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 			
 			if (rc == -1) {
 				if (errno == EAGAIN) {
-					logging_log(LOG_WARNING,
+					DEBUG_MSG(LOG_NOTICE,
 						"%s, still trying to send response block (write queue hit limit)",
 						strerror(errno));
 					try++;
 					if (try >= CONGESTION_LIMIT) {
 					        logging_log(LOG_WARNING,
-                                                "tried to send response block %d times without success, aborting");
+                                                "tried to send response block %d times without success, aborting", try);
 					}	
 				}
 				else {
