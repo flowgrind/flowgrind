@@ -226,25 +226,12 @@ response sizes, needed because normal and weibull distributed values are
 unbounded, but we need to know the buffersize (it's not needed for 
 constant values or uniform distribution)
 
-
-example:
-.BR "-G q=C,40:p=N,2000,50:g=U,0.005,0.01 -U 32000"
-
-which means:
-
-.B "q=C,40"
-use contant request size of 40 bytes
-
-.B "p=N,2000,50"
-use normal distributed response size with mean 2000 bytes and variance 50
-
-.B "g=U,0.005,0.01"
-use uniform distributed interpacket gap with min 0.005s and and max 10ms
-
-.B "-U 32000"
-cap block sizes at 32 kbytes (needed for normal distribution)
-
 .SH "EXAMPLES"
+
+.TP
+.B flowgrind
+default settings, same as ./flowgrind -H b=localhost -T s=5,d=0
+
 .TP 
 .B flowgrind \-H s=host1,d=host2
 Start bulk TCP transfer with host1 as source and host2 as destination endpoint. Both endpoints need to be running the flowgrind daemon. The default flow options are used, with a flow of 5 seconds duration with data sent from the source to the destination endpoint.
@@ -262,7 +249,16 @@ Setup two flows, first flow between 192.168.0.1 and 192.168.0.69, second flow be
 Setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP adresses for configuration. Activate minimal response for RTT calculation and show symbolic values.
 
 .TP
-.B flowgrind \-H s=192.168.
+.B "flowgrind -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -U 32000"
+.B "q=C,40"
+use contant request size of 40 bytes
+.B "p=N,2000,50"
+use normal distributed response size with mean 2000 bytes and variance 50
+.B "g=U,0.005,0.01"
+use uniform distributed interpacket gap with min 0.005s and and max 10ms
+.B "-U 32000"
+cap block sizes at 32 kbytes (needed for normal distribution)
+
 .SH "OUTPUT COLUMNS"
 .TP 
 .B #
