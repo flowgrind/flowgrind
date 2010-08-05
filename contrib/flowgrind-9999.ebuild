@@ -6,14 +6,13 @@ EAPI="2"
 
 inherit eutils 
 
-DESCRIPTION="Flowgrind"
+DESCRIPTION="Flowgrind - network performance measurement tool"
 HOMEPAGE="http://www.umic-mesh.net/research/flowgrind"
 LICENSE="GPL-2"
 SLOT="0"
 if [[ ${PV} == "9999" ]] ; then
 	inherit subversion autotools
 	ESVN_REPO_URI="svn://svn.umic-mesh.net/flowgrind/trunk/"
-#	ESVN_STORE_DIR="${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/svn-src/flowgrind"
 	SLOT="svn"
 else
 	SRC_URI="http://www.umic-mesh.net/downloads/flowgrind/files/flowgrind-${P}.bz2"
@@ -46,7 +45,7 @@ src_compile() {
 }
 
 src_install() {
-	einstall ||
+	einstall || die
 	prepalldocs
-	dodoc AUTHORS ChangeLog NEWS README
+	dodoc AUTHORS ChangeLog NEWS README TODO
 }
