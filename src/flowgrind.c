@@ -630,6 +630,7 @@ static void usage_sockopt(void)
 		"  x=TCP_CORK   set TCP_CORK on test socket\n"
 		"  x=TCP_ELCN   set TCP_ELCN on test socket\n"
 		"  x=TCP_ICMP   set TCP_ICMP on test socket\n"
+		"  x=SO_DEBUG	set SO_DEBUG on test socket\n"
 		"  x=IP_MTU_DISCOVER\n"
 		"               set IP_MTU_DISCOVER on test socket if not already enabled by\n"
 		"               system default\n"
