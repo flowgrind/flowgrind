@@ -1,6 +1,6 @@
-+allow setsockopt of SO_DEBUG, TCP_ICMP etc.. independently on server and client
++make compatible with recent xmlrpc-c versions
 +make it easier to define arbitary socket options
-+check possibility for autotuning parameters
++remove I2-TSC and FASTTIME
 +recover UDP option
 +make traffic ports configureable (again)
 +xml style output
