@@ -85,8 +85,8 @@ if test "$enable_debug" = yes ; then
 	CFLAGS="-ggdb $CFLAGS"
 fi
 
-AC_ARG_WITH(pcap,
-[  --with-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=no]]],
+AC_ARG_ENABLE(pcap,
+[  --enable-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=no]]],
 [
 	if test $withval = no
 	then
