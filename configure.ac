@@ -88,15 +88,15 @@ fi
 AC_ARG_ENABLE(pcap,
 [  --enable-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=no]]],
 [
-	if test $withval = no
+	if test "$enable_pcap" = no
 	then
 		want_pcap=no
-	elif test $withval = yes
+	elif test "$enable_pcap" = yes
 	then
 		want_pcap=yes
 	else
 		want_pcap=yes
-		pcap_dir=$withval
+		pcap_dir="$enable_debug"
 	fi
 ],[
 	want_pcap=no
