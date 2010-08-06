@@ -14,12 +14,12 @@ if [[ ${PV} == "9999" ]] ; then
 	inherit subversion autotools
 	ESVN_REPO_URI="svn://svn.umic-mesh.net/flowgrind/trunk/"
 	SLOT="svn"
+	KEYWORDS=""
 else
-	SRC_URI="http://www.umic-mesh.net/downloads/flowgrind/files/flowgrind-${P}.bz2"
+	SRC_URI="http://www.umic-mesh.net/downloads/files/${P}.tar.bz2"
 	SLOT="0"
+	KEYWORDS="~x86 ~amd64"
 fi
-
-KEYWORDS="~x86 ~amd64"
 
 IUSE="pcap debug"
 
@@ -31,14 +31,14 @@ DEPEND="${RDEPEND}"
 
 if [[ ${PV} == "9999" ]] ; then
 	src_prepare() {
-		eautoreconf
+		eautoreconf || die
 	}
 fi
 
 
 src_compile() {
 	econf \
-	$(use_enable libpcap) \
+	$(use_enable pcap) \
 	$(use_enable debug) || die 
 
 	emake || die
