@@ -24,7 +24,7 @@ fi
 IUSE="pcap debug"
 
 RDEPEND="
-	dev-libs/xmlrpc-c[abyss,curl]
+	<dev-libs/xmlrpc-c-1.14[curl]
 	pcap? ( sys-libs/libcap )
 "
 DEPEND="${RDEPEND}"
