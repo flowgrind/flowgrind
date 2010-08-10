@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <syslog.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "debug.h"
@@ -17,7 +18,7 @@
 
 #include "pcap.h"
 
-#define PCAP_SNAPLEN 120
+#define PCAP_SNAPLEN 120 
 
 static pcap_if_t *alldevs;
 static pcap_t *pcap_handle;
@@ -60,7 +61,7 @@ void fg_pcap_go(int fd)
 	socklen_t sl = sizeof(sa);
 	char found = 0;
 	char* pcap_expression;
-	struct bpf_program pcap_programm;
+	struct bpf_program pcap_program;
 
 	if (getsockname(fd, (struct sockaddr *)&sa, &sl) == -1) {
 		logging_log(LOG_WARNING, "getsockname() failed. Eliding packet "
