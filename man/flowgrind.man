@@ -51,8 +51,8 @@ Print version information and exit.
 Perform Anderson\-Darling Test for exponential distribution OR lower and upper bounds for computing the test for uniform distribution with the given bounds. Test data always generated from first flow.
 
 .TP 
-.BR \-c " +begin,+end,+thrpt,+rtt,+iat,+kernel"
-Comma separated list of column groups to display in output. Prefix with either + to show column group, \- to hide column group.
+.BR \-c " -begin,-end,-thrpt,-rtt,-iat,-kernel,-blocks"
+Comma separated list of column groups to display in output. Prefix with either + to show column group, \- to hide column group (default: show all).
 
 .TP 
 .B \-d

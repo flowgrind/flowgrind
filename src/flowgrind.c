@@ -515,10 +515,10 @@ static void usage(void)
 		"  -b lwr_bound1,lwr_bound2,lwr_bound3,upr_bound1,upr_bound2,upr_bound3\n"
 		"               lower and upper bounds for computing the A2 test for uniform\n"
 		"               distribution with the given bounds\n"
-		"  -c +begin,+end,+thrpt,+rtt,+iat,+blocks,+kernel\n"
+		"  -c -begin,-end,-thrpt,-rtt,-iat,-blocks,-kernel\n"
 		"               comma separated list of column groups to display in output.\n"
 		"               Prefix with either + to show column group or - to hide\n"
-		"               column group.\n"
+		"               column group (default: show all)\n"
 #ifdef DEBUG
 		"  -d           increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
