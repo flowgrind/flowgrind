@@ -251,7 +251,7 @@ Setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP adresses
 .TP
 .B "flowgrind -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -U 32000"
 .B "q=C,40"
-use contant request size of 40 bytes
+use constant request size of 40 bytes
 .B "p=N,2000,50"
 use normal distributed response size with mean 2000 bytes and variance 50
 .B "g=U,0.005,0.01"

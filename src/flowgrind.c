@@ -58,17 +58,67 @@ unsigned select_timeout = DEFAULT_SELECT_TIMEOUT;
 
 enum _column_types
 {
-	column_type_begin,
-	column_type_end,
-	column_type_thrpt,
-	column_type_rtt,
-	column_type_iat,
-	column_type_kernel,
-	column_type_other
+        column_type_begin,
+        column_type_end,
+        column_type_thrpt,
+        column_type_rtt,
+        column_type_iat,
+        column_type_kernel,
+        column_type_blocks,
+        column_type_other
 };
 
+
+struct _header_info
+{
+        const char* first;
+        const char* second;
+        enum _column_types column_type;
+};
+
+struct _column_state
+{
+        unsigned int count_oversized;
+        unsigned int last_width;
+};
+
+const struct _header_info header_info[] = {
+        { "#  ID", "#    ", column_type_other },
+        { " begin", " [s]", column_type_begin },
+        { " end", " [s]", column_type_end },
+        { " through", " [Mbit]", column_type_thrpt },
+        { " through", " [MB]", column_type_thrpt },
+        { " requ", " [#]", column_type_blocks },
+        { " resp", " [#]", column_type_blocks },
+        { " min RTT", " [ms]", column_type_rtt },
+        { " avg RTT", " [ms]", column_type_rtt },
+        { " max RTT", " [ms]", column_type_rtt },
+        { " min IAT", " [ms]", column_type_iat },
+        { " avg IAT", " [ms]", column_type_iat },
+        { " max IAT", " [ms]", column_type_iat },
+        { " cwnd", " [#]", column_type_kernel },
+        { " ssth", " [#]", column_type_kernel },
+        { " uack", " [#]", column_type_kernel },
+        { " sack", " [#]", column_type_kernel },
+        { " lost", " [#]", column_type_kernel },
+        { " fret", " [#]", column_type_kernel },
+        { " tret", " [#]", column_type_kernel },
+        { " fack", " [#]", column_type_kernel },
+        { " reor", " [#]", column_type_kernel },
+        { " rtt", " [ms]", column_type_kernel },
+        { " rttvar", " [ms]", column_type_kernel },
+        { " rto", " [ms]", column_type_kernel },
+        { " castate", " ", column_type_kernel },
+        { " mss", " [B]", column_type_kernel },
+        { " mtu", " [B]", column_type_kernel },
+        { " status", " ", column_type_other }
+};
+
+
+struct _column_state column_states[sizeof(header_info) / sizeof(struct _header_info)] = {{0,0}};
+
 /* Array for the dynamical output, show all by default */
-int visible_columns[7] = {1, 1, 1, 1, 1, 1, 1};
+int visible_columns[8] = {1, 1, 1, 1, 1, 1, 1, 1};
 
 /* these are the 2 parameters for the ADT test. If the user wants to test for
  * Exponential only ADT1 will be used and will represent the mean if the user
@@ -83,34 +133,6 @@ void check_idle(xmlrpc_client *rpc_client);
 void prepare_flows(xmlrpc_client *rpc_client);
 void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void grind_flows(xmlrpc_client *rpc_client);
-
-static void parse_visible_param(char *to_parse) {
-	/* {begin, end, throughput, RTT, IAT, Kernel} */
-	if (strstr(to_parse, "+begin"))
-		visible_columns[column_type_begin] = 1;
-	if (strstr(to_parse, "-begin"))
-		visible_columns[column_type_begin] = 0;
-	if (strstr(to_parse, "+end"))
-		visible_columns[column_type_end] = 1;
-	if (strstr(to_parse, "-end"))
-		visible_columns[column_type_end] = 0;
-	if (strstr(to_parse, "+thrpt"))
-		visible_columns[column_type_thrpt] = 1;
-	if (strstr(to_parse, "-thrpt"))
-		visible_columns[column_type_thrpt] = 0;
-	if (strstr(to_parse, "+rtt"))
-		visible_columns[column_type_rtt] = 1;
-	if (strstr(to_parse, "-rtt"))
-		visible_columns[column_type_rtt] = 0;
-	if (strstr(to_parse, "+iat"))
-		visible_columns[column_type_iat] = 1;
-	if (strstr(to_parse, "-iat"))
-		visible_columns[column_type_iat] = 0;
-	if (strstr(to_parse, "+kernel"))
-		visible_columns[column_type_kernel] = 1;
-	if (strstr(to_parse, "-kernel"))
-		visible_columns[column_type_kernel] = 0;
-}
 
 /* New output
    determines the number of digits before the comma
@@ -136,51 +158,6 @@ char *outStringPart(int digits, int decimalPart) {
 
 	return outstr;
 }
-
-struct _header_info
-{
-	const char* first;
-	const char* second;
-	enum _column_types column_type;
-};
-
-const struct _header_info header_info[] = {
-	{ "#  ID", "#    ", column_type_other },
-	{ " begin", " [s]", column_type_begin },
-	{ " end", " [s]", column_type_end },
-	{ " through", " [Mbit]", column_type_thrpt },
-	{ " through", " [MB]", column_type_thrpt },
-	{ " min RTT", " [ms]", column_type_rtt },
-	{ " avg RTT", " [ms]", column_type_rtt },
-	{ " max RTT", " [ms]", column_type_rtt },
-	{ " min IAT", " [ms]", column_type_iat },
-	{ " avg IAT", " [ms]", column_type_iat },
-	{ " max IAT", " [ms]", column_type_iat },
-	{ " cwnd", " [#]", column_type_kernel },
-	{ " ssth", " [#]", column_type_kernel },
-	{ " uack", " [#]", column_type_kernel },
-	{ " sack", " [#]", column_type_kernel },
-	{ " lost", " [#]", column_type_kernel },
-	{ " fret", " [#]", column_type_kernel },
-	{ " tret", " [#]", column_type_kernel },
-	{ " fack", " [#]", column_type_kernel },
-	{ " reor", " [#]", column_type_kernel },
-	{ " rtt", " [ms]", column_type_kernel },
-	{ " rttvar", " [ms]", column_type_kernel },
-	{ " rto", " [ms]", column_type_kernel },
-	{ " castate", " ", column_type_kernel },
-	{ " mss", " [B]", column_type_kernel },
-	{ " mtu", " [B]", column_type_kernel },
-	{ " status", " ", column_type_other }
-};
-
-struct _column_state
-{
-	unsigned int count_oversized;
-	unsigned int last_width;
-};
-
-struct _column_state column_states[sizeof(header_info) / sizeof(struct _header_info)] = {{0,0}};
 
 int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	int column, double value, struct _column_state *column_state,
@@ -342,7 +319,8 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 }
 
 char *createOutput(char hash, int id, int type, double begin, double end,
-		double throughput,
+		double throughput, 
+		unsigned int request_blocks, unsigned int response_blocks,
 		double rttmin, double rttavg, double rttmax,
 		double iatmin, double iatavg, double iatmax,
 		unsigned int cwnd, unsigned int ssth, unsigned int uack, unsigned int sack, unsigned int lost, unsigned int reor,
@@ -385,6 +363,14 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else
 		createOutputColumn(headerString1, headerString2, dataString, i, throughput, &column_states[i], 6, &columnWidthChanged);
 	i += 2;
+
+	/* param request blocks */
+	createOutputColumn(headerString1, headerString2, dataString, i, request_blocks, &column_states[i], 0, &columnWidthChanged);
+	i++;
+
+	/* param response blocks */
+	createOutputColumn(headerString1, headerString2, dataString, i, response_blocks, &column_states[i], 0, &columnWidthChanged);
+	i++;
 
 	/* param str_rttmin */
 	createOutputColumn(headerString1, headerString2, dataString, i, rttmin, &column_states[i], 3, &columnWidthChanged);
@@ -529,7 +515,7 @@ static void usage(void)
 		"  -b lwr_bound1,lwr_bound2,lwr_bound3,upr_bound1,upr_bound2,upr_bound3\n"
 		"               lower and upper bounds for computing the A2 test for uniform\n"
 		"               distribution with the given bounds\n"
-		"  -c +begin,+end,+thrpt,+rtt,+iat,+kernel\n"
+		"  -c +begin,+end,+thrpt,+rtt,+iat,+blocks,+kernel\n"
 		"               comma separated list of column groups to display in output.\n"
 		"               Prefix with either + to show column group or - to hide\n"
 		"               column group.\n"
@@ -919,6 +905,7 @@ void print_tcp_report_line(char hash, int id,
 #endif
 	strcpy(rep_string, createOutput((hash ? '#' : ' '), id, type,
 		time1, time2, thruput,
+		(unsigned int)r->request_blocks_written,(unsigned int)r->response_blocks_written,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
 #ifdef __LINUX__
@@ -1746,6 +1733,38 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 	}
 
 	#undef ASSIGN_ENDPOINT_FLOW_OPTION
+}
+
+static void parse_visible_param(char *to_parse) {
+        /* {begin, end, throughput, RTT, IAT, Kernel} */
+        if (strstr(to_parse, "+begin"))
+                visible_columns[column_type_begin] = 1;
+        if (strstr(to_parse, "-begin"))
+                visible_columns[column_type_begin] = 0;
+        if (strstr(to_parse, "+end"))
+                visible_columns[column_type_end] = 1;
+        if (strstr(to_parse, "-end"))
+                visible_columns[column_type_end] = 0;
+        if (strstr(to_parse, "+thrpt"))
+                visible_columns[column_type_thrpt] = 1;
+        if (strstr(to_parse, "-thrpt"))
+                visible_columns[column_type_thrpt] = 0;
+        if (strstr(to_parse, "+rtt"))
+                visible_columns[column_type_rtt] = 1;
+        if (strstr(to_parse, "-rtt"))
+                visible_columns[column_type_rtt] = 0;
+        if (strstr(to_parse, "+iat"))
+                visible_columns[column_type_iat] = 1;
+        if (strstr(to_parse, "-iat"))
+                visible_columns[column_type_iat] = 0;
+        if (strstr(to_parse, "+blocks"))
+                visible_columns[column_type_blocks] = 1;
+        if (strstr(to_parse, "-blocks"))
+                visible_columns[column_type_blocks] = 0;
+        if (strstr(to_parse, "+kernel"))
+                visible_columns[column_type_kernel] = 1;
+        if (strstr(to_parse, "-kernel"))
+                visible_columns[column_type_kernel] = 0;
 }
 
 static void parse_cmdline(int argc, char **argv) {
