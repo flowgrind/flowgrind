@@ -1,4 +1,8 @@
-Release 0.4 (2010-8-XX)
+Release 0.4a (2010-8-10)
+- bugfixes
+- block count column
+
+Release 0.4 (2010-8-01)
 
 - traffic generation
 - symbolic numbers
