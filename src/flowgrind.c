@@ -841,12 +841,12 @@ void print_tcp_report_line(char hash, int id,
 		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
 		strncat(comment_buffer, (s), sizeof(comment_buffer)-1); }while(0);
 
-	if (r->response_blocks_read > 0)
+	if (r->response_blocks_read)
 		avg_rtt = r->rtt_sum / (double)(r->response_blocks_read);
 	else
 		min_rtt = max_rtt = avg_rtt = INFINITY;
 
-	if (r->request_blocks_read > 0)
+	if (r->request_blocks_read)
 		avg_iat = r->iat_sum / (double)(r->request_blocks_read);
 	else
 		min_iat = max_iat = avg_iat = INFINITY;
@@ -1276,7 +1276,7 @@ char *guess_topology (int mss, int mtu)
 	return "unknown";
 }
 
-static int parse_Anderson_Test(char *params) {
+static int parse_adt_option(char *params) {
 
 
 	init_adt_defaults();
@@ -1810,7 +1810,7 @@ static void parse_cmdline(int argc, char **argv) {
 		switch (ch) {
 
 		case 'b':
-			if (!parse_Anderson_Test(optarg)) {
+			if (!parse_adt_option(optarg)) {
 				fprintf(stderr, "Failed to parse adt options\n");
 				usage();
 			}
