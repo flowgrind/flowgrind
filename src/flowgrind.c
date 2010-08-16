@@ -530,7 +530,7 @@ static void usage(void)
 		"               (default: 10**6 bit/sec)\n"
 		"  -n #         number of test flows (default: 1)\n"
 		"  -o           overwrite existing log files (default: don't)\n"
-                "  -p           print symbolic values (like INT_MAX) instead of numbers.\n"		
+                "  -p           dont print symbolic values (like INT_MAX) instead of numbers.\n"		
 		"  -q           be quiet, do not log to screen (default: off)\n"
 		"  -r #         use random seed # (default: read /dev/urandom)\n"
 		"  -w           write output to logfile (default: off)\n\n"
@@ -689,6 +689,7 @@ static void init_options_defaults(void)
 	opt.reporting_interval = 0.05;
 	opt.log_filename_prefix = "flowlog-";
 	opt.dont_log_logfile = 1;
+	opt.symbolic = 1;
 }
 
 static void init_adt_defaults(void)
@@ -1655,6 +1656,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 			case 'M':
 			/* TODO */
+				ASSIGN_COMMON_FLOW_SETTING(traffic_dump, 1)
 				break;
 			case 'O':
 				if (!*arg) {
@@ -1864,7 +1866,7 @@ static void parse_cmdline(int argc, char **argv) {
 			break;
 
 		case 'p':
-			opt.symbolic = 1;
+			opt.symbolic = 0;
 			break;
 
 		case 'q':
@@ -2316,7 +2318,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 
                 "maximum_block_size", flow[id].settings[DESTINATION].maximum_block_size,
 
-                "trafficdump", flow[id].settings[DESTINATION].trafficdump,
+                "traffic_dump", flow[id].settings[DESTINATION].traffic_dump,
                 "so_debug", flow[id].settings[DESTINATION].so_debug,
                 "route_record", (int)flow[id].settings[DESTINATION].route_record,
                 "pushy", flow[id].settings[DESTINATION].pushy,
@@ -2414,7 +2416,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 
                 "maximum_block_size", flow[id].settings[SOURCE].maximum_block_size,
 
-                "trafficdump", flow[id].settings[SOURCE].trafficdump,
+                "traffic_dump", flow[id].settings[SOURCE].traffic_dump,
                 "so_debug", flow[id].settings[SOURCE].so_debug,
                 "route_record", (int)flow[id].settings[SOURCE].route_record,
                 "pushy", flow[id].settings[SOURCE].pushy,

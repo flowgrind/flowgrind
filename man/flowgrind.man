@@ -84,7 +84,7 @@ Overwrite existing log files (default: don't).
 
 .TP 
 .BR \-p
-print symbolic values (like INT_MAX) instead of numbers (improves readablity, default off) 
+dont print symbolic values (like INT_MAX) instead of numbers (default off) 
 
 .TP 
 .BR \-q

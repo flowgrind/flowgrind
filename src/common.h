@@ -121,7 +121,7 @@ struct _flow_settings
 
 	int maximum_block_size;
 
-	int trafficdump;
+	int traffic_dump;
 	int so_debug;
 	int route_record;
 	int pushy;

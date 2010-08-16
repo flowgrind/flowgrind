@@ -135,8 +135,10 @@ void fg_pcap_go(int fd)
 				 errbuf);
 		return;
 	}
-	
-	/* compile a pcap expression to match the inbound port. */
+	/* strong pcap expression: tcp and on if and host a and b and port c and d */
+	/* weaker pcap expression: on if and host a and b */
+	/* sprintf(pcap_expression, "on %s and host %s and %b"
+	 * d-			    d->name); */
 	if(pcap_compile(pcap_handle,&pcap_program,pcap_expression,0,0) == -1)
 		        { logging_log(LOG_ALERT,"Error calling pcap_compile\n"); exit(1); }
 
