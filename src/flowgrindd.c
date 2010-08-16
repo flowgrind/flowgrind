@@ -174,7 +174,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		
 		"maximum_block_size", &settings.maximum_block_size,
 
-		"trafficdump", &settings.trafficdump,
+		"traffic_dump", &settings.traffic_dump,
 		"so_debug", &settings.so_debug,
 		"route_record", &settings.route_record,
 		"pushy", &settings.pushy,
@@ -368,7 +368,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		
 		"maximum_block_size", &settings.maximum_block_size,
 
-		"trafficdump", &settings.trafficdump,
+		"traffic_dump", &settings.traffic_dump,
 		"so_debug", &settings.so_debug,
 		"route_record", &settings.route_record,
 		"pushy", &settings.pushy,
