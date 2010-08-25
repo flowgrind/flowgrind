@@ -8,4 +8,3 @@
 +allow send volume to be specified (instead of duration/rate)
 +meet more the spirit of IPPM (connectivity test, etc.)
 +finish automatic traffic capture option
-+improve errorhandling of trafgen parser in case , instead of : (common handler)
