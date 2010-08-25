@@ -1312,76 +1312,81 @@ static int parse_adt_option(char *params) {
 
 
 static void parse_trafgen_option(char *params, int current_flow_ids[]) {
-	double param1, param2, unused;
-	char type, optchar;
-	enum _stochastic_distributions distr = 0;
 	int rc;
 	char * section;
 	char * arg;
 	
 	for (section = strtok(params, ":"); section; section = strtok(NULL, ":")) {
-			type = section[0];
-                	if (section[1] == '=')
-                        	arg = section + 2;
-                	else
-                        	arg = section + 1;
+	
+		double param1 = 0, param2 = 0, unused;
+	        char type, optchar;
+        	enum _stochastic_distributions distr = 0;
 
-                	if (type != 'p' && type != 'q' && type != 'g') {
-                        	if (type != 'h')
-					fprintf(stderr, "Syntax error in traffic generation option: %c is not a type.\n", type);
+		type = section[0];
+               	if (section[1] == '=')
+                       	arg = section + 2;
+               	else
+                       	arg = section + 1;
+
+               	if (type != 'p' && type != 'q' && type != 'g') {
+                       	if (type != 'h')
+				fprintf(stderr, "Syntax error in traffic generation option: %c is not a type.\n", type);
+       	                
+			usage_trafgenopt();
+               	}
+
+		rc = sscanf(arg, "%c,%lf,%lf,%lf", &optchar, &param1, &param2, &unused);
+                if (rc != 2 && rc != 3) {
+                	fprintf(stderr, "malformed traffic generation parameters\n");
                         	usage_trafgenopt();
-                	}
-			rc = sscanf(arg, "%c,%lf,%lf,%lf", &optchar, &param1, &param2, &unused);
-                                if (rc != 2 && rc != 3) {
-                                        fprintf(stderr, "malformed traffic generation parameters\n");
-                                        usage_trafgenopt();
-                                }
-			switch (optchar) {
-				case 'N':
-					distr = NORMAL;
-					if (!param1 || !param2)
-					{
-						fprintf(stderr, "normal distribution needs two non-zero parameters");
-						usage_trafgenopt();
-					}
-					break;
-				case 'W':
-					distr = WEIBULL;
-                                        if (!param1 || !param2)
-					{
-						fprintf(stderr, "weibull distribution needs two non-zero paramters\n");
-                                                usage_trafgenopt();
-					}
-					break;
-				case 'U':
-					distr = UNIFORM;
-                                        if (!param1 || !param2)
-					{
-						fprintf(stderr, "uniform distribution needs two non-zero paramters\n");
-                                       		usage_trafgenopt();
-					}
-					break;
-                                case 'C':
-                                        distr = CONSTANT;
-					if (!param1)
-					{
-						fprintf(stderr, "constant value needs one non-zero paramters\n");
-						usage_trafgenopt();
-					}
-					break;
-				default:
-					fprintf(stderr, "Syntax error in traffic generation option: %c is not a distribution.\n", optchar);
+               	}
+
+		switch (optchar) {
+			case 'N':
+				distr = NORMAL;
+				if (!param1 || !param2) {
+					fprintf(stderr, "normal distribution needs two non-zero parameters");
 					usage_trafgenopt();
-			}
+				}
+				break;
+		
+			case 'W':
+				distr = WEIBULL;
+                                if (!param1 || !param2) {
+					fprintf(stderr, "weibull distribution needs two non-zero parameters\n");
+                                        usage_trafgenopt();
+				}
+				break;
+				
+			case 'U':
+				distr = UNIFORM;
+                                if  ( param1 <= 0 || param2 <= 0 || (param1 > param2) ) {
+					fprintf(stderr, "uniform distribution needs two positive parameters\n");
+                                       	usage_trafgenopt();
+				}
+				break;
+                                
+			case 'C':
+                        	distr = CONSTANT;
+				if (param1 <= 0) {
+					fprintf(stderr, "constant value needs one positive paramters\n");
+					usage_trafgenopt();
+				}
+				break;
+				
+			default:
+				fprintf(stderr, "Syntax error in traffic generation option: %c is not a distribution.\n", optchar);
+				usage_trafgenopt();
+		}
 
 				
-			if (current_flow_ids[0] == -1) {
-                                int id;
-                                for (id = 0; id < MAX_FLOWS; id++) {
-                                        for (int i = 0; i < 2; i++) {
-                                                switch (type) {
-                                                        case 'p':
-                                                        flow[id].settings[i].response_trafgen_options.distribution = distr;
+		if (current_flow_ids[0] == -1) {
+                        int id;
+                        for (id = 0; id < MAX_FLOWS; id++) {
+	                        for (int i = 0; i < 2; i++) {
+        	                        switch (type) {
+                	                        case 'p':
+                        	                        flow[id].settings[i].response_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].response_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].response_trafgen_options.param_two = param2;
 							if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
@@ -1390,7 +1395,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 								flow[id].settings[i].maximum_block_size = param2;
                                                         break;
 
-                                                        case 'q': 
+                                        	case 'q': 
                                                         flow[id].settings[i].request_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].request_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].request_trafgen_options.param_two = param2;
@@ -1400,7 +1405,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                                 flow[id].settings[i].maximum_block_size = param2;
 							break;
 
-                                                        case 'g':
+                       		               case 'g':
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
                                                         flow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
@@ -1408,15 +1413,15 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                 }
                                         }
                                 }
-                        } else {
-                                int id;
-                                for (id = 0; id < MAX_FLOWS; id++) {
-                                       if (current_flow_ids[id] == -1)
-                                                break;
+		} else {
+                	int id;
+                        for (id = 0; id < MAX_FLOWS; id++) {
+                        	if (current_flow_ids[id] == -1)
+                                	break;
 
-                                       for (int i = 0; i < 2; i++) {
-                                                switch (type) {
-                                                        case 'p':
+                        	for (int i = 0; i < 2; i++) {
+                                	switch (type) {
+                                        	case 'p':
                                                         flow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
                                                         flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
                                                         flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
@@ -1426,7 +1431,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                                 flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
                                                         break;
 
-                                                        case 'q':
+                                                case 'q':
                                                         flow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
                                                         flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
                                                         flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
@@ -1436,7 +1441,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                                                 flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
                                                         break;
 
-                                                        case 'g':
+                                                case 'g':
                                                         flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.distribution = distr;
                                                         flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_one = param1;
                                                         flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_two = param2;
@@ -1445,7 +1450,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                         }
                                 }
                         }
-
 		}
 }
 
