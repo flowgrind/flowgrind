@@ -178,7 +178,7 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 
 	/* get max columnsize */
 	if (opt.symbolic) {
-		switch ((int)value) {
+		switch ((unsigned int)value) {
 			case INT_MAX:
 				lengthData = strlen(" INT_MAX");
 				break;
@@ -186,6 +186,10 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 			case USHRT_MAX:
 	                	lengthData = strlen(" USHRT_MAX");
                         	break;
+
+			case UINT_MAX:
+				lengthData = strlen(" UINT_MAX");
+				break;
 
 			default:
 				lengthData = det_output_column_size(value) + 2 + numDigitsDecimalPart;
@@ -237,6 +241,13 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
                                 	strcat(strDataRow, " ");
                         	strcat(strDataRow, " USHRT_MAX");
 				break;
+
+                        case UINT_MAX:
+                                for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
+                                        strcat(strDataRow, " ");
+                                strcat(strDataRow, " UINT_MAX");
+                                break;
+
 		
 			default: /*  number */
 				sprintf(tempBuffer, number_formatstring, value);
@@ -1343,6 +1354,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 
 		switch (optchar) {
 			case 'N':
+			case 'n':
 				distr = NORMAL;
 				if (!param1 || !param2) {
 					fprintf(stderr, "normal distribution needs two non-zero parameters");
@@ -1351,6 +1363,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 				break;
 		
 			case 'W':
+			case 'w':
 				distr = WEIBULL;
                                 if (!param1 || !param2) {
 					fprintf(stderr, "weibull distribution needs two non-zero parameters\n");
@@ -1359,6 +1372,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 				break;
 				
 			case 'U':
+			case 'u':
 				distr = UNIFORM;
                                 if  ( param1 <= 0 || param2 <= 0 || (param1 > param2) ) {
 					fprintf(stderr, "uniform distribution needs two positive parameters\n");
@@ -1367,6 +1381,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 				break;
                                 
 			case 'C':
+			case 'c':
                         	distr = CONSTANT;
 				if (param1 <= 0) {
 					fprintf(stderr, "constant value needs one positive paramters\n");
