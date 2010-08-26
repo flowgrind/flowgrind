@@ -5,7 +5,7 @@ Dependencies
 ============
 
 Flowgrind depends on the following tools and libraries:
-- libxmlrpc-c with curl transport and abyss server
+- libxmlrpc-c with curl transport and abyss server (sudo apt-get install libxmlrpc-c3-dev)
 - libpcap (currently not used, therefore disabled by default)
 - GNU Autotools (autoconf, automake and friends) if using source from 
   the SVN repository

@@ -156,10 +156,10 @@ struct _report
 
 	unsigned long long bytes_read;
 	unsigned long long bytes_written;
-	unsigned long request_blocks_read;
-	unsigned long request_blocks_written;
-	unsigned long response_blocks_read;
-	unsigned long response_blocks_written;
+	unsigned int request_blocks_read;
+	unsigned int request_blocks_written;
+	unsigned int response_blocks_read;
+	unsigned int response_blocks_written;
 
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;
