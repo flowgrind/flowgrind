@@ -109,7 +109,7 @@ void fg_pcap_go(int fd)
 	pcap_ll_type = pcap_datalink(pcap_handle);
 	if (pcap_ll_type == -1) {
 		logging_log(LOG_WARNING, "pcap: failed to determine link "
-				"layer type. Eliding packet caputure.");
+				"layer type. skipping acket capture.");
 		return;
 	}
 
