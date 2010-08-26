@@ -2307,21 +2307,21 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
                 xmlrpc_DECREF(option);
         }
         xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[DESTINATION].server_url, "add_flow_destination", &resultP,
-                "({"
-                "s:s,"
-                "s:d,s:d,s:d,s:d,s:d,"
-                "s:i,s:i,"
-                "s:i,"
-                "s:b,s:b,s:b,s:b,s:b,"
-                "s:i,s:i,"
-		"s:i,s:d,s:d," /* request */
-		"s:i,s:d,s:d," /* response */
-		"s:i,s:d,s:d," /* interpacket_gap */
-                "s:b,s:b,s:i,"
-                "s:s,"
-                "s:i,s:i,s:i,s:i,"
-                "s:i,s:A"
-                "})",
+                "("
+                "{s:s}"
+                "{s:d,s:d,s:d,s:d,s:d}"
+                "{s:i,s:i}"
+                "{s:i}"
+                "{s:b,s:b,s:b,s:b,s:b}"
+                "{s:i,s:i}"
+		"{s:i,s:d,s:d}" /* request */
+		"{s:i,s:d,s:d}" /* response */
+		"{s:i,s:d,s:d}" /* interpacket_gap */
+                "{s:b,s:b,s:i}"
+                "{s:s}"
+                "{s:i,s:i,s:i,s:i}"
+                "{s:i,s:A}"
+                ")",
 
                 /* general flow settings */
                 "bind_address", flow[id].endpoint_options[DESTINATION].bind_address,
@@ -2404,22 +2404,22 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
         DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
 
         xmlrpc_client_call2f(&rpc_env, rpc_client, flow[id].endpoint_options[SOURCE].server_url, "add_flow_source", &resultP,
-                "({"
-                "s:s,"
-                "s:d,s:d,s:d,s:d,s:d,"
-                "s:i,s:i,"
-                "s:i,"
-                "s:b,s:b,s:b,s:b,s:b,"
-                "s:i,s:i,"
-                "s:i,s:d,s:d," /* request */
-                "s:i,s:d,s:d," /* response */
-                "s:i,s:d,s:d," /* interpacket_gap */
-                "s:b,s:b,s:i,"
-                "s:s,"
-                "s:i,s:i,s:i,s:i,"
-                "s:i,s:A,"
-                "s:s,s:i,s:i"
-                "})",
+                "("
+                "{s:s}"
+                "{s:d,s:d,s:d,s:d,s:d}"
+                "{s:i,s:i}"
+                "{s:i}"
+                "{s:b,s:b,s:b,s:b,s:b}"
+                "{s:i,s:i}"
+                "{s:i,s:d,s:d}" /* request */
+                "{s:i,s:d,s:d}" /* response */
+                "{s:i,s:d,s:d}" /* interpacket_gap */
+                "{s:b,s:b,s:i}"
+                "{s:s}"
+                "{s:i,s:i,s:i,s:i}"
+                "{s:i,s:A}"
+                "{s:s,s:i,s:i}"
+                ")",
 
                 /* general flow settings */
                 "bind_address", flow[id].endpoint_options[SOURCE].bind_address,
@@ -2584,17 +2584,17 @@ has_more_reports:
                                         int bytes_written_low, bytes_written_high;
 
                                         xmlrpc_decompose_value(&rpc_env, rv,
-                                                "({"
-                                                "s:i,s:i,s:i,s:i,s:i,s:i," /* timeval */
-                                                "s:i,s:i,s:i,s:i," /* bytes */
-                                                "s:i,s:i,s:i,s:i," /* blocks */
-                                                "s:d,s:d,s:d,s:d,s:d,s:d," /* RTT, IAT */
-                                                "s:i,s:i" /* MSS, MTU */
-                                                "s:i,s:i,s:i,s:i,s:i," /* TCP info */
-                                                "s:i,s:i,s:i,s:i,s:i," /* ...      */
-                                                "s:i,s:i,s:i,s:i,s:i," /* ...      */
-                                                "s:i,*"
-                                                "})",
+                                                "("
+                                                "{s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
+                                                "{s:i,s:i,s:i,s:i,*}" /* bytes */
+                                                "{s:i,s:i,s:i,s:i,*}" /* blocks */
+                                                "{s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT */
+                                                "{s:i,s:i,*}" /* MSS, MTU */
+                                                "{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
+                                                "{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
+                                                "{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
+                                                "{s:i,*}"
+                                                ")",
 
                                                 "id", &report.id,
                                                 "type", &report.type,

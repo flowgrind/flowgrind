@@ -61,6 +61,7 @@ int next_request_block_size(struct _flow *flow)
 			   flow->settings.request_trafgen_options.param_two
 			   );
 
+	/* sanity checks */
 	if (bs < MIN_BLOCK_SIZE) {
                 bs = MIN_BLOCK_SIZE;
 		DEBUG_MSG(LOG_WARNING, "applied minimal request size limit %d for flow %d", bs, flow->id);
@@ -105,7 +106,7 @@ double next_interpacket_gap(struct _flow *flow) {
 
 	double gap = 0.0;
 	if (flow->settings.write_rate)
-		gap = (double)1/flow->settings.write_rate;
+		gap = (double)1.0/flow->settings.write_rate;
 	else
 		gap = calculate(flow->settings.interpacket_gap_trafgen_options.distribution,
                 	               flow->settings.interpacket_gap_trafgen_options.param_one,

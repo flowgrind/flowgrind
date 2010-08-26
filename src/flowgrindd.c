@@ -143,22 +143,22 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array, 
-		"({"
-		"s:s,"
-		"s:d,s:d,s:d,s:d,s:d,"
-		"s:i,s:i,"
-		"s:i,"
-		"s:b,s:b,s:b,s:b,s:b,"
-		"s:i,s:i,"
-                "s:i,s:d,s:d," /* request */
-                "s:i,s:d,s:d," /* response */
-                "s:i,s:d,s:d," /* interpacket_gap */
-		"s:b,s:b,s:i,"
-		"s:s,"
-		"s:i,s:i,s:i,s:i,"
-		"s:i,s:A,"
-		"s:s,s:i,s:i,*"
-		"})",
+		"("
+		"{s:s,*}"
+		"{s:d,s:d,s:d,s:d,s:d,*}"
+		"{s:i,s:i,*}"
+		"{s:i,*}"
+		"{s:b,s:b,s:b,s:b,s:b,*}"
+		"{s:i,s:i,*}"
+                "{s:i,s:d,s:d,*}" /* request */
+                "{s:i,s:d,s:d,*}" /* response */
+                "{s:i,s:d,s:d,*}" /* interpacket_gap */
+		"{s:b,s:b,s:i,*}"
+		"{s:s,*}"
+		"{s:i,s:i,s:i,s:i,*}"
+		"{s:i,s:A,*}"
+		"{s:s,s:i,s:i,*}"
+		")",
 
 		/* general settings */
 		"bind_address", &bind_address,
@@ -338,21 +338,21 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array,
-		"({"
-		"s:s,"
-		"s:d,s:d,s:d,s:d,s:d,"
-		"s:i,s:i,"
-		"s:i,"
-		"s:b,s:b,s:b,s:b,s:b,"
-		"s:i,s:i,"
-		"s:i,s:d,s:d," /* request */
-		"s:i,s:d,s:d," /* response */
-		"s:i,s:d,s:d," /* interpacket_gap */
-		"s:b,s:b,s:i,"
-		"s:s,"
-		"s:i,s:i,s:i,s:i,"
-		"s:i,s:A,*"
-		"})",
+		"("
+		"{s:s,*}"
+		"{s:d,s:d,s:d,s:d,s:d,*}"
+		"{s:i,s:i,*}"
+		"{s:i,*}"
+		"{s:b,s:b,s:b,s:b,s:b,*}"
+		"{s:i,s:i,*}"
+		"{s:i,s:d,s:d,*}" /* request */
+		"{s:i,s:d,s:d,*}" /* response */
+		"{s:i,s:d,s:d,*}" /* interpacket_gap */
+		"{s:b,s:b,s:i,*}"
+		"{s:s,*}"
+		"{s:i,s:i,s:i,s:i,*}"
+		"{s:i,s:A,*}"
+		")",
 
 		/* general settings */
 		"bind_address", &bind_address,
@@ -574,17 +574,17 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 	while (report) {
 		xmlrpc_value *rv = xmlrpc_build_value(env, 
-			"({"
-			"s:i,s:i,s:i,s:i,s:i,s:i," /* timeval */
-			"s:i,s:i,s:i,s:i," /* bytes */
-			"s:i,s:i,s:i,s:i," /* block counts */
-			"s:d,s:d,s:d,s:d,s:d,s:d," /* RTT, IAT */
-			"s:i,s:i," /* MSS, MTU */
-			"s:i,s:i,s:i,s:i,s:i," /* TCP info */
-			"s:i,s:i,s:i,s:i,s:i," /* ...      */
-			"s:i,s:i,s:i,s:i,s:i," /* ...      */
-			"s:i"
-			"})",
+			"("
+			"{s:i,s:i,s:i,s:i,s:i,s:i}" /* timeval */
+			"{s:i,s:i,s:i,s:i}" /* bytes */
+			"{s:i,s:i,s:i,s:i}" /* block counts */
+			"{s:d,s:d,s:d,s:d,s:d,s:d}" /* RTT, IAT */
+			"{s:i,s:i}" /* MSS, MTU */
+			"{s:i,s:i,s:i,s:i,s:i}" /* TCP info */
+			"{s:i,s:i,s:i,s:i,s:i}" /* ...      */
+			"{s:i,s:i,s:i,s:i,s:i}" /* ...      */
+			"{s:i}"
+			")",
 
 			"id", report->id,
 			"type", report->type,
