@@ -1,3 +1,7 @@
+Release 0.5 (2010-X-X)
+- removed obsolete fasttime and TSCI2 support
+- bugfixes
+
 Release 0.4a (2010-8-10)
 - bugfixes
 - block count column

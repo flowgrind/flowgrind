@@ -5,14 +5,6 @@
 #include <config.h>
 #endif
 
-#ifdef HAVE_FASTTIME_H
-#include <fasttime.h>
-#endif
-
-#ifdef HAVE_TSCI2_H
-#include <tsci2.h>
-#endif
-
 #include <limits.h>
 #include <netinet/in.h>
 #include <stdio.h>
