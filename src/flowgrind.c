@@ -1033,7 +1033,7 @@ void report_final(void)
                                 thruput_read = scale_thruput(thruput_read);
 				thruput_written = scale_thruput(thruput_written);
 
-				CATC("through = %.6f/%.6fM%c/s, %lu/%lu request blocks, %lu/%lu response blocks (out/in)", thruput_written, thruput_read, opt.mbyte ? 'B' : 'b', 
+				CATC("through = %.6f/%.6fM%c/s, %u/%u request blocks, %u/%u response blocks (out/in)", thruput_written, thruput_read, opt.mbyte ? 'B' : 'b', 
 					flow[id].final_report[endpoint]->request_blocks_written,
                                         flow[id].final_report[endpoint]->request_blocks_read,
 					flow[id].final_report[endpoint]->response_blocks_written,

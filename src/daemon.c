@@ -492,8 +492,8 @@ static void report_flow(struct _flow* flow, int type)
 
 	/* New report interval, reset old data */
 	if (type == INTERVAL) {
-		flow->statistics[INTERVAL].bytes_read = 0;
-		flow->statistics[INTERVAL].bytes_written = 0;
+		flow->statistics[INTERVAL].bytes_read = 0LL;
+		flow->statistics[INTERVAL].bytes_written = 0LL;
 
 		flow->statistics[INTERVAL].request_blocks_read = 0;
 		flow->statistics[INTERVAL].response_blocks_read = 0;
@@ -503,10 +503,10 @@ static void report_flow(struct _flow* flow, int type)
 
 		flow->statistics[INTERVAL].rtt_min = +INFINITY;
 		flow->statistics[INTERVAL].rtt_max = -INFINITY;
-		flow->statistics[INTERVAL].rtt_sum = 0;
+		flow->statistics[INTERVAL].rtt_sum = 0.0F;
 		flow->statistics[INTERVAL].iat_min = +INFINITY;
 		flow->statistics[INTERVAL].iat_max = -INFINITY;
-		flow->statistics[INTERVAL].iat_sum = 0;
+		flow->statistics[INTERVAL].iat_sum = 0.0F;
 	}
 
 	add_report(report);
@@ -722,8 +722,8 @@ void init_flow(struct _flow* flow, int is_source)
 	flow->read_block = 0;
 	flow->write_block = 0;
 
-	flow->current_block_bytes_read = 0;
-	flow->current_block_bytes_written = 0;
+	flow->current_block_bytes_read = 0LL;
+	flow->current_block_bytes_written = 0LL;
 	
 	flow->current_read_block_size = MIN_BLOCK_SIZE;
 	flow->current_write_block_size = MIN_BLOCK_SIZE;
@@ -738,8 +738,8 @@ void init_flow(struct _flow* flow, int is_source)
 
 	/* INTERVAL and TOTAL */
 	for (int i = 0; i < 2; i++) {
-                flow->statistics[i].bytes_read = 0;
-                flow->statistics[i].bytes_written = 0;
+                flow->statistics[i].bytes_read = 0LL;
+                flow->statistics[i].bytes_written = 0LL;
 
                 flow->statistics[i].request_blocks_read = 0;
                 flow->statistics[i].request_blocks_written = 0;
@@ -748,11 +748,11 @@ void init_flow(struct _flow* flow, int is_source)
 
 		flow->statistics[i].rtt_min = +INFINITY;
 		flow->statistics[i].rtt_max = -INFINITY;
-		flow->statistics[i].rtt_sum = 0;
+		flow->statistics[i].rtt_sum = 0.0;
 
 		flow->statistics[i].iat_min = +INFINITY;
 		flow->statistics[i].iat_max = -INFINITY;
-		flow->statistics[i].iat_sum = 0;
+		flow->statistics[i].iat_sum = 0.0;
 	}
 
 	flow->congestion_counter = 0;
