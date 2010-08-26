@@ -932,7 +932,6 @@ int main(int argc, char ** argv)
 
 	parse_option(argc, argv);
 	logging_init();
-	tsc_init();
 
 	if (log_type == LOGTYPE_SYSLOG) {
 		/* Need to call daemon() before creating the thread because

@@ -1,6 +1,5 @@
 +make compatible with recent xmlrpc-c versions
 +make it easier to define arbitary socket options
-+remove I2-TSC and FASTTIME
 +recover UDP option
 +make traffic ports configureable (again)
 +xml style output

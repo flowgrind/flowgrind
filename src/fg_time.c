@@ -135,13 +135,7 @@ int
 tsc_gettimeofday(struct timeval *tv) 
 {
 	int rc;
-#if defined(HAVE_FASTTIME_H) && defined(HAVE_LIBFASTTIME)
-	rc = fasttime_gettimeofday(tv);
-#elif defined(HAVE_TSCI2_H) && defined(HAVE_LIBTSCI2)
-	rc = tsci2_gettimeofday(tv, 0);
-#else
 	rc = gettimeofday(tv, 0);
-#endif
 	if (rc != 0) {
 		error(ERR_FATAL, "gettimeofday(): failed: %s",
 				strerror(errno));

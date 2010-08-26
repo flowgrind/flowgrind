@@ -1,4 +1,4 @@
-AC_PREREQ(2.59)
+
 AC_INIT([flowgrind],[0.4],[flowgrind@umic-mesh.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
@@ -68,8 +68,6 @@ AC_CHECK_LIB([socket], [socket])
 AC_CHECK_LIB([nsl], [socket])
 AC_CHECK_LIB([resolv], [herror])
 AC_CHECK_LIB([rt], [nanosleep])
-AC_CHECK_LIB([fasttime], [fasttime_init_context])
-AC_CHECK_LIB([tsci2], [tsci2_init])
 
 # check if DEBUG to be set
 AC_ARG_ENABLE(debug,
@@ -121,9 +119,7 @@ AC_CHECK_HEADERS([ \
 	limits.h \
 	fcntl.h \
 	arpa/inet.h \
-	fasttime.h \
 	float.h \
-	tsci2.h
 ])
 
 AC_CONFIG_HEADERS([config.h])
