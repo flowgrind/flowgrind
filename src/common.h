@@ -79,6 +79,7 @@ struct _block
         int32_t this_block_size;
         int32_t request_block_size;
         struct timeval data;
+        struct timeval data2;
 };
 
 enum _stochastic_distributions

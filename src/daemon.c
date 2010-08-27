@@ -1035,8 +1035,8 @@ static void process_iat(struct _flow* flow)
 
 	tsc_gettimeofday(&now);
 
-	if (flow->last_block_read.tv_sec  != 0 || 
-	    flow->last_block_read.tv_usec != 0) {
+	if (flow->last_block_read.tv_sec || 
+	    flow->last_block_read.tv_usec) {
 		current_iat = time_diff(&flow->last_block_read, &now);
 	} else {
 		current_iat = NAN;
@@ -1074,7 +1074,11 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 		((struct _block *)flow->write_block)->request_block_size = htonl(-1);
 		/* copy rtt data from received block to response block (echo back) */
 		((struct _block *)flow->write_block)->data = ((struct _block *)flow->read_block)->data;
-		
+		/* workaround for 64bit sender and 32bit receiver:
+		 * we check if the timeeval is 64bit and then echo the missing 32bit back, too */ 
+		if (( ((struct _block *)flow->write_block)->data.tv_sec) || ((struct _block *)flow->write_block)->data.tv_usec)
+			((struct _block *)flow->write_block)->data2 = ((struct _block *)flow->read_block)->data2;
+
 		DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, rqs = %d on flow %d",
                         ntohl(((struct _block *)flow->write_block)->this_block_size),
                         ntohl(((struct _block *)flow->write_block)->request_block_size),
