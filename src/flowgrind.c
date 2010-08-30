@@ -83,7 +83,7 @@ struct _column_state
 };
 
 const struct _header_info header_info[] = {
-        { "#  ID", "#    ", column_type_other },
+        { "# ID", "#   ", column_type_other },
         { " begin", " [s]", column_type_begin },
         { " end", " [s]", column_type_end },
         { " through", " [Mbit]", column_type_thrpt },
@@ -108,7 +108,7 @@ const struct _header_info header_info[] = {
         { " rtt", " [ms]", column_type_kernel },
         { " rttvar", " [ms]", column_type_kernel },
         { " rto", " [ms]", column_type_kernel },
-        { " castate", " ", column_type_kernel },
+        { " ca state", " ", column_type_kernel },
         { " mss", " [B]", column_type_kernel },
         { " mtu", " [B]", column_type_kernel },
         { " status", " ", column_type_other }
@@ -352,12 +352,16 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 
 	/* output string
 	param # + flow_id */
-	if (type == 0)
-		sprintf(dataString, "%cS%3d", hash, id);
+	if (hash)
+		sprintf(dataString, "#");
+
+	if (type)
+		sprintf(dataString, "R%3d", id);
 	else
-		sprintf(dataString, "%cR%3d", hash, id);
+		sprintf(dataString, "S%3d", id);
+
 	strcpy(headerString1, header_info[0].first);
-	strcpy(headerString2, header_info[0].first);
+	strcpy(headerString2, header_info[0].second);
 	i++;
 
 	/* param begin */
@@ -365,7 +369,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	i++;
 
 	/* param end */
-	createOutputColumn(headerString1, headerString2, dataString,  i, end, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, end, &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param throughput */
@@ -464,11 +468,11 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else if (ca_state == TCP_CA_CWR)
 		strcpy(tmp, "cwr");
 	else if (ca_state == TCP_CA_Recovery)
-		strcpy(tmp, "rcvry");
+		strcpy(tmp, "recover");
 	else if (ca_state == TCP_CA_Loss)
 		strcpy(tmp, "loss");
 	else if (ca_state)
-		sprintf(tmp, "uknwn(%d)", ca_state);
+		sprintf(tmp, "unknown!(%d)", ca_state);
 	else
 		strcpy(tmp, "none");
 
@@ -915,7 +919,7 @@ void print_tcp_report_line(char hash, int id,
 	/* dont show linux kernel output if there is no linux OS */
 	column_type_kernel = 0;
 #endif
-	strcpy(rep_string, createOutput((hash ? '#' : ' '), id, type,
+	strcpy(rep_string, createOutput(hash, id, type,
 		time1, time2, thruput,
 		(unsigned int)r->request_blocks_written,(unsigned int)r->response_blocks_written,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
