@@ -35,12 +35,13 @@ if [[ ${PV} == "9999" ]] ; then
 	}
 fi
 
-
-src_compile() {
+src_configure() {
 	econf \
 	$(use_enable pcap) \
-	$(use_enable debug) || die 
+	$(use_enable debug) || die
+}
 
+src_compile() {
 	emake || die
 }
 

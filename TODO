@@ -1,4 +1,5 @@
 +make it easier to define arbitary socket options
++fix crash in conjunction with newer libxmlrpc-c
 +recover UDP option
 +make traffic ports configureable (again)
 +xml style output
