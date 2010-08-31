@@ -33,21 +33,26 @@ inline static double calculate(enum _stochastic_distributions type, double param
 			DEBUG_MSG(LOG_DEBUG, "calculated normal distribution value %f for parameters %f,%f", val, param_one, param_two);
 		break;
 
+                case UNIFORM:
+                        val = dist_uniform ( param_one, param_two );
+                        DEBUG_MSG(LOG_DEBUG, "calculated uniform distribution value %f", val);
+                break;
+		
 		case WEIBULL:
 			val = dist_weibull ( param_one, param_two );
 			DEBUG_MSG(LOG_DEBUG, "calculated weibull distribution value %f for parameters %f,%f", val, param_one, param_two);
 		break;
 
-		case UNIFORM:
-			val = dist_uniform ( param_one, param_two ); 
-			DEBUG_MSG(LOG_DEBUG, "calculated uniform distribution value %f", val);
+		case EXPONENTIAL:
+			val = dist_exponential (param_one);
+			DEBUG_MSG(LOG_DEBUG, "calculated exponential distribution value %f for parameters %f", val, param_one);
 		break;
-
+		
 		case CONSTANT:
 		/* constant is default */	
 		default:
 			val = param_one;
-			DEBUG_MSG(LOG_DEBUG, "default value %f", val);
+			DEBUG_MSG(LOG_DEBUG, "constant value %f", val);
 
 	}
 
