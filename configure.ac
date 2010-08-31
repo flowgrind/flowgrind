@@ -101,14 +101,13 @@ else
 	CFLAGS="-O3 $CFLAGS"
 fi
 
-AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: autodetect]] )])
-if test "x$enable_pcap" != "xno"; then
-	AC_PCAP_CHECK
+AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: no]] )])
+AS_IF([ test "x$enable_pcap" = "xyes"], [
         if test -z "$PCAP_CONFIG"; then
                 AC_PATH_PROG(PCAP_CONFIG, pcap-config, no)
         fi
 
-        if test "$PCAP_CONFIG" = "xno"; then
+        if test "$PCAP_CONFIG" = "no"; then
                 AC_MSG_ERROR(pcap-config not found in path.)
         fi
 
@@ -117,11 +116,10 @@ if test "x$enable_pcap" != "xno"; then
 
         AC_SUBST(PCAP_CFLAGS)
         AC_SUBST(PCAP_LDADD)
+])
 
-fi
-
-AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[default: autodetect]] )])
-if test "x$enable_gsl" != "xno"; then
+AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[default: yes]] )])
+AS_IF([ test "x$enable_gsl" != "xno"], [
 	AC_CHECK_HEADER(gsl/gsl_rng.h,
    		AC_CHECK_LIB([gsl], gsl_rng_alloc, [AC_DEFINE(HAVE_LIBGSL, 1, [Define to 1 if you have the gsl library (-lgsl).])],
           	AC_MSG_NOTICE([*** Could not find libgsl: will compile without optional trafgen distributions. ***]),[-lgslcblas]),
@@ -139,8 +137,7 @@ if test "x$enable_gsl" != "xno"; then
 
 	AC_SUBST(GSL_CFLAGS)
 	AC_SUBST(GSL_LDADD)
-fi
-
+])
 
 if test -z "$CURL_CONFIG"; then
         AC_PATH_PROG(CURL_CONFIG, curl-config, no)
