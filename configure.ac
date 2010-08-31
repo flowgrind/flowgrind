@@ -104,14 +104,41 @@ fi
 AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: autodetect]] )])
 if test "x$enable_pcap" != "xno"; then
 	AC_PCAP_CHECK
+        if test -z "$PCAP_CONFIG"; then
+                AC_PATH_PROG(PCAP_CONFIG, pcap-config, no)
+        fi
+
+        if test "$PCAP_CONFIG" = "xno"; then
+                AC_MSG_ERROR(pcap-config not found in path.)
+        fi
+
+        PCAP_CFLAGS=`$PCAP_CONFIG --cflags`
+        PCAP_LDADD=`$PCAP_CONFIG --libs`
+
+        AC_SUBST(PCAP_CFLAGS)
+        AC_SUBST(PCAP_LDADD)
+
 fi
 
 AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[default: autodetect]] )])
 if test "x$enable_gsl" != "xno"; then
 	AC_CHECK_HEADER(gsl/gsl_rng.h,
-   		AC_CHECK_LIB([gsl], gsl_rng_alloc, [AC_DEFINE(HAVE_LIBGSL, 1, [Define to 1 if you have the gsl library (-lgsl).]) LIBS=$LIBS"-lgsl -lgslcblas"],
+   		AC_CHECK_LIB([gsl], gsl_rng_alloc, [AC_DEFINE(HAVE_LIBGSL, 1, [Define to 1 if you have the gsl library (-lgsl).])],
           	AC_MSG_NOTICE([*** Could not find libgsl: will compile without optional trafgen distributions. ***]),[-lgslcblas]),
      		AC_MSG_NOTICE([*** Header file gsl_rng.h not found: will compile without optional trafgen distributions. ***]))
+	if test -z "$GSL_CONFIG"; then
+        	AC_PATH_PROG(GSL_CONFIG, gsl-config, no)
+	fi
+
+	if test "$GSL_CONFIG" = "xno"; then
+        	AC_MSG_ERROR(gsl-config not found in path.)
+	fi
+		
+	GSL_CFLAGS=`$GSL_CONFIG --cflags`
+	GSL_LDADD=`$GSL_CONFIG --libs`
+
+	AC_SUBST(GSL_CFLAGS)
+	AC_SUBST(GSL_LDADD)
 fi
 
 
