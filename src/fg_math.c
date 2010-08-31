@@ -91,8 +91,10 @@ rn_uniform_zero_to_one() {
 #endif
 }
 
+#ifndef HAVE_LIBGSL
 static inline double
 rn_uniform_minusone_to_one() { return (rn_uniform()/(RANDOM_MAX/2.0)-1.0); }
+#endif
 
 double
 dist_exponential(const double mu) { 
