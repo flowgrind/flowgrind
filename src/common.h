@@ -88,6 +88,7 @@ enum _stochastic_distributions
         NORMAL,
         WEIBULL,
         UNIFORM,
+        EXPONENTIAL,
 };
 
 struct _trafgen_options

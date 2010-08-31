@@ -1383,7 +1383,16 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
                                        	usage_trafgenopt();
 				}
 				break;
-                                
+
+                        case 'E':
+                        case 'e':
+                                distr = EXPONENTIAL;
+                                if (param1 <= 0) {
+                                        fprintf(stderr, "exponential value needs one positive paramters\n");
+                                        usage_trafgenopt();
+                                }
+                                break;
+        
 			case 'C':
 			case 'c':
                         	distr = CONSTANT;
@@ -1392,6 +1401,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 					usage_trafgenopt();
 				}
 				break;
+
 				
 			default:
 				fprintf(stderr, "Syntax error in traffic generation option: %c is not a distribution.\n", optchar);

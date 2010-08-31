@@ -63,89 +63,87 @@ AC_CHECK_FUNCS([ \
 	uname \
 ])
 
+
+AC_HEADER_STDC
+AC_CHECK_HEADERS([ \
+        syslog.h \
+        sys/time.h \
+        sys/socket.h \
+        sys/param.h \
+        sys/ioctl.h \
+        netinet/in.h \
+        netdb.h \
+        limits.h \
+        fcntl.h \
+        arpa/inet.h \
+        float.h \
+])
+
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([ \
+        Makefile
+        src/Makefile \
+])
+
+
 AC_CHECK_LIB([m], [log])
 AC_CHECK_LIB([socket], [socket])
 AC_CHECK_LIB([nsl], [socket])
 AC_CHECK_LIB([resolv], [herror])
 AC_CHECK_LIB([rt], [nanosleep])
 
-# check if DEBUG to be set
-AC_ARG_ENABLE(debug,
-[  --enable-debug          enable internal debugging output and debugging symbols [[default=no]]],
-[
-enable_debug=yes
-],[
-enable_debug=no
-])
+AC_ARG_ENABLE(debug,[AS_HELP_STRING(--enable-debug, enable debugging output and symbols [[default: no]] )])
 
 if test "$enable_debug" = yes ; then
 	AC_DEFINE(DEBUG, [1], [Use debugging])
 	CFLAGS="-ggdb $CFLAGS"
+else
+	CFLAGS="-O3 $CFLAGS"
 fi
 
-AC_ARG_ENABLE(pcap,
-[  --enable-pcap[[=DIR]]       use libpcap for packet capturing.  [[default=no]]],
-[
-	if test "$enable_pcap" = no
-	then
-		want_pcap=no
-	elif test "$enable_pcap" = yes
-	then
-		want_pcap=yes
-	else
-		want_pcap=yes
-		pcap_dir="$enable_debug"
-	fi
-],[
-	want_pcap=no
-	pcap_dir=
-])
-if test "x$want_pcap" = "xno" ; then
-	AC_MSG_RESULT(no)
-else
-	AC_MSG_RESULT(yes)
+AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: autodetect]] )])
+if test "x$enable_pcap" != "xno"; then
 	AC_PCAP_CHECK
 fi
 
-AC_HEADER_STDC
-AC_CHECK_HEADERS([ \
-	syslog.h \
-	sys/time.h \
-	sys/socket.h \
-	sys/param.h \
-	sys/ioctl.h \
-	netinet/in.h \
-	netdb.h \
-	limits.h \
-	fcntl.h \
-	arpa/inet.h \
-	float.h \
-])
-
-AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([ \
-	Makefile
-	src/Makefile \
-])
-
-AC_CHECK_PROG(xmlrpcconfig, xmlrpc-c-config, yes, no)
-
-if test "x$xmlrpcconfig" = "xno"; then
-  AC_MSG_ERROR(xmlrpc-c-config not found in path.)
+AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[default: autodetect]] )])
+if test "x$enable_gsl" != "xno"; then
+	AC_CHECK_HEADER(gsl/gsl_rng.h,
+   		AC_CHECK_LIB([gsl], gsl_rng_alloc, [AC_DEFINE(HAVE_LIBGSL, 1, [Define to 1 if you have the gsl library (-lgsl).]) LIBS=$LIBS"-lgsl -lgslcblas"],
+          	AC_MSG_NOTICE([*** Could not find libgsl: will compile without optional trafgen distributions. ***]),[-lgslcblas]),
+     		AC_MSG_NOTICE([*** Header file gsl_rng.h not found: will compile without optional trafgen distributions. ***]))
 fi
 
-if ! xmlrpc-c-config --features | grep "curl-client" > /dev/null; then
-  AC_MSG_ERROR([xmlrpc-c needs to be compiled with curl-client enabled.])
-fi
-if ! xmlrpc-c-config --features | grep "abyss-server" > /dev/null; then
-  AC_MSG_ERROR([xmlrpc-c needs to be compiled with abyss-server enabled.])
+
+if test -z "$CURL_CONFIG"; then
+        AC_PATH_PROG(CURL_CONFIG, curl-config, no)
 fi
 
-AC_CHECK_LIB(curl, curl_version,
-  [],
-  [
-    AC_MSG_ERROR([libcurl not found.])
-  ])
+if test "$CURL_CONFIG" = "xno" ; then
+        AC_MSG_ERROR(required curl-config not found in path.)
+fi
+
+CURL_CFLAGS=`$CURL_CONFIG --cflags`
+CURL_LDADD=`$CURL_CONFIG --libs`
+
+AC_SUBST(CURL_CFLAGS)
+AC_SUBST(CURL_LDADD)
+
+if test -z "$XMLRPC_C_CONFIG"; then
+        AC_PATH_PROG(XMLRPC_C_CONFIG, xmlrpc-c-config, no)
+fi
+  
+if test "$XMLRPC_C_CONFIG" = "xno"; then
+	AC_MSG_ERROR(xmlrpc-c-config not found in path.)
+fi
+
+if ! $XMLRPC_C_CONFIG --features | grep "curl-client" > /dev/null; then
+	AC_MSG_ERROR([xmlrpc-c needs to be compiled with curl-client enabled.])
+fi
+
+if ! $XMLRPC_C_CONFIG --features | grep "abyss-server" > /dev/null; then
+	AC_MSG_ERROR([xmlrpc-c needs to be compiled with abyss-server enabled.])
+fi
 
 XMLRPC_C_CLIENT_CFLAGS=`xmlrpc-c-config client --cflags`
 XMLRPC_C_CLIENT_LDADD=`xmlrpc-c-config client --ldadd`

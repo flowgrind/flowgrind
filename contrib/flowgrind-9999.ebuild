@@ -21,11 +21,12 @@ else
 	KEYWORDS="~x86 ~amd64"
 fi
 
-IUSE="pcap debug"
+IUSE="pcap gsl debug"
 
 RDEPEND="
 	<dev-libs/xmlrpc-c-1.14[curl]
 	pcap? ( sys-libs/libcap )
+	gsl? ( sci-libs/gsl )
 "
 DEPEND="${RDEPEND}"
 
@@ -38,7 +39,8 @@ fi
 src_configure() {
 	econf \
 	$(use_enable pcap) \
-	$(use_enable debug) || die
+	$(use_enable debug) \
+	$(use_enable gsl) || die 
 }
 
 src_compile() {
