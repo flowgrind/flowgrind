@@ -96,7 +96,7 @@ AC_ARG_ENABLE(debug,[AS_HELP_STRING(--enable-debug, enable debugging output and 
 
 if test "$enable_debug" = yes ; then
 	AC_DEFINE(DEBUG, [1], [Use debugging])
-	CFLAGS="-ggdb $CFLAGS"
+	CFLAGS="-ggdb3 $CFLAGS"
 else
 	CFLAGS="-O3 $CFLAGS"
 fi
