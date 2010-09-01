@@ -61,10 +61,10 @@ inline static double calculate(enum _stochastic_distributions type, double param
 }	
 int next_request_block_size(struct _flow *flow)
 {
-	int bs = calculate(flow->settings.request_trafgen_options.distribution, 
+	int bs = round(calculate(flow->settings.request_trafgen_options.distribution, 
 			   flow->settings.request_trafgen_options.param_one,
 			   flow->settings.request_trafgen_options.param_two
-			   );
+			   ));
 
 	/* sanity checks */
 	if (bs < MIN_BLOCK_SIZE) {
@@ -85,10 +85,10 @@ int next_request_block_size(struct _flow *flow)
 
 int next_response_block_size(struct _flow *flow)
 {
-        int bs = calculate(flow->settings.response_trafgen_options.distribution, 
+        int bs = round(calculate(flow->settings.response_trafgen_options.distribution, 
                            flow->settings.response_trafgen_options.param_one,
                            flow->settings.response_trafgen_options.param_two
-                           );
+                           ));
 
 	if (bs && bs < MIN_BLOCK_SIZE) {
                 bs = MIN_BLOCK_SIZE;

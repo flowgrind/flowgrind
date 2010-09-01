@@ -1,6 +1,5 @@
 /* initalization for random number generator */
-extern void rn_set_seed (const int i);
-extern int rn_read_dev_random ();
+extern void init_math_functions (unsigned int seed);
 
 /* basic probability distributions */
 extern int 	dist_bernoulli	(const double p);

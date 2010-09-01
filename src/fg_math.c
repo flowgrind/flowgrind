@@ -19,6 +19,7 @@
 
 #ifdef HAVE_FLOAT_H
 #include <float.h>
+#include <fenv.h>
 #endif
 
 #ifdef HAVE_LIBGSL 
@@ -31,7 +32,7 @@
 #endif
 
 #ifndef HAVE_LIBGSL
-
+/* RANDOM_MAX only needed for POSIX math functions */
 #ifdef __SOLARIS__
 #define RANDOM_MAX              4294967295UL    /* 2**32-1 */
 #elif __DARWIN__
@@ -48,29 +49,36 @@ gsl_rng * r;
 #endif
 
 extern void
-rn_set_seed (int i) {
+init_math_functions (unsigned int seed) {
+	int rc;
+
+	/* set rounding */
+	fesetround(FE_TONEAREST);
+	/* initalize rng */
+
 #ifdef HAVE_LIBGSL
-	gsl_rng_env_setup();
+        gsl_rng_env_setup();
         T = gsl_rng_default;
         r = gsl_rng_alloc (T);
-	gsl_rng_set (r, i);
-	DEBUG_MSG(LOG_WARNING, "initalized libgsl random functions with seed %u",(unsigned)i);
-#else
-	srand((unsigned)i);
-	DEBUG_MSG(LOG_WARNING, "initalized posix random functions with seed %u",(unsigned)i);
 #endif
-}
 
-extern int
-rn_read_dev_random () {
-	int i, rc;
-	int data = open("/dev/urandom", O_RDONLY);
-	rc = read(data, &i, sizeof (int) );
-	close(data);
-	if(rc == -1) {
-		error(ERR_FATAL, "read /dev/urandom failed: %s", strerror(errno));
+	if (!seed) {
+	/* if no seed supplied use urandom */
+        	int data = open("/dev/urandom", O_RDONLY);
+        	rc = read(data, &seed, sizeof (int) );
+        	close(data); 
+        	if(rc == -1) {
+                	error(ERR_FATAL, "read /dev/urandom failed: %s", strerror(errno));
+        	}
 	}
-	return i;
+
+#ifdef HAVE_LIBGSL
+        gsl_rng_set (r, seed);
+        DEBUG_MSG(LOG_WARNING, "initalized libgsl random functions with seed %u, gsl generator is: %s",seed,gsl_rng_name (r));
+#else   
+        srand(seed);
+        DEBUG_MSG(LOG_WARNING, "initalized posix random functions with seed %u",seed);
+#endif
 }
 
 static inline double

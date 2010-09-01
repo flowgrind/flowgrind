@@ -233,11 +233,9 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		settings.reporting_interval < 0) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");
 	}
-	/* initalize random number generator (use cmdline option if given, else use random data) */
-	if (settings.random_seed)
-		rn_set_seed(settings.random_seed);
-	else
-		rn_set_seed(rn_read_dev_random());
+	/* initalize random number generator etc */
+	init_math_functions(settings.random_seed);
+
 	/* Parse extra socket options */
 	for (i = 0; i < settings.num_extra_socket_options; i++) {
 
@@ -422,10 +420,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	 /* initalize random number generator (use cmdline option if given, else use random data) 
 	  * (currently not used for flow_destination, but added for future use)
 	  */
-        if (settings.random_seed)
-                rn_set_seed(settings.random_seed);
-        else
-                rn_set_seed(rn_read_dev_random());
+        /* init_math_functions (settings.random_seed); */
 
 	/* Parse extra socket options */
 	for (i = 0; i < settings.num_extra_socket_options; i++) {
