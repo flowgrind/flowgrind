@@ -568,7 +568,11 @@ static void usage(void)
 		"               Useful in combination with -n to set specific options\n"
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
-                "  -G [q|p|g]=[C|P|W|U],#1,(#2):<multiple times>\n"
+#if HAVE_LIBGSL
+                "  -G [q|p|g]=[C|U],#1,(#2):<multiple times>\n"
+#else
+                "  -G [q|p|g]=[C|E|P|N|U],#1,(#2):<multiple times>\n"
+#endif
                 "               Activate stochastic traffic generation and set parameters\n"
                 "               according to the used distribution\n"
                 "               (call with -G help more info)\n"	
@@ -662,11 +666,14 @@ static void usage_trafgenopt(void)
                 "               p = response size (in bytes)\n"
                 "               g = request interpacket gap (in s)\n"
                 "               \n"
-                "               possible distributions:\n"
+                "               possible distributions (E, N, W only available if compiled with libgsl):\n"
                 "               C = constant (param 1: value, param 2: not used)\n"
 		"               U = uniform (param 1: min, param 2: max)\n"
+#ifdef HAVE_LIBGSL
+		"		E = exponential (param 1: lamba - lifetime, param 2: not used)\n"
                 "               N = normal (param 1: mu - mean value, param 2: sigma_square - variance)\n"
                 "               W = weibull distributed (param 1: lambda - scale, param 2: k - shape)\n"
+#endif
                 "\n"
 		"               -U # and -V # specify a cap for the calculated values for request and\n"
 		"               response sizes (not needed for constant values or uniform distribution)\n"

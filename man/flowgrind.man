@@ -220,6 +220,9 @@ normal (param 1: mu \- mean value, param 2: sigma_square \- variance)
 .BR W
 weibull distributed (param 1: lambda \- scale, param 2: k \- shape)
 
+advanced distributions like weibull are only available if flowgrind is compiled
+with libgsl support.
+
 .BR \-U " #" 
 specify a cap for the calculated values for request and
 response sizes, needed because normal and weibull distributed values are 

@@ -113,13 +113,18 @@ dist_exponential(const double mu) {
 #endif
 }
 
-/* source english wikipedia articles */
+/* source for naive implementation english wikipedia articles */
 
 double
 dist_uniform(const double minval, const double maxval) {
+#ifdef HAVE_LIBGSL
+	return gsl_ran_flat(r, minval, maxval);
+#else
 	const double x = rn_uniform_zero_to_one();
 	return ((maxval-minval) * x) + minval;
+#endif
 }
+
 double
 dist_normal(const double mu, const double sigma_square) {
 #ifdef HAVE_LIBGSL
@@ -153,7 +158,7 @@ dist_pareto (const double k, const double x_min) {
 extern double
 dist_weibull (const double alpha, const double beta) {
 #ifdef HAVE_LIBGSL
-	return gsl_ran_weibull(r, alpha, beta);
+	return gsl_ran_weibull (r, alpha, beta);
 #else
         const double x = rn_uniform_zero_to_one();
         return  alpha * beta * pow (x,beta-1.0) * exp( -alpha * pow(x,beta) );
