@@ -1,5 +1,6 @@
 Release 0.5 (2010-X-X)
 - removed obsolete fasttime and TSCI2 support
+- libgsl support for advanced stochastic distributions
 - bugfixes
 
 Release 0.4a (2010-8-10)
