@@ -1,13 +1,13 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
-#define LOGGING_MAXLEN	255		/* maximum string length */
+#define LOGGING_MAXLEN  255             /* maximum string length */
 
 extern int log_type;
 
 enum {
-	LOGTYPE_SYSLOG,
-	LOGTYPE_STDERR
+        LOGTYPE_SYSLOG,
+        LOGTYPE_STDERR
 };
 
 void logging_init (void);

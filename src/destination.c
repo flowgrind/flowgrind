@@ -50,177 +50,177 @@ void uninit_flow(struct _flow *flow);
 /* listen_port will receive the port of the created socket */
 static int create_listen_socket(struct _flow *flow, char *bind_addr, unsigned short *listen_port)
 {
-	int port;
-	int rc;
-	int fd;
-	struct addrinfo hints, *res, *ressave;
+        int port;
+        int rc;
+        int fd;
+        struct addrinfo hints, *res, *ressave;
 
-	bzero(&hints, sizeof(struct addrinfo));
-	hints.ai_flags = bind_addr ? 0 : AI_PASSIVE;
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
+        bzero(&hints, sizeof(struct addrinfo));
+        hints.ai_flags = bind_addr ? 0 : AI_PASSIVE;
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
 
-	/* Any port will be fine */
-	if ((rc = getaddrinfo(bind_addr, "0",
-			&hints, &res)) != 0) {
-		logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n",
-			gai_strerror(rc));
-		flow_error(flow, "getaddrinfo() failed: %s",
-			gai_strerror(rc));
-		return -1;
-	}
+        /* Any port will be fine */
+        if ((rc = getaddrinfo(bind_addr, "0",
+                        &hints, &res)) != 0) {
+                logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n",
+                        gai_strerror(rc));
+                flow_error(flow, "getaddrinfo() failed: %s",
+                        gai_strerror(rc));
+                return -1;
+        }
 
-	ressave = res;
+        ressave = res;
 
-	do {
-		fd = socket(res->ai_family, res->ai_socktype,
-			res->ai_protocol);
-		if (fd < 0)
-			continue;
+        do {
+                fd = socket(res->ai_family, res->ai_socktype,
+                        res->ai_protocol);
+                if (fd < 0)
+                        continue;
 
-		if (bind(fd, res->ai_addr, res->ai_addrlen) == 0)
-			break;
+                if (bind(fd, res->ai_addr, res->ai_addrlen) == 0)
+                        break;
 
-		close(fd);
-	} while ((res = res->ai_next) != NULL);
+                close(fd);
+        } while ((res = res->ai_next) != NULL);
 
 
-	if (res == NULL) {
-		logging_log(LOG_ALERT, "failed to create listen socket");
-		flow_error(flow, "Failed to create listen socket: %s", strerror(errno));
-		freeaddrinfo(ressave);
-		return -1;
-	}
+        if (res == NULL) {
+                logging_log(LOG_ALERT, "failed to create listen socket");
+                flow_error(flow, "Failed to create listen socket: %s", strerror(errno));
+                freeaddrinfo(ressave);
+                return -1;
+        }
 
-	freeaddrinfo(ressave);
+        freeaddrinfo(ressave);
 
-	if (listen(fd, 0) < 0) {
-		logging_log(LOG_ALERT, "listen failed: %s",
-				strerror(errno));
-		flow_error(flow, "Listen failed: %s", strerror(errno));
-		return -1;
-	}
+        if (listen(fd, 0) < 0) {
+                logging_log(LOG_ALERT, "listen failed: %s",
+                                strerror(errno));
+                flow_error(flow, "Listen failed: %s", strerror(errno));
+                return -1;
+        }
 
-	set_non_blocking(fd);
+        set_non_blocking(fd);
 
-	port = get_port(fd);
-	if (port < 0) {
-		flow_error(flow, "Could not get port: %s", strerror(errno));
-		close(fd);
-		return -1;
-	}
-	*listen_port = (unsigned short)port;
+        port = get_port(fd);
+        if (port < 0) {
+                flow_error(flow, "Could not get port: %s", strerror(errno));
+                close(fd);
+                return -1;
+        }
+        *listen_port = (unsigned short)port;
 
-	return fd;
+        return fd;
 }
 
 void add_flow_destination(struct _request_add_flow_destination *request)
 {
-	struct _flow *flow;
-	unsigned short server_data_port;
+        struct _flow *flow;
+        unsigned short server_data_port;
 
-	if (num_flows >= MAX_FLOWS) {
-		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
-		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
-		return;
-	}
+        if (num_flows >= MAX_FLOWS) {
+                logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
+                request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
+                return;
+        }
 
-	flow = &flows[num_flows++];
-	init_flow(flow, 0);
+        flow = &flows[num_flows++];
+        init_flow(flow, 0);
 
-	flow->settings = request->settings;
-	flow->write_block = calloc(1, flow->settings.maximum_block_size );
-	flow->read_block = calloc(1, flow->settings.maximum_block_size );
-	if (flow->write_block == NULL || flow->read_block == NULL) {
-		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
-		request_error(&request->r, "could not allocate memory for read/write blocks");
-		uninit_flow(flow);
-		num_flows--;
-		return;
-	}
+        flow->settings = request->settings;
+        flow->write_block = calloc(1, flow->settings.maximum_block_size );
+        flow->read_block = calloc(1, flow->settings.maximum_block_size );
+        if (flow->write_block == NULL || flow->read_block == NULL) {
+                logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
+                request_error(&request->r, "could not allocate memory for read/write blocks");
+                uninit_flow(flow);
+                num_flows--;
+                return;
+        }
 
-	if (flow->settings.byte_counting) {
-		int byte_idx;
-		for (byte_idx = 0; byte_idx < flow->settings.maximum_block_size; byte_idx++)
-			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
-	}
+        if (flow->settings.byte_counting) {
+                int byte_idx;
+                for (byte_idx = 0; byte_idx < flow->settings.maximum_block_size; byte_idx++)
+                        *(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
+        }
 
-	/* Create listen socket for data connection */
-	if ((flow->listenfd_data = create_listen_socket(flow, flow->settings.bind_address[0] ? flow->settings.bind_address : 0, &server_data_port)) == -1) {
-		logging_log(LOG_ALERT, "could not create listen socket for data connection: %s", flow->error);
-		request_error(&request->r, "could not create listen socket for data connection: %s", flow->error);
-		uninit_flow(flow);
-		num_flows--;
-		return;
-	}
+        /* Create listen socket for data connection */
+        if ((flow->listenfd_data = create_listen_socket(flow, flow->settings.bind_address[0] ? flow->settings.bind_address : 0, &server_data_port)) == -1) {
+                logging_log(LOG_ALERT, "could not create listen socket for data connection: %s", flow->error);
+                request_error(&request->r, "could not create listen socket for data connection: %s", flow->error);
+                uninit_flow(flow);
+                num_flows--;
+                return;
+        }
 
-	flow->real_listen_send_buffer_size = set_window_size_directed(flow->listenfd_data, flow->settings.requested_send_buffer_size, SO_SNDBUF);
-	flow->real_listen_receive_buffer_size = set_window_size_directed(flow->listenfd_data, flow->settings.requested_read_buffer_size, SO_RCVBUF);
-	/* XXX: It might be too brave to report the window size of the listen
-	 * socket to the client as the window size of test socket might differ
-	 * from the reported one. Close the socket in that case. */
+        flow->real_listen_send_buffer_size = set_window_size_directed(flow->listenfd_data, flow->settings.requested_send_buffer_size, SO_SNDBUF);
+        flow->real_listen_receive_buffer_size = set_window_size_directed(flow->listenfd_data, flow->settings.requested_read_buffer_size, SO_RCVBUF);
+        /* XXX: It might be too brave to report the window size of the listen
+         * socket to the client as the window size of test socket might differ
+         * from the reported one. Close the socket in that case. */
 
-	request->listen_data_port = (int)server_data_port;
-	request->real_listen_send_buffer_size = flow->real_listen_send_buffer_size;
-	request->real_listen_read_buffer_size = flow->real_listen_receive_buffer_size;
+        request->listen_data_port = (int)server_data_port;
+        request->real_listen_send_buffer_size = flow->real_listen_send_buffer_size;
+        request->real_listen_read_buffer_size = flow->real_listen_receive_buffer_size;
 
-	request->flow_id = flow->id;
+        request->flow_id = flow->id;
 
-	return;
+        return;
 }
 
 int accept_data(struct _flow *flow)
 {
-	struct sockaddr_storage caddr;
-	socklen_t addrlen = sizeof(caddr);
+        struct sockaddr_storage caddr;
+        socklen_t addrlen = sizeof(caddr);
 
-	unsigned real_send_buffer_size;
-	unsigned real_receive_buffer_size;
+        unsigned real_send_buffer_size;
+        unsigned real_receive_buffer_size;
 
-	flow->fd = accept(flow->listenfd_data, (struct sockaddr *)&caddr, &addrlen);
-	if (flow->fd == -1) {
-		if (errno == EINTR || errno == EAGAIN)
-		{
-			/* TODO: Accept timeout
-			 logging_log(LOG_ALERT, "client did not connect()."); */
-			return 0;
-		}
+        flow->fd = accept(flow->listenfd_data, (struct sockaddr *)&caddr, &addrlen);
+        if (flow->fd == -1) {
+                if (errno == EINTR || errno == EAGAIN)
+                {
+                        /* TODO: Accept timeout
+                         logging_log(LOG_ALERT, "client did not connect()."); */
+                        return 0;
+                }
 
-		logging_log(LOG_ALERT, "accept() failed: %s", strerror(errno));
-		return -1;
-	}
-	/* XXX: Check if this is the same client. */
-	if (close(flow->listenfd_data) == -1)
-		logging_log(LOG_WARNING, "close(): failed");
-	flow->listenfd_data = -1;
+                logging_log(LOG_ALERT, "accept() failed: %s", strerror(errno));
+                return -1;
+        }
+        /* XXX: Check if this is the same client. */
+        if (close(flow->listenfd_data) == -1)
+                logging_log(LOG_WARNING, "close(): failed");
+        flow->listenfd_data = -1;
 
-	logging_log(LOG_NOTICE, "client %s connected for testing.",
-			fg_nameinfo((struct sockaddr *)&caddr, addrlen));
-	real_send_buffer_size = set_window_size_directed(flow->fd, flow->settings.requested_send_buffer_size, SO_SNDBUF);
-	if (flow->requested_server_test_port &&
-			flow->real_listen_send_buffer_size != real_send_buffer_size) {
-		logging_log(LOG_WARNING, "Failed to set send buffer size of test "
-				"socket to send buffer size size of listen socket "
-				"(listen = %u, test = %u).",
-				flow->real_listen_send_buffer_size, real_send_buffer_size);
-		return -1;
-	}
-	real_receive_buffer_size = set_window_size_directed(flow->fd, flow->settings.requested_read_buffer_size, SO_RCVBUF);
-	if (flow->requested_server_test_port &&
-			flow->real_listen_receive_buffer_size != real_receive_buffer_size) {
-		logging_log(LOG_WARNING, "Failed to set receive buffer size (advertised window) of test "
-				"socket to receive buffer size of listen socket "
-				"(listen = %u, test = %u).",
-				flow->real_listen_receive_buffer_size, real_receive_buffer_size);
-		return -1;
-	}
+        logging_log(LOG_NOTICE, "client %s connected for testing.",
+                        fg_nameinfo((struct sockaddr *)&caddr, addrlen));
+        real_send_buffer_size = set_window_size_directed(flow->fd, flow->settings.requested_send_buffer_size, SO_SNDBUF);
+        if (flow->requested_server_test_port &&
+                        flow->real_listen_send_buffer_size != real_send_buffer_size) {
+                logging_log(LOG_WARNING, "Failed to set send buffer size of test "
+                                "socket to send buffer size size of listen socket "
+                                "(listen = %u, test = %u).",
+                                flow->real_listen_send_buffer_size, real_send_buffer_size);
+                return -1;
+        }
+        real_receive_buffer_size = set_window_size_directed(flow->fd, flow->settings.requested_read_buffer_size, SO_RCVBUF);
+        if (flow->requested_server_test_port &&
+                        flow->real_listen_receive_buffer_size != real_receive_buffer_size) {
+                logging_log(LOG_WARNING, "Failed to set receive buffer size (advertised window) of test "
+                                "socket to receive buffer size of listen socket "
+                                "(listen = %u, test = %u).",
+                                flow->real_listen_receive_buffer_size, real_receive_buffer_size);
+                return -1;
+        }
 
-	if (set_flow_tcp_options(flow) == -1)
-		return -1;
+        if (set_flow_tcp_options(flow) == -1)
+                return -1;
 
-	DEBUG_MSG(LOG_NOTICE, "data socket accepted");
-	flow->state = GRIND;
-	flow->connect_called = 1;
+        DEBUG_MSG(LOG_NOTICE, "data socket accepted");
+        flow->state = GRIND;
+        flow->connect_called = 1;
 
-	return 0;
+        return 0;
 }

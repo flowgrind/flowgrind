@@ -18,11 +18,11 @@ unsigned debug_level;
 const char *debug_timestamp(void);
 
 #define DEBUG_MSG(message_level, msg, args...) \
-		if (debug_level>=message_level) { \
+                if (debug_level>=message_level) { \
                         fprintf(stderr, "%s %s:%d  [%d] " msg "\n", \
                                         debug_timestamp(), __FUNCTION__, \
                                         __LINE__, getpid(), ##args); \
-                } 
+                }
 #else
 
 #define DEBUG_MSG(message_level, msg, args...) do {} while(0)
