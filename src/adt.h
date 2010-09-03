@@ -8,7 +8,7 @@
 
 /*
 Notes on Anderson Darlington Test
-    
+
    Both routines return a significance level, as described earlier. This
    is a value between 0 and 1.  The correct use of the routines is to
    pick in advance the threshold for the significance level to test;
@@ -53,18 +53,18 @@ Notes on Anderson Darlington Test
 
 enum _adt_data_type
 {
-	adt_throughput,
-	adt_iat,
-	adt_rtt,
+        adt_throughput,
+        adt_iat,
+        adt_rtt,
 
-	adt_type_max
+        adt_type_max
 };
 
 void adt_add_data(double v, enum endpoint direction, enum _adt_data_type type);
 
-double adt_get_result_range(enum endpoint direction, enum _adt_data_type type, 
+double adt_get_result_range(enum endpoint direction, enum _adt_data_type type,
                       double lower_bound, double upper_bound);
-double adt_get_result_mean(enum endpoint direction, enum _adt_data_type type, 
+double adt_get_result_mean(enum endpoint direction, enum _adt_data_type type,
                       double mean);
 
 int adt_too_much_data();

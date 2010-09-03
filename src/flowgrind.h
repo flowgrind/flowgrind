@@ -11,89 +11,89 @@
 #include <xmlrpc-c/client.h>
 
 
-#define	MAX_FLOWS		256
-#define CONGESTION_LIMIT 	10000
-#define DEFAULT_SELECT_TIMEOUT	10000
+#define MAX_FLOWS               256
+#define CONGESTION_LIMIT        10000
+#define DEFAULT_SELECT_TIMEOUT  10000
 
 struct _opt {
-	unsigned short num_flows;
-	double reporting_interval;
-	char dont_log_stdout;
-	char dont_log_logfile;
-	char *log_filename;
-	char *log_filename_prefix;
-	char clobber;
-	char mbyte;
-	char symbolic;
-	char doAnderson;
-	unsigned short base_port;
+        unsigned short num_flows;
+        double reporting_interval;
+        char dont_log_stdout;
+        char dont_log_logfile;
+        char *log_filename;
+        char *log_filename_prefix;
+        char clobber;
+        char mbyte;
+        char symbolic;
+        char doAnderson;
+        unsigned short base_port;
 };
 extern struct _opt opt;
 
 enum protocol {
-	PROTO_TCP = 1,
-	PROTO_UDP
+        PROTO_TCP = 1,
+        PROTO_UDP
 };
 
 enum endpoint {
-	SOURCE = 0,
-	DESTINATION
+        SOURCE = 0,
+        DESTINATION
 };
 
 struct _flow_endpoint {
-	/* Flow options only affecting source or destination*/
+        /* Flow options only affecting source or destination*/
 
-	/* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
+        /* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
 
-	/* SO_SNDBUF */
-	int send_buffer_size_real;
+        /* SO_SNDBUF */
+        int send_buffer_size_real;
 
-	/* SO_RCVBUF */
-	int receive_buffer_size_real;
+        /* SO_RCVBUF */
+        int receive_buffer_size_real;
 
-	struct timeval flow_start_timestamp;
-	struct timeval flow_stop_timestamp;
+        struct timeval flow_start_timestamp;
+        struct timeval flow_stop_timestamp;
 
-	char *rate_str;
+        char *rate_str;
 
-	char server_url[1000];
-	char server_address[1000];
-	unsigned server_port;
-	char test_address[1000];
-	char bind_address[1000];
+        char server_url[1000];
+        char server_address[1000];
+        unsigned server_port;
+        char test_address[1000];
+        char bind_address[1000];
 };
 
 struct _flow {
 
-	enum protocol proto;
+        enum protocol proto;
 
-	char late_connect;
-	char shutdown;
-	char summarize_only;
-	char byte_counting;
+        char late_connect;
+        char shutdown;
+        char summarize_only;
+        char byte_counting;
 
-	int random_seed;
+        int random_seed;
 
-	int endpoint_id[2];
+        int endpoint_id[2];
 
-	struct timeval start_timestamp[2];
+        struct timeval start_timestamp[2];
 
-	// 0 for source
-	// 1 for destination
-	struct _flow_endpoint endpoint_options[2];
-	struct _flow_settings settings[2];
+        // 0 for source
+        // 1 for destination
+        struct _flow_endpoint endpoint_options[2];
+        struct _flow_settings settings[2];
 
-	char finished[2];
-	struct _report *final_report[2];
+        char finished[2];
+        struct _report *final_report[2];
 };
 
 char *guess_topology (int mss, int mtu);
 
 inline static double scale_thruput(double thruput)
 {
-	if (opt.mbyte)
-		return thruput / (1<<20);
-	return thruput / 1e6 *(1<<3);
+        if (opt.mbyte)
+                return thruput / (1<<20);
+        return thruput / 1e6 *(1<<3);
 }
 
 #endif
