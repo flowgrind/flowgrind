@@ -54,8 +54,6 @@ static struct _flow flow[MAX_FLOWS];
 int active_flows = 0;
 unsigned int num_unique_servers = 0;
 
-unsigned select_timeout = DEFAULT_SELECT_TIMEOUT;
-
 enum _column_types
 {
         column_type_begin,
@@ -134,9 +132,7 @@ void prepare_flows(xmlrpc_client *rpc_client);
 void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void grind_flows(xmlrpc_client *rpc_client);
 
-/* New output
-   determines the number of digits before the comma
-*/
+/* New output determines the number of digits before the comma */
 int det_output_column_size(long value) {
         int i = 1;
         double dez = 10.0;
@@ -506,7 +502,6 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 
         return outputString;
 }
-/*New output end*/
 
 static void usage(void)
 {
@@ -558,8 +553,8 @@ static void usage(void)
                 "  specify different values for each endpoints, separate them by comma.\n"
                 "  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
                 "  and 4096 at the destination.\n\n"
-                "  -A x         Use minimal response size for RTT calculation,\n"
-                "               same as -G p=C,16.\n"
+                "  -A x         Use minimal response size for RTT calculation\n"
+                "               same as -G p=C,16 (value depends on arch).\n"
                 "  -B x=#       Set requested sending buffer in bytes\n"
                 "  -C x         Stop flow if it is experiencing local congestion\n"
                 "  -D x=DSCP    DSCP value for TOS byte\n"
@@ -633,20 +628,21 @@ static void usage_sockopt(void)
 
         fprintf(stderr,
                 "  x=TCP_CORK   set TCP_CORK on test socket\n"
-                "  x=TCP_ELCN   set TCP_ELCN on test socket\n"
-                "  x=TCP_ICMP   set TCP_ICMP on test socket\n"
                 "  x=SO_DEBUG   set SO_DEBUG on test socket\n"
                 "  x=IP_MTU_DISCOVER\n"
                 "               set IP_MTU_DISCOVER on test socket if not already enabled by\n"
                 "               system default\n"
                 "  x=ROUTE_RECORD\n"
                 "               set ROUTE_RECORD on test socket\n\n"
+		
+		"the following non-standard socket options are supported:\n"
+		"  x=TCP_ELCN   set TCP_ELCN (20) on test socket\n"
+		"  x=TCP_ICMP   set TCP_ICMP (21) on test socket\n\n"
 
                 "x can be replaced with 's' for source or 'd' for destination\n\n"
 
                 "Examples:\n"
                 "  flowgrind -H d=testhost -O s=TCP_CONG_MODULE=reno,d=SO_DEBUG\n"
-                /* ToDo: write more examples and descriptions */
                 );
         exit(1);
 }
@@ -1009,19 +1005,17 @@ void report_final(void)
                                 flow[id].endpoint_options[endpoint].receive_buffer_size_real,
                                 flow[id].settings[endpoint].requested_read_buffer_size);
 
-                        CATC("delay = %.2fs/%.2fs",
-                                flow[id].settings[SOURCE].delay[WRITE],
-                                flow[id].settings[SOURCE].delay[READ]);
+			if (flow[id].settings[SOURCE].delay[WRITE] || flow[id].settings[SOURCE].delay[READ])
+                        	CATC("delay = %.2fs/%.2fs",
+                                	flow[id].settings[SOURCE].delay[WRITE],
+                                	flow[id].settings[SOURCE].delay[READ]);
 
                         CATC("duration = %.2fs/%.2fs",
                                 flow[id].settings[SOURCE].duration[WRITE],
                                 flow[id].settings[SOURCE].duration[READ]);
 
                         if (flow[id].final_report[endpoint]) {
-                                double thruput_read = 0.0;
-                                double thruput_written = 0.0;
-
-                                double report_diff, duration_read, duration_write;
+                                double thruput_read, thruput_written, report_diff, duration_read, duration_write;
 
                                 report_diff = time_diff(&flow[id].final_report[endpoint]->begin, &flow[id].final_report[endpoint]->end);
                                 /* Calculate duration the flow was receiving */
@@ -1245,7 +1239,6 @@ void close_flows(void)
         int id;
         for (id = 0; id < opt.num_flows; id++)
                 close_flow(id);
-
 }
 
 
@@ -1352,7 +1345,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 
                 if (type != 'p' && type != 'q' && type != 'g') {
                         if (type != 'h')
-                                fprintf(stderr, "Syntax error in traffic generation option: %c is not a type.\n", type);
+                                fprintf(stderr, "Syntax error in traffic generation option: %c is not a parameter type.\n", type);
 
                         usage_trafgenopt();
                 }
@@ -2186,13 +2179,7 @@ static void parse_cmdline(int argc, char **argv) {
                 exit(EXIT_FAILURE);
 #endif
         }
-        DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
-        if (max_flow_rate > 0) {
-                select_timeout = 1e6/max_flow_rate/2;
-                if (select_timeout > DEFAULT_SELECT_TIMEOUT)
-                        select_timeout = DEFAULT_SELECT_TIMEOUT;
-                DEBUG_MSG(LOG_WARNING, "setting select timeout = %uus", select_timeout);
-        }
+	DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
 }
 
 static void die_if_fault_occurred(xmlrpc_env *env)
@@ -2740,21 +2727,20 @@ int main(int argc, char *argv[])
         }
         DEBUG_MSG(LOG_WARNING, "prepare xmlrpc client");
         xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &rpc_client);
-        /* Check that all nodes run a compatible flowgrind version */
-        DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
+        
+	DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
         if (!sigint_caught)
                 check_version(rpc_client);
-        DEBUG_MSG(LOG_WARNING, "check if flowgrindds are idle");
-        /* Check that all nodes are currently idle */
+        
+	DEBUG_MSG(LOG_WARNING, "check if flowgrindds are idle");
         if (!sigint_caught)
                 check_idle(rpc_client);
-        DEBUG_MSG(LOG_WARNING, "prepare flows");
-        /* Setup flows */
+        
+	DEBUG_MSG(LOG_WARNING, "prepare flows");
         if (!sigint_caught)
                 prepare_flows(rpc_client);
 
         DEBUG_MSG(LOG_WARNING, "start flows");
-        /* Start the test */
         if (!sigint_caught)
                 grind_flows(rpc_client);
 
@@ -2771,7 +2757,7 @@ int main(int argc, char *argv[])
 
         xmlrpc_client_teardown_global_const();
 
-        DEBUG_MSG(LOG_WARNING, "finished");
+        DEBUG_MSG(LOG_WARNING, "bye");
         return 0;
 }
 
