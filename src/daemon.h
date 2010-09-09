@@ -84,7 +84,7 @@ struct _flow
         int mss;
         int mtu;
 
-        unsigned congestion_counter;
+        unsigned int congestion_counter;
 
         /* Used for late_connect */
         struct sockaddr *addr;

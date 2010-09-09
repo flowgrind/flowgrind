@@ -41,9 +41,8 @@ enum endpoint {
 };
 
 struct _flow_endpoint {
-        /* Flow options only affecting source or destination*/
-
-        /* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
+        /* Flow options only affecting source or destination
+         * SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
 
         /* SO_SNDBUF */
         int send_buffer_size_real;
@@ -58,7 +57,7 @@ struct _flow_endpoint {
 
         char server_url[1000];
         char server_address[1000];
-        unsigned server_port;
+        unsigned short server_port;
         char test_address[1000];
         char bind_address[1000];
 };
@@ -72,7 +71,7 @@ struct _flow {
         char summarize_only;
         char byte_counting;
 
-        int random_seed;
+        unsigned int random_seed;
 
         int endpoint_id[2];
 

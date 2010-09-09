@@ -156,9 +156,6 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 
         flow->real_listen_send_buffer_size = set_window_size_directed(flow->listenfd_data, flow->settings.requested_send_buffer_size, SO_SNDBUF);
         flow->real_listen_receive_buffer_size = set_window_size_directed(flow->listenfd_data, flow->settings.requested_read_buffer_size, SO_RCVBUF);
-        /* XXX: It might be too brave to report the window size of the listen
-         * socket to the client as the window size of test socket might differ
-         * from the reported one. Close the socket in that case. */
 
         request->listen_data_port = (int)server_data_port;
         request->real_listen_send_buffer_size = flow->real_listen_send_buffer_size;
@@ -180,16 +177,12 @@ int accept_data(struct _flow *flow)
         flow->fd = accept(flow->listenfd_data, (struct sockaddr *)&caddr, &addrlen);
         if (flow->fd == -1) {
                 if (errno == EINTR || errno == EAGAIN)
-                {
-                        /* TODO: Accept timeout
-                         logging_log(LOG_ALERT, "client did not connect()."); */
+		/* try again later .... */
                         return 0;
-                }
 
                 logging_log(LOG_ALERT, "accept() failed: %s", strerror(errno));
                 return -1;
         }
-        /* XXX: Check if this is the same client. */
         if (close(flow->listenfd_data) == -1)
                 logging_log(LOG_WARNING, "close(): failed");
         flow->listenfd_data = -1;

@@ -139,7 +139,6 @@ tsc_gettimeofday(struct timeval *tv)
         if (rc != 0) {
                 error(ERR_FATAL, "gettimeofday(): failed: %s",
                                 strerror(errno));
-                /* NOTREACHED */
         }
         normalize_tv(tv);
 

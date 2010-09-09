@@ -79,7 +79,7 @@ struct _block
         int32_t this_block_size;
         int32_t request_block_size;
         struct timeval data;
-        struct timeval data2;
+        struct timeval data2; /* used to access 64bit timeval on 32bit arch */
 };
 
 enum _stochastic_distributions
@@ -109,7 +109,6 @@ struct _flow_settings
         double duration[2];
 
         double reporting_interval;
-        double interleave_time;
 
         int requested_send_buffer_size;
         int requested_read_buffer_size;
@@ -173,7 +172,6 @@ struct _report
         int mss;
         int mtu;
 
-        /* Flow status.as displayed in comment column */
         int status;
 
         struct _report* next;
