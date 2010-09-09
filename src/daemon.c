@@ -473,7 +473,7 @@ static void report_flow(struct _flow* flow, int type)
         }
         report->status <<= 8;
 
-        if (flow->statistics[type].bytes_written < flow->settings.maximum_block_size) {
+        if (flow->statistics[type].bytes_written == 0) {
                 if (flow_in_delay(&report->end, flow, WRITE))
                         report->status |= 'd';
                 else if (flow_sending(&report->end, flow, WRITE))
