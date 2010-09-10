@@ -50,52 +50,52 @@ gsl_rng * r;
 
 extern void
 init_math_functions (unsigned long seed) {
-        int rc;
+	int rc;
 
-        /* set rounding */
-        fesetround(FE_TONEAREST);
-        /* initalize rng */
+	/* set rounding */
+	fesetround(FE_TONEAREST);
+	/* initalize rng */
 
 #ifdef HAVE_LIBGSL
-        gsl_rng_env_setup();
-        T = gsl_rng_default;
-        r = gsl_rng_alloc (T);
+	gsl_rng_env_setup();
+	T = gsl_rng_default;
+	r = gsl_rng_alloc (T);
 #endif
 
-        if (!seed) {
-        /* if no seed supplied use urandom */
-                int data = open("/dev/urandom", O_RDONLY);
-                rc = read(data, &seed, sizeof (long) );
-                close(data);
-                if(rc == -1) {
-                        error(ERR_FATAL, "read /dev/urandom failed: %s", strerror(errno));
-                }
-        }
+	if (!seed) {
+	/* if no seed supplied use urandom */
+		int data = open("/dev/urandom", O_RDONLY);
+		rc = read(data, &seed, sizeof (long) );
+		close(data);
+		if(rc == -1) {
+			error(ERR_FATAL, "read /dev/urandom failed: %s", strerror(errno));
+		}
+	}
 
 #ifdef HAVE_LIBGSL
-        gsl_rng_set (r, seed);
-        DEBUG_MSG(LOG_WARNING, "initalized libgsl random functions with seed %lu, gsl generator is: %s",seed,gsl_rng_name (r));
+	gsl_rng_set (r, seed);
+	DEBUG_MSG(LOG_WARNING, "initalized libgsl random functions with seed %lu, gsl generator is: %s",seed,gsl_rng_name (r));
 #else
-        srand((unsigned int)seed);
-        DEBUG_MSG(LOG_WARNING, "initalized posix random functions with seed %u",(unsigned int)seed);
+	srand((unsigned int)seed);
+	DEBUG_MSG(LOG_WARNING, "initalized posix random functions with seed %u",(unsigned int)seed);
 #endif
 }
 
 static inline double
 rn_uniform() {
 #ifdef HAVE_LIBGSL
-        return gsl_rng_get(r);
+	return gsl_rng_get(r);
 #else
-        return (rand());
+	return (rand());
 #endif
 }
 
 static inline double
 rn_uniform_zero_to_one() {
 #ifdef HAVE_LIBGSL
-        return gsl_rng_uniform_pos(r);
+	return gsl_rng_uniform_pos(r);
 #else
-        return (rn_uniform()/(RANDOM_MAX+1.0) );
+	return (rn_uniform()/(RANDOM_MAX+1.0) );
 #endif
 }
 
@@ -107,9 +107,9 @@ rn_uniform_minusone_to_one() { return (rn_uniform()/(RANDOM_MAX/2.0)-1.0); }
 extern double
 dist_exponential(const double mu) {
 #ifdef HAVE_LIBGSL
-        return gsl_ran_exponential(r, mu);
+	return gsl_ran_exponential(r, mu);
 #else
-        return (-log(rn_uniform())+mu);
+	return (-log(rn_uniform())+mu);
 #endif
 }
 
@@ -118,59 +118,59 @@ dist_exponential(const double mu) {
 extern double
 dist_uniform(const double minval, const double maxval) {
 #ifdef HAVE_LIBGSL
-        return gsl_ran_flat(r, minval, maxval);
+	return gsl_ran_flat(r, minval, maxval);
 #else
-        const double x = rn_uniform_zero_to_one();
-        return ((maxval-minval) * x) + minval;
+	const double x = rn_uniform_zero_to_one();
+	return ((maxval-minval) * x) + minval;
 #endif
 }
 
 extern double
 dist_normal(const double mu, const double sigma_square) {
 #ifdef HAVE_LIBGSL
-        return gsl_ran_gaussian (r, sigma_square) + mu;
+	return gsl_ran_gaussian (r, sigma_square) + mu;
 #else
-        const double x = rn_uniform_minusone_to_one();
-        return ( 1.0 / sqrt(2.0*M_PI*sigma_square) ) * exp( (-pow ((x-mu),2) ) / ( 2 * sigma_square) );
+	const double x = rn_uniform_minusone_to_one();
+	return ( 1.0 / sqrt(2.0*M_PI*sigma_square) ) * exp( (-pow ((x-mu),2) ) / ( 2 * sigma_square) );
 #endif
 }
 
 extern int
 dist_bernoulli(const double p) {
 #ifdef HAVE_LIBGSL
-        return gsl_ran_bernoulli (r, p);
+	return gsl_ran_bernoulli (r, p);
 #else
-        return (rn_uniform_zero_to_one() <= p);
+	return (rn_uniform_zero_to_one() <= p);
 #endif
 }
 
 extern double
 dist_pareto (const double k, const double x_min) {
 #ifdef HAVE_LIBGSL
-        return gsl_ran_pareto (r, k, x_min);
+	return gsl_ran_pareto (r, k, x_min);
 #else
-        const double x = rn_uniform();
-        if (x < x_min) return 0;
-        else return ( (k/x_min) * pow (x_min/rn_uniform(),k+1) );
+	const double x = rn_uniform();
+	if (x < x_min) return 0;
+	else return ( (k/x_min) * pow (x_min/rn_uniform(),k+1) );
 #endif
 }
 
 extern double
 dist_weibull (const double alpha, const double beta) {
 #ifdef HAVE_LIBGSL
-        return gsl_ran_weibull (r, alpha, beta);
+	return gsl_ran_weibull (r, alpha, beta);
 #else
-        const double x = rn_uniform_zero_to_one();
-        return  alpha * beta * pow (x,beta-1.0) * exp( -alpha * pow(x,beta) );
+	const double x = rn_uniform_zero_to_one();
+	return  alpha * beta * pow (x,beta-1.0) * exp( -alpha * pow(x,beta) );
 #endif
 }
 
 extern double
 dist_chisq (const double nu) {
 #ifdef HAVE_LIBGSL
-        return gsl_ran_chisq(r, nu);
+	return gsl_ran_chisq(r, nu);
 #else
-        UNUSED_ARGUMENT(nu);
-        return 0;
+	UNUSED_ARGUMENT(nu);
+	return 0;
 #endif
 }
