@@ -14,58 +14,58 @@
 const char *
 ctime_us_r(struct timeval *tv, char *buf)
 {
-        char u_buf[8];
+	char u_buf[8];
 
-        normalize_tv(tv);
-        ctime_r(&tv->tv_sec, buf);
-        snprintf(u_buf, sizeof(u_buf), ".%06ld", (long)tv->tv_usec);
-        strcat(buf, u_buf);
+	normalize_tv(tv);
+	ctime_r(&tv->tv_sec, buf);
+	snprintf(u_buf, sizeof(u_buf), ".%06ld", (long)tv->tv_usec);
+	strcat(buf, u_buf);
 
-        return buf;
+	return buf;
 }
 
 const char *
 ctime_us(struct timeval *tv)
 {
-        static char buf[33];
+	static char buf[33];
 
-        ctime_us_r(tv, buf);
+	ctime_us_r(tv, buf);
 
-        return buf;
+	return buf;
 }
 
 double time_diff(const struct timeval *tv1, const struct timeval *tv2)
 {
-        return (double) (tv2->tv_sec - tv1->tv_sec)
-                + (double) (tv2->tv_usec - tv1->tv_usec) / 1e6;
+	return (double) (tv2->tv_sec - tv1->tv_sec)
+		+ (double) (tv2->tv_usec - tv1->tv_usec) / 1e6;
 }
 
 double
 time_diff_now(const struct timeval *tv1)
 {
-        struct timeval now;
+	struct timeval now;
 
-        tsc_gettimeofday(&now);
-        return (double) (now.tv_sec - tv1->tv_sec)
-                + (double) (now.tv_usec - tv1->tv_usec) / 1e6;
+	tsc_gettimeofday(&now);
+	return (double) (now.tv_sec - tv1->tv_sec)
+		+ (double) (now.tv_usec - tv1->tv_usec) / 1e6;
 }
 
 void
 time_add(struct timeval *tv, double seconds)
 {
-        tv->tv_sec += (long)seconds;
-        tv->tv_usec += (long)((seconds - (long)seconds) * 1e6);
-        normalize_tv(tv);
+	tv->tv_sec += (long)seconds;
+	tv->tv_usec += (long)((seconds - (long)seconds) * 1e6);
+	normalize_tv(tv);
 }
 
 int
 time_is_after(const struct timeval *tv1, const struct timeval *tv2)
 {
-        if (tv1->tv_sec > tv2->tv_sec)
-                return 1;
-        if (tv1->tv_sec < tv2->tv_sec)
-                return 0;
-        return (tv1->tv_usec > tv2->tv_usec);
+	if (tv1->tv_sec > tv2->tv_sec)
+		return 1;
+	if (tv1->tv_sec < tv2->tv_sec)
+		return 0;
+	return (tv1->tv_usec > tv2->tv_usec);
 }
 #define NTP_EPOCH_OFFSET        2208988800ULL
 
@@ -80,16 +80,16 @@ time_is_after(const struct timeval *tv1, const struct timeval *tv2)
 void
 tv2ntp(const struct timeval *tv, char *ntp)
 {
-        uint32_t msb, lsb;
+	uint32_t msb, lsb;
 
-        msb = tv->tv_sec + NTP_EPOCH_OFFSET;
-        lsb = (uint32_t)((double)tv->tv_usec * 4294967296.0 / 1000000.0);
+	msb = tv->tv_sec + NTP_EPOCH_OFFSET;
+	lsb = (uint32_t)((double)tv->tv_usec * 4294967296.0 / 1000000.0);
 
-        msb = htonl(msb);
-        lsb = htonl(lsb);
+	msb = htonl(msb);
+	lsb = htonl(lsb);
 
-        memcpy(ntp, &msb, sizeof(msb));
-        memcpy(ntp + sizeof(msb), &lsb, sizeof(lsb));
+	memcpy(ntp, &msb, sizeof(msb));
+	memcpy(ntp + sizeof(msb), &lsb, sizeof(lsb));
 }
 
 /*
@@ -99,16 +99,16 @@ tv2ntp(const struct timeval *tv, char *ntp)
 void
 ntp2tv(struct timeval *tv, const char *ntp)
 {
-        uint32_t msb, lsb;
+	uint32_t msb, lsb;
 
-        memcpy(&msb, ntp, sizeof(msb));
-        memcpy(&lsb, ntp + sizeof(msb), sizeof(lsb));
+	memcpy(&msb, ntp, sizeof(msb));
+	memcpy(&lsb, ntp + sizeof(msb), sizeof(lsb));
 
-        msb = ntohl(msb);
-        lsb = ntohl(lsb);
+	msb = ntohl(msb);
+	lsb = ntohl(lsb);
 
-        tv->tv_sec = msb - NTP_EPOCH_OFFSET;
-        tv->tv_usec = (uint32_t)((double)lsb * 1000000.0 / 4294967296.0);
+	tv->tv_sec = msb - NTP_EPOCH_OFFSET;
+	tv->tv_usec = (uint32_t)((double)lsb * 1000000.0 / 4294967296.0);
 }
 
 /* Make sure 0 <= tv.tv_usec < 1000000.  Return 0 if it was normal,
@@ -116,31 +116,31 @@ ntp2tv(struct timeval *tv, const char *ntp)
 int
 normalize_tv(struct timeval *tv)
 {
-        int result = 0;
+	int result = 0;
 
-        while (tv->tv_usec >= 1000000) {
-                tv->tv_usec -= 1000000;
-                tv->tv_sec++;
-                result++;
-        }
-        while (tv->tv_usec < 0) {
-                tv->tv_usec += 1000000;
-                tv->tv_sec--;
-                result++;
-        }
-        return result;
+	while (tv->tv_usec >= 1000000) {
+		tv->tv_usec -= 1000000;
+		tv->tv_sec++;
+		result++;
+	}
+	while (tv->tv_usec < 0) {
+		tv->tv_usec += 1000000;
+		tv->tv_sec--;
+		result++;
+	}
+	return result;
 }
 
 int
 tsc_gettimeofday(struct timeval *tv)
 {
-        int rc;
-        rc = gettimeofday(tv, 0);
-        if (rc != 0) {
-                error(ERR_FATAL, "gettimeofday(): failed: %s",
-                                strerror(errno));
-        }
-        normalize_tv(tv);
+	int rc;
+	rc = gettimeofday(tv, 0);
+	if (rc != 0) {
+		error(ERR_FATAL, "gettimeofday(): failed: %s",
+				strerror(errno));
+	}
+	normalize_tv(tv);
 
-        return 0;
+	return 0;
 }

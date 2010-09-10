@@ -53,19 +53,19 @@ Notes on Anderson Darlington Test
 
 enum _adt_data_type
 {
-        adt_throughput,
-        adt_iat,
-        adt_rtt,
+	adt_throughput,
+	adt_iat,
+	adt_rtt,
 
-        adt_type_max
+	adt_type_max
 };
 
 void adt_add_data(double v, enum endpoint direction, enum _adt_data_type type);
 
 double adt_get_result_range(enum endpoint direction, enum _adt_data_type type,
-                      double lower_bound, double upper_bound);
+		      double lower_bound, double upper_bound);
 double adt_get_result_mean(enum endpoint direction, enum _adt_data_type type,
-                      double mean);
+		      double mean);
 
 int adt_too_much_data();
 

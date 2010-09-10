@@ -14,106 +14,106 @@ extern pthread_mutex_t mutex;
 
 enum flow_endpoint
 {
-        SOURCE,
-        DESTINATION,
+	SOURCE,
+	DESTINATION,
 };
 
 enum flow_state
 {
-        /* SOURCE */
-        GRIND_WAIT_CONNECT,
+	/* SOURCE */
+	GRIND_WAIT_CONNECT,
 
-        /* DESTINATION */
-        GRIND_WAIT_ACCEPT,
+	/* DESTINATION */
+	GRIND_WAIT_ACCEPT,
 
-        /* RUN */
-        GRIND
+	/* RUN */
+	GRIND
 };
 
 struct _flow_source_settings
 {
-        char destination_host[256];
-        int destination_port;
+	char destination_host[256];
+	int destination_port;
 
-        int late_connect;
+	int late_connect;
 
-        pthread_cond_t* add_source_condition;
+	pthread_cond_t* add_source_condition;
 };
 
 struct _flow
 {
-        int id;
+	int id;
 
-        enum flow_state state;
-        enum flow_endpoint endpoint;
+	enum flow_state state;
+	enum flow_endpoint endpoint;
 
-        int fd;
-        int listenfd_data;
+	int fd;
+	int listenfd_data;
 
-        struct _flow_settings settings;
-        struct _flow_source_settings source_settings;
+	struct _flow_settings settings;
+	struct _flow_source_settings source_settings;
 
-        struct timeval start_timestamp[2];
-        struct timeval stop_timestamp[2];
-        struct timeval last_block_read;
-        struct timeval last_block_written;
+	struct timeval start_timestamp[2];
+	struct timeval stop_timestamp[2];
+	struct timeval last_block_read;
+	struct timeval last_block_written;
 
-        struct timeval first_report_time;
-        struct timeval last_report_time;
-        struct timeval next_report_time;
+	struct timeval first_report_time;
+	struct timeval last_report_time;
+	struct timeval next_report_time;
 
-        struct timeval next_write_block_timestamp;
+	struct timeval next_write_block_timestamp;
 
-        char *read_block;
-        char *write_block;
+	char *read_block;
+	char *write_block;
 
-        unsigned int current_write_block_size;
-        unsigned int current_read_block_size;
+	unsigned int current_write_block_size;
+	unsigned int current_read_block_size;
 
-        unsigned int current_block_bytes_read;
-        unsigned int current_block_bytes_written;
+	unsigned int current_block_bytes_read;
+	unsigned int current_block_bytes_written;
 
-        unsigned short requested_server_test_port;
+	unsigned short requested_server_test_port;
 
-        unsigned real_listen_send_buffer_size;
-        unsigned real_listen_receive_buffer_size;
+	unsigned real_listen_send_buffer_size;
+	unsigned real_listen_receive_buffer_size;
 
-        char connect_called;
-        char finished[2];
+	char connect_called;
+	char finished[2];
 
-        int mss;
-        int mtu;
+	int mss;
+	int mtu;
 
-        unsigned int congestion_counter;
+	unsigned int congestion_counter;
 
-        /* Used for late_connect */
-        struct sockaddr *addr;
-        socklen_t addr_len;
+	/* Used for late_connect */
+	struct sockaddr *addr;
+	socklen_t addr_len;
 
-        struct _statistics {
+	struct _statistics {
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
-                unsigned long long bytes_read;
-                unsigned long long bytes_written;
+		unsigned long long bytes_read;
+		unsigned long long bytes_written;
 #else   
-                unsigned int bytes_read;
-                unsigned int bytes_written;
+		unsigned int bytes_read;
+		unsigned int bytes_written;
 #endif
-                unsigned int request_blocks_read;
-                unsigned int request_blocks_written;
-                unsigned int response_blocks_read;
-                unsigned int response_blocks_written;
+		unsigned int request_blocks_read;
+		unsigned int request_blocks_written;
+		unsigned int response_blocks_read;
+		unsigned int response_blocks_written;
 
-                double iat_min, iat_max, iat_sum;
-                double rtt_min, rtt_max, rtt_sum;
+		double iat_min, iat_max, iat_sum;
+		double rtt_min, rtt_max, rtt_sum;
 
 #ifdef __LINUX__
-                int has_tcp_info;
-                struct tcp_info tcp_info;
+		int has_tcp_info;
+		struct tcp_info tcp_info;
 #endif
 
-        } statistics[2];
+	} statistics[2];
 
-        char* error;
+	char* error;
 };
 
 #define MAX_FLOWS       256
@@ -140,65 +140,65 @@ extern char started;
 #define REQUEST_GET_STATUS 4
 struct _request
 {
-        char type;
+	char type;
 
-        /* We signal this condition once the daemon thread
-         * has processed the request */
-        pthread_cond_t* condition;
+	/* We signal this condition once the daemon thread
+	 * has processed the request */
+	pthread_cond_t* condition;
 
-        char* error;
+	char* error;
 
-        struct _request *next;
+	struct _request *next;
 };
 extern struct _request *requests, *requests_last;
 
 struct _request_add_flow_destination
 {
-        struct _request r;
+	struct _request r;
 
-        struct _flow_settings settings;
+	struct _flow_settings settings;
 
-        /* The request reply */
-        int flow_id;
-        int listen_data_port;
-        int real_listen_send_buffer_size;
-        int real_listen_read_buffer_size;
+	/* The request reply */
+	int flow_id;
+	int listen_data_port;
+	int real_listen_send_buffer_size;
+	int real_listen_read_buffer_size;
 };
 
 struct _request_add_flow_source
 {
-        struct _request r;
+	struct _request r;
 
-        struct _flow_settings settings;
-        struct _flow_source_settings source_settings;
+	struct _flow_settings settings;
+	struct _flow_source_settings source_settings;
 
-        /* The request reply */
-        int flow_id;
-        char cc_alg[256];
-        int real_send_buffer_size;
-        int real_read_buffer_size;
+	/* The request reply */
+	int flow_id;
+	char cc_alg[256];
+	int real_send_buffer_size;
+	int real_read_buffer_size;
 };
 
 struct _request_start_flows
 {
-        struct _request r;
+	struct _request r;
 
-        int start_timestamp;
+	int start_timestamp;
 };
 
 struct _request_stop_flow
 {
-        struct _request r;
+	struct _request r;
 
-        int flow_id;
+	int flow_id;
 };
 
 struct _request_get_status
 {
-        struct _request r;
+	struct _request r;
 
-        int started;
-        int num_flows;
+	int started;
+	int num_flows;
 };
 
 void flow_error(struct _flow *flow, const char *fmt, ...);

@@ -6,8 +6,8 @@
 extern int log_type;
 
 enum {
-        LOGTYPE_SYSLOG,
-        LOGTYPE_STDERR
+	LOGTYPE_SYSLOG,
+	LOGTYPE_STDERR
 };
 
 void logging_init (void);
