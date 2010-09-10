@@ -155,9 +155,13 @@ struct _report
         int type; /* INTERVAL or TOTAL */
         struct timeval begin;
         struct timeval end;
-
+#ifdef HAVE_UNSIGNED_LONG_LONG_INT
         unsigned long long bytes_read;
         unsigned long long bytes_written;
+#else
+        unsigned int bytes_read;
+        unsigned int bytes_written;
+#endif 
         unsigned int request_blocks_read;
         unsigned int request_blocks_written;
         unsigned int response_blocks_read;

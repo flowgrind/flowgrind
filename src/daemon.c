@@ -494,8 +494,8 @@ static void report_flow(struct _flow* flow, int type)
 
         /* New report interval, reset old data */
         if (type == INTERVAL) {
-                flow->statistics[INTERVAL].bytes_read = 0LL;
-                flow->statistics[INTERVAL].bytes_written = 0LL;
+                flow->statistics[INTERVAL].bytes_read = 0;
+                flow->statistics[INTERVAL].bytes_written = 0;
 
                 flow->statistics[INTERVAL].request_blocks_read = 0;
                 flow->statistics[INTERVAL].response_blocks_read = 0;
@@ -724,8 +724,8 @@ void init_flow(struct _flow* flow, int is_source)
         flow->read_block = 0;
         flow->write_block = 0;
 
-        flow->current_block_bytes_read = 0LL;
-        flow->current_block_bytes_written = 0LL;
+        flow->current_block_bytes_read = 0;
+        flow->current_block_bytes_written = 0;
 
         flow->current_read_block_size = MIN_BLOCK_SIZE;
         flow->current_write_block_size = MIN_BLOCK_SIZE;
@@ -740,8 +740,8 @@ void init_flow(struct _flow* flow, int is_source)
 
         /* INTERVAL and TOTAL */
         for (int i = 0; i < 2; i++) {
-                flow->statistics[i].bytes_read = 0LL;
-                flow->statistics[i].bytes_written = 0LL;
+                flow->statistics[i].bytes_read = 0;
+                flow->statistics[i].bytes_written = 0;
 
                 flow->statistics[i].request_blocks_read = 0;
                 flow->statistics[i].request_blocks_written = 0;
@@ -871,7 +871,7 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
         int rc;
         struct iovec iov;
         struct msghdr msg;
-/* we only read aux data for debugging purpose */
+/* we only read out of band data for debugging purpose */
 #ifdef DEBUG
         char cbuf[512];
         struct cmsghdr *cmsg;
