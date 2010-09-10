@@ -634,10 +634,10 @@ static void usage_sockopt(void)
                 "               system default\n"
                 "  x=ROUTE_RECORD\n"
                 "               set ROUTE_RECORD on test socket\n\n"
-		
-		"the following non-standard socket options are supported:\n"
-		"  x=TCP_ELCN   set TCP_ELCN (20) on test socket\n"
-		"  x=TCP_ICMP   set TCP_ICMP (21) on test socket\n\n"
+                
+                "the following non-standard socket options are supported:\n"
+                "  x=TCP_ELCN   set TCP_ELCN (20) on test socket\n"
+                "  x=TCP_ICMP   set TCP_ICMP (21) on test socket\n\n"
 
                 "x can be replaced with 's' for source or 'd' for destination\n\n"
 
@@ -1005,10 +1005,10 @@ void report_final(void)
                                 flow[id].endpoint_options[endpoint].receive_buffer_size_real,
                                 flow[id].settings[endpoint].requested_read_buffer_size);
 
-			if (flow[id].settings[SOURCE].delay[WRITE] || flow[id].settings[SOURCE].delay[READ])
-                        	CATC("delay = %.2fs/%.2fs",
-                                	flow[id].settings[SOURCE].delay[WRITE],
-                                	flow[id].settings[SOURCE].delay[READ]);
+                        if (flow[id].settings[SOURCE].delay[WRITE] || flow[id].settings[SOURCE].delay[READ])
+                                CATC("delay = %.2fs/%.2fs",
+                                        flow[id].settings[SOURCE].delay[WRITE],
+                                        flow[id].settings[SOURCE].delay[READ]);
 
                         CATC("duration = %.2fs/%.2fs",
                                 flow[id].settings[SOURCE].duration[WRITE],
@@ -2179,7 +2179,7 @@ static void parse_cmdline(int argc, char **argv) {
                 exit(EXIT_FAILURE);
 #endif
         }
-	DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
+        DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
 }
 
 static void die_if_fault_occurred(xmlrpc_env *env)
@@ -2661,9 +2661,13 @@ has_more_reports:
                                                 "status", &report.status
                                         );
                                         xmlrpc_DECREF(rv);
-
+#ifdef HAVE_UNSIGNED_LONG_LONG_INT
                                         report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
                                         report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
+#else
+                                        report.bytes_read = (uint32_t)bytes_read_low;
+                                        report.bytes_written = (uint32_t)bytes_written_low;
+#endif
 
 #ifdef __LINUX__
                                         report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
@@ -2728,15 +2732,15 @@ int main(int argc, char *argv[])
         DEBUG_MSG(LOG_WARNING, "prepare xmlrpc client");
         xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &rpc_client);
         
-	DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
+        DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
         if (!sigint_caught)
                 check_version(rpc_client);
         
-	DEBUG_MSG(LOG_WARNING, "check if flowgrindds are idle");
+        DEBUG_MSG(LOG_WARNING, "check if flowgrindds are idle");
         if (!sigint_caught)
                 check_idle(rpc_client);
         
-	DEBUG_MSG(LOG_WARNING, "prepare flows");
+        DEBUG_MSG(LOG_WARNING, "prepare flows");
         if (!sigint_caught)
                 prepare_flows(rpc_client);
 

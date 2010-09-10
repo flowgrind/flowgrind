@@ -91,13 +91,17 @@ struct _flow
         socklen_t addr_len;
 
         struct _statistics {
-                long long bytes_read;
-                long long bytes_written;
-
-                int request_blocks_read;
-                int request_blocks_written;
-                int response_blocks_read;
-                int response_blocks_written;
+#ifdef HAVE_UNSIGNED_LONG_LONG_INT
+                unsigned long long bytes_read;
+                unsigned long long bytes_written;
+#else   
+                unsigned int bytes_read;
+                unsigned int bytes_written;
+#endif
+                unsigned int request_blocks_read;
+                unsigned int request_blocks_written;
+                unsigned int response_blocks_read;
+                unsigned int response_blocks_written;
 
                 double iat_min, iat_max, iat_sum;
                 double rtt_min, rtt_max, rtt_sum;

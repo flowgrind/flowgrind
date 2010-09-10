@@ -177,7 +177,7 @@ int accept_data(struct _flow *flow)
         flow->fd = accept(flow->listenfd_data, (struct sockaddr *)&caddr, &addrlen);
         if (flow->fd == -1) {
                 if (errno == EINTR || errno == EAGAIN)
-		/* try again later .... */
+                /* try again later .... */
                         return 0;
 
                 logging_log(LOG_ALERT, "accept() failed: %s", strerror(errno));
