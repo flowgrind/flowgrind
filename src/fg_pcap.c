@@ -7,12 +7,16 @@
 #include <sys/socket.h>
 #include <syslog.h>
 #include <stdlib.h>
+#include <time.h>
+#include <netinet/in.h>
 
 #include "common.h"
 #include "debug.h"
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "log.h"
+#include "daemon.h"
+#include "fg_pcap.h" 
 
 #if HAVE_LIBPCAP
 
@@ -22,12 +26,13 @@
 
 static pcap_if_t *alldevs;
 static pcap_t *pcap_handle;
+static pcap_dumper_t *pcap_dumper;
 static char errbuf[PCAP_ERRBUF_SIZE];
 static char pcap_init_done = 0;
 static int pcap_ll_type = 0;
 
 void fg_pcap_init()
-{
+{	
 	pcap_if_t *d;
 	char devdes[160];
 
@@ -54,16 +59,26 @@ void fg_pcap_init()
 	return;
 }
 
-void fg_pcap_go(int fd)
+void fg_pcap_go(struct _flow *flow)
 {
 	pcap_if_t *d;
 	struct sockaddr_storage sa;
 	socklen_t sl = sizeof(sa);
 	char found = 0;
-	char* pcap_expression;
-	struct bpf_program pcap_program;
+	int len;
+	uint32_t net = 0;
+	uint32_t mask = 0;
 
-	if (getsockname(fd, (struct sockaddr *)&sa, &sl) == -1) {
+	static char pcap_expression[200];
+	static char dump_filename[60];
+	struct bpf_program pcap_program;
+	struct timeval now;
+	static char buf[60];
+
+	if (!flow->settings.traffic_dump)
+			return;
+
+	if (getsockname(flow->fd, (struct sockaddr *)&sa, &sl) == -1) {
 		logging_log(LOG_WARNING, "getsockname() failed. Eliding packet "
 				"capture for flow.");
 		return;
@@ -102,6 +117,7 @@ void fg_pcap_go(int fd)
 				" %s", d->name, errbuf);
 		return;
 	}
+
 	if (*errbuf)
 		logging_log(LOG_WARNING, "pcap warning: %s", errbuf);
 
@@ -121,6 +137,8 @@ void fg_pcap_go(int fd)
 	switch (pcap_ll_type) {
 	case DLT_NULL:
 	case DLT_LOOP:
+	case DLT_EN10MB:
+	case DLT_IEEE802_11:
 		break;
 
 	default:
@@ -129,6 +147,11 @@ void fg_pcap_go(int fd)
 		return;
 	}
 
+	if (pcap_lookupnet(d->name, &net, &mask, errbuf) < 0) {
+		logging_log(LOG_WARNING, "pcap: netmask lookup failed: %s", errbuf);
+		return;
+
+	}
 	/* We rely on a non-blocking dispatch loop */
 	if (pcap_setnonblock(pcap_handle, 1 /* non-blocking */ , errbuf) == -1) {
 		logging_log(LOG_WARNING, "pcap: failed to set non-blocking: %s",
@@ -137,27 +160,32 @@ void fg_pcap_go(int fd)
 	}
 	/* strong pcap expression: tcp and on if and host a and b and port c and d */
 	/* weaker pcap expression: on if and host a and b */
-	/* sprintf(pcap_expression, "on %s and host %s and %b"
-	 * d-                       d->name); */
-	if(pcap_compile(pcap_handle,&pcap_program,pcap_expression,0,0) == -1)
-			{ logging_log(LOG_ALERT,"Error calling pcap_compile\n"); exit(1); }
+	sprintf(pcap_expression, "on %s", d->name);
+	if(pcap_compile(pcap_handle,&pcap_program,pcap_expression,1,mask) < 0) { 
+		logging_log(LOG_ALERT, "Error calling pcap_compile filter '%s', if '%s': %s", pcap_expression, d->name, pcap_geterr(pcap_handle)); 
+		return;
+	}
+
+	if(pcap_setfilter(pcap_handle, &pcap_program) < 0) {
+		logging_log(LOG_ALERT, "pcap: failed to set non-blocking: %s", pcap_geterr(pcap_handle));
+		return;
+	}
+
+	tsc_gettimeofday(&now);
+	len = strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
+	strcat(dump_filename, buf);
+	strcat(dump_filename, ".pcap");
+
+	DEBUG_MSG(LOG_NOTICE, "dumping to \"%s\"", dump_filename);
+
+	pcap_dumper = pcap_dump_open(pcap_handle, dump_filename);
+	if (pcap_dumper == NULL)
+		logging_log(LOG_ALERT, "pcap: failed to open file writeing: %s", pcap_geterr(pcap_handle));
+
 
 	DEBUG_MSG(LOG_ERR, "pcap init done.");
+
 	pcap_init_done = 1;
-	return;
-}
-
-void
-fg_pcap_handler(u_char *arg, const struct pcap_pkthdr *h, const u_char *packet)
-{
-	UNUSED_ARGUMENT(arg);
-	UNUSED_ARGUMENT(h);
-	UNUSED_ARGUMENT(packet);
-
-	DEBUG_MSG(LOG_DEBUG, "pcap: processing packet, ts = %lu.%lu, %hhu bytes.",
-			h->ts.tv_sec, h->ts.tv_usec, h->caplen);
-
-	/* XXX: do something about it! */
 	return;
 }
 
@@ -167,15 +195,15 @@ void fg_pcap_dispatch(void)
 	if (!pcap_init_done)
 		return;
 
-	rc = pcap_dispatch(pcap_handle, -1 /* all packets */,
-			fg_pcap_handler, NULL);
+	rc = pcap_dispatch(pcap_handle, -1, &pcap_dump, (char *)pcap_dumper);
+
 	if (rc == -1) {
 		logging_log(LOG_WARNING, "pcap_dispatch() failed. Packet "
 				"dispatching stopped.");
 		pcap_init_done = 0;
 		return;
 	}
-	DEBUG_MSG(LOG_NOTICE, "pcap: finished processing %u packets.", rc);
+	DEBUG_MSG(LOG_NOTICE, "pcap: finished dumping %u packets.", rc);
 
 	return;
 }
@@ -183,6 +211,8 @@ void fg_pcap_dispatch(void)
 
 void fg_pcap_shutdown()
 {
+	pcap_dump_close(pcap_dumper);
+	pcap_close(pcap_handle);
 	pcap_freealldevs(alldevs);
 }
 

@@ -929,7 +929,9 @@ int main(int argc, char ** argv)
 
 	parse_option(argc, argv);
 	logging_init();
-
+#if HAVE_LIBPCAP
+	fg_pcap_init();
+#endif
 	if (log_type == LOGTYPE_SYSLOG) {
 		/* Need to call daemon() before creating the thread because
 		 * it internally calls fork() which does not copy threads. */

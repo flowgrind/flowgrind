@@ -95,8 +95,8 @@ struct _flow
 		unsigned long long bytes_read;
 		unsigned long long bytes_written;
 #else   
-		unsigned int bytes_read;
-		unsigned int bytes_written;
+		long bytes_read;
+		long bytes_written;
 #endif
 		unsigned int request_blocks_read;
 		unsigned int request_blocks_written;
