@@ -608,7 +608,10 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 				if (read_data(flow) == -1)
 					goto remove;
 		}
-
+#ifdef HAVE_LIBPCAP
+		if (!flow->settings.traffic_dump)
+			fg_pcap_dispatch();
+#endif
 		i++;
 		continue;
 remove:
@@ -1197,6 +1200,8 @@ int apply_extra_socket_options(struct _flow *flow)
 int set_flow_tcp_options(struct _flow *flow)
 {
 	set_non_blocking(flow->fd);
+
+	fg_pcap_go(flow);
 
 	if (*flow->settings.cc_alg && set_congestion_control(
 				flow->fd, flow->settings.cc_alg) == -1) {

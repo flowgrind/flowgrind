@@ -744,11 +744,12 @@ static void init_flows_defaults(void)
 			strcpy(flow[id].endpoint_options[i].bind_address, "");
 
 			flow[id].settings[i].pushy = 0;
-
 			flow[id].settings[i].cork = 0;
 			flow[id].settings[i].cc_alg[0] = 0;
 			flow[id].settings[i].elcn = 0;
 			flow[id].settings[i].icmp = 0;
+			flow[id].settings[i].mtcp = 0;
+			flow[id].settings[i].traffic_dump = 0;
 			flow[id].settings[i].so_debug = 0;
 			flow[id].settings[i].dscp = 0;
 			flow[id].settings[i].ipmtudiscover = 0;
@@ -1699,7 +1700,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				break;
 
 			case 'M':
-			/* TODO */
 				ASSIGN_COMMON_FLOW_SETTING(traffic_dump, 1)
 				break;
 			case 'O':
