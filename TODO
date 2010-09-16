@@ -1,7 +1,7 @@
-+make it easier to define arbitary socket options
++simplify arbitary socket options
 +fix crash in conjunction with newer libxmlrpc-c
++fix rare daemon crash on flow close
 +recover UDP option
-+make traffic ports configureable (again)
 +xml style output
 +(try to)track route changes (IP route record option)
 +allow send volume to be specified (instead of duration/rate)

@@ -2710,7 +2710,7 @@ has_more_reports:
 			}
 		}
 
-		if (!active_flows)
+		if (active_flows < 1)
 			/* All flows have ended */
 			return;
 	}

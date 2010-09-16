@@ -1201,8 +1201,6 @@ int set_flow_tcp_options(struct _flow *flow)
 {
 	set_non_blocking(flow->fd);
 
-	fg_pcap_go(flow);
-
 	if (*flow->settings.cc_alg && set_congestion_control(
 				flow->fd, flow->settings.cc_alg) == -1) {
 		flow_error(flow, "Unable to set congestion control algorithm: %s",

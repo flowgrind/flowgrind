@@ -207,6 +207,8 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 
 	request->flow_id = flow->id;
-
+#ifdef HAVE_LIBPCAP
+	fg_pcap_go(flow);
+#endif
 	return 0;
 }
