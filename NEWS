@@ -1,8 +1,9 @@
 Release 0.5 (2010-X-X)
 - removed obsolete fasttime and TSCI2 support
 - libgsl support for advanced stochastic distributions
+- reinvented lipcap support for automatic traffic dumping
 - added non-standard sockopt MTCP
-- bugfixes
+- bugfixes (oh-rly?)
 
 Release 0.4a (2010-8-10)
 - bugfixes

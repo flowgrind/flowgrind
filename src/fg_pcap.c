@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <netinet/in.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "debug.h"
@@ -18,29 +19,31 @@
 #include "daemon.h"
 #include "fg_pcap.h" 
 
-#if HAVE_LIBPCAP
+#ifdef HAVE_LIBPCAP
 
 #include "pcap.h"
 
-#define PCAP_SNAPLEN 120
+#define PCAP_SNAPLEN 90 
 
-static pcap_if_t *alldevs;
-static pcap_t *pcap_handle;
-static pcap_dumper_t *pcap_dumper;
+static pcap_if_t 	*alldevs;
+static pcap_t 		*pcap_handle;
+static pcap_dumper_t 	*pcap_dumper;
+struct pcap_stat 	pcap_statistics;
+
 static char errbuf[PCAP_ERRBUF_SIZE];
 static char pcap_init_done = 0;
-static int pcap_ll_type = 0;
 
 void fg_pcap_init()
-{	
+{
+#ifdef DEBUG
 	pcap_if_t *d;
 	char devdes[160];
-
+#endif
 	if (pcap_findalldevs(&alldevs, errbuf) == -1) {
 		fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
 		return;
 	}
-
+#ifdef DEBUG
 	for (d = alldevs; d; d = d->next) {
 		pcap_addr_t *a;
 		snprintf(devdes, sizeof(devdes), "%s: ", d->name);
@@ -53,14 +56,15 @@ void fg_pcap_init()
 			if (a->next)
 				strncat(devdes, ", ", sizeof(devdes));
 		}
-		DEBUG_MSG(LOG_ERR, "found pcapabple device (%s)", devdes);
+		DEBUG_MSG(LOG_ERR, "pcap: found pcapabple device (%s)", devdes);
 	}
-
+#endif
 	return;
 }
 
 void fg_pcap_go(struct _flow *flow)
 {
+	int pcap_ll_type = 0;
 	pcap_if_t *d;
 	struct sockaddr_storage sa;
 	socklen_t sl = sizeof(sa);
@@ -69,11 +73,11 @@ void fg_pcap_go(struct _flow *flow)
 	uint32_t net = 0;
 	uint32_t mask = 0;
 
-	static char pcap_expression[200];
-	static char dump_filename[60];
+	char pcap_expression[200];
+	char dump_filename[20];
 	struct bpf_program pcap_program;
 	struct timeval now;
-	static char buf[60];
+	char buf[60];
 
 	if (!flow->settings.traffic_dump)
 			return;
@@ -83,6 +87,7 @@ void fg_pcap_go(struct _flow *flow)
 				"capture for flow.");
 		return;
 	}
+	/* find approciate (used for test) interface to dump */
 	for (d = alldevs; d; d = d->next) {
 		pcap_addr_t *a;
 		for (a = d->addresses; a; a = a->next) {
@@ -112,67 +117,57 @@ void fg_pcap_go(struct _flow *flow)
 	pcap_handle = pcap_open_live(d->name, PCAP_SNAPLEN,
 			0 /* non-promisc */,
 			0 /* no read timeout */, errbuf);
+
 	if (!pcap_handle) {
 		logging_log(LOG_WARNING, "Failed to init pcap on device %s:"
 				" %s", d->name, errbuf);
 		return;
 	}
 
-	if (*errbuf)
-		logging_log(LOG_WARNING, "pcap warning: %s", errbuf);
-
 	/* Check link-layer type */
 	pcap_ll_type = pcap_datalink(pcap_handle);
 	if (pcap_ll_type == -1) {
 		logging_log(LOG_WARNING, "pcap: failed to determine link "
-				"layer type. skipping acket capture.");
+				"layer type: %s", pcap_geterr(pcap_handle));
 		return;
 	}
 
-	DEBUG_MSG(LOG_NOTICE, "pcap: inbound device %s has link layer type "
-			"\"%s\" (%u).", d->name,
+	DEBUG_MSG(LOG_NOTICE, "pcap: device %s has link layer type "
+			"\"%s\" (%u).", 
+			d->name,
 			pcap_datalink_val_to_name(pcap_ll_type),
 			pcap_ll_type);
 
-	switch (pcap_ll_type) {
-	case DLT_NULL:
-	case DLT_LOOP:
-	case DLT_EN10MB:
-	case DLT_IEEE802_11:
-		break;
-
-	default:
-		logging_log(LOG_WARNING, "pcap: link layer type not supported. "
-				"Eliding packet caputure.");
-		return;
-	}
 
 	if (pcap_lookupnet(d->name, &net, &mask, errbuf) < 0) {
 		logging_log(LOG_WARNING, "pcap: netmask lookup failed: %s", errbuf);
 		return;
-
 	}
+
 	/* We rely on a non-blocking dispatch loop */
-	if (pcap_setnonblock(pcap_handle, 1 /* non-blocking */ , errbuf) == -1) {
+	if (pcap_setnonblock(pcap_handle, 1 /* non-blocking */ , errbuf) < 0) {
 		logging_log(LOG_WARNING, "pcap: failed to set non-blocking: %s",
-				 errbuf);
+				 errbuf );
 		return;
 	}
+
 	/* strong pcap expression: tcp and on if and host a and b and port c and d */
 	/* weaker pcap expression: on if and host a and b */
-	sprintf(pcap_expression, "on %s", d->name);
-	if(pcap_compile(pcap_handle,&pcap_program,pcap_expression,1,mask) < 0) { 
-		logging_log(LOG_ALERT, "Error calling pcap_compile filter '%s', if '%s': %s", pcap_expression, d->name, pcap_geterr(pcap_handle)); 
-		return;
+	sprintf(pcap_expression, "on %s and tcp and port %u", d->name, get_port(flow->fd));
+	if (pcap_compile(pcap_handle, &pcap_program, pcap_expression, 1, mask) < 0) { 
+		logging_log(LOG_WARNING, "pcap: failed compiling filter '%s': %s", pcap_expression, pcap_geterr(pcap_handle)); 
+	/*return;*/
 	}
-
-	if(pcap_setfilter(pcap_handle, &pcap_program) < 0) {
-		logging_log(LOG_ALERT, "pcap: failed to set non-blocking: %s", pcap_geterr(pcap_handle));
+	
+	/* attach filter to interface */
+	if (pcap_setfilter(pcap_handle, &pcap_program) < 0) {
+		logging_log(LOG_WARNING, "pcap: failed to set filter: %s", pcap_geterr(pcap_handle));
 		return;
 	}
 
 	tsc_gettimeofday(&now);
 	len = strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
+	
 	strcat(dump_filename, buf);
 	strcat(dump_filename, ".pcap");
 
@@ -180,7 +175,7 @@ void fg_pcap_go(struct _flow *flow)
 
 	pcap_dumper = pcap_dump_open(pcap_handle, dump_filename);
 	if (pcap_dumper == NULL)
-		logging_log(LOG_ALERT, "pcap: failed to open file writeing: %s", pcap_geterr(pcap_handle));
+		logging_log(LOG_WARNING, "pcap: failed to open file writeing: %s", pcap_geterr(pcap_handle));
 
 
 	DEBUG_MSG(LOG_ERR, "pcap init done.");
@@ -195,11 +190,11 @@ void fg_pcap_dispatch(void)
 	if (!pcap_init_done)
 		return;
 
-	rc = pcap_dispatch(pcap_handle, -1, &pcap_dump, (char *)pcap_dumper);
+	rc = pcap_dispatch(pcap_handle, -1, &pcap_dump, (u_char *)pcap_dumper);
 
 	if (rc == -1) {
 		logging_log(LOG_WARNING, "pcap_dispatch() failed. Packet "
-				"dispatching stopped.");
+				"dumping stopped.");
 		pcap_init_done = 0;
 		return;
 	}
