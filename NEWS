@@ -3,6 +3,7 @@ Release 0.5 (2010-X-X)
 - libgsl support for advanced stochastic distributions
 - reinvented lipcap support for automatic traffic dumping
 - added non-standard sockopt MTCP
+- always print final report
 - bugfixes (oh-rly?)
 
 Release 0.4a (2010-8-10)

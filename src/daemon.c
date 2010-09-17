@@ -327,7 +327,7 @@ static void start_flows(struct _request_start_flows *request)
 
 static void stop_flow(struct _request_stop_flow *request)
 {
-
+	DEBUG_MSG(LOG_DEBUG, "stop_flow forcefully unlocked mutex");
 	pthread_mutex_unlock(&mutex);
 
 	if (request->flow_id == -1) {
