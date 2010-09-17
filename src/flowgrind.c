@@ -2556,9 +2556,9 @@ static void grind_flows(xmlrpc_client *rpc_client)
 		fetch_reports(rpc_client);
 		tsc_gettimeofday(&lastreport_end);
 
-                if (active_flows < 1)
-                        /* All flows have ended */
-                        return;
+		if (active_flows < 1)
+			/* All flows have ended */
+			return;
 	}
 }
 

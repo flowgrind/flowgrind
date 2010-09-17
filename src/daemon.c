@@ -339,10 +339,10 @@ static void stop_flow(struct _request_stop_flow *request)
 #ifdef __LINUX__
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif          
-                        flow->mtu = get_mtu(flow->fd);
-                        flow->mss = get_mss(flow->fd);
+			flow->mtu = get_mtu(flow->fd);
+			flow->mss = get_mss(flow->fd);
 
-                        report_flow(flow, TOTAL);
+			report_flow(flow, TOTAL);
 
 			uninit_flow(flow);
 			remove_flow(i);
@@ -358,12 +358,12 @@ static void stop_flow(struct _request_stop_flow *request)
 			continue;
 
 #ifdef __LINUX__        
-                flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+		flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif                          
-                flow->mtu = get_mtu(flow->fd);
-                flow->mss = get_mss(flow->fd);
+		flow->mtu = get_mtu(flow->fd);
+		flow->mss = get_mss(flow->fd);
 
-                report_flow(flow, TOTAL);
+		report_flow(flow, TOTAL);
 
 		uninit_flow(flow);
 		remove_flow(i);
