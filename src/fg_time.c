@@ -34,7 +34,8 @@ ctime_us(struct timeval *tv)
 	return buf;
 }
 
-double time_diff(const struct timeval *tv1, const struct timeval *tv2)
+double
+time_diff(const struct timeval *tv1, const struct timeval *tv2)
 {
 	return (double) (tv2->tv_sec - tv1->tv_sec)
 		+ (double) (tv2->tv_usec - tv1->tv_usec) / 1e6;
