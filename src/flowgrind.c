@@ -1079,6 +1079,7 @@ void report_final(void)
 				continue;
 
 			print_report(id, endpoint, flow[id].final_report[endpoint]);
+			free(flow[id].final_report[endpoint]);
 		};
 	}
 
@@ -1135,7 +1136,7 @@ void report_flow(const char* server_url, struct _report* report)
 	}
 exit_outer_loop:
 
-	if (id == opt.num_flows) {
+	if (id >= opt.num_flows) {
 		DEBUG_MSG(LOG_ERR, "Got report from nonexistant flow, ignoring");
 		return;
 	}
@@ -1197,9 +1198,6 @@ void close_flow(int id)
 	xmlrpc_env env;
 	xmlrpc_client *client;
 
-	free(flow[id].final_report[0]);
-	free(flow[id].final_report[1]);
-
 	if (flow[id].finished[SOURCE] && flow[id].finished[DESTINATION])
 		return;
 
@@ -1230,10 +1228,12 @@ void close_flow(int id)
 		xmlrpc_env_clean(&env);
 	}
 
+
 	if (active_flows > 0)
 		active_flows--;
 
 	xmlrpc_client_destroy(client);
+	DEBUG_MSG(LOG_WARNING, "closed flow %d.", id);
 }
 
 
@@ -2514,16 +2514,22 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
 }
 
+static void fetch_reports(xmlrpc_client *);
+
 /* start flows */
 static void grind_flows(xmlrpc_client *rpc_client)
 {
-	unsigned j;
 	xmlrpc_value * resultP = 0;
 
-	struct timeval lastreport;
+	unsigned j;
+
+	struct timeval lastreport_end;
+	struct timeval lastreport_begin;
 	struct timeval now;
+	
+	tsc_gettimeofday(&lastreport_end);
+	tsc_gettimeofday(&lastreport_begin);
 	tsc_gettimeofday(&now);
-	tsc_gettimeofday(&lastreport);
 
 	for (j = 0; j < num_unique_servers; j++) {
 
@@ -2542,177 +2548,181 @@ static void grind_flows(xmlrpc_client *rpc_client)
 
 	while (!sigint_caught) {
 
-		if ( time_diff_now(&lastreport) <  opt.reporting_interval ) {
-			usleep(100);
+		if ( time_diff_now(&lastreport_begin) <  opt.reporting_interval ) {
+			usleep(opt.reporting_interval - time_diff(&lastreport_begin,&lastreport_end) );
 			continue;
 		}
-		tsc_gettimeofday(&lastreport);
+		tsc_gettimeofday(&lastreport_begin);
+		fetch_reports(rpc_client);
+		tsc_gettimeofday(&lastreport_end);
 
-		for (j = 0; j < num_unique_servers; j++) {
+                if (active_flows < 1)
+                        /* All flows have ended */
+                        return;
+	}
+}
 
-			int array_size, has_more;
-			xmlrpc_value *rv = 0;
+static void fetch_reports(xmlrpc_client *rpc_client) {
+
+	xmlrpc_value * resultP = 0;
+
+	for (unsigned int j = 0; j < num_unique_servers; j++) {
+
+		int array_size, has_more;
+		xmlrpc_value *rv = 0;
 
 has_more_reports:
 
-			xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_reports", &resultP, "()");
-			if (rpc_env.fault_occurred) {
-				fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-				rpc_env.fault_string, rpc_env.fault_code);
-				continue;
-			}
+		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_reports", &resultP, "()");
+		if (rpc_env.fault_occurred) {
+			fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+			rpc_env.fault_string, rpc_env.fault_code);
+			continue;
+		}
 
-			if (!resultP)
-				continue;
+		if (!resultP)
+			continue;
 
-			array_size = xmlrpc_array_size(&rpc_env, resultP);
-			if (!array_size) {
-				fprintf(stderr, "Empty array in get_reports reply\n");
-				continue;
-			}
+		array_size = xmlrpc_array_size(&rpc_env, resultP);
+		if (!array_size) {
+			fprintf(stderr, "Empty array in get_reports reply\n");
+			continue;
+		}
 
-			xmlrpc_array_read_item(&rpc_env, resultP, 0, &rv);
-			xmlrpc_read_int(&rpc_env, rv, &has_more);
-			if (rpc_env.fault_occurred) {
-				fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-				rpc_env.fault_string, rpc_env.fault_code);
-				xmlrpc_DECREF(rv);
-				continue;
-			}
+		xmlrpc_array_read_item(&rpc_env, resultP, 0, &rv);
+		xmlrpc_read_int(&rpc_env, rv, &has_more);
+		if (rpc_env.fault_occurred) {
+			fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+			rpc_env.fault_string, rpc_env.fault_code);
 			xmlrpc_DECREF(rv);
+			continue;
+		}
+		xmlrpc_DECREF(rv);
 
-			for (int i = 1; i < array_size; i++) {
-				xmlrpc_value *rv = 0;
+		for (int i = 1; i < array_size; i++) {
+			xmlrpc_value *rv = 0;
 
-				xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
-				if (rv) {
-					struct _report report;
-					int begin_sec, begin_usec, end_sec, end_usec;
+			xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
+			if (rv) {
+				struct _report report;
+				int begin_sec, begin_usec, end_sec, end_usec;
 
-					int tcpi_snd_cwnd;
-					int tcpi_snd_ssthresh;
-					int tcpi_unacked;
-					int tcpi_sacked;
-					int tcpi_lost;
-					int tcpi_retrans;
-					int tcpi_retransmits;
-					int tcpi_fackets;
-					int tcpi_reordering;
-					int tcpi_rtt;
-					int tcpi_rttvar;
-					int tcpi_rto;
-					int tcpi_last_data_sent;
-					int tcpi_last_ack_recv;
-					int tcpi_ca_state;
-					int bytes_read_low, bytes_read_high;
-					int bytes_written_low, bytes_written_high;
+				int tcpi_snd_cwnd;
+				int tcpi_snd_ssthresh;
+				int tcpi_unacked;
+				int tcpi_sacked;
+				int tcpi_lost;
+				int tcpi_retrans;
+				int tcpi_retransmits;
+				int tcpi_fackets;
+				int tcpi_reordering;
+				int tcpi_rtt;
+				int tcpi_rttvar;
+				int tcpi_rto;
+				int tcpi_last_data_sent;
+				int tcpi_last_ack_recv;
+				int tcpi_ca_state;
+				int bytes_read_low, bytes_read_high;
+				int bytes_written_low, bytes_written_high;
 
-					xmlrpc_decompose_value(&rpc_env, rv,
-						"("
-						"{s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
-						"{s:i,s:i,s:i,s:i,*}" /* bytes */
-						"{s:i,s:i,s:i,s:i,*}" /* blocks */
-						"{s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT */
-						"{s:i,s:i,*}" /* MSS, MTU */
-						"{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
-						"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
-						"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
-						"{s:i,*}"
-						")",
+				xmlrpc_decompose_value(&rpc_env, rv,
+					"("
+					"{s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
+					"{s:i,s:i,s:i,s:i,*}" /* bytes */
+					"{s:i,s:i,s:i,s:i,*}" /* blocks */
+					"{s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT */
+					"{s:i,s:i,*}" /* MSS, MTU */
+					"{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
+					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
+					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
+					"{s:i,*}"
+					")",
 
-						"id", &report.id,
-						"type", &report.type,
-						"begin_tv_sec", &begin_sec,
-						"begin_tv_usec", &begin_usec,
-						"end_tv_sec", &end_sec,
-						"end_tv_usec", &end_usec,
+					"id", &report.id,
+					"type", &report.type,
+					"begin_tv_sec", &begin_sec,
+					"begin_tv_usec", &begin_usec,
+					"end_tv_sec", &end_sec,
+					"end_tv_usec", &end_usec,
 
-						"bytes_read_high", &bytes_read_high,
-						"bytes_read_low", &bytes_read_low,
-						"bytes_written_high", &bytes_written_high,
-						"bytes_written_low", &bytes_written_low,
+					"bytes_read_high", &bytes_read_high,
+					"bytes_read_low", &bytes_read_low,
+					"bytes_written_high", &bytes_written_high,
+					"bytes_written_low", &bytes_written_low,
 
-						"request_blocks_read", &report.request_blocks_read,
-						"request_blocks_written", &report.request_blocks_written,
-						"response_blocks_read", &report.response_blocks_read,
-						"response_blocks_written", &report.response_blocks_written,
+					"request_blocks_read", &report.request_blocks_read,
+					"request_blocks_written", &report.request_blocks_written,
+					"response_blocks_read", &report.response_blocks_read,
+					"response_blocks_written", &report.response_blocks_written,
 
-						"rtt_min", &report.rtt_min,
-						"rtt_max", &report.rtt_max,
-						"rtt_sum", &report.rtt_sum,
-						"iat_min", &report.iat_min,
-						"iat_max", &report.iat_max,
-						"iat_sum", &report.iat_sum,
+					"rtt_min", &report.rtt_min,
+					"rtt_max", &report.rtt_max,
+					"rtt_sum", &report.rtt_sum,
+					"iat_min", &report.iat_min,
+					"iat_max", &report.iat_max,
+					"iat_sum", &report.iat_sum,
 
-						"mss", &report.mss,
-						"mtu", &report.mtu,
+					"mss", &report.mss,
+					"mtu", &report.mtu,
 
-						"tcpi_snd_cwnd", &tcpi_snd_cwnd,
-						"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
-						"tcpi_unacked", &tcpi_unacked,
-						"tcpi_sacked", &tcpi_sacked,
-						"tcpi_lost", &tcpi_lost,
+					"tcpi_snd_cwnd", &tcpi_snd_cwnd,
+					"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
+					"tcpi_unacked", &tcpi_unacked,
+					"tcpi_sacked", &tcpi_sacked,
+					"tcpi_lost", &tcpi_lost,
 
-						"tcpi_retrans", &tcpi_retrans,
-						"tcpi_retransmits", &tcpi_retransmits,
-						"tcpi_fackets", &tcpi_fackets,
-						"tcpi_reordering", &tcpi_reordering,
-						"tcpi_rtt", &tcpi_rtt,
+					"tcpi_retrans", &tcpi_retrans,
+					"tcpi_retransmits", &tcpi_retransmits,
+					"tcpi_fackets", &tcpi_fackets,
+					"tcpi_reordering", &tcpi_reordering,
+					"tcpi_rtt", &tcpi_rtt,
 
-						"tcpi_rttvar", &tcpi_rttvar,
-						"tcpi_rto", &tcpi_rto,
-						"tcpi_last_data_sent", &tcpi_last_data_sent,
-						"tcpi_last_ack_recv", &tcpi_last_ack_recv,
-						"tcpi_ca_state", &tcpi_ca_state,
+					"tcpi_rttvar", &tcpi_rttvar,
+					"tcpi_rto", &tcpi_rto,
+					"tcpi_last_data_sent", &tcpi_last_data_sent,
+					"tcpi_last_ack_recv", &tcpi_last_ack_recv,
+					"tcpi_ca_state", &tcpi_ca_state,
 
-						"status", &report.status
-					);
-					xmlrpc_DECREF(rv);
+					"status", &report.status
+				);
+				xmlrpc_DECREF(rv);
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
-					report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
-					report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
+				report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
+				report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
 #else
-					report.bytes_read = (uint32_t)bytes_read_low;
-					report.bytes_written = (uint32_t)bytes_written_low;
+				report.bytes_read = (uint32_t)bytes_read_low;
+				report.bytes_written = (uint32_t)bytes_written_low;
 #endif
 
 #ifdef __LINUX__
-					report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
-					report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
-					report.tcp_info.tcpi_unacked = tcpi_unacked;
-					report.tcp_info.tcpi_sacked = tcpi_sacked;
-					report.tcp_info.tcpi_lost = tcpi_lost;
-					report.tcp_info.tcpi_retrans = tcpi_retrans;
-					report.tcp_info.tcpi_retransmits = tcpi_retransmits;
-					report.tcp_info.tcpi_fackets = tcpi_fackets;
-					report.tcp_info.tcpi_reordering = tcpi_reordering;
-					report.tcp_info.tcpi_rtt = tcpi_rtt;
-					report.tcp_info.tcpi_rttvar = tcpi_rttvar;
-					report.tcp_info.tcpi_rto = tcpi_rto;
-					report.tcp_info.tcpi_last_data_sent = tcpi_last_data_sent;
-					report.tcp_info.tcpi_last_ack_recv = tcpi_last_ack_recv;
-					report.tcp_info.tcpi_ca_state = tcpi_ca_state;
+				report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
+				report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
+				report.tcp_info.tcpi_unacked = tcpi_unacked;
+				report.tcp_info.tcpi_sacked = tcpi_sacked;
+				report.tcp_info.tcpi_lost = tcpi_lost;
+				report.tcp_info.tcpi_retrans = tcpi_retrans;
+				report.tcp_info.tcpi_retransmits = tcpi_retransmits;
+				report.tcp_info.tcpi_fackets = tcpi_fackets;
+				report.tcp_info.tcpi_reordering = tcpi_reordering;
+				report.tcp_info.tcpi_rtt = tcpi_rtt;
+				report.tcp_info.tcpi_rttvar = tcpi_rttvar;
+				report.tcp_info.tcpi_rto = tcpi_rto;
+				report.tcp_info.tcpi_last_data_sent = tcpi_last_data_sent;
+				report.tcp_info.tcpi_last_ack_recv = tcpi_last_ack_recv;
+				report.tcp_info.tcpi_ca_state = tcpi_ca_state;
 #endif
-					report.begin.tv_sec = begin_sec;
-					report.begin.tv_usec = begin_usec;
-					report.end.tv_sec = end_sec;
-					report.end.tv_usec = end_usec;
+				report.begin.tv_sec = begin_sec;
+				report.begin.tv_usec = begin_usec;
+				report.end.tv_sec = end_sec;
+				report.end.tv_usec = end_usec;
 
-					report_flow(unique_servers[j], &report);
-				}
-			}
-			xmlrpc_DECREF(resultP);
-
-			if (has_more)
-			{
-				/* Go back to beginning of loop */
-				goto has_more_reports;
+				report_flow(unique_servers[j], &report);
 			}
 		}
+		xmlrpc_DECREF(resultP);
 
-		if (active_flows < 1)
-			/* All flows have ended */
-			return;
+		if (has_more)
+			goto has_more_reports;
 	}
 }
 
@@ -2755,11 +2765,13 @@ int main(int argc, char *argv[])
 	if (!sigint_caught)
 		grind_flows(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "report final");
-	if (!sigint_caught)
-		report_final();
 
+	DEBUG_MSG(LOG_WARNING, "close flows");
 	close_flows();
+
+	DEBUG_MSG(LOG_WARNING, "report final");
+	fetch_reports(rpc_client);
+	report_final();
 
 	shutdown_logfile();
 

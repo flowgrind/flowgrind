@@ -327,11 +327,22 @@ static void start_flows(struct _request_start_flows *request)
 
 static void stop_flow(struct _request_stop_flow *request)
 {
+
+	pthread_mutex_unlock(&mutex);
+
 	if (request->flow_id == -1) {
 		/* Stop all flows */
 
 		for (unsigned int i = 0; i < num_flows; i++) {
 			struct _flow *flow = &flows[i];
+
+#ifdef __LINUX__
+			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+#endif          
+                        flow->mtu = get_mtu(flow->fd);
+                        flow->mss = get_mss(flow->fd);
+
+                        report_flow(flow, TOTAL);
 
 			uninit_flow(flow);
 			remove_flow(i);
@@ -346,6 +357,14 @@ static void stop_flow(struct _request_stop_flow *request)
 		if (flow->id != request->flow_id)
 			continue;
 
+#ifdef __LINUX__        
+                flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+#endif                          
+                flow->mtu = get_mtu(flow->fd);
+                flow->mss = get_mss(flow->fd);
+
+                report_flow(flow, TOTAL);
+
 		uninit_flow(flow);
 		remove_flow(i);
 		return;
@@ -357,7 +376,9 @@ static void stop_flow(struct _request_stop_flow *request)
 static void process_requests()
 {
 	int rc;
+	DEBUG_MSG(LOG_DEBUG, "process_requests trying to lock mutex");
 	pthread_mutex_lock(&mutex);
+	DEBUG_MSG(LOG_DEBUG, "process_requests locked mutex");
 
 	char tmp[100];
 	for (;;) {
@@ -401,6 +422,7 @@ static void process_requests()
 	};
 
 	pthread_mutex_unlock(&mutex);
+	DEBUG_MSG(LOG_DEBUG, "process_requests unlocked mutex");
 }
 
 /*
@@ -409,6 +431,7 @@ static void process_requests()
  */
 static void report_flow(struct _flow* flow, int type)
 {
+	DEBUG_MSG(LOG_DEBUG, "report_flow called for flow %d (type %d)", flow->id, type);
 	struct _report* report = (struct _report*)malloc(sizeof(struct _report));
 
 	report->id = flow->id;
@@ -512,6 +535,7 @@ static void report_flow(struct _flow* flow, int type)
 	}
 
 	add_report(report);
+	DEBUG_MSG(LOG_DEBUG, "report_flow finished for flow %d (type %d)", flow->id, type);
 }
 
 #ifdef __LINUX__
@@ -660,8 +684,9 @@ void* daemon_main(void* ptr __attribute__((unused)))
 
 void add_report(struct _report* report)
 {
+	DEBUG_MSG(LOG_DEBUG, "add_report trying to lock mutex");
 	pthread_mutex_lock(&mutex);
-
+	DEBUG_MSG(LOG_DEBUG, "add_report aquired mutex");
 	/* Do not keep too much data */
 	if (pending_reports >= 100 && report->type != TOTAL) {
 		free(report);
@@ -675,11 +700,13 @@ void add_report(struct _report* report)
 		reports_last->next = report;
 	else
 		reports = report;
+
 	reports_last = report;
 
 	pending_reports++;
 
 	pthread_mutex_unlock(&mutex);
+	DEBUG_MSG(LOG_DEBUG, "add_report unlocked mutex");
 }
 
 struct _report* get_reports(int *has_more)
@@ -687,9 +714,9 @@ struct _report* get_reports(int *has_more)
 	const unsigned int max_reports = 50;
 
 	struct _report* ret;
-
+	DEBUG_MSG(LOG_DEBUG, "get_reports trying to lock mutex");
 	pthread_mutex_lock(&mutex);
-
+	DEBUG_MSG(LOG_DEBUG, "get_reports aquired mutex");
 	ret = reports;
 
 	if (pending_reports <= max_reports) {
@@ -712,7 +739,7 @@ struct _report* get_reports(int *has_more)
 	}
 
 	pthread_mutex_unlock(&mutex);
-
+	DEBUG_MSG(LOG_DEBUG, "get_reports unlocked mutex");
 	return ret;
 }
 
