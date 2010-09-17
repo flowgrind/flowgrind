@@ -1184,7 +1184,7 @@ static void sigint_handler(int sig)
 	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
 
 	if (sigint_caught == 0) {
-		fprintf(stderr, "Trying to gracefully close flows. Press CTRL+C again to force termination.\n");
+		fprintf(stderr, "# Trying to gracefully close flows. Press CTRL+C again to force termination.\n");
 		sigint_caught = 1;
 	}
 	else
