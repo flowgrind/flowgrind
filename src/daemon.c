@@ -118,7 +118,7 @@ static inline int flow_in_delay(struct timeval *now, struct _flow *flow, int dir
 static inline int flow_sending(struct timeval *now, struct _flow *flow, int direction)
 {
 	return !flow_in_delay(now, flow, direction) && (flow->settings.duration[direction] < 0 ||
-		 time_diff(&flow->stop_timestamp[direction], now) < 0.0);
+		 time_diff_now(&flow->stop_timestamp[direction]) < 0.0);
 }
 
 static inline int flow_block_scheduled(struct timeval *now, struct _flow *flow)
@@ -229,6 +229,7 @@ static void report_flow(struct _flow* flow, int type);
 
 static int prepare_fds() {
 
+	DEBUG_MSG(LOG_DEBUG, "prepare_fds() called, num_flows: %d", num_flows);
 	unsigned int i = 0;
 
 	FD_ZERO(&rfds);
@@ -247,9 +248,11 @@ static int prepare_fds() {
 		if (started &&
 			(flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(&now, flow, READ) && !flow_sending(&now, flow, READ))) &&
 			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))) {
+			DEBUG_MSG(LOG_DEBUG, "finished");
 
 			/* Nothing left to read, nothing left to send */
-			if (flow->fd != -1) {
+			/* if (flow->fd != -1) { */
+				DEBUG_MSG(LOG_DEBUG, "finished 2");
 #ifdef __LINUX__
 				flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif
@@ -257,7 +260,7 @@ static int prepare_fds() {
 				flow->mss = get_mss(flow->fd);
 
 				report_flow(flow, TOTAL);
-			}
+			/*} */
 
 			uninit_flow(flow);
 			remove_flow(--i);
@@ -567,6 +570,8 @@ static void timer_check()
 	tsc_gettimeofday(&now);
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
+		
+		DEBUG_MSG(LOG_DEBUG, "processing timer_check() for flow %d", flow->id);
 
 		if (!flow->settings.reporting_interval)
 			continue;
@@ -584,6 +589,7 @@ static void timer_check()
 			time_add(&flow->next_report_time, flow->settings.reporting_interval);
 		} while (time_is_after(&now, &flow->next_report_time));
 	}
+	DEBUG_MSG(LOG_DEBUG, "finished timer_check()");
 }
 
 static int write_data(struct _flow *flow);
@@ -593,7 +599,10 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 {
 	unsigned int i = 0;
 	while (i < num_flows) {
+		
 		struct _flow *flow = &flows[i];
+
+		DEBUG_MSG(LOG_DEBUG, "processing select() for flow %d", flow->id);
 
 		if (flow->listenfd_data != -1 && FD_ISSET(flow->listenfd_data, rfds)) {
 			if (flow->state == GRIND_WAIT_ACCEPT) {
@@ -661,9 +670,9 @@ void* daemon_main(void* ptr __attribute__((unused)))
 	for (;;) {
 		int need_timeout = prepare_fds();
 
-		timeout.tv_sec = 2;
+		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
-
+		DEBUG_MSG(LOG_DEBUG, "calling select() need_timeout: %i", need_timeout);
 		int rc = select(maxfd + 1, &rfds, &wfds, &efds, need_timeout ? &timeout : 0);
 		if (rc < 0) {
 			if (errno == EINTR)
@@ -672,6 +681,7 @@ void* daemon_main(void* ptr __attribute__((unused)))
 					strerror(errno));
 			exit(1);
 		}
+		DEBUG_MSG(LOG_DEBUG, "select() finished");
 
 		if (FD_ISSET(daemon_pipe[0], &rfds))
 			process_requests();

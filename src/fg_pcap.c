@@ -167,7 +167,9 @@ void fg_pcap_go(struct _flow *flow)
 
 	tsc_gettimeofday(&now);
 	len = strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
-	
+
+	strcat(dump_filename, "flowgrind-");
+
 	strcat(dump_filename, buf);
 	strcat(dump_filename, ".pcap");
 
