@@ -579,7 +579,7 @@ static void usage(void)
 		"  -L x         Call connect() on test socket immediately before starting to send\n"
 		"               data (late connect). If not specified the test connection is\n"
 		"               established in the preparation phase before the test starts.\n"
-		"  -N x         shutdown() each socket direction after test flow\n"
+		"  -N           shutdown() each socket direction after test flow\n"
 #if HAVE_LIBPCAP
 		"  -M x         dump traffic using libcap\n"
 #endif
@@ -1156,6 +1156,7 @@ exit_outer_loop:
 	}
 
 	if (report->type == TOTAL) {
+		DEBUG_MSG(LOG_DEBUG, "received final report");
 		/* Final report, keep it for later */
 		free(f->final_report[endpoint]);
 		f->final_report[endpoint] = malloc(sizeof(struct _report));
@@ -1163,13 +1164,13 @@ exit_outer_loop:
 
 		if (!f->finished[endpoint]) {
 			f->finished[endpoint] = 1;
-
-			if (f->finished[1 - endpoint]) {
+			if (f->finished[1 - endpoint]) { 
 				active_flows--;
+				DEBUG_MSG(LOG_DEBUG, "remaining active flows: %d", active_flows);
 #ifdef DEBUG
 				assert(active_flows >= 0);
 #endif
-			}
+			} 
 		}
 		return;
 	}
@@ -1184,7 +1185,7 @@ static void sigint_handler(int sig)
 	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
 
 	if (sigint_caught == 0) {
-		fprintf(stderr, "# Trying to gracefully close flows. Press CTRL+C again to force termination.\n");
+		fprintf(stderr, "# received SIGNT, trying to gracefully close flows. Press CTRL+C again to force termination.\n");
 		sigint_caught = 1;
 	}
 	else
