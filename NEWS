@@ -1,5 +1,7 @@
 Release 0.5 (2010-X-X)
 - removed obsolete fasttime and TSCI2 support
+- libpcap support for automatic traffic dumping (for analysis with
+  tcptrace etc)
 - libgsl support for advanced stochastic distributions
 - reinvented lipcap support for automatic traffic dumping
 - added non-standard sockopt MTCP

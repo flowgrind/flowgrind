@@ -16,5 +16,5 @@ int normalize_tv(struct timeval *);
 int time_is_after(const struct timeval *, const struct timeval *);
 
 int tsc_gettimeofday(struct timeval *tv);
-
+int get_futuretimespec(struct timespec *time, int sec);
 #endif

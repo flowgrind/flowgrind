@@ -193,6 +193,11 @@ int accept_data(struct _flow *flow)
 
 	logging_log(LOG_NOTICE, "client %s connected for testing.",
 			fg_nameinfo((struct sockaddr *)&caddr, addrlen));
+
+#ifdef HAVE_LIBPCAP
+	fg_pcap_go(flow, 0);
+#endif 
+
 	real_send_buffer_size = set_window_size_directed(flow->fd, flow->settings.requested_send_buffer_size, SO_SNDBUF);
 	if (flow->requested_server_test_port &&
 			flow->real_listen_send_buffer_size != real_send_buffer_size) {

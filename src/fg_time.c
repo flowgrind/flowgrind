@@ -145,3 +145,11 @@ tsc_gettimeofday(struct timeval *tv)
 
 	return 0;
 }
+
+int
+get_futuretimespec(struct timespec *t, int sec)
+{
+	int rc = clock_gettime(CLOCK_REALTIME, t);
+	t->tv_sec += sec;
+	return rc;
+}

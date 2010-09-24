@@ -14,14 +14,14 @@ extern pthread_mutex_t mutex;
 
 enum flow_endpoint
 {
-	SOURCE,
+	SOURCE = 0,
 	DESTINATION,
 };
 
 enum flow_state
 {
 	/* SOURCE */
-	GRIND_WAIT_CONNECT,
+	GRIND_WAIT_CONNECT = 0,
 
 	/* DESTINATION */
 	GRIND_WAIT_ACCEPT,
@@ -113,6 +113,12 @@ struct _flow
 
 	} statistics[2];
 
+#ifdef HAVE_LIBPCAP
+	pthread_t 		 pcap_thread;
+	pthread_mutex_t 	 pcap_mutex;
+	struct pcap_t          	*pcap_handle;
+	struct pcap_dumper_t   	*pcap_dumper;
+#endif
 	char* error;
 };
 
@@ -200,6 +206,8 @@ struct _request_get_status
 	int started;
 	int num_flows;
 };
+
+char * dump_filename_prefix;
 
 void flow_error(struct _flow *flow, const char *fmt, ...);
 void request_error(struct _request *request, const char *fmt, ...);

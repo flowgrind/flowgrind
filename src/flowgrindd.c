@@ -42,13 +42,14 @@ static char progname[50] = "flowgrindd";
 static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
-		"Usage: %1$s [-p#] [-d] [-v]\n"
+		"Usage: %1$s [-p#] [-d] [-w DIR] [-v]\n"
 		"\t-p#\t\tXML-RPC server port\n"
 #ifdef DEBUG
 		"\t-d\t\tincrease debug verbosity, add multiple times (no daemon, log to stderr)\n"
 #else
 		"\t-d\t\tdon't fork into background\n"
 #endif
+		"\t-w\t\ttarget directory for dumps\n"
 		"\t-v\t\tPrint version information and exit\n",
 		progname);
 	exit(1);
@@ -853,9 +854,9 @@ static void parse_option(int argc, char ** argv) {
 				{"debug", 0, 0, 'd'},
 				{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "dDhp:vV", lo, 0)) != -1) {
+	while ((ch = getopt_long(argc, argv, "dDhp:vVw:W:", lo, 0)) != -1) {
 #else
-	while ((ch = getopt(argc, argv, "dDhp:vV")) != -1) {
+	while ((ch = getopt(argc, argv, "dDhp:vVw:W:")) != -1) {
 #endif
 		switch (ch) {
 		case 'h':
@@ -881,6 +882,10 @@ static void parse_option(int argc, char ** argv) {
 		case 'V':
 			fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
+		case 'w':
+		case 'W':
+			dump_filename_prefix = optarg;
+			break;
 
 		default:
 			usage();
