@@ -707,7 +707,7 @@ static void init_options_defaults(void)
 {
 	opt.num_flows = 1;
 	opt.reporting_interval = 0.05;
-	opt.log_filename_prefix = "flowlog-";
+	opt.log_filename_prefix = "flowgrind-";
 	opt.dont_log_logfile = 1;
 	opt.symbolic = 1;
 }
@@ -800,9 +800,10 @@ static void init_logfile(void)
 	} else {
 		tsc_gettimeofday(&now);
 		len = strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
-		log_filename = malloc(strlen(opt.log_filename_prefix) + len + 1);
+		log_filename = malloc(strlen(opt.log_filename_prefix) + len + 1 + strlen(".log") );
 		strcpy(log_filename, opt.log_filename_prefix);
 		strcat(log_filename, buf);
+		strcat(log_filename, ".log");
 	}
 
 	DEBUG_MSG(LOG_NOTICE, "logging to \"%s\"", log_filename);

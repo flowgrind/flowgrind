@@ -128,6 +128,27 @@ static inline int flow_block_scheduled(struct timeval *now, struct _flow *flow)
 
 void uninit_flow(struct _flow *flow)
 {
+#ifdef HAVE_LIBPCAP
+	int rc;
+	if (flow->settings.traffic_dump && flow->pcap_thread) {
+		struct timespec *timeout;
+		timeout = malloc(sizeof(struct timespec));
+		/* guard thread cancelation so no unwritten packets get lost, but dont wait
+		 * forever */
+		DEBUG_MSG(LOG_DEBUG, "uninit_flow()  waiting for lock on flow %d", flow->id);
+
+		get_futuretimespec(timeout, 2);
+		pthread_mutex_timedlock(&flow->pcap_mutex, timeout);
+		DEBUG_MSG(LOG_DEBUG, "uninit_flow() locked on flow %d", flow->id);
+		rc = pthread_cancel(flow->pcap_thread);
+		pthread_mutex_unlock(&flow->pcap_mutex);
+		DEBUG_MSG(LOG_DEBUG, "uninit_flow() unlocked on flow %d", flow->id);
+		if (rc)
+			logging_log(LOG_WARNING, "failed to cancel dump thread: %s", strerror(errno));
+
+	}
+#endif
+
 	if (flow->fd != -1)
 		close(flow->fd);
 	if (flow->listenfd_data != -1)
@@ -248,19 +269,14 @@ static int prepare_fds() {
 		if (started &&
 			(flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(&now, flow, READ) && !flow_sending(&now, flow, READ))) &&
 			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))) {
-			DEBUG_MSG(LOG_DEBUG, "finished");
 
-			/* Nothing left to read, nothing left to send */
-			/* if (flow->fd != -1) { */
-				DEBUG_MSG(LOG_DEBUG, "finished 2");
 #ifdef __LINUX__
-				flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif
-				flow->mtu = get_mtu(flow->fd);
-				flow->mss = get_mss(flow->fd);
+			flow->mtu = get_mtu(flow->fd);
+			flow->mss = get_mss(flow->fd);
 
-				report_flow(flow, TOTAL);
-			/*} */
+			report_flow(flow, TOTAL);
 
 			uninit_flow(flow);
 			remove_flow(--i);
@@ -641,10 +657,6 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 				if (read_data(flow) == -1)
 					goto remove;
 		}
-#ifdef HAVE_LIBPCAP
-		if (!flow->settings.traffic_dump)
-			fg_pcap_dispatch();
-#endif
 		i++;
 		continue;
 remove:
@@ -928,7 +940,10 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 	msg.msg_iovlen = 1;
 	msg.msg_control = cbuf;
 	msg.msg_controllen = sizeof(cbuf);
+	
 	rc = recvmsg(flow->fd, &msg, 0);
+
+	DEBUG_MSG(LOG_DEBUG, "tried reading %d bytes, got %d", bytes, rc);
 
 	if (rc == -1) {
 		if (errno == EAGAIN)
@@ -976,7 +991,7 @@ static int read_data(struct _flow *flow)
 		/* make sure to read block header for new block */
 		if (flow->current_block_bytes_read < MIN_BLOCK_SIZE)
 			rc = try_read_n_bytes(flow,MIN_BLOCK_SIZE-flow->current_block_bytes_read);
-			if (rc == -1)
+			if (rc <= 0)
 				break;
 			if (flow->current_block_bytes_read < MIN_BLOCK_SIZE)
 				continue;
