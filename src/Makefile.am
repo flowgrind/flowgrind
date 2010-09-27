@@ -1,4 +1,4 @@
-AM_CFLAGS = -Wall -Wextra -std=gnu99 -D_GNU_SOURCE -fgnu89-inline 
+AM_CFLAGS = -Wall -Wextra -Werror=implicit -std=gnu99 -D_GNU_SOURCE -fgnu89-inline 
 AM_LDFLAGS = -Wl,--as-needed
 
 bin_PROGRAMS = flowgrind flowgrind-stop
