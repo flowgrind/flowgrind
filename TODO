@@ -1,8 +1,6 @@
 +simplify arbitary socket options
 +fix crash in conjunction with newer libxmlrpc-c
-+fix rare daemon crash on flow close
 +recover UDP option
 +xml style output
-+(try to)track route changes (IP route record option)
 +allow send volume to be specified (instead of duration/rate)
 +meet more the spirit of IPPM (connectivity test, etc.)

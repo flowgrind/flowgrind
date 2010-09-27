@@ -133,9 +133,9 @@ void uninit_flow(struct _flow *flow)
 	if (flow->settings.traffic_dump && flow->pcap_thread) {
 		struct timespec *timeout;
 		timeout = malloc(sizeof(struct timespec));
-		/* guard thread cancelation so no unwritten packets get lost, but dont wait
+		/* guard thread cancellation so no unwritten packets get lost, but dont wait
 		 * forever */
-		DEBUG_MSG(LOG_DEBUG, "uninit_flow()  waiting for lock on flow %d", flow->id);
+		DEBUG_MSG(LOG_DEBUG, "uninit_flow() waiting for lock on flow %d", flow->id);
 
 		get_futuretimespec(timeout, 2);
 		pthread_mutex_timedlock(&flow->pcap_mutex, timeout);
