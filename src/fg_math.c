@@ -86,7 +86,7 @@ rn_uniform() {
 #ifdef HAVE_LIBGSL
 	return gsl_rng_get(r);
 #else
-	return (rand());
+	return rand();
 #endif
 }
 
@@ -95,7 +95,7 @@ rn_uniform_zero_to_one() {
 #ifdef HAVE_LIBGSL
 	return gsl_rng_uniform_pos(r);
 #else
-	return (rn_uniform()/(RANDOM_MAX+1.0) );
+	return rn_uniform()/(RANDOM_MAX+1.0);
 #endif
 }
 
@@ -109,7 +109,7 @@ dist_exponential(const double mu) {
 #ifdef HAVE_LIBGSL
 	return gsl_ran_exponential(r, mu);
 #else
-	return (-log(rn_uniform())+mu);
+	return -log(rn_uniform())+mu;
 #endif
 }
 
@@ -140,7 +140,7 @@ dist_bernoulli(const double p) {
 #ifdef HAVE_LIBGSL
 	return gsl_ran_bernoulli (r, p);
 #else
-	return (rn_uniform_zero_to_one() <= p);
+	return rn_uniform_zero_to_one() <= p;
 #endif
 }
 
@@ -151,7 +151,7 @@ dist_pareto (const double k, const double x_min) {
 #else
 	const double x = rn_uniform();
 	if (x < x_min) return 0;
-	else return ( (k/x_min) * pow (x_min/rn_uniform(),k+1) );
+	else return  (k/x_min) * pow (x_min/rn_uniform(),k+1));
 #endif
 }
 

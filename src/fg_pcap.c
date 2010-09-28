@@ -164,9 +164,9 @@ void fg_pcap_go(struct _flow *flow, int is_source)
 		strcat(dump_filename, dump_filename_prefix); 
 	strcat(dump_filename, "flowgrind-");
 
-        /* timestamp */
-        tsc_gettimeofday(&now);
-        strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
+	/* timestamp */
+	tsc_gettimeofday(&now);
+	strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
 	strcat(dump_filename, buf);
 
 	/* hostname */
@@ -217,7 +217,7 @@ error:
 void* fg_pcap_thread(void* arg)
 {
 #ifdef DEBUG
-        struct pcap_stat p_stats;
+	struct pcap_stat p_stats;
 #endif
 	int rc;
 	struct _flow * flow; 
@@ -246,7 +246,7 @@ void* fg_pcap_thread(void* arg)
 #endif
 		DEBUG_MSG(LOG_NOTICE, "pcap: finished dumping %u packets for flow %d", rc, flow->id);
 		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets received by filter for flow %d", p_stats.ps_recv, flow->id);
-        	DEBUG_MSG(LOG_NOTICE, "pcap: %d packets dropped by kernel for flow %d", p_stats.ps_drop, flow->id);
+		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets dropped by kernel for flow %d", p_stats.ps_drop, flow->id);
 	}
 
 }
