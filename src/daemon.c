@@ -682,8 +682,8 @@ void* daemon_main(void* ptr __attribute__((unused)))
 	for (;;) {
 		int need_timeout = prepare_fds();
 
-		timeout.tv_sec = 1;
-		timeout.tv_usec = 0;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 10000;
 		DEBUG_MSG(LOG_DEBUG, "calling select() need_timeout: %i", need_timeout);
 		int rc = select(maxfd + 1, &rfds, &wfds, &efds, need_timeout ? &timeout : 0);
 		if (rc < 0) {
