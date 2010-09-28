@@ -956,11 +956,7 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 		if (!flow->finished[READ] || !flow->settings.shutdown)
 			error(ERR_WARNING, "Premature shutdown of server flow");
 			flow->finished[READ] = 1;
-			if (flow->finished[WRITE]) {
-				DEBUG_MSG(LOG_WARNING, "flow %u finished", flow->id);
-				return -1;
-			}
-			return 0;
+			return -1;
 	}
 
 
@@ -991,7 +987,7 @@ static int read_data(struct _flow *flow)
 		/* make sure to read block header for new block */
 		if (flow->current_block_bytes_read < MIN_BLOCK_SIZE)
 			rc = try_read_n_bytes(flow,MIN_BLOCK_SIZE-flow->current_block_bytes_read);
-			if (rc <= 0)
+			if (rc == -1)
 				break;
 			if (flow->current_block_bytes_read < MIN_BLOCK_SIZE)
 				continue;
