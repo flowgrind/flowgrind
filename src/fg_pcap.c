@@ -35,6 +35,7 @@ static char errbuf[PCAP_ERRBUF_SIZE];
 
 void fg_pcap_init()
 {
+/* initalize *alldevs for later use */
 #ifdef DEBUG
 	pcap_if_t *d;
 	char devdes[200];
@@ -74,8 +75,8 @@ void fg_pcap_go(struct _flow *flow, int is_source)
 	uint32_t net = 0;
 	uint32_t mask = 0;
 
-	char dump_filename[250];
-	char hostname[60];
+	char dump_filename[500];
+	char hostname[100];
 
 	struct bpf_program pcap_program;
 	struct timeval now;
