@@ -66,7 +66,7 @@ time_is_after(const struct timeval *tv1, const struct timeval *tv2)
 		return 1;
 	if (tv1->tv_sec < tv2->tv_sec)
 		return 0;
-	return (tv1->tv_usec > tv2->tv_usec);
+	return tv1->tv_usec > tv2->tv_usec;
 }
 #define NTP_EPOCH_OFFSET        2208988800ULL
 

@@ -1276,7 +1276,7 @@ char *guess_topology (int mss, int mtu)
 	if (mtu) {
 		for (i = 0; i < MTU_LIST_NUM; i++) {
 			if (mtu == mtu_list[i].mtu) {
-				return (mtu_list[i].topology);
+				return mtu_list[i].topology;
 			}
 		}
 	}
@@ -1290,7 +1290,7 @@ char *guess_topology (int mss, int mtu)
 		if (((mss + 40) <= mtu_list[i].mtu)
 				&& (mtu_list[i].mtu <= (mss + 120))) {
 
-			return (mtu_list[i].topology);
+			return mtu_list[i].topology;
 		}
 	}
 

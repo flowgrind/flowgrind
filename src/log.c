@@ -86,5 +86,5 @@ logging_time(void)
 	memset(&timestr, 0, sizeof(timestr));
 	strftime(&timestr[0], sizeof(timestr), "%Y/%m/%d %H:%M:%S", loc);
 
-	return (&timestr[0]);
+	return &timestr[0];
 }
