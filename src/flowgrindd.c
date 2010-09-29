@@ -49,7 +49,7 @@ static void __attribute__((noreturn)) usage(void)
 #else
 		"\t-d\t\tdon't fork into background\n"
 #endif
-		"\t-w\t\ttarget directory for dumps\n"
+		"\t-w\t\ttarget directory for dumps (default: /tmp/)\n"
 		"\t-v\t\tPrint version information and exit\n",
 		progname);
 	exit(1);

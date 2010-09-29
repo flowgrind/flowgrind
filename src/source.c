@@ -178,10 +178,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		return -1;
 	}
 
-#ifdef HAVE_LIBPCAP
-	fg_pcap_go(flow, 1);
-#endif
-
 	if (set_flow_tcp_options(flow) == -1) {
 		request->r.error = flow->error;
 		flow->error = NULL;
@@ -211,6 +207,9 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 
 	request->flow_id = flow->id;
-	
+
+#ifdef HAVE_LIBPCAP
+	        fg_pcap_go(flow, 1);
+#endif
 	return 0;
 }
