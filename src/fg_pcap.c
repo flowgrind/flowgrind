@@ -162,6 +162,8 @@ void fg_pcap_go(struct _flow *flow, int is_source)
 	/* prefix */
 	if (dump_filename_prefix)
 		strcat(dump_filename, dump_filename_prefix); 
+	else	
+		strcat(dump_filename, "/tmp/");
 	strcat(dump_filename, "flowgrind-");
 
 	/* timestamp */
@@ -176,6 +178,9 @@ void fg_pcap_go(struct _flow *flow, int is_source)
 		strcat(dump_filename, hostname);
 	}
 
+	/* interface */
+	strcat(dump_filename, "-");
+	strcat(dump_filename, d->name);
 	/* -source or -destination */
 	if (is_source)
 		strcat(dump_filename, "-source");
