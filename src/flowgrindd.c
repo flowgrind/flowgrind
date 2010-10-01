@@ -16,7 +16,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#if HAVE_GETOPT_LONG
+#ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #endif
 
@@ -31,7 +31,7 @@
 #include "fg_time.h"
 #include "debug.h"
 #include "fg_math.h"
-#if HAVE_LIBPCAP
+#ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif
 
@@ -42,14 +42,16 @@ static char progname[50] = "flowgrindd";
 static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
-		"Usage: %1$s [-p#] [-d] [-w DIR] [-v]\n"
+		"Usage: %1$s [-p#] [-d] [-w DIR/] [-v]\n"
 		"\t-p#\t\tXML-RPC server port\n"
 #ifdef DEBUG
 		"\t-d\t\tincrease debug verbosity, add multiple times (no daemon, log to stderr)\n"
 #else
 		"\t-d\t\tdon't fork into background\n"
 #endif
-		"\t-w\t\ttarget directory for dumps (default: /tmp/)\n"
+#ifdef HAVE_LIBPCAP
+		"\t-w\t\ttarget directory for dumps\n"
+#endif
 		"\t-v\t\tPrint version information and exit\n",
 		progname);
 	exit(1);
@@ -157,6 +159,9 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"{s:b,s:b,s:i,*}"
 		"{s:s,*}"
 		"{s:i,s:i,s:i,s:i,s:i,*}"
+#ifdef HAVE_LIBPCAP
+		"{s:s,*}"
+#endif
 		"{s:i,s:A,*}"
 		"{s:s,s:i,s:i,*}"
 		")",
@@ -207,7 +212,9 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"mtcp", &settings.mtcp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
-
+#ifdef HAVE_LIBPCAP
+		"filename_prefix", &dump_filename_prefix_client,
+#endif
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options,
 
@@ -351,6 +358,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"{s:b,s:b,s:i,*}"
 		"{s:s,*}"
 		"{s:i,s:i,s:i,s:i,s:i,*}"
+#ifdef HAVE_LIBPCAP
+		"{s:s,*}"
+#endif
 		"{s:i,s:A,*}"
 		")",
 
@@ -400,7 +410,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"mtcp", &settings.mtcp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
-
+#ifdef HAVE_LIBPCAP
+		"filename_prefix", &dump_filename_prefix_client,
+#endif
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options);
 
@@ -847,7 +859,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 static void parse_option(int argc, char ** argv) {
 	int ch, rc;
 	int argcorig = argc;
-#if HAVE_GETOPT_LONG
+#ifdef HAVE_GETOPT_LONG
 	/* getopt_long isn't portable, it's GNU extension */
 	struct option lo[] = {  {"help", 0, 0, 'h' },
 				{"version", 0, 0, 'v'},
@@ -882,11 +894,13 @@ static void parse_option(int argc, char ** argv) {
 		case 'V':
 			fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
+
 		case 'w':
 		case 'W':
-			dump_filename_prefix = optarg;
+#ifdef HAVE_LIBPCAP
+			dump_filename_prefix_server = optarg;
 			break;
-
+#endif
 		default:
 			usage();
 		}
@@ -934,7 +948,7 @@ int main(int argc, char ** argv)
 
 	parse_option(argc, argv);
 	logging_init();
-#if HAVE_LIBPCAP
+#ifdef HAVE_LIBPCAP
 	fg_pcap_init();
 #endif
 	if (log_type == LOGTYPE_SYSLOG) {

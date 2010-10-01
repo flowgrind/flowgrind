@@ -207,7 +207,10 @@ struct _request_get_status
 	int num_flows;
 };
 
-char * dump_filename_prefix;
+#ifdef HAVE_LIBPCAP
+char * dump_filename_prefix_client;
+char * dump_filename_prefix_server;
+#endif
 
 void flow_error(struct _flow *flow, const char *fmt, ...);
 void request_error(struct _request *request, const char *fmt, ...);
