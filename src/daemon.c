@@ -30,7 +30,7 @@
 
 #include "common.h"
 #include "debug.h"
-#if HAVE_LIBPCAP
+#ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif
 #include "fg_socket.h"

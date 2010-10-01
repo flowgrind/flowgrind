@@ -160,11 +160,10 @@ void fg_pcap_go(struct _flow *flow, int is_source)
 	/* timestamp */
 
 	/* prefix */
-	if (dump_filename_prefix)
-		strcat(dump_filename, dump_filename_prefix); 
-	else	
-		strcat(dump_filename, "/tmp/");
-	strcat(dump_filename, "flowgrind-");
+	if (dump_filename_prefix_server)
+		strcat(dump_filename, dump_filename_prefix_server); 
+	if (dump_filename_prefix_client)
+		strcat(dump_filename, dump_filename_prefix_client);
 
 	/* timestamp */
 	tsc_gettimeofday(&now);

@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#if HAVE_GETOPT_LONG
+#ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #endif
 
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-#if HAVE_GETOPT_LONG
+#ifdef HAVE_GETOPT_LONG
 	/* getopt_long isn't portable, it's GNU extension */
 	struct option lo[] = {  {"help", 0, 0, 'h' },
 							{"version", 0, 0, 'v'},

@@ -34,7 +34,7 @@
 #include "debug.h"
 #include "flowgrind.h"
 #include "fg_math.h"
-#if HAVE_GETOPT_LONG
+#ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #endif
 
@@ -534,7 +534,11 @@ static void usage(void)
 		"  -d           increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
 #endif
+#ifdef HAVE_LIBPCAP
 		"  -e PRE       prepend prefix PRE to log and dump filename (default: \"%1$s\")\n"
+#else
+		"  -e PRE       prepend prefix PRE to log filename (default: \"%1$s\")\n"
+#endif
 		"  -i #.#       reporting interval in seconds (default: 0.05s)\n"
 		"  -l NAME      use log filename NAME (default: timestamp)\n"
 		"  -m           report throughput in 2**20 bytes/second\n"
@@ -564,7 +568,7 @@ static void usage(void)
 		"               Useful in combination with -n to set specific options\n"
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
-#if HAVE_LIBGSL
+#ifdef HAVE_LIBGSL
 		"  -G [q|p|g]=[C|U],#1,(#2):<multiple times>\n"
 #else
 		"  -G [q|p|g]=[C|E|P|N|U],#1,(#2):<multiple times>\n"
@@ -580,7 +584,7 @@ static void usage(void)
 		"               data (late connect). If not specified the test connection is\n"
 		"               established in the preparation phase before the test starts.\n"
 		"  -N           shutdown() each socket direction after test flow\n"
-#if HAVE_LIBPCAP
+#ifdef HAVE_LIBPCAP
 		"  -M x         dump traffic using libcap\n"
 #endif
 		"  -O x=OPT     Set specific socket options on test socket.\n"
@@ -1848,7 +1852,7 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-#if HAVE_GETOPT_LONG
+#ifdef HAVE_GETOPT_LONG
 	/* getopt_long isn't portable, it's GNU extension */
 	struct option lo[] = {  {"help", 0, 0, 'h' },
 							{"version", 0, 0, 'v'},
@@ -2344,6 +2348,9 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:b,s:b,s:i}"
 		"{s:s}"
 		"{s:i,s:i,s:i,s:i,s:i}"
+#ifdef HAVE_LIBPCAP
+		"{s:s}"
+#endif
 		"{s:i,s:A}"
 		")",
 
@@ -2382,7 +2389,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"traffic_generation_gap_param_one", flow[id].settings[DESTINATION].interpacket_gap_trafgen_options.param_one,
 		"traffic_generation_gap_param_two", flow[id].settings[DESTINATION].interpacket_gap_trafgen_options.param_two,
 
-		"flow_control", flow[id].settings[DESTINATION].flow_control,
+	"flow_control", flow[id].settings[DESTINATION].flow_control,
 		"byte_counting", flow[id].byte_counting,
 		"cork", (int)flow[id].settings[DESTINATION].cork,
 
@@ -2393,7 +2400,9 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"mtcp", flow[id].settings[DESTINATION].mtcp,
 		"dscp", (int)flow[id].settings[DESTINATION].dscp,
 		"ipmtudiscover", flow[id].settings[DESTINATION].ipmtudiscover,
-
+#ifdef HAVE_LIBPCAP
+		"filename_prefix", opt.log_filename_prefix,
+#endif
 		"num_extra_socket_options", flow[id].settings[DESTINATION].num_extra_socket_options,
 		"extra_socket_options", extra_options);
 
@@ -2442,6 +2451,9 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:b,s:b,s:i}"
 		"{s:s}"
 		"{s:i,s:i,s:i,s:i,s:i}"
+#ifdef HAVE_LIBPCAP
+		"{s:s}"
+#endif
 		"{s:i,s:A}"
 		"{s:s,s:i,s:i}"
 		")",
@@ -2493,7 +2505,9 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"mtcp", flow[id].settings[SOURCE].mtcp,
 		"dscp", (int)flow[id].settings[SOURCE].dscp,
 		"ipmtudiscover", flow[id].settings[SOURCE].ipmtudiscover,
-
+#ifdef HAVE_LIBPCAP
+		"filename_prefix", opt.log_filename_prefix,
+#endif
 		"num_extra_socket_options", flow[id].settings[SOURCE].num_extra_socket_options,
 		"extra_socket_options", extra_options,
 
