@@ -151,7 +151,7 @@ dist_pareto (const double k, const double x_min) {
 #else
 	const double x = rn_uniform();
 	if (x < x_min) return 0;
-	else return  (k/x_min) * pow (x_min/rn_uniform(),k+1));
+	else return  (k/x_min) * pow (x_min/rn_uniform(),k+1);
 #endif
 }
 
