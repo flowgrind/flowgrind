@@ -75,6 +75,10 @@ unsigned int num_flows = 0;
 
 char started = 0;
 
+#ifdef HAVE_LIBPCAP
+char dumping = 0;
+#endif
+
 static void process_rtt(struct _flow* flow);
 static void process_iat(struct _flow* flow);
 static void send_response(struct _flow* flow, int requested_response_block_size);
@@ -128,25 +132,15 @@ static inline int flow_block_scheduled(struct timeval *now, struct _flow *flow)
 
 void uninit_flow(struct _flow *flow)
 {
+	DEBUG_MSG(LOG_DEBUG,"uninit_flow() called for flow %d",flow->id);
 #ifdef HAVE_LIBPCAP
 	int rc;
 	if (flow->settings.traffic_dump && flow->pcap_thread) {
-		struct timespec *timeout;
-		timeout = malloc(sizeof(struct timespec));
-		/* guard thread cancellation so no unwritten packets get lost, but dont wait
-		 * forever */
-		DEBUG_MSG(LOG_DEBUG, "uninit_flow() waiting for lock on flow %d", flow->id);
-
-		get_futuretimespec(timeout, 2);
-		pthread_mutex_timedlock(&flow->pcap_mutex, timeout);
-		DEBUG_MSG(LOG_DEBUG, "uninit_flow() locked on flow %d", flow->id);
 		rc = pthread_cancel(flow->pcap_thread);
-		pthread_mutex_unlock(&flow->pcap_mutex);
-		DEBUG_MSG(LOG_DEBUG, "uninit_flow() unlocked on flow %d", flow->id);
 		if (rc)
 			logging_log(LOG_WARNING, "failed to cancel dump thread: %s", strerror(errno));
-
 	}
+	fg_pcap_cleanup(flow);
 #endif
 
 	if (flow->fd != -1)
@@ -789,7 +783,6 @@ void init_flow(struct _flow* flow, int is_source)
 	flow->finished[READ] = flow->finished[WRITE] = 0;
 
 	flow->addr = 0;
-
 	/* INTERVAL and TOTAL */
 	for (int i = 0; i < 2; i++) {
 		flow->statistics[i].bytes_read = 0;

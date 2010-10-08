@@ -12,6 +12,7 @@ void increase_debuglevel();
 
 #include <sys/types.h>
 #include <unistd.h>
+#include <pthread.h>
 
 unsigned debug_level;
 
@@ -19,9 +20,9 @@ const char *debug_timestamp(void);
 
 #define DEBUG_MSG(message_level, msg, args...) \
 		if (debug_level>=message_level) { \
-			fprintf(stderr, "%s %s:%d  [%d] " msg "\n", \
+			fprintf(stderr, "%s %s:%d  [%d/%hu] " msg "\n", \
 					debug_timestamp(), __FUNCTION__, \
-					__LINE__, getpid(), ##args); \
+					__LINE__, getpid(), (unsigned short)pthread_self(), ##args); \
 		}
 #else
 

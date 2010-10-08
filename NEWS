@@ -3,7 +3,6 @@ Release 0.5 (2010-X-X)
 - libpcap support for automatic traffic dumping (for analysis with
   tcptrace etc)
 - libgsl support for advanced stochastic distributions
-- reinvented lipcap support for automatic traffic dumping
 - added non-standard sockopt MTCP
 - always print final report
 - bugfixes (oh-rly?)
