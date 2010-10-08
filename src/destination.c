@@ -195,7 +195,7 @@ int accept_data(struct _flow *flow)
 			fg_nameinfo((struct sockaddr *)&caddr, addrlen));
 
 #ifdef HAVE_LIBPCAP
-	fg_pcap_go(flow, 0);
+	fg_pcap_go(flow);
 #endif 
 
 	real_send_buffer_size = set_window_size_directed(flow->fd, flow->settings.requested_send_buffer_size, SO_SNDBUF);

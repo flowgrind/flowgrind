@@ -10,6 +10,8 @@ pthread_t daemon_thread;
 /* Through this pipe we wakeup the thread from select */
 extern int daemon_pipe[2];
 
+extern char dumping;
+
 extern pthread_mutex_t mutex;
 
 enum flow_endpoint
@@ -115,7 +117,6 @@ struct _flow
 
 #ifdef HAVE_LIBPCAP
 	pthread_t 		 pcap_thread;
-	pthread_mutex_t 	 pcap_mutex;
 	struct pcap_t          	*pcap_handle;
 	struct pcap_dumper_t   	*pcap_dumper;
 #endif
