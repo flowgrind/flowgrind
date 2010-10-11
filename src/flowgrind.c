@@ -1023,7 +1023,7 @@ void report_final(void)
 				flow[id].settings[SOURCE].duration[READ]);
 
 			if (flow[id].final_report[endpoint]) {
-				double thruput_read, thruput_written, report_diff, duration_read, duration_write;
+				double thruput_read, thruput_written, transactions_per_sec, report_diff, duration_read, duration_write;
 
 				report_diff = time_diff(&flow[id].final_report[endpoint]->begin, &flow[id].final_report[endpoint]->end);
 				/* Calculate duration the flow was receiving */
@@ -1043,15 +1043,31 @@ void report_final(void)
 				if (isnan(thruput_written))
 					thruput_written = 0.0;
 
+				transactions_per_sec = flow[id].final_report[endpoint]->response_blocks_read / MAX(duration_read,duration_write);
+				if (isnan(transactions_per_sec))
+					transactions_per_sec = 0.0;
+
 				thruput_read = scale_thruput(thruput_read);
 				thruput_written = scale_thruput(thruput_written);
 
-				CATC("through = %.6f/%.6fM%c/s, %u/%u request blocks, %u/%u response blocks (out/in)", thruput_written, thruput_read, opt.mbyte ? 'B' : 'b',
+				CATC("through = %.6f/%.6fM%c/s", 
+					thruput_written, 
+					thruput_read, 
+					opt.mbyte ? 'B' : 'b');
+
+
+				if (flow[id].final_report[endpoint]->request_blocks_written || flow[id].final_report[endpoint]->request_blocks_read)
+					CATC("%u/%u request blocks (out/in)",
 					flow[id].final_report[endpoint]->request_blocks_written,
-					flow[id].final_report[endpoint]->request_blocks_read,
+					flow[id].final_report[endpoint]->request_blocks_read);
+
+				if (flow[id].final_report[endpoint]->response_blocks_written || flow[id].final_report[endpoint]->response_blocks_read)
+					CATC("%u/%u response blocks (out/in)",
 					flow[id].final_report[endpoint]->response_blocks_written,
-					flow[id].final_report[endpoint]->response_blocks_read
-					);
+					flow[id].final_report[endpoint]->response_blocks_read);
+
+				if (transactions_per_sec)
+					CATC("%.2f transactions/s", transactions_per_sec);
 			}
 
 			if (flow[id].endpoint_options[endpoint].rate_str)
