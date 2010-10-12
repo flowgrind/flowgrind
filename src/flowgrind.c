@@ -563,7 +563,7 @@ static void usage(void)
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
-		"  -E           Enumerate bytes in payload instead of sending zeros (default: don't)\n"
+		"  -E           Enumerate bytes in payload instead of sending zeros\n"
 		"  -F #{,#}     Flow options following this option apply only to flow #{,#}.\n"
 		"               Useful in combination with -n to set specific options\n"
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
@@ -600,7 +600,7 @@ static void usage(void)
 		"               b = bits per second (default), y = bytes/second, B = blocks/s\n"
 		"  -U #         Set application buffer size (default: 8192)\n"
 		"               used with stochastic traffic generation (-G)\n"
-		"  -T x=#.#     Set flow duration, in seconds (default: s=5,d=0)\n"
+		"  -T x=#.#     Set flow duration, in seconds (default: s=10,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n",
 		opt.log_filename_prefix,
@@ -668,26 +668,30 @@ static void usage_trafgenopt(void)
 		"               p = response size (in bytes)\n"
 		"               g = request interpacket gap (in s)\n"
 		"               \n"
-		"               possible distributions (E, N, W only available if compiled with libgsl):\n"
-		"               C = constant (param 1: value, param 2: not used)\n"
-		"               U = uniform (param 1: min, param 2: max)\n"
+		"               possible distributions:\n"
+		"               C = constant (p1: value, p2: not used)\n"
+		"               U = uniform (p1: min, p2: max)\n"
 #ifdef HAVE_LIBGSL
-		"               E = exponential (param 1: lamba - lifetime, param 2: not used)\n"
-		"               N = normal (param 1: mu - mean value, param 2: sigma_square - variance)\n"
-		"               W = weibull distributed (param 1: lambda - scale, param 2: k - shape)\n"
+		"               E = exponential (p1: lamba - lifetime, p2: not used)\n"
+		"               N = normal (p1: mu - mean value, p2: sigma_square - variance)\n"
+		"               W = weibull distributed (p1: lambda - scale, p2: k - shape)\n"
 #endif
 		"\n"
-		"               -U # and -V # specify a cap for the calculated values for request and\n"
-		"               response sizes (not needed for constant values or uniform distribution)\n"
+		"               -U # and -V # specify a cap for the calculated values for\n"
+		"               request and response sizes (not needed for constant values or\n"
+		"               uniform distribution)\n"
 		"\n"
 		"example:\n"
 		"  -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -U 32000\n"
 		"\n"
 		"which means:\n"
 		"               q=C,40         use contant request size of 40 bytes\n"
-		"               p=N,2000,50    use normal distributed response size with mean 2000 bytes and variance 50\n"
-		"               g=U,0.005,0.01 use uniform distributed interpacket gap with min 0.005s and and max 10ms\n"
-		"               -U 32000       cap block sizes at 32 kbytes (needed for normal distribution)\n"
+		"               p=N,2000,50    use normal distributed response size with\n"
+		"                              mean 2000 bytes and variance 50\n"
+		"               g=U,0.005,0.01 use uniform distributed interpacket gap with\n"
+		"                              minimum 0.005s and and maximum 0.01s\n"
+		"               -U 32000       cap block sizes at 32 kbytes (needed for\n"
+		"                              normal distribution)\n"
 
 		);
 	exit(1);
@@ -760,7 +764,7 @@ static void init_flows_defaults(void)
 
 			flow[id].settings[i].num_extra_socket_options = 0;
 		}
-		flow[id].settings[SOURCE].duration[WRITE] = 5.0;
+		flow[id].settings[SOURCE].duration[WRITE] = 10.0;
 		flow[id].settings[DESTINATION].duration[WRITE] = 0.0;
 
 		flow[id].endpoint_id[0] = flow[id].endpoint_id[1] = -1;
