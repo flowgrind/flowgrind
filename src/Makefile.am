@@ -7,8 +7,8 @@ noinst_HEADERS = common.h debug.h
 
 flowgrind_SOURCES = common.c debug.c fg_socket.c fg_time.c fg_math.h fg_math.c \
 		    flowgrind.h flowgrind.c adt.c adt.h
-flowgrind_LDADD = $(XMLRPC_C_CLIENT_LDADD) $(CURL_LDADD) $(GSL_LDADD)
-flowgrind_CFLAGS = $(AM_CFLAGS) $(XMLRPC_C_CLIENT_CFLAGS) $(CURL_CFLAGS) $(GSL_CFLAGS)
+flowgrind_LDADD = $(CURL_LDADD) $(XMLRPC_C_CLIENT_LDADD) $(GSL_LDADD)
+flowgrind_CFLAGS = $(AM_CFLAGS) $(CURL_CFLAGS) $(XMLRPC_C_CLIENT_CFLAGS) $(GSL_CFLAGS)
 
 flowgrindd_SOURCES = common.c daemon.h daemon.c debug.c destination.h destination.c \
                      fg_pcap.c fg_pcap.h fg_socket.c fg_socket.h fg_time.c flowgrindd.c log.h log.c \

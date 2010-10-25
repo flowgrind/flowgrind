@@ -30,8 +30,16 @@ Building flowgrind
 4. Run  ./configure  to build the makefiles. If this step fails, you are
    missing a working compiler toolchain or some dependencies. Analyze the
    output of configure for more information.
-   Read  ./configure --help  for a list of supported options
+   Read  ./configure --help  for a list of supported options.
+
+   e.g. disable libgsl and libpcap with: --disable-gsl --disable-pcap
 
 5. Run make to compile flowgrind. This creates src/flowgrind and src/flowgrindd
 
 6. Optionally run (sudo) make install  to copy the binaries to the installation prefix.
+
+Hint: If you encounter something like 
+
+"XML-RPC Fault: RPC failed at server.  No member of struct has key 'num_extra_socket_options' (-502)"
+
+it's probably related to different xmlrpc-c versions on client and server and not a flowgrind bug.
