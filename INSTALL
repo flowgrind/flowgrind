@@ -5,13 +5,15 @@ Dependencies
 ============
 
 Flowgrind depends on the following tools and libraries:
-- libxmlrpc-c with curl transport and abyss server (sudo apt-get install libxmlrpc-c3-dev)
-- libpcap (currently not used, therefore disabled by default)
-- GNU Autotools (autoconf, automake and friends) if using source from 
-  the SVN repository
+- GNU Autotools (autoconf, automake and friends) (aptitude install build-essential)
+- libxmlrpc-c with curl transport and abyss server (aptitude install libxmlrpc-c3-dev libcurl4-gnutls-dev)
 
-These libraries as well as their headers and tools need to be installed 
+These libraries as well as their headers and tools need to be installed
 (install approciate -dev packages too).
+
+The following depencies are optional and only required for advanced features:
+- libpcap (for automatic dump, optional) (aptitude install libpcap0.8-dev)
+- libgsl (for advanced traffic generation, optional) (aptitude install libgsl0-dev)
 
 Building flowgrind
 ==================
@@ -30,6 +32,6 @@ Building flowgrind
    output of configure for more information.
    Read  ./configure --help  for a list of supported options
 
-5. Run  make  to compile flowgrind. This creates src/flowgrind and src/flowgrindd
+5. Run make to compile flowgrind. This creates src/flowgrind and src/flowgrindd
 
-6. Optionally run (sudo)  make install  to copy the binaries to the installation prefix.
+6. Optionally run (sudo) make install  to copy the binaries to the installation prefix.
