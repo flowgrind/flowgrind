@@ -3,7 +3,7 @@ Release 0.5 (2010-X-X)
 - libpcap support for automatic traffic dumping (for analysis with
   tcptrace etc)
 - libgsl support for advanced stochastic distributions
-- added non-standard sockopt MTCP
+- added sockopts TCP_NODELAY and non-standard MTCP
 - always print final report
 - bugfixes (oh-rly?)
 

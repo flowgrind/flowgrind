@@ -632,18 +632,18 @@ static void usage_sockopt(void)
 		}
 
 	fprintf(stderr,
-		"  x=TCP_CORK   set TCP_CORK on test socket\n"
-		"  x=SO_DEBUG   set SO_DEBUG on test socket\n"
+		"  x=TCP_CORK     set TCP_CORK on test socket\n"
+		"  x=TCP_NODELAY  disable nagle algorithmn\n"
+		"  x=SO_DEBUG     set SO_DEBUG on test socket\n"
 		"  x=IP_MTU_DISCOVER\n"
-		"               set IP_MTU_DISCOVER on test socket if not already enabled by\n"
-		"               system default\n"
-		"  x=ROUTE_RECORD\n"
-		"               set ROUTE_RECORD on test socket\n\n"
+		"                 set IP_MTU_DISCOVER on test socket if not\n"
+		"                 already enabled by system default\n"
+		"  x=ROUTE_RECORD set ROUTE_RECORD on test socket\n\n"
 		
 		"the following non-standard socket options are supported:\n"
-		"  x=TCP_MTCP   set TCP_MTCP (15) on test socket\n"
-		"  x=TCP_ELCN   set TCP_ELCN (20) on test socket\n"
-		"  x=TCP_ICMP   set TCP_ICMP (21) on test socket\n\n"
+		"  x=TCP_MTCP     set TCP_MTCP (15) on test socket\n"
+		"  x=TCP_ELCN     set TCP_ELCN (20) on test socket\n"
+		"  x=TCP_ICMP     set TCP_ICMP (21) on test socket\n\n"
 
 		"x can be replaced with 's' for source or 'd' for destination\n\n"
 
@@ -757,6 +757,7 @@ static void init_flows_defaults(void)
 			flow[id].settings[i].elcn = 0;
 			flow[id].settings[i].icmp = 0;
 			flow[id].settings[i].mtcp = 0;
+			flow[id].settings[i].nonagle = 0;
 			flow[id].settings[i].traffic_dump = 0;
 			flow[id].settings[i].so_debug = 0;
 			flow[id].settings[i].dscp = 0;
@@ -1082,6 +1083,10 @@ void report_final(void)
 				CATC("TCP_CORK");
 			if (flow[id].settings[endpoint].pushy)
 				CATC("PUSHY");
+                        if (flow[id].settings[endpoint].nonagle)
+                                CATC("TCP_NODELAY");
+                        if (flow[id].settings[endpoint].mtcp)
+                                CATC("TCP_MTCP");
 
 		if (flow[id].settings[endpoint].dscp)
 			CATC("dscp = 0x%02x", flow[id].settings[endpoint].dscp);
@@ -1746,6 +1751,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				else if (!strcmp(arg, "TCP_MTCP")) {
 					ASSIGN_COMMON_FLOW_SETTING(mtcp, 1);
 				}
+                                else if (!strcmp(arg, "TCP_NODELAY")) {
+                                        ASSIGN_COMMON_FLOW_SETTING(nonagle, 1);
+                                }
+
 				else if (!strcmp(arg, "ROUTE_RECORD")) {
 					ASSIGN_COMMON_FLOW_SETTING(route_record, 1);
 				}
@@ -2365,7 +2374,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:i,s:d,s:d}" /* request */
 		"{s:i,s:d,s:d}" /* response */
 		"{s:i,s:d,s:d}" /* interpacket_gap */
-		"{s:b,s:b,s:i}"
+		"{s:b,s:b,s:i,s:i}"
 		"{s:s}"
 		"{s:i,s:i,s:i,s:i,s:i}"
 #ifdef HAVE_LIBPCAP
@@ -2412,6 +2421,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	"flow_control", flow[id].settings[DESTINATION].flow_control,
 		"byte_counting", flow[id].byte_counting,
 		"cork", (int)flow[id].settings[DESTINATION].cork,
+                "nonagle", flow[id].settings[DESTINATION].nonagle,
 
 		"cc_alg", flow[id].settings[DESTINATION].cc_alg,
 
@@ -2468,7 +2478,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:i,s:d,s:d}" /* request */
 		"{s:i,s:d,s:d}" /* response */
 		"{s:i,s:d,s:d}" /* interpacket_gap */
-		"{s:b,s:b,s:i}"
+		"{s:b,s:b,s:i,s:i}"
 		"{s:s}"
 		"{s:i,s:i,s:i,s:i,s:i}"
 #ifdef HAVE_LIBPCAP
@@ -2517,6 +2527,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"flow_control", flow[id].settings[SOURCE].flow_control,
 		"byte_counting", flow[id].byte_counting,
 		"cork", (int)flow[id].settings[SOURCE].cork,
+                "nonagle", (int)flow[id].settings[SOURCE].nonagle,
 
 		"cc_alg", flow[id].settings[SOURCE].cc_alg,
 
