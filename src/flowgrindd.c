@@ -156,7 +156,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"{s:i,s:d,s:d,*}" /* request */
 		"{s:i,s:d,s:d,*}" /* response */
 		"{s:i,s:d,s:d,*}" /* interpacket_gap */
-		"{s:b,s:b,s:i,*}"
+		"{s:b,s:b,s:i,s:i,*}"
 		"{s:s,*}"
 		"{s:i,s:i,s:i,s:i,s:i,*}"
 #ifdef HAVE_LIBPCAP
@@ -204,6 +204,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"flow_control", &settings.flow_control,
 		"byte_counting", &settings.byte_counting,
 		"cork", &settings.cork,
+		"nonagle", &settings.nonagle,
 
 		"cc_alg", &cc_alg,
 
@@ -355,7 +356,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"{s:i,s:d,s:d,*}" /* request */
 		"{s:i,s:d,s:d,*}" /* response */
 		"{s:i,s:d,s:d,*}" /* interpacket_gap */
-		"{s:b,s:b,s:i,*}"
+		"{s:b,s:b,s:i,s:i,*}"
 		"{s:s,*}"
 		"{s:i,s:i,s:i,s:i,s:i,*}"
 #ifdef HAVE_LIBPCAP
@@ -402,6 +403,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"flow_control", &settings.flow_control,
 		"byte_counting", &settings.byte_counting,
 		"cork", &settings.cork,
+		"nonagle", &settings.nonagle,
 
 		"cc_alg", &cc_alg,
 

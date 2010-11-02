@@ -129,6 +129,7 @@ struct _flow_settings
 	int byte_counting;
 
 	int cork;
+	int nonagle;
 	char cc_alg[256];
 	int elcn;
 	int icmp;

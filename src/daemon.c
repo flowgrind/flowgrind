@@ -1274,6 +1274,11 @@ int set_flow_tcp_options(struct _flow *flow)
 		return -1;
 	}
 
+        if (flow->settings.nonagle && set_tcp_nodelay(flow->fd) == -1) {
+	        flow_error(flow, "Unable to set TCP_NODELAY: %s", strerror(errno));
+	        return -1;
+	}
+
 	if (flow->settings.route_record && set_route_record(flow->fd) == -1) {
 		flow_error(flow, "Unable to set route record option: %s", strerror(errno));
 		return -1;
