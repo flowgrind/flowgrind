@@ -23,6 +23,8 @@
 #include "fg_math.h"
 #include "trafgen.h"
 
+#define MAX_RUNS_PER_DISTRIBUTION 10
+
 inline static double calculate(enum _stochastic_distributions type, double param_one, double param_two) {
 
 	double val = 0;
@@ -71,24 +73,32 @@ inline static double calculate(enum _stochastic_distributions type, double param
 }
 int next_request_block_size(struct _flow *flow)
 {
-	int bs = round(calculate(flow->settings.request_trafgen_options.distribution,
+	int bs = 0;
+	int i = 0;
+	/* recalculate values to match prequisits, but at most 10 times */
+	while (( bs < MIN_BLOCK_SIZE || bs > flow->settings.maximum_block_size) && i < MAX_RUNS_PER_DISTRIBUTION) {
+		
+		bs = round(calculate(
+			   flow->settings.request_trafgen_options.distribution,
 			   flow->settings.request_trafgen_options.param_one,
 			   flow->settings.request_trafgen_options.param_two
 			   ));
+		i++;
+	}
 
 	/* sanity checks */
-	if (bs < MIN_BLOCK_SIZE) {
+	if (i >= MAX_RUNS_PER_DISTRIBUTION && bs < MIN_BLOCK_SIZE) {
 		bs = MIN_BLOCK_SIZE;
-		DEBUG_MSG(LOG_WARNING, "applied minimal request size limit %d for flow %d", bs, flow->id);
+		DEBUG_MSG(LOG_WARNING, "WARNING: applied minimal request size limit %d for flow %d", bs, flow->id);
 	}
 
-	if (bs > flow->settings.maximum_block_size) {
+	if (i >= MAX_RUNS_PER_DISTRIBUTION && bs > flow->settings.maximum_block_size) {
 		bs = flow->settings.maximum_block_size;
-		DEBUG_MSG(LOG_WARNING, "applied maximal request size limit %d for flow %d", bs, flow->id);
+		DEBUG_MSG(LOG_WARNING, "WARNING: applied maximal request size limit %d for flow %d", bs, flow->id);
 
 	}
 
-	DEBUG_MSG(LOG_NOTICE, "calculated request size %d for flow %d", bs, flow->id);
+	DEBUG_MSG(LOG_NOTICE, "calculated request size %d for flow %d after %d runs", bs, flow->id, i);
 
 	return bs;
 }
