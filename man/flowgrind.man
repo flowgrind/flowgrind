@@ -218,7 +218,9 @@ uniform (param 1: min, param 2: max)
 .BR N
 normal (param 1: mu \- mean value, param 2: sigma_square \- variance)
 .BR W
-weibull distributed (param 1: lambda \- scale, param 2: k \- shape)
+weibull (param 1: lambda \- scale, param 2: k \- shape)
+.BR L
+normal (param 1: zeta \- mean value, param 2: sigma \- std dev)
 
 advanced distributions like weibull are only available if flowgrind is compiled
 with libgsl support.
