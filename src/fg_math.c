@@ -135,6 +135,17 @@ dist_normal(const double mu, const double sigma_square) {
 #endif
 }
 
+extern double
+dist_lognormal(const double zeta, const double sigma) {
+#ifdef HAVE_LIBGSL
+        return gsl_ran_lognormal (r, zeta, sigma);
+#else
+	UNUSED_ARGUMENT(zeta,sigma);
+	return 0;
+#endif
+}
+
+
 extern int
 dist_bernoulli(const double p) {
 #ifdef HAVE_LIBGSL

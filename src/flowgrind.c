@@ -674,7 +674,8 @@ static void usage_trafgenopt(void)
 #ifdef HAVE_LIBGSL
 		"               E = exponential (p1: lamba - lifetime, p2: not used)\n"
 		"               N = normal (p1: mu - mean value, p2: sigma_square - variance)\n"
-		"               W = weibull distributed (p1: lambda - scale, p2: k - shape)\n"
+		"               W = weibull (p1: lambda - scale, p2: k - shape)\n"
+		"		L = lognormal (p1: zeta - mean, p2: sigma - std dev)\n"
 #endif
 		"\n"
 		"               -U # and -V # specify a cap for the calculated values for\n"
@@ -1435,6 +1436,16 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 					usage_trafgenopt();
 				}
 				break;
+
+                        case 'L':
+                        case 'l':
+                                distr = LOGNORMAL;
+                                if (!param1 || !param2) {
+                                        fprintf(stderr, "lognormal distribution needs two non-zero parameters\n");
+                                        usage_trafgenopt();
+                                }
+                                break;
+			
 
 			case 'C':
 			case 'c':

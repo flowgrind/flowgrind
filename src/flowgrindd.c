@@ -42,7 +42,11 @@ static char progname[50] = "flowgrindd";
 static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
+#ifdef HAVE_LIBPCAP
 		"Usage: %1$s [-p#] [-d] [-w DIR/] [-v]\n"
+#else
+		"Usage: %1$s [-p#] [-d] [-v]\n"
+#endif
 		"\t-p#\t\tXML-RPC server port\n"
 #ifdef DEBUG
 		"\t-d\t\tincrease debug verbosity, add multiple times (no daemon, log to stderr)\n"
