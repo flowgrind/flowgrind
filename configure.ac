@@ -113,7 +113,7 @@ AS_IF([ test "x$enable_pcap" != "xno"], [
         fi
 
         if test "x$PCAP_CONFIG" = "xno"; then
-                AC_MSG_NOTICE(pcap-config not found in path.)
+                AC_MSG_ERROR(pcap-config not found in path.)
 	else
 	        PCAP_CFLAGS=`$PCAP_CONFIG --cflags`
 		PCAP_LDADD=`$PCAP_CONFIG --libs`
