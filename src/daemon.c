@@ -704,7 +704,7 @@ void add_report(struct _report* report)
 	pthread_mutex_lock(&mutex);
 	DEBUG_MSG(LOG_DEBUG, "add_report aquired mutex");
 	/* Do not keep too much data */
-	if (pending_reports >= 100 && report->type != TOTAL) {
+	if (pending_reports >= 250 && report->type != TOTAL) {
 		free(report);
 		pthread_mutex_unlock(&mutex);
 		return;
