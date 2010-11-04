@@ -1,5 +1,5 @@
 
-AC_INIT([flowgrind],[0.4],[flowgrind@umic-mesh.net])
+AC_INIT([flowgrind],[0.5],[flowgrind@umic-mesh.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
 
@@ -101,8 +101,8 @@ else
 	CFLAGS="-O3 $CFLAGS"
 fi
 
-AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: no]] )])
-AS_IF([ test "x$enable_pcap" = "xyes"], [
+AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: yes]] )])
+AS_IF([ test "x$enable_pcap" != "xno"], [
         AC_CHECK_HEADER(pcap.h,
                 AC_CHECK_LIB([pcap], pcap_open_live, [AC_DEFINE(HAVE_LIBPCAP, 1, [Define to 1 if you have the pcap library (-pcap).])],
                 AC_MSG_NOTICE([*** Could not find libpcap: will compile without optional traffic dump feature. ***]),[-pcap]),
@@ -112,15 +112,15 @@ AS_IF([ test "x$enable_pcap" = "xyes"], [
                 AC_PATH_PROG(PCAP_CONFIG, pcap-config, no)
         fi
 
-        if test "$PCAP_CONFIG" = "no"; then
+        if test "x$PCAP_CONFIG" = "xno"; then
                 AC_MSG_ERROR(pcap-config not found in path.)
-        fi
+	else
+	        PCAP_CFLAGS=`$PCAP_CONFIG --cflags`
+		PCAP_LDADD=`$PCAP_CONFIG --libs`
 
-        PCAP_CFLAGS=`$PCAP_CONFIG --cflags`
-        PCAP_LDADD=`$PCAP_CONFIG --libs`
-
-        AC_SUBST(PCAP_CFLAGS)
-        AC_SUBST(PCAP_LDADD)
+		AC_SUBST(PCAP_CFLAGS)
+		AC_SUBST(PCAP_LDADD)
+	fi
 ])
 
 AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[default: yes]] )])
@@ -134,21 +134,21 @@ AS_IF([ test "x$enable_gsl" != "xno"], [
 	fi
 
 	if test "x$GSL_CONFIG" = "xno"; then
-        	AC_MSG_ERROR(gsl-config not found in path.)
-	fi
-		
-	GSL_CFLAGS=`$GSL_CONFIG --cflags`
-	GSL_LDADD=`$GSL_CONFIG --libs`
+        	AC_MSG_NOTICE(gsl-config not found in path.)
+	else		
+		GSL_CFLAGS=`$GSL_CONFIG --cflags`
+		GSL_LDADD=`$GSL_CONFIG --libs`
 
-	AC_SUBST(GSL_CFLAGS)
-	AC_SUBST(GSL_LDADD)
+		AC_SUBST(GSL_CFLAGS)
+		AC_SUBST(GSL_LDADD)
+	fi
 ])
 
 if test -z "$CURL_CONFIG"; then
         AC_PATH_PROG(CURL_CONFIG, curl-config, no)
 fi
 
-if test "$CURL_CONFIG" = "xno" ; then
+if test "x$CURL_CONFIG" = "xno" ; then
         AC_MSG_ERROR(required curl-config not found in path.)
 fi
 
@@ -162,7 +162,7 @@ if test -z "$XMLRPC_C_CONFIG"; then
         AC_PATH_PROG(XMLRPC_C_CONFIG, xmlrpc-c-config, no)
 fi
   
-if test "$XMLRPC_C_CONFIG" = "xno"; then
+if test "x$XMLRPC_C_CONFIG" = "xno"; then
 	AC_MSG_ERROR(xmlrpc-c-config not found in path.)
 fi
 
