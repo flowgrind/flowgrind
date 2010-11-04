@@ -9,9 +9,9 @@ Flowgrind depends on the following tools and libraries:
 - libxmlrpc-c with curl transport and abyss server (aptitude install libxmlrpc-c3-dev libcurl4-gnutls-dev)
 
 These libraries as well as their headers and tools need to be installed
-(install approciate -dev packages too).
+(install appropriate -dev packages too).
 
-The following depencies are optional and only required for advanced features:
+The following dependencies are optional and only required for advanced features:
 - libpcap (for automatic dump, optional) (aptitude install libpcap0.8-dev)
 - libgsl (for advanced traffic generation, optional) (aptitude install libgsl0-dev)
 
@@ -36,10 +36,10 @@ Building flowgrind
 
 5. Run make to compile flowgrind. This creates src/flowgrind and src/flowgrindd
 
-6. Optionally run (sudo) make install  to copy the binaries to the installation prefix.
+6. Optionally run (sudo) make install to copy the binaries to the installation prefix.
 
 Hint: If you encounter something like 
 
-"XML-RPC Fault: RPC failed at server.  No member of struct has key 'num_extra_socket_options' (-502)"
+"XML-RPC Fault: RPC failed at server. No member of struct has key 'num_extra_socket_options' (-502)"
 
 it's probably related to different xmlrpc-c versions on client and server and not a flowgrind bug.
