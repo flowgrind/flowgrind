@@ -32,8 +32,11 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
+find . -type d -name ".svn" | xargs rm -r
 rm -r config.h.in~ autom4te.cache 
+
 cd ..
+
 tar -cjf flowgrind-$VERSION.tar.bz2 flowgrind-$VERSION
 if [ $? -ne 0 ]; then
 	echo "failed to create the tarball."
