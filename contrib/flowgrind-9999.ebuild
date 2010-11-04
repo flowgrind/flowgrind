@@ -50,5 +50,6 @@ src_compile() {
 src_install() {
 	einstall || die
 	prepalldocs
+	doman man/*.1
 	dodoc AUTHORS ChangeLog NEWS README TODO
 }
