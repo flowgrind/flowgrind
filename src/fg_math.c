@@ -140,7 +140,8 @@ dist_lognormal(const double zeta, const double sigma) {
 #ifdef HAVE_LIBGSL
         return gsl_ran_lognormal (r, zeta, sigma);
 #else
-	UNUSED_ARGUMENT(zeta,sigma);
+	UNUSED_ARGUMENT(zeta);
+	UNUSED_ARGUMENT(sigma);
 	return 0;
 #endif
 }

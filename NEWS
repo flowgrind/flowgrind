@@ -1,4 +1,4 @@
-Release 0.5 (2010-X-X)
+Release 0.5 (2010-11-4)
 - removed obsolete fasttime and TSCI2 support
 - libpcap support for automatic traffic dumping (for analysis with
   tcptrace etc)
