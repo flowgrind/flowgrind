@@ -4,12 +4,10 @@
 
 EAPI="2"
 
-inherit eutils 
+inherit eutils
 
-DESCRIPTION="Flowgrind - network performance measurement tool"
+DESCRIPTION="network performance measurement tool"
 HOMEPAGE="http://www.umic-mesh.net/research/flowgrind"
-LICENSE="GPL-2"
-SLOT="0"
 if [[ ${PV} == "9999" ]] ; then
 	inherit subversion autotools
 	ESVN_REPO_URI="svn://svn.umic-mesh.net/flowgrind/trunk/"
@@ -18,16 +16,14 @@ if [[ ${PV} == "9999" ]] ; then
 else
 	SRC_URI="http://www.umic-mesh.net/downloads/files/${P}.tar.bz2"
 	SLOT="0"
-	KEYWORDS="~x86 ~amd64"
+	KEYWORDS="~amd64 ~x86"
 fi
+LICENSE="GPL-2"
+IUSE="debug gsl pcap"
 
-IUSE="pcap gsl debug"
-
-RDEPEND="
-	<dev-libs/xmlrpc-c-1.14[curl]
-	pcap? ( sys-libs/libcap )
-	gsl? ( sci-libs/gsl )
-"
+RDEPEND="gsl?  ( sci-libs/gsl )
+         pcap? ( sys-libs/libcap )
+         <dev-libs/xmlrpc-c-1.14[curl]"
 DEPEND="${RDEPEND}"
 
 if [[ ${PV} == "9999" ]] ; then
@@ -40,7 +36,7 @@ src_configure() {
 	econf \
 	$(use_enable pcap) \
 	$(use_enable debug) \
-	$(use_enable gsl) || die 
+	$(use_enable gsl) || die
 }
 
 src_compile() {
@@ -48,8 +44,8 @@ src_compile() {
 }
 
 src_install() {
-	einstall || die
+	emake DESTDIR="${D}" install || die
 	prepalldocs
-	doman man/*.1
-	dodoc AUTHORS ChangeLog NEWS README TODO
+	doman man/*.1 || die
+	dodoc AUTHORS ChangeLog NEWS README TODO || die
 }
