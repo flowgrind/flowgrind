@@ -133,7 +133,7 @@ AS_IF([ test "x$enable_gsl" != "xno"], [
         	AC_PATH_PROG(GSL_CONFIG, gsl-config, no)
 	fi
 
-	if test "$GSL_CONFIG" = "xno"; then
+	if test "x$GSL_CONFIG" = "xno"; then
         	AC_MSG_ERROR(gsl-config not found in path.)
 	fi
 		
