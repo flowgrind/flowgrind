@@ -27,7 +27,7 @@ Two important groups of options are the global options and flow options. Like th
 .B \-F
 option.
 
-.SS Miscallaneous
+.SS Miscellaneous
 
 .TP 
 .B \-h
@@ -200,7 +200,7 @@ Set initial delay before the host starts to send data.
 .BR "-G [q|p|g]=[C|U|P|W],#1,(#2):<multiple times> -U #"
 
 Activate stochastic traffic generation and set parameters
-for the choosen distribution.
+for the chosen distribution.
 
 use distribution for the following flow parameter:
 .BR q=
@@ -251,7 +251,7 @@ Setup two flows, first flow between 192.168.0.1 and 192.168.0.69, second flow be
 
 .TP
 .B flowgrind \-p \-H s=10.0.0.100/192.168.1.100,d=10.0.0.101/192.168.1.101 \-A s
-Setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP adresses for configuration. Activate minimal response for RTT calculation and show symbolic values.
+Setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP addresses for configuration. Activate minimal response for RTT calculation and show symbolic values.
 
 .TP
 .B "flowgrind -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -U 32000"
@@ -283,11 +283,11 @@ The transmitting goodput of the flow endpoint during this measurement interval, 
 
 .TP 
 .BR IAT " and " RTT
-The 1\-way and 2\-way block (application layer) delays respectively block IAT and block RTT. For both delays the minimum and maximum encoutered values in that interval are displayed in addition to the artihmetic mean. If no block acknowledgement arrived during that report interval, inf is displayed (for example when no responses are send, if in doubt try -A s)
+The 1\-way and 2\-way block (application layer) delays respectively block IAT and block RTT. For both delays the minimum and maximum encountered values in that interval are displayed in addition to the arithmetic mean. If no block acknowledgement arrived during that report interval, inf is displayed (for example when no responses are send, if in doubt try -A s)
 
 .TP 
 .B cwnd
-Size of TCP congestion window in number of segements. All TCP specific metrics are obtained from the Linux kernel through the TCP_INFO socket option at the end of every reporting interval.
+Size of TCP congestion window in number of segments. All TCP specific metrics are obtained from the Linux kernel through the TCP_INFO socket option at the end of every reporting interval.
 
 .TP 
 .B ssth
