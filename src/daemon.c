@@ -269,7 +269,7 @@ static int prepare_fds() {
 #endif
 			flow->mtu = get_mtu(flow->fd);
 			flow->mss = get_mss(flow->fd);
-
+			report_flow(flow, INTERVAL);
 			report_flow(flow, TOTAL);
 
 			uninit_flow(flow);
