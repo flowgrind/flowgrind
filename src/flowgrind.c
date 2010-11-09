@@ -63,6 +63,9 @@ enum _column_types
 	column_type_iat,
 	column_type_kernel,
 	column_type_blocks,
+#ifdef DEBUG	
+	column_type_status,
+#endif
 	column_type_other
 };
 
@@ -109,14 +112,16 @@ const struct _header_info header_info[] = {
 	{ " ca state", " ", column_type_kernel },
 	{ " mss", " [B]", column_type_kernel },
 	{ " mtu", " [B]", column_type_kernel },
-	{ " status", " ", column_type_other }
+#ifdef DEBUG
+	{ " status", " ", column_type_status }
+#endif
 };
 
 
 struct _column_state column_states[sizeof(header_info) / sizeof(struct _header_info)] = {{0,0}};
 
-/* Array for the dynamical output, show all by default */
-int visible_columns[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+/* Array for the dynamical output, show all except status by default */
+int visible_columns[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 /* these are the 2 parameters for the ADT test. If the user wants to test for
  * Exponential only ADT1 will be used and will represent the mean if the user
@@ -333,7 +338,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		   double iatmin, double iatavg, double iatmax,
 		   unsigned int cwnd, unsigned int ssth, unsigned int uack, unsigned int sack, unsigned int lost, unsigned int reor,
 		   unsigned int fret, unsigned int tret, unsigned int fack, double linrtt, double linrttvar,
-		   double linrto, int ca_state, int mss, int mtu, char* comment, int unit_byte)
+		   double linrto, int ca_state, int mss, int mtu, char* status, int unit_byte)
 {
 	int columnWidthChanged = 0;
 
@@ -461,7 +466,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	if (ca_state == TCP_CA_Open)
 		strcpy(tmp, "open");
 	else if (ca_state == TCP_CA_Disorder)
-		strcpy(tmp, "disordr");
+		strcpy(tmp, "disorder");
 	else if (ca_state == TCP_CA_CWR)
 		strcpy(tmp, "cwr");
 	else if (ca_state == TCP_CA_Recovery)
@@ -482,10 +487,13 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	createOutputColumn(headerString1, headerString2, dataString, i, mtu, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	strcat(headerString1, header_info[i].first);
-	strcat(headerString2, header_info[i].second);
-	strcat(dataString, comment);
-
+	/* status */
+#ifdef DEBUG
+        createOutputColumn_str(headerString1, headerString2, dataString, i, status, &column_states[i], &columnWidthChanged);
+	i++;
+#else
+	UNUSED_ARGUMENT(status);
+#endif
 	/* newline */
 	strcat(headerString1, "\n");
 	strcat(headerString2, "\n");
@@ -886,6 +894,7 @@ void print_tcp_report_line(char hash, int id,
 
 	if (flow[id].finished[type])
 		COMMENT_CAT("stopped")
+#ifdef DEBUG
 	else {
 		char tmp[2];
 
@@ -925,6 +934,7 @@ void print_tcp_report_line(char hash, int id,
 				break;
 		}
 	}
+#endif
 	strncat(comment_buffer, ")", sizeof(comment_buffer));
 	if (strlen(comment_buffer) == 2)
 		comment_buffer[0] = '\0';
@@ -1860,6 +1870,12 @@ static void parse_visible_param(char *to_parse) {
 		visible_columns[column_type_kernel] = 1;
 	if (strstr(to_parse, "-kernel"))
 		visible_columns[column_type_kernel] = 0;
+#ifdef DEBUG
+	if (strstr(to_parse, "+status"))
+                visible_columns[column_type_status] = 1;
+        if (strstr(to_parse, "-status"))
+                visible_columns[column_type_status] = 0;
+#endif
 }
 
 static void parse_cmdline(int argc, char **argv) {
