@@ -269,6 +269,7 @@ static int prepare_fds() {
 #endif
 			flow->mtu = get_mtu(flow->fd);
 			flow->mss = get_mss(flow->fd);
+
 			report_flow(flow, INTERVAL);
 			report_flow(flow, TOTAL);
 
@@ -355,6 +356,7 @@ static void stop_flow(struct _request_stop_flow *request)
 			flow->mtu = get_mtu(flow->fd);
 			flow->mss = get_mss(flow->fd);
 
+			report_flow(flow, INTERVAL);
 			report_flow(flow, TOTAL);
 
 			uninit_flow(flow);
@@ -376,6 +378,7 @@ static void stop_flow(struct _request_stop_flow *request)
 		flow->mtu = get_mtu(flow->fd);
 		flow->mss = get_mss(flow->fd);
 
+		report_flow(flow, INTERVAL);
 		report_flow(flow, TOTAL);
 
 		uninit_flow(flow);
@@ -473,7 +476,7 @@ static void report_flow(struct _flow* flow, int type)
 	report->iat_sum = flow->statistics[type].iat_sum;
 
 #ifdef __LINUX__
-	if (flow->statistics[type].has_tcp_info)
+	if (flow->statistics[type].has_tcp_info && type == INTERVAL)
 		report->tcp_info = flow->statistics[type].tcp_info;
 	else
 		memset(&report->tcp_info, 0, sizeof(struct tcp_info));
