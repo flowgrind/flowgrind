@@ -461,7 +461,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	if (ca_state == TCP_CA_Open)
 		strcpy(tmp, "open");
 	else if (ca_state == TCP_CA_Disorder)
-		strcpy(tmp, "disordr");
+		strcpy(tmp, "disorder");
 	else if (ca_state == TCP_CA_CWR)
 		strcpy(tmp, "cwr");
 	else if (ca_state == TCP_CA_Recovery)
