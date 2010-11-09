@@ -1,5 +1,10 @@
-Release 0.5 (2010-11-4)
+Release 0.5 (2010-11-15)
 - removed obsolete fasttime and TSCI2 support
+- remove useless status column (only activated with 
+  --enable-debug)
+- nullify linux kernel state columns in final report, as they 
+  are not accumulated. (last interval has same information
+  anyways)
 - libpcap support for automatic traffic dumping (for analysis with
   tcptrace etc)
 - libgsl support for advanced stochastic distributions
