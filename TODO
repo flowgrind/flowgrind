@@ -1,6 +1,6 @@
 +simplify arbitary socket options
 +fix crash in conjunction with newer libxmlrpc-c
-+recover UDP option
++do something with UDP
 +xml style output
 +allow send volume to be specified (instead of duration/rate)
 +meet more the spirit of IPPM (connectivity test, etc.)
