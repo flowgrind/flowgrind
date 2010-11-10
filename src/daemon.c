@@ -850,13 +850,12 @@ static int write_data(struct _flow *flow)
 			}
 			flow_error(flow, "Premature end of test: %s",
 					strerror(errno));
-			return -1;
+			return rc;
 		}
 
 		if (rc == 0) {
 			DEBUG_MSG(LOG_CRIT, "flow %d sent zero bytes. what does that mean?", flow->id);
-			return -1;
-			break;
+			return rc;
 		}
 
 		DEBUG_MSG(LOG_DEBUG, "flow %d sent %d request bytes of %u (before = %u)", flow->id, rc,
