@@ -58,23 +58,3 @@ So our host argument will be this:
 In words: Test from 192.168.0.1 to 192.168.0.2 on the nodes identified by
 10.0.0.1 and 10.0.0.2 respectively. 
 
-Colums
-======
-
-Status column
--------------
-
-The status column in the output conists of both the sending and receiving state separated by a slash.
-Possible states:
-- c = direction completed
-- d = direction in initial delay
-- f = fault
-- l = active, nothing sent/received yet
-- n = normal activity
-- o = zero duration, not going to receive/send data
-
-Examples:
-  d/o   Unidirectional flow with sending in initial delay, receiving disabled
-  n/n   Bidirectiona flow, active and some data got transferred in each direction
-  c/d   Sending has completed, receiving still in initial delay
-

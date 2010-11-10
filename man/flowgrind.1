@@ -1,4 +1,4 @@
-.TH "flowgrind" "1" "July 2010" "" "Flowgrind Manual"
+.TH "flowgrind" "1" "November 2010" "" "Flowgrind Manual"
 .SH "NAME"
 flowgrind \- network performance measurement tool
 .SH "SYNOPSIS"
@@ -143,7 +143,7 @@ Activate stochastic traffic generation and set parameters according to the used 
 .BR \-H " x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]"
 Test from/to HOST. Optional argument is the address and port of the RPC server.
 Third address is for the reply connection.
-An endpoint that isn't specified is assumed to be localhost.
+An endpoint that isn't specified is assumed to be 127.0.0.1.
 
 .TP 
 .BR \-L " x"
@@ -235,7 +235,7 @@ constant values or uniform distribution)
 
 .TP
 .B flowgrind
-default settings, same as ./flowgrind -H b=localhost -T s=5,d=0
+default settings, same as ./flowgrind -H b=127.0.0.1 -T s=10,d=0
 
 .TP 
 .B flowgrind \-H s=host1,d=host2
