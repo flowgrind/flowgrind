@@ -9,7 +9,7 @@ flowgrind [general options] [flow options]
 is a distributed network performance measurement tool. Using the
 .B flowgrind
 controller, tests can be setup between hosts running
-.BR flowgrindd ","
+.BR flowgrindd "(5) ,"
 the flowgrind daemon.
 
 Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the TCP metrics returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
@@ -277,6 +277,7 @@ The numerical low identifier.
 .BR begin " and " end
 The boundaries of the measuring interval in seconds. The time shown is the elapsed time since receiving the RPC message to start the test from the daemons point of view.
 
+.SS Application layer metrics
 .TP 
 .B through
 The transmitting goodput of the flow endpoint during this measurement interval, measured in Mb/s.
@@ -285,40 +286,49 @@ The transmitting goodput of the flow endpoint during this measurement interval, 
 .BR IAT " and " RTT
 The 1\-way and 2\-way block (application layer) delays respectively block IAT and block RTT. For both delays the minimum and maximum encountered values in that interval are displayed in addition to the arithmetic mean. If no block acknowledgement arrived during that report interval, inf is displayed (for example when no responses are send, if in doubt try -A s)
 
+.SS Kernel metrics (TCP_INFO)
 .TP 
-.B cwnd
+.B cwnd (tcpi_cwnd)
 Size of TCP congestion window in number of segments. All TCP specific metrics are obtained from the Linux kernel through the TCP_INFO socket option at the end of every reporting interval.
 
 .TP 
-.B ssth
+.B ssth (tcpi_snd_sshtresh)
 The slowstart threshold of the sender in number of segments.
 
 .TP 
-.BR uack ", " sack " and " fack
-Statistics about unacknowledged, selectively acknowledged or forward acknowledged segments.
+.BR "uack (tcpi_unacked) " "and" " sack (tcpi_sacked)"
+Statistics about the number of unacknowledged and selectively acknowledged segments.
 
 .TP 
-.B lost
+.B lost (tcpi_lost)
 Number of segments assumed lost during reporting interval.
 
 .TP 
-.BR fret ", " tret
-Number of segments retransmitted by Fast Retransmit and due to a retransmission timeout.
+.B fret (tcpi_retrans)
+Number of unacknowledged retransmitted segments.
 
-.TP 
-.B reor
+.TP
+.B tret (tcpi_retransmits)
+Number of retransmissions of the same segment due a retransmission timeout.
+
+.TP
+.B fack (tcpi_fackets)
+Number of segments between SND.UND and the highest selectively acknowledged sequence number.
+
+.TP
+.B reor (tcpi_reordering)
 Segment reordering metric. The Linux kernel can detect and cope with reordering without loss of performance if the distance a segment gets displaced does not exceed the reordering metric.
 
-.TP 
-.BR rtt " and " rttvar
+.TP
+.BR "rtt (tcpi_rtt) " "and" " rttvar (tcpi_rttvar)"
 TCP round\-trip time and its variance given in ms.
 
-.TP 
-.B rto
+.TP
+.B rto (tcpi_rto)
 The retransmission timeout given in ms.
 
-.TP 
-.B castate
+.TP
+.B castate (tcpi_ca_state)
 Internal state of congestion control state machine as implemented in the Linux kernel. Can be one of open, disorder, cwr, recovery or loss.
 
 .RS 8
@@ -348,6 +358,7 @@ is entered if the RTO expires. Again the size of the congestion window got lower
 .BR mss " and " mtu
 Maximum segment size and maximum transmission unit in bytes.
 
+.SS Internal flowgrind state
 .TP 
 .B status
 The state of the flow inside flowgrind for diagnostic purposes. It is a tuple of two values, the first for sending and the second for receiving. Ideally the states of both the source and destination endpoints of a flow should be symmetrical but since they are not synchronized they may not change at the same time. The possible values are:
