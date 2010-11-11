@@ -102,7 +102,7 @@ const struct _header_info header_info[] = {
 	{ " uack", " [#]", column_type_kernel },
 	{ " sack", " [#]", column_type_kernel },
 	{ " lost", " [#]", column_type_kernel },
-	{ " fret", " [#]", column_type_kernel },
+	{ " retr", " [#]", column_type_kernel },
 	{ " tret", " [#]", column_type_kernel },
 	{ " fack", " [#]", column_type_kernel },
 	{ " reor", " [#]", column_type_kernel },
@@ -337,7 +337,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		   double rttmin, double rttavg, double rttmax,
 		   double iatmin, double iatavg, double iatmax,
 		   unsigned int cwnd, unsigned int ssth, unsigned int uack, unsigned int sack, unsigned int lost, unsigned int reor,
-		   unsigned int fret, unsigned int tret, unsigned int fack, double linrtt, double linrttvar,
+		   unsigned int retr, unsigned int tret, unsigned int fack, double linrtt, double linrttvar,
 		   double linrto, int ca_state, int mss, int mtu, char* status, int unit_byte)
 {
 	int columnWidthChanged = 0;
@@ -434,8 +434,8 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	createOutputColumn(headerString1, headerString2, dataString, i, lost, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	/* param str_fret */
-	createOutputColumn(headerString1, headerString2, dataString, i, fret, &column_states[i], 0, &columnWidthChanged);
+	/* param str_retr */
+	createOutputColumn(headerString1, headerString2, dataString, i, retr, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_tret */
@@ -892,9 +892,9 @@ void print_tcp_report_line(char hash, int id,
 	else
 		min_iat = max_iat = avg_iat = INFINITY;
 
+#ifdef DEBUG
 	if (flow[id].finished[type])
 		COMMENT_CAT("stopped")
-#ifdef DEBUG
 	else {
 		char tmp[2];
 
