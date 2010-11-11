@@ -1,5 +1,5 @@
 
-AC_INIT([flowgrind],[0.5],[flowgrind@umic-mesh.net])
+AC_INIT([Flowgrind],[0.5],[flowgrind@umic-mesh.net],[flowgrind],[http://www.umic-mesh.net/downloads/flowgrind.html])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
 
