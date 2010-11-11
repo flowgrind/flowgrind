@@ -9,7 +9,7 @@ flowgrind [general options] [flow options]
 is a distributed network performance measurement tool. Using the
 .B flowgrind
 controller, tests can be setup between hosts running
-.BR flowgrindd "(5) ,"
+.BR flowgrindd "(1) ,"
 the flowgrind daemon.
 
 Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the TCP metrics returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
@@ -220,7 +220,7 @@ normal (param 1: mu \- mean value, param 2: sigma_square \- variance)
 .BR W
 weibull (param 1: lambda \- scale, param 2: k \- shape)
 .BR L
-normal (param 1: zeta \- mean value, param 2: sigma \- std dev)
+lognormal (param 1: zeta \- mean value, param 2: sigma \- std dev)
 
 advanced distributions like weibull are only available if flowgrind is compiled
 with libgsl support.
@@ -254,15 +254,15 @@ Setup two flows, first flow between 192.168.0.1 and 192.168.0.69, second flow be
 Setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP addresses for configuration. Activate minimal response for RTT calculation and show symbolic values.
 
 .TP
-.B "flowgrind -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -U 32000"
-.B "q=C,40"
-use constant request size of 40 bytes
+.B "flowgrind -G q=C,400:p=N,2000,50:g=U,0.005,0.01 -U 32000"
+.B "q=C,400"
+use constant request size of 400 bytes
 .B "p=N,2000,50"
 use normal distributed response size with mean 2000 bytes and variance 50
 .B "g=U,0.005,0.01"
 use uniform distributed interpacket gap with min 0.005s and and max 10ms
 .B "-U 32000"
-cap block sizes at 32 kbytes (needed for normal distribution)
+truncate block sizes at 32 kbytes (needed for normal distribution)
 
 .SH "OUTPUT COLUMNS"
 .TP 
@@ -271,7 +271,7 @@ The endpoint, either S for source or R for destination.
 
 .TP 
 .B ID
-The numerical low identifier.
+The numerical flow identifier.
 
 .TP 
 .BR begin " and " end
@@ -281,6 +281,10 @@ The boundaries of the measuring interval in seconds. The time shown is the elaps
 .TP 
 .B through
 The transmitting goodput of the flow endpoint during this measurement interval, measured in Mb/s.
+
+.TP
+.B requ/resp
+The number of request and response block sent during this measurement interval.
 
 .TP 
 .BR IAT " and " RTT
@@ -301,7 +305,7 @@ Statistics about the number of unacknowledged and selectively acknowledged segme
 
 .TP 
 .B lost (tcpi_lost)
-Number of segments assumed lost during reporting interval.
+Number of segments assumed lost at the end of the reporting interval.
 
 .TP 
 .B fret (tcpi_retrans)
@@ -328,7 +332,7 @@ TCP round\-trip time and its variance given in ms.
 The retransmission timeout given in ms.
 
 .TP
-.B castate (tcpi_ca_state)
+.B ca state (tcpi_ca_state)
 Internal state of congestion control state machine as implemented in the Linux kernel. Can be one of open, disorder, cwr, recovery or loss.
 
 .RS 8
@@ -358,7 +362,7 @@ is entered if the RTO expires. Again the size of the congestion window got lower
 .BR mss " and " mtu
 Maximum segment size and maximum transmission unit in bytes.
 
-.SS Internal flowgrind state
+.SS Internal flowgrind state (only enabled in debug builds)
 .TP 
 .B status
 The state of the flow inside flowgrind for diagnostic purposes. It is a tuple of two values, the first for sending and the second for receiving. Ideally the states of both the source and destination endpoints of a flow should be symmetrical but since they are not synchronized they may not change at the same time. The possible values are:
