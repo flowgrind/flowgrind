@@ -698,8 +698,9 @@ static void usage_trafgenopt(void)
 #ifdef HAVE_LIBGSL
 		"               E = exponential (p1: lamba - lifetime, p2: not used)\n"
 		"               N = normal (p1: mu - mean value, p2: sigma_square - variance)\n"
+                "               L = lognormal (p1: zeta - mean, p2: sigma - std dev)\n"
+		"               P = pareto (param 1: k - shape, x_min - scale)\n"
 		"               W = weibull (p1: lambda - scale, p2: k - shape)\n"
-		"		L = lognormal (p1: zeta - mean, p2: sigma - std dev)\n"
 #endif
 		"\n"
 		"               -U # and -V # specify a cap for the calculated values for\n"
