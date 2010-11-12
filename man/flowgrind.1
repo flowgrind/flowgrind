@@ -51,8 +51,8 @@ Print version information and exit.
 Perform Anderson\-Darling Test for exponential distribution OR lower and upper bounds for computing the test for uniform distribution with the given bounds. Test data always generated from first flow.
 
 .TP 
-.BR \-c " -begin,-end,-thrpt,-rtt,-iat,-kernel,-blocks"
-Comma separated list of column groups to display in output. Prefix with either + to show column group, \- to hide column group (default: show all).
+.BR \-c " -begin,-end,-thrpt,-transac,+blocks,-rtt,-iat,-kernel,+status"
+Comma separated list of column groups to display in output. Prefix with either + to show column group, \- to hide column group.
 
 .TP 
 .B \-d
@@ -203,22 +203,32 @@ Activate stochastic traffic generation and set parameters
 for the chosen distribution.
 
 use distribution for the following flow parameter:
+
 .BR q=
 request size (in bytes)
+
 .BR p=
 response size (in bytes)
+
 .BR g=
 request interpacket gap (in s)
                
 possible distributions:
 .BR C
 constant (param 1: value, param 2: not used)
+
 .BR U
 uniform (param 1: min, param 2: max)
+
 .BR N
 normal (param 1: mu \- mean value, param 2: sigma_square \- variance)
+
+.BR P
+pareto (param 1: k \- shape, x_min \- scale)
+
 .BR W
 weibull (param 1: lambda \- scale, param 2: k \- shape)
+
 .BR L
 lognormal (param 1: zeta \- mean value, param 2: sigma \- std dev)
 
@@ -229,7 +239,9 @@ with libgsl support.
 specify a cap for the calculated values for request and
 response sizes, needed because normal and weibull distributed values are 
 unbounded, but we need to know the buffersize (it's not needed for 
-constant values or uniform distribution)
+constant values or uniform distribution). Values outside the bounds are 
+recalculated until a valid result occurs but at most 10 times (then 
+the bound value is used).
 
 .SH "EXAMPLES"
 
@@ -280,7 +292,11 @@ The boundaries of the measuring interval in seconds. The time shown is the elaps
 .SS Application layer metrics
 .TP 
 .B through
-The transmitting goodput of the flow endpoint during this measurement interval, measured in Mb/s.
+The transmitting goodput of the flow endpoint during this measurement interval, measured in Mbit/s (default) or MB/s (-m).
+
+.TP
+.B transac
+The number of successfully received response blocks per second (network transactions/s).
 
 .TP
 .B requ/resp
