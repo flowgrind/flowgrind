@@ -110,8 +110,8 @@ const struct _header_info header_info[] = {
 	{ " rttvar", " [ms]", column_type_kernel },
 	{ " rto", " [ms]", column_type_kernel },
 	{ " ca state", " ", column_type_kernel },
-	{ " mss", " [B]", column_type_kernel },
-	{ " mtu", " [B]", column_type_kernel },
+	{ " mss", "[B]", column_type_kernel },
+	{ " mtu", "[B]", column_type_kernel },
 #ifdef DEBUG
 	{ " status", " ", column_type_status }
 #endif
@@ -181,24 +181,30 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	if (opt.symbolic) {
 		switch ((unsigned int)value) {
 			case INT_MAX:
-				lengthData = strlen(" INT_MAX");
+				lengthData = strlen("INT_MAX");
 				break;
 
 			case USHRT_MAX:
-				lengthData = strlen(" USHRT_MAX");
+				lengthData = strlen("USHRT_MAX");
 				break;
 
 			case UINT_MAX:
-				lengthData = strlen(" UINT_MAX");
+				lengthData = strlen("UINT_MAX");
 				break;
 
 			default:
-				lengthData = det_output_column_size(value) + 2 + numDigitsDecimalPart;
+				lengthData = det_output_column_size(value) + numDigitsDecimalPart;
 			}
 		}
 	else {
-		lengthData = det_output_column_size(value) + 2 + numDigitsDecimalPart;
+		lengthData = det_output_column_size(value) + numDigitsDecimalPart;
 	}
+	/* leading space */
+	lengthData++;
+
+	/* decimal point if necessary */
+	if (numDigitsDecimalPart)
+		lengthData++;	
 
 	lengthHead = MAX(strlen(header->first), strlen(header->second));
 	columnSize = MAX(lengthData, lengthHead);
@@ -290,7 +296,7 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 	/* get max columnsize */
 	lengthData = strlen(value);
 	lengthHead = MAX(strlen(header->first), strlen(header->second));
-	columnSize = MAX(lengthData, lengthHead) + 2;
+	columnSize = MAX(lengthData, lengthHead) + 1;
 
 	/* check if columnsize has changed */
 	if (column_state->last_width < columnSize) {
@@ -314,17 +320,17 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 		column_state->count_oversized = 0;
 
 	/* create columns */
-	for (a = lengthData; a < columnSize; a++)
+	for (a = lengthData+1; a < columnSize; a++)
 		strcat(strDataRow, " ");
 	strcat(strDataRow, value);
 
 	/* 1st header row */
-	for (a = column_state->last_width; a > strlen(header->first); a--)
+	for (a = column_state->last_width; a > strlen(header->first)+1; a--)
 		strcat(strHead1Row, " ");
 	strcat(strHead1Row, header->first);
 
 	/* 2nd header Row */
-	for (a = column_state->last_width; a > strlen(header->second); a--)
+	for (a = column_state->last_width; a > strlen(header->second)+1; a--)
 		strcat(strHead2Row, " ");
 	strcat(strHead2Row, header->second);
 
