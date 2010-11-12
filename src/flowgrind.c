@@ -59,10 +59,11 @@ enum _column_types
 	column_type_begin,
 	column_type_end,
 	column_type_thrpt,
+	column_type_transac,
+	column_type_blocks,
 	column_type_rtt,
 	column_type_iat,
 	column_type_kernel,
-	column_type_blocks,
 #ifdef DEBUG	
 	column_type_status,
 #endif
@@ -87,8 +88,9 @@ const struct _header_info header_info[] = {
 	{ "# ID", "#   ", column_type_other },
 	{ " begin", " [s]", column_type_begin },
 	{ " end", " [s]", column_type_end },
-	{ " through", " [Mbit]", column_type_thrpt },
-	{ " through", " [MB]", column_type_thrpt },
+	{ " through", " [Mbit/s]", column_type_thrpt },
+	{ " through", " [MB/s]", column_type_thrpt },
+	{ " transac", " [#/s]", column_type_transac },
 	{ " requ", " [#]", column_type_blocks },
 	{ " resp", " [#]", column_type_blocks },
 	{ " min RTT", " [ms]", column_type_rtt },
@@ -121,7 +123,7 @@ const struct _header_info header_info[] = {
 struct _column_state column_states[sizeof(header_info) / sizeof(struct _header_info)] = {{0,0}};
 
 /* Array for the dynamical output, show all except status by default */
-int visible_columns[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+int visible_columns[10] = {1, 1, 1, 1, 0, 1, 1, 1, 1, 1};
 
 /* these are the 2 parameters for the ADT test. If the user wants to test for
  * Exponential only ADT1 will be used and will represent the mean if the user
@@ -338,7 +340,7 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 }
 
 char *createOutput(char hash, int id, int type, double begin, double end,
-		   double throughput,
+		   double throughput, double transac,
 		   unsigned int request_blocks, unsigned int response_blocks,
 		   double rttmin, double rttavg, double rttmax,
 		   double iatmin, double iatavg, double iatmax,
@@ -386,6 +388,10 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else
 		createOutputColumn(headerString1, headerString2, dataString, i, throughput, &column_states[i], 6, &columnWidthChanged);
 	i += 2;
+
+	/* param trans/s */
+	createOutputColumn(headerString1, headerString2, dataString, i, transac, &column_states[i], 2, &columnWidthChanged);
+	i++;
 
 	/* param request blocks */
 	createOutputColumn(headerString1, headerString2, dataString, i, request_blocks, &column_states[i], 0, &columnWidthChanged);
@@ -540,10 +546,14 @@ static void usage(void)
 		"  -b lwr_bound1,lwr_bound2,lwr_bound3,upr_bound1,upr_bound2,upr_bound3\n"
 		"               lower and upper bounds for computing the A2 test for uniform\n"
 		"               distribution with the given bounds\n"
-		"  -c -begin,-end,-thrpt,-rtt,-iat,-blocks,-kernel\n"
+#ifdef DEBUG
+		"  -c -begin,-end,-thrpt,-rtt,-iat,+blocks,-transac,-kernel,-status\n"
+#else
+                "  -c -begin,-end,-thrpt,-rtt,-iat,+blocks,-transac,-kernel\n"
+#endif
 		"               comma separated list of column groups to display in output.\n"
 		"               Prefix with either + to show column group or - to hide\n"
-		"               column group (default: show all)\n"
+		"               column group (default: show all but blocks)\n"
 #ifdef DEBUG
 		"  -d           increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
@@ -882,7 +892,8 @@ void print_tcp_report_line(char hash, int id,
 
 	char comment_buffer[100] = " (";
 	char report_buffer[4000] = "";
-	double thruput = 0.0;
+	double thruput;
+	double transac;
 
 #define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
 		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
@@ -947,13 +958,15 @@ void print_tcp_report_line(char hash, int id,
 
 	thruput = scale_thruput((double)r->bytes_written / (time2 - time1));
 
+	transac = (double)r->response_blocks_read / (time2 - time1);
+
 	char rep_string[4000];
 #ifndef __LINUX__
 	/* dont show linux kernel output if there is no linux OS */
 	column_type_kernel = 0;
 #endif
 	strcpy(rep_string, createOutput(hash, id, type,
-		time1, time2, thruput,
+		time1, time2, thruput, transac,
 		(unsigned int)r->request_blocks_written,(unsigned int)r->response_blocks_written,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
@@ -1860,6 +1873,10 @@ static void parse_visible_param(char *to_parse) {
 		visible_columns[column_type_thrpt] = 1;
 	if (strstr(to_parse, "-thrpt"))
 		visible_columns[column_type_thrpt] = 0;
+        if (strstr(to_parse, "+transac"))
+                visible_columns[column_type_transac] = 1;
+        if (strstr(to_parse, "-transac"))
+                visible_columns[column_type_transac] = 0;
 	if (strstr(to_parse, "+rtt"))
 		visible_columns[column_type_rtt] = 1;
 	if (strstr(to_parse, "-rtt"))
@@ -2360,7 +2377,7 @@ void prepare_flows(xmlrpc_client *rpc_client)
 		start_ts_buffer[24] = '\0';
 		snprintf(headline, sizeof(headline), "# %s: controlling host = %s, "
 				"number of flows = %d, reporting interval = %.2fs, "
-				"[tput] = %s (%s)\n",
+				"[through] = %s (%s)\n",
 				(start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
 				(rc == -1 ? "(unknown)" : me.nodename),
 				opt.num_flows, opt.reporting_interval,
