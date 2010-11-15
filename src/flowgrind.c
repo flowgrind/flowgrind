@@ -569,7 +569,7 @@ static void usage(void)
 		"               (default: 10**6 bit/sec)\n"
 		"  -n #         number of test flows (default: 1)\n"
 		"  -o           overwrite existing log files (default: don't)\n"
-		"  -p           dont print symbolic values (like INT_MAX) instead of numbers.\n"
+		"  -p           don't print symbolic values (like INT_MAX) instead of numbers.\n"
 		"  -q           be quiet, do not log to screen (default: off)\n"
 		"  -r #         use random seed # (default: read /dev/urandom)\n"
 		"  -w           write output to logfile (default: off)\n\n"
