@@ -34,9 +34,6 @@
 #include "debug.h"
 #include "flowgrind.h"
 #include "fg_math.h"
-#ifdef HAVE_GETOPT_LONG
-#include <getopt.h>
-#endif
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -533,8 +530,9 @@ static void usage(void)
 		"flowgrind allows you to generate traffic among hosts in your network.\n\n"
 
 		"Miscellaneous:\n"
-		"  -h           show help and exit\n"
-		"  -s           show help for socket options and exit\n"
+		"  -h           show this help and exit\n"
+		"  -h [s|g|f]   show additional help for socket options, traffic generation\n"
+		"               or flow options\n"
 		"  -v           print version information and exit\n\n"
 
 		"General options:\n\n"
@@ -593,13 +591,12 @@ static void usage(void)
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
 #ifdef HAVE_LIBGSL
-		"  -G [q|p|g]=[C|U],#1,(#2):<multiple times>\n"
+		"  -G [q|p|g]=[C|U],#1,{#2}:<multiple times>\n"
 #else
-		"  -G [q|p|g]=[C|E|P|N|U],#1,(#2):<multiple times>\n"
+		"  -G [q|p|g]=[C|E|P|N|U],#1,{#2}:<multiple times>\n"
 #endif
 		"               Activate stochastic traffic generation and set parameters\n"
 		"               according to the used distribution\n"
-		"               (call with -G help more info)\n"
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
@@ -607,12 +604,11 @@ static void usage(void)
 		"  -L x         Call connect() on test socket immediately before starting to send\n"
 		"               data (late connect). If not specified the test connection is\n"
 		"               established in the preparation phase before the test starts.\n"
-		"  -N           shutdown() each socket direction after test flow\n"
 #ifdef HAVE_LIBPCAP
 		"  -M x         dump traffic using libcap\n"
 #endif
+		"  -N           shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
-		"               For a list of supported socket options see '%2$s -s'.\n"
 		"               It is possible to repeatedly pass the same endpoint in order to\n"
 		"               specify multiple socket options, e.g. s=SO_DEBUG,s=TCP_CORK\n"
 		"  -P x         Do not iterate through select() to continue sending in case\n"
@@ -682,7 +678,11 @@ static void usage_trafgenopt(void)
 	fprintf(stderr,
 		"Stochastic Traffic Generation Options:"
 		"\n"
-		"  -G [q|p|g]=[C|U|P|W],#1,(#2):<multiple times> -U #\n"
+#ifdef HAVE_LIBGSL
+		"  -G [q|p|g]=[C|U|E|N|L|P|W],#1,(#2):<multiple times> -U #\n"
+#else
+		"  -G [q|p|g]=[C|U],#1,(#2):<multiple times> -U #\n"
+#endif
 		"\n"
 		"               Activate stochastic traffic generation and set parameters\n"
 		"               for the choosen distribution.\n"
@@ -701,11 +701,14 @@ static void usage_trafgenopt(void)
                 "               L = lognormal (p1: zeta - mean, p2: sigma - std dev)\n"
 		"               P = pareto (param 1: k - shape, x_min - scale)\n"
 		"               W = weibull (p1: lambda - scale, p2: k - shape)\n"
+#else
+		"               advanced distributions are only available if compiled with\n"
+		"               libgsl\n"
 #endif
 		"\n"
-		"               -U # and -V # specify a cap for the calculated values for\n"
-		"               request and response sizes (not needed for constant values or\n"
-		"               uniform distribution)\n"
+		"               -U # specify a cap for the calculated values for request\n"
+		"               and response size (not needed for constant values or\n"
+		"               uniform distribution), values over this cap are recalculated.\n"
 		"\n"
 		"example:\n"
 		"  -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -U 32000\n"
@@ -1357,13 +1360,32 @@ char *guess_topology (int mss, int mtu)
 	return "unknown";
 }
 
+static void parse_help_option(char *params) {
+	char opt;
+	sscanf(params, "%c", &opt);
+        switch (opt) {
+                case 's':
+                case 'S':
+                	usage_sockopt();
+                case 'g':
+                case 'G':
+                	usage_trafgenopt();
+                break;
+                case 'f':
+                case 'F':
+        	        usage_flowopt();
+                default:
+	                usage();
+	}
+
+}
+
 static int parse_adt_option(char *params) {
 
 
 	init_adt_defaults();
 
 	int i=0;
-
 	char field [ 32 ];
 	int n;
 	char c[1];
@@ -1932,16 +1954,8 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-#ifdef HAVE_GETOPT_LONG
-	/* getopt_long isn't portable, it's GNU extension */
-	struct option lo[] = {  {"help", 0, 0, 'h' },
-							{"version", 0, 0, 'v'},
-							{0, 0, 0, 0}
-				};
-	while ((ch = getopt_long(argc, argv, "b:c:de:hi:l:mn:opqr:svwA:B:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:", lo, 0)) != -1)
-#else
-	while ((ch = getopt(argc, argv, "b:c:de:hi:l:mn:opqr:svwA:B:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:")) != -1)
-#endif
+	while ((ch = getopt(argc, argv, "b:c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:")) != -1)
+		
 		switch (ch) {
 
 		case 'b':
@@ -1964,7 +1978,7 @@ static void parse_cmdline(int argc, char **argv) {
 			break;
 
 		case 'h':
-			usage();
+			parse_help_option(optarg);
 			break;
 
 		case 'i':
@@ -2015,10 +2029,6 @@ static void parse_cmdline(int argc, char **argv) {
 			ASSIGN_FLOW_OPTION(random_seed, optint);
 			break;
 
-
-		case 's':
-			usage_sockopt();
-			break;
 
 		case 'v':
 			fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
