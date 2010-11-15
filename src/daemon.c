@@ -270,7 +270,8 @@ static int prepare_fds() {
 			flow->mtu = get_mtu(flow->fd);
 			flow->mss = get_mss(flow->fd);
 
-			report_flow(flow, INTERVAL);
+			if (flow->settings.reporting_interval)
+				report_flow(flow, INTERVAL);
 			report_flow(flow, TOTAL);
 
 			uninit_flow(flow);
@@ -356,7 +357,8 @@ static void stop_flow(struct _request_stop_flow *request)
 			flow->mtu = get_mtu(flow->fd);
 			flow->mss = get_mss(flow->fd);
 
-			report_flow(flow, INTERVAL);
+                        if (flow->settings.reporting_interval)
+				report_flow(flow, INTERVAL);
 			report_flow(flow, TOTAL);
 
 			uninit_flow(flow);
@@ -378,7 +380,8 @@ static void stop_flow(struct _request_stop_flow *request)
 		flow->mtu = get_mtu(flow->fd);
 		flow->mss = get_mss(flow->fd);
 
-		report_flow(flow, INTERVAL);
+		if (flow->settings.reporting_interval)
+			report_flow(flow, INTERVAL);
 		report_flow(flow, TOTAL);
 
 		uninit_flow(flow);
