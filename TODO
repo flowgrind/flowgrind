@@ -1,3 +1,7 @@
++-V (return path blocksize)
++check if path MTU or interface MTU is returned
++-h e (examples)
++investigate -H x=localhost vs. x=127.0.0.1
 +simplify arbitary socket options
 +fix crash in conjunction with newer libxmlrpc-c
 +do something with UDP

@@ -729,6 +729,9 @@ static void usage_trafgenopt(void)
 		"                              minimum 0.005s and and maximum 0.01s\n"
 		"               -U 32000       cap block sizes at 32 kbytes (needed for\n"
 		"                              normal distribution)\n"
+		"\n"
+		"Reminder: Usage of -G in conjunction with -A, -R, -V is not recommended, as\n"
+		"they overwrite each other. -A, -R and -V exists for backward compatibility.\n"
 
 		);
 	exit(1);
