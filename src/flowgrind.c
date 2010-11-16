@@ -617,6 +617,7 @@ static void usage(void)
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
 		"               b = bits per second (default), B = bytes/second, o = blocks/s\n"
+		"               same a -G g=C,###\n"
 		"  -U #         Set application buffer size (default: 8192)\n"
 		"               truncates values if used with stochastic traffic generation\n"
 		"               enforces write/read block size if used without traffic gen\n"
