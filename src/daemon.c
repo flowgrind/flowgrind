@@ -357,7 +357,7 @@ static void stop_flow(struct _request_stop_flow *request)
 			flow->mtu = get_mtu(flow->fd);
 			flow->mss = get_mss(flow->fd);
 
-                        if (flow->settings.reporting_interval)
+			if (flow->settings.reporting_interval)
 				report_flow(flow, INTERVAL);
 			report_flow(flow, TOTAL);
 
@@ -463,6 +463,12 @@ static void report_flow(struct _flow* flow, int type)
 
 	tsc_gettimeofday(&report->end);
 	flow->last_report_time = report->end;
+
+	/* abort if we were scheduled way to early for a interval report */
+	if (time_diff(&report->begin,&report->end) < 0.2 * flow->settings.reporting_interval && type == INTERVAL)
+	{	free(report);
+		return;
+	}
 	report->bytes_read = flow->statistics[type].bytes_read;
 	report->bytes_written = flow->statistics[type].bytes_written;
 	report->request_blocks_read = flow->statistics[type].request_blocks_read;
@@ -479,10 +485,10 @@ static void report_flow(struct _flow* flow, int type)
 	report->iat_sum = flow->statistics[type].iat_sum;
 
 #ifdef __LINUX__
-	if (flow->statistics[type].has_tcp_info && type == INTERVAL)
-		report->tcp_info = flow->statistics[type].tcp_info;
-	else
-		memset(&report->tcp_info, 0, sizeof(struct tcp_info));
+	report->tcp_info = flow->statistics[type].tcp_info;
+#else
+	memset(&report->tcp_info, 0, sizeof(struct tcp_info));
+	
 #endif
 	if (flow->fd != -1) {
 		/* Get latest MTU and MSS */
@@ -1279,9 +1285,9 @@ int set_flow_tcp_options(struct _flow *flow)
 		return -1;
 	}
 
-        if (flow->settings.nonagle && set_tcp_nodelay(flow->fd) == -1) {
-	        flow_error(flow, "Unable to set TCP_NODELAY: %s", strerror(errno));
-	        return -1;
+	if (flow->settings.nonagle && set_tcp_nodelay(flow->fd) == -1) {
+		flow_error(flow, "Unable to set TCP_NODELAY: %s", strerror(errno));
+		return -1;
 	}
 
 	if (flow->settings.route_record && set_route_record(flow->fd) == -1) {

@@ -363,7 +363,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		sprintf(dataString, "#");
 
 	if (type)
-		sprintf(dataString, "R%3d", id);
+		sprintf(dataString, "D%3d", id);
 	else
 		sprintf(dataString, "S%3d", id);
 
@@ -498,7 +498,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 
 	/* status */
 #ifdef DEBUG
-        createOutputColumn_str(headerString1, headerString2, dataString, i, status, &column_states[i], &columnWidthChanged);
+	createOutputColumn_str(headerString1, headerString2, dataString, i, status, &column_states[i], &columnWidthChanged);
 	i++;
 #else
 	UNUSED_ARGUMENT(status);
@@ -530,47 +530,46 @@ static void usage(void)
 		"flowgrind allows you to generate traffic among hosts in your network.\n\n"
 
 		"Miscellaneous:\n"
-		"  -h           show this help and exit\n"
-		"  -h [s|g|f]   show additional help for socket options, traffic generation\n"
-		"               or flow options\n"
-		"  -v           print version information and exit\n\n"
+		"  -h           Show this help and exit\n"
+		"  -h [s|g]     Show additional help for socket options, traffic generation\n"
+		"  -v           Print version information and exit\n\n"
 
 		"General options:\n\n"
 
 		"  -b mean1,mean2,mean3\n"
-		"               means for computing Anderson-Darling Test for exponential\n"
+		"               Means for computing Anderson-Darling Test for exponential\n"
 		"               distribution\n"
 		"               OR\n"
 		"  -b lwr_bound1,lwr_bound2,lwr_bound3,upr_bound1,upr_bound2,upr_bound3\n"
 		"               lower and upper bounds for computing the A2 test for uniform\n"
 		"               distribution with the given bounds\n"
 #ifdef DEBUG
-		"  -c -begin,-end,-thrpt,-rtt,-iat,+blocks,-transac,-kernel,-status\n"
+		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-kernel,-status\n"
 #else
-                "  -c -begin,-end,-thrpt,-rtt,-iat,+blocks,-transac,-kernel\n"
+		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-kernel\n"
 #endif
-		"               comma separated list of column groups to display in output.\n"
+		"               Comma separated list of column groups to display in output.\n"
 		"               Prefix with either + to show column group or - to hide\n"
 		"               column group (default: show all but blocks)\n"
 #ifdef DEBUG
-		"  -d           increase debugging verbosity. Add option multiple times to\n"
+		"  -d           Increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
 #endif
 #ifdef HAVE_LIBPCAP
-		"  -e PRE       prepend prefix PRE to log and dump filename (default: \"%1$s\")\n"
+		"  -e PRE       Prepend prefix PRE to log and dump filename (default: \"%1$s\")\n"
 #else
-		"  -e PRE       prepend prefix PRE to log filename (default: \"%1$s\")\n"
+		"  -e PRE       Prepend prefix PRE to log filename (default: \"%1$s\")\n"
 #endif
-		"  -i #.#       reporting interval in seconds (default: 0.05s)\n"
-		"  -l NAME      use log filename NAME (default: timestamp)\n"
-		"  -m           report throughput in 2**20 bytes/second\n"
+		"  -i #.#       Reporting interval in seconds (default: 0.05s)\n"
+		"  -l NAME      Use log filename NAME (default: timestamp)\n"
+		"  -m           Report throughput in 2**20 bytes/second\n"
 		"               (default: 10**6 bit/sec)\n"
-		"  -n #         number of test flows (default: 1)\n"
-		"  -o           overwrite existing log files (default: don't)\n"
-		"  -p           don't print symbolic values (like INT_MAX) instead of numbers.\n"
-		"  -q           be quiet, do not log to screen (default: off)\n"
-		"  -r #         use random seed # (default: read /dev/urandom)\n"
-		"  -w           write output to logfile (default: off)\n\n"
+		"  -n #         Number of test flows (default: 1)\n"
+		"  -o           Overwrite existing log files (default: don't)\n"
+		"  -p           Don't print symbolic values (like INT_MAX) instead of numbers\n"
+		"  -q           Be quiet, do not log to screen (default: off)\n"
+		"  -r #         Use random seed # (default: read /dev/urandom)\n"
+		"  -w           Write output to logfile (default: off)\n\n"
 
 		"Flow options:\n\n"
 
@@ -580,8 +579,8 @@ static void usage(void)
 		"  specify different values for each endpoints, separate them by comma.\n"
 		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
-		"  -A x         Use minimal response size for RTT calculation\n"
-		"               same as -G p=C,16 (value depends on arch).\n"
+		"  -A x         Use minimal response size needed for RTT calculation\n"
+		"               same as -G p=C,%3$d\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -591,21 +590,21 @@ static void usage(void)
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
 #ifdef HAVE_LIBGSL
-		"  -G [q|p|g]=[C|U],#1,{#2}:<multiple times>\n"
+		"  -G [q|p|g]=[C|E|P|N|U],#1,[#2]\n"
 #else
-		"  -G [q|p|g]=[C|E|P|N|U],#1,{#2}:<multiple times>\n"
+		"  -G [q|p|g]=[C|U],#1,[#2]\n"
 #endif
 		"               Activate stochastic traffic generation and set parameters\n"
 		"               according to the used distribution\n"
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
-		"               An endpoint that isn't specified is assumed to be 127.0.0.1.\n"
+		"               An endpoint that isn't specified is assumed to be 127.0.0.1\n"
 		"  -L x         Call connect() on test socket immediately before starting to send\n"
 		"               data (late connect). If not specified the test connection is\n"
-		"               established in the preparation phase before the test starts.\n"
+		"               established in the preparation phase before the test starts\n"
 #ifdef HAVE_LIBPCAP
-		"  -M x         dump traffic using libcap\n"
+		"  -M x         dump traffic using libpcap\n"
 #endif
 		"  -N           shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
@@ -614,18 +613,19 @@ static void usage(void)
 		"  -P x         Do not iterate through select() to continue sending in case\n"
 		"               block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q           Summarize only, skip interval reports (quiet)\n"
-		"  -R x=#.#[z|k|M|G][b|y|B]\n"
+		"  -R x=#.#[z|k|M|G][b|B|o]\n"
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
-		"               b = bits per second (default), y = bytes/second, B = blocks/s\n"
+		"               b = bits per second (default), B = bytes/second, o = blocks/s\n"
 		"  -U #         Set application buffer size (default: 8192)\n"
 		"               truncates values if used with stochastic traffic generation\n"
-		"		enforces write/read block size if used without traffic gen\n"
+		"               enforces write/read block size if used without traffic gen\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=10,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n",
 		opt.log_filename_prefix,
-		progname
+		progname,
+		MIN_BLOCK_SIZE
 	);
 	exit(1);
 }
@@ -636,7 +636,7 @@ static void usage_sockopt(void)
 
 	fprintf(stderr,
 		"The following list contains possible values that can be set on the test socket:\n"
-		"  s=TCP_CONG_MODULE=ALG\n"
+		"  -O x=TCP_CONG_MODULE=ALG\n"
 		"               set congestion control algorithm ALG.\n");
 
 		/* Read and print available congestion control algorithms */
@@ -653,23 +653,29 @@ static void usage_sockopt(void)
 		}
 
 	fprintf(stderr,
-		"  x=TCP_CORK     set TCP_CORK on test socket\n"
-		"  x=TCP_NODELAY  disable nagle algorithmn\n"
-		"  x=SO_DEBUG     set SO_DEBUG on test socket\n"
-		"  x=IP_MTU_DISCOVER\n"
-		"                 set IP_MTU_DISCOVER on test socket if not\n"
-		"                 already enabled by system default\n"
-		"  x=ROUTE_RECORD set ROUTE_RECORD on test socket\n\n"
+		"  -O x=TCP_CORK"
+		"               set TCP_CORK on test socket\n"
+		"  -O x=TCP_NODELAY"
+		"               disable nagle algorithmn\n"
+		"  -O x=SO_DEBUG"
+		"               set SO_DEBUG on test socket\n"
+		"  -O x=IP_MTU_DISCOVER\n"
+		"               set IP_MTU_DISCOVER on test socket if not\n"
+		"               already enabled by system default\n"
+		"  -O x=ROUTE_RECORD"
+		"               set ROUTE_RECORD on test socket\n\n"
 		
 		"the following non-standard socket options are supported:\n"
-		"  x=TCP_MTCP     set TCP_MTCP (15) on test socket\n"
-		"  x=TCP_ELCN     set TCP_ELCN (20) on test socket\n"
-		"  x=TCP_ICMP     set TCP_ICMP (21) on test socket\n\n"
+		"  -O x=TCP_MTCP"
+		"               set TCP_MTCP (15) on test socket\n"
+		"  -O x=TCP_ELCN"
+		"               set TCP_ELCN (20) on test socket\n"
+		"  -O x=TCP_LCD set TCP_LCD (21) on test socket\n\n"
 
 		"x can be replaced with 's' for source or 'd' for destination\n\n"
 
 		"Examples:\n"
-		"  flowgrind -H d=testhost -O s=TCP_CONG_MODULE=reno,d=SO_DEBUG\n"
+		"  flowgrind -H s=host1,d=host2 -O s=TCP_CONG_MODULE=reno,d=SO_DEBUG\n"
 		);
 	exit(1);
 }
@@ -680,9 +686,9 @@ static void usage_trafgenopt(void)
 		"Stochastic Traffic Generation Options:"
 		"\n"
 #ifdef HAVE_LIBGSL
-		"  -G [q|p|g]=[C|U|E|N|L|P|W],#1,(#2):<multiple times> -U #\n"
+		"  -G [q|p|g]=[C|U|E|N|L|P|W],#1,(#2)\n"
 #else
-		"  -G [q|p|g]=[C|U],#1,(#2):<multiple times> -U #\n"
+		"  -G [q|p|g]=[C|U],#1,(#2)\n"
 #endif
 		"\n"
 		"               Activate stochastic traffic generation and set parameters\n"
@@ -694,20 +700,20 @@ static void usage_trafgenopt(void)
 		"               g = request interpacket gap (in s)\n"
 		"               \n"
 		"               possible distributions:\n"
-		"               C = constant (p1: value, p2: not used)\n"
-		"               U = uniform (p1: min, p2: max)\n"
+		"               C = constant (#1: value, #2: not used)\n"
+		"               U = uniform (#1: min, #2: max)\n"
 #ifdef HAVE_LIBGSL
-		"               E = exponential (p1: lamba - lifetime, p2: not used)\n"
-		"               N = normal (p1: mu - mean value, p2: sigma_square - variance)\n"
-                "               L = lognormal (p1: zeta - mean, p2: sigma - std dev)\n"
-		"               P = pareto (param 1: k - shape, x_min - scale)\n"
-		"               W = weibull (p1: lambda - scale, p2: k - shape)\n"
+		"               E = exponential (#1: lamba - lifetime, #2: not used)\n"
+		"               N = normal (#1: mu - mean value, #2: sigma_square - variance)\n"
+		"               L = lognormal (#1: zeta - mean, #2: sigma - std dev)\n"
+		"               P = pareto (#1: k - shape, #2 x_min - scale)\n"
+		"               W = weibull (#1: lambda - scale, #2: k - shape)\n"
 #else
 		"               advanced distributions are only available if compiled with\n"
 		"               libgsl\n"
 #endif
 		"\n"
-		"               -U # specify a cap for the calculated values for request\n"
+		"  -U #         specify a cap for the calculated values for request\n"
 		"               and response size (not needed for constant values or\n"
 		"               uniform distribution), values over this cap are recalculated.\n"
 		"\n"
@@ -1008,8 +1014,8 @@ void print_report(int id, int endpoint, struct _report* report)
 void report_final(void)
 {
 	int id = 0;
-	char header_buffer[400] = "";
-	char header_nibble[400] = "";
+	char header_buffer[600] = "";
+	char header_nibble[600] = "";
 	int i, j;
 
 	for (id = 0; id < opt.num_flows; id++) {
@@ -1027,7 +1033,7 @@ void report_final(void)
 			int mtu;
 			int mss;
 
-			CAT("#% 4d %s:", id, endpoint ? "R" : "S");
+			CAT("#% 4d %s:", id, endpoint ? "D" : "S");
 
 			CAT(" %s", flow[id].endpoint_options[endpoint].server_address);
 			if (flow[id].endpoint_options[endpoint].server_port != DEFAULT_LISTEN_PORT)
@@ -1053,49 +1059,55 @@ void report_final(void)
 				flow[id].endpoint_options[endpoint].receive_buffer_size_real,
 				flow[id].settings[endpoint].requested_read_buffer_size);
 
-			if (flow[id].settings[SOURCE].delay[WRITE] || flow[id].settings[SOURCE].delay[READ])
-				CATC("delay = %.2fs/%.2fs",
-					flow[id].settings[SOURCE].delay[WRITE],
-					flow[id].settings[SOURCE].delay[READ]);
-
-			CATC("duration = %.2fs/%.2fs",
-				flow[id].settings[SOURCE].duration[WRITE],
-				flow[id].settings[SOURCE].duration[READ]);
-
 			if (flow[id].final_report[endpoint]) {
-				double thruput_read, thruput_written, transactions_per_sec, report_diff, duration_read, duration_write;
+				double thruput_read, thruput_written, transactions_per_sec;
+				double report_time, report_delta_write = 0, report_delta_read = 0, duration_read, duration_write;
 
-				report_diff = time_diff(&flow[id].final_report[endpoint]->begin, &flow[id].final_report[endpoint]->end);
-				/* Calculate duration the flow was receiving */
-				duration_read = report_diff - flow[id].settings[endpoint].delay[DESTINATION];
-				if (duration_read > flow[id].settings[endpoint].duration[DESTINATION])
-					duration_read = flow[id].settings[endpoint].duration[DESTINATION];
-				/* Calculate duration the flow was sending */
-				duration_write = report_diff - flow[id].settings[endpoint].delay[SOURCE];
-				if (duration_write > flow[id].settings[endpoint].duration[SOURCE])
-					duration_write = flow[id].settings[endpoint].duration[SOURCE];
+				/* calculate time */
+				report_time = time_diff(&flow[id].final_report[endpoint]->begin, &flow[id].final_report[endpoint]->end);
+				if (flow[id].settings[endpoint].duration[WRITE])
+					report_delta_write = report_time - flow[id].settings[endpoint].duration[WRITE] - flow[id].settings[endpoint].delay[SOURCE];
+				if (flow[id].settings[endpoint].duration[READ])
+					report_delta_read = report_time - flow[id].settings[endpoint].duration[READ] - flow[id].settings[endpoint].delay[DESTINATION];
 
-				thruput_read = flow[id].final_report[endpoint]->bytes_read / MAX(duration_read,duration_write);
+				/* calculate delta target vs real report time */
+				duration_write = flow[id].settings[endpoint].duration[WRITE] + report_delta_write;
+				duration_read = flow[id].settings[endpoint].duration[READ] + report_delta_read;
+
+				if (flow[id].settings[endpoint].duration[WRITE])
+					CATC("flow duration %.3fs/%.3fs (real/req)",
+						duration_write,
+						flow[id].settings[endpoint].duration[WRITE]);
+
+				if (flow[id].settings[endpoint].delay[WRITE])
+				       CATC("write delay = %.3fs", flow[id].settings[endpoint].delay[WRITE]);
+
+				if (flow[id].settings[endpoint].delay[READ])
+				       CATC("read delay = %.3fs", flow[id].settings[endpoint].delay[READ]);
+
+				/* calucate throughput */
+				thruput_read = flow[id].final_report[endpoint]->bytes_read / MAX(duration_read, duration_write);
 				if (isnan(thruput_read))
 					thruput_read = 0.0;
 
-				thruput_written = flow[id].final_report[endpoint]->bytes_written / MAX(duration_read,duration_write);
+				thruput_written = flow[id].final_report[endpoint]->bytes_written / MAX(duration_read, duration_write);
 				if (isnan(thruput_written))
 					thruput_written = 0.0;
-
-				transactions_per_sec = flow[id].final_report[endpoint]->response_blocks_read / MAX(duration_read,duration_write);
-				if (isnan(transactions_per_sec))
-					transactions_per_sec = 0.0;
 
 				thruput_read = scale_thruput(thruput_read);
 				thruput_written = scale_thruput(thruput_written);
 
-				CATC("through = %.6f/%.6fM%c/s", 
-					thruput_written, 
-					thruput_read, 
-					opt.mbyte ? 'B' : 'b');
+				if (opt.mbyte)
+					CATC("through = %.6f/%.6fMbyte/s (out/in)", thruput_written, thruput_read);
+				else
+					CATC("through = %.6f/%.6fMbit/s (out/in)", thruput_written, thruput_read);
 
+				/* transactions */
+				transactions_per_sec = flow[id].final_report[endpoint]->response_blocks_read / MAX(duration_read, duration_write);
+				if (transactions_per_sec)
+					CATC("%.2f transactions/s", transactions_per_sec);
 
+				/* blocks */
 				if (flow[id].final_report[endpoint]->request_blocks_written || flow[id].final_report[endpoint]->request_blocks_read)
 					CATC("%u/%u request blocks (out/in)",
 					flow[id].final_report[endpoint]->request_blocks_written,
@@ -1106,8 +1118,26 @@ void report_final(void)
 					flow[id].final_report[endpoint]->response_blocks_written,
 					flow[id].final_report[endpoint]->response_blocks_read);
 
-				if (transactions_per_sec)
-					CATC("%.2f transactions/s", transactions_per_sec);
+				/* rtt */
+				if (flow[id].final_report[endpoint]->response_blocks_read) {
+					double min_rtt = flow[id].final_report[endpoint]->rtt_min;
+					double max_rtt = flow[id].final_report[endpoint]->rtt_max;
+					double avg_rtt;
+					avg_rtt = flow[id].final_report[endpoint]->rtt_sum / (double)(flow[id].final_report[endpoint]->response_blocks_read);
+					CATC("%.3f/%.3f/%.3f RTT (min/avg/max)", min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
+				}
+
+				/* iat */
+				if (flow[id].final_report[endpoint]->request_blocks_read) {
+					double min_iat = flow[id].final_report[endpoint]->iat_min;
+					double max_iat = flow[id].final_report[endpoint]->iat_max;
+					double avg_iat; 
+					avg_iat = flow[id].final_report[endpoint]->iat_sum / (double)(flow[id].final_report[endpoint]->request_blocks_read);
+					CATC("%.3f/%.3f/%.3f IAT (min/avg/max)", min_iat*1e3, avg_iat*1e3, max_iat*1e3);
+				}
+
+				free(flow[id].final_report[endpoint]); 
+
 			}
 
 			if (flow[id].endpoint_options[endpoint].rate_str)
@@ -1118,10 +1148,10 @@ void report_final(void)
 				CATC("TCP_CORK");
 			if (flow[id].settings[endpoint].pushy)
 				CATC("PUSHY");
-                        if (flow[id].settings[endpoint].nonagle)
-                                CATC("TCP_NODELAY");
-                        if (flow[id].settings[endpoint].mtcp)
-                                CATC("TCP_MTCP");
+			if (flow[id].settings[endpoint].nonagle)
+				CATC("TCP_NODELAY");
+			if (flow[id].settings[endpoint].mtcp)
+				CATC("TCP_MTCP");
 
 		if (flow[id].settings[endpoint].dscp)
 			CATC("dscp = 0x%02x", flow[id].settings[endpoint].dscp);
@@ -1134,18 +1164,6 @@ void report_final(void)
 			log_output(header_buffer);
 
 		}
-	}
-
-	for (id = 0; id < opt.num_flows; id++) {
-
-		for (int endpoint = 0; endpoint < 2; endpoint++) {
-
-			if (!flow[id].final_report[endpoint])
-				continue;
-
-			print_report(id, endpoint, flow[id].final_report[endpoint]);
-			free(flow[id].final_report[endpoint]);
-		};
 	}
 
 	/* now depending on which test the user wanted we make the function calls */
@@ -1181,7 +1199,8 @@ void report_final(void)
 
 		if (adt_too_much_data())
 			log_output("# Note: The Darlington test was done only on the first 1000 samples. The reason for this is that the test gives poor results for a larger sample size (as specified in literature)\n");
-	}
+	} 	
+
 }
 
 void report_flow(const char* server_url, struct _report* report)
@@ -1221,7 +1240,7 @@ exit_outer_loop:
 	}
 
 	if (report->type == TOTAL) {
-		DEBUG_MSG(LOG_DEBUG, "received final report");
+		DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);
 		/* Final report, keep it for later */
 		free(f->final_report[endpoint]);
 		f->final_report[endpoint] = malloc(sizeof(struct _report));
@@ -1364,19 +1383,19 @@ char *guess_topology (int mss, int mtu)
 static void parse_help_option(char *params) {
 	char opt;
 	sscanf(params, "%c", &opt);
-        switch (opt) {
-                case 's':
-                case 'S':
-                	usage_sockopt();
-                case 'g':
-                case 'G':
-                	usage_trafgenopt();
-                break;
-                case 'f':
-                case 'F':
-        	        usage_flowopt();
-                default:
-	                usage();
+	switch (opt) {
+		case 's':
+		case 'S':
+			usage_sockopt();
+		case 'g':
+		case 'G':
+			usage_trafgenopt();
+		break;
+		case 'f':
+		case 'F':
+			usage_flowopt();
+		default:
+			usage();
 	}
 
 }
@@ -1490,14 +1509,14 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 				}
 				break;
 
-                        case 'L':
-                        case 'l':
-                                distr = LOGNORMAL;
-                                if (!param1 || !param2) {
-                                        fprintf(stderr, "lognormal distribution needs two non-zero parameters\n");
-                                        usage_trafgenopt();
-                                }
-                                break;
+			case 'L':
+			case 'l':
+				distr = LOGNORMAL;
+				if (!param1 || !param2) {
+					fprintf(stderr, "lognormal distribution needs two non-zero parameters\n");
+					usage_trafgenopt();
+				}
+				break;
 			
 
 			case 'C':
@@ -1815,9 +1834,9 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				else if (!strcmp(arg, "TCP_MTCP")) {
 					ASSIGN_COMMON_FLOW_SETTING(mtcp, 1);
 				}
-                                else if (!strcmp(arg, "TCP_NODELAY")) {
-                                        ASSIGN_COMMON_FLOW_SETTING(nonagle, 1);
-                                }
+				else if (!strcmp(arg, "TCP_NODELAY")) {
+					ASSIGN_COMMON_FLOW_SETTING(nonagle, 1);
+				}
 
 				else if (!strcmp(arg, "ROUTE_RECORD")) {
 					ASSIGN_COMMON_FLOW_SETTING(route_record, 1);
@@ -1897,10 +1916,10 @@ static void parse_visible_param(char *to_parse) {
 		visible_columns[column_type_thrpt] = 1;
 	if (strstr(to_parse, "-thrpt"))
 		visible_columns[column_type_thrpt] = 0;
-        if (strstr(to_parse, "+transac"))
-                visible_columns[column_type_transac] = 1;
-        if (strstr(to_parse, "-transac"))
-                visible_columns[column_type_transac] = 0;
+	if (strstr(to_parse, "+transac"))
+		visible_columns[column_type_transac] = 1;
+	if (strstr(to_parse, "-transac"))
+		visible_columns[column_type_transac] = 0;
 	if (strstr(to_parse, "+rtt"))
 		visible_columns[column_type_rtt] = 1;
 	if (strstr(to_parse, "-rtt"))
@@ -1919,9 +1938,9 @@ static void parse_visible_param(char *to_parse) {
 		visible_columns[column_type_kernel] = 0;
 #ifdef DEBUG
 	if (strstr(to_parse, "+status"))
-                visible_columns[column_type_status] = 1;
-        if (strstr(to_parse, "-status"))
-                visible_columns[column_type_status] = 0;
+		visible_columns[column_type_status] = 1;
+	if (strstr(to_parse, "-status"))
+		visible_columns[column_type_status] = 0;
 #endif
 }
 
@@ -2229,7 +2248,7 @@ static void parse_cmdline(int argc, char **argv) {
 					}
 					break;
 
-				case 'y':
+				case 'B':
 					optdouble /= flow[id].settings[SOURCE].maximum_block_size;
 					if (optdouble < 1) {
 						fprintf(stderr, "client block size "
@@ -2240,7 +2259,7 @@ static void parse_cmdline(int argc, char **argv) {
 					}
 					break;
 
-				case 'B':
+				case 'o':
 					break;
 
 				default:
@@ -2483,7 +2502,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	"flow_control", flow[id].settings[DESTINATION].flow_control,
 		"byte_counting", flow[id].byte_counting,
 		"cork", (int)flow[id].settings[DESTINATION].cork,
-                "nonagle", flow[id].settings[DESTINATION].nonagle,
+		"nonagle", flow[id].settings[DESTINATION].nonagle,
 
 		"cc_alg", flow[id].settings[DESTINATION].cc_alg,
 
@@ -2589,7 +2608,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"flow_control", flow[id].settings[SOURCE].flow_control,
 		"byte_counting", flow[id].byte_counting,
 		"cork", (int)flow[id].settings[SOURCE].cork,
-                "nonagle", (int)flow[id].settings[SOURCE].nonagle,
+		"nonagle", (int)flow[id].settings[SOURCE].nonagle,
 
 		"cc_alg", flow[id].settings[SOURCE].cc_alg,
 

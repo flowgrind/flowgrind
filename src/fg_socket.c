@@ -284,10 +284,10 @@ int set_tcp_mtcp(int fd)
 
 int set_tcp_nodelay(int fd)
 {
-        int opt = 1;
+	int opt = 1;
 
-        DEBUG_MSG(LOG_WARNING, "Setting TCP_NODELAY on fd %d", fd);
-        return setsockopt(fd, SOL_TCP, TCP_NODELAY, &opt, sizeof(opt));
+	DEBUG_MSG(LOG_WARNING, "Setting TCP_NODELAY on fd %d", fd);
+	return setsockopt(fd, SOL_TCP, TCP_NODELAY, &opt, sizeof(opt));
 }
 
 int set_so_debug(int fd)
