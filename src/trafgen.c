@@ -55,10 +55,10 @@ inline static double calculate(enum _stochastic_distributions type, double param
 			DEBUG_MSG(LOG_DEBUG, "calculated pareto distribution value %f for parameters %f,%f", val, param_one, param_two);
 		break;
 
-                case LOGNORMAL:
-                        val = dist_normal ( param_one, param_two );
-                        DEBUG_MSG(LOG_DEBUG, "calculated lognormal distribution value %f for parameters %f,%f", val, param_one, param_two);
-                break;		
+		case LOGNORMAL:
+			val = dist_normal ( param_one, param_two );
+			DEBUG_MSG(LOG_DEBUG, "calculated lognormal distribution value %f for parameters %f,%f", val, param_one, param_two);
+		break;		
 
 		case CONSTANT:
 		/* constant is default */

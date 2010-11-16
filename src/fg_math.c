@@ -138,7 +138,7 @@ dist_normal(const double mu, const double sigma_square) {
 extern double
 dist_lognormal(const double zeta, const double sigma) {
 #ifdef HAVE_LIBGSL
-        return gsl_ran_lognormal (r, zeta, sigma);
+	return gsl_ran_lognormal (r, zeta, sigma);
 #else
 	UNUSED_ARGUMENT(zeta);
 	UNUSED_ARGUMENT(sigma);
