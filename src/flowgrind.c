@@ -580,7 +580,7 @@ static void usage(void)
 		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
 		"  -A x         Use minimal response size needed for RTT calculation\n"
-		"               same as -G p=C,%3$d\n"
+		"               same as -G s=p,C,%3$d\n"
 		"  -B x=#       Set requested sending buffer in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
@@ -590,9 +590,9 @@ static void usage(void)
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
 #ifdef HAVE_LIBGSL
-		"  -G [q|p|g]=[C|E|P|N|U],#1,[#2]\n"
+		"  -G x=[q|p|g],[C|E|P|N|U],#1,[#2]\n"
 #else
-		"  -G [q|p|g]=[C|U],#1,[#2]\n"
+		"  -G x=[q|p|g],[C|U],#1,[#2]\n"
 #endif
 		"               Activate stochastic traffic generation and set parameters\n"
 		"               according to the used distribution\n"
@@ -613,11 +613,12 @@ static void usage(void)
 		"  -P x         Do not iterate through select() to continue sending in case\n"
 		"               block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q           Summarize only, skip interval reports (quiet)\n"
+		"  -S x=#       Set block size, same as -G s=q,C,#\n"
 		"  -R x=#.#[z|k|M|G][b|B|o]\n"
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
 		"               b = bits per second (default), B = bytes/second, o = blocks/s\n"
-		"               same a -G g=C,###\n"
+		"               same a -G s=g,C,#'\n"
 		"  -U #         Set application buffer size (default: 8192)\n"
 		"               truncates values if used with stochastic traffic generation\n"
 		"               enforces write/read block size if used without traffic gen\n"
@@ -687,9 +688,9 @@ static void usage_trafgenopt(void)
 		"Stochastic Traffic Generation Options:"
 		"\n"
 #ifdef HAVE_LIBGSL
-		"  -G [q|p|g]=[C|U|E|N|L|P|W],#1,(#2)\n"
+		"  -G x=[q|p|g],[C|U|E|N|L|P|W],#1,(#2)\n"
 #else
-		"  -G [q|p|g]=[C|U],#1,(#2)\n"
+		"  -G x=[q|p|g],[C|U],#1,(#2)\n"
 #endif
 		"\n"
 		"               Activate stochastic traffic generation and set parameters\n"
@@ -719,19 +720,23 @@ static void usage_trafgenopt(void)
 		"               uniform distribution), values over this cap are recalculated.\n"
 		"\n"
 		"example:\n"
-		"  -G q=C,40:p=N,2000,50:g=U,0.005,0.01 -U 32000\n"
+		"  -G s=q,C,40 -G s=p,N,2000,50 -G s=g,U,0.005,0.01 -U 32000\n"
 		"\n"
 		"which means:\n"
-		"               q=C,40         use contant request size of 40 bytes\n"
-		"               p=N,2000,50    use normal distributed response size with\n"
+		"               q,C,40         use contant request size of 40 bytes\n"
+		"               p,N,2000,50    use normal distributed response size with\n"
 		"                              mean 2000 bytes and variance 50\n"
-		"               g=U,0.005,0.01 use uniform distributed interpacket gap with\n"
+		"               g,U,0.005,0.01 use uniform distributed interpacket gap with\n"
 		"                              minimum 0.005s and and maximum 0.01s\n"
 		"               -U 32000       cap block sizes at 32 kbytes (needed for\n"
 		"                              normal distribution)\n"
 		"\n"
-		"Reminder: Usage of -G in conjunction with -A, -R, -V is not recommended, as\n"
-		"they overwrite each other. -A, -R and -V exists for backward compatibility.\n"
+		"Reminder: \n"
+		"\n"
+		"- Using Bidirectional Traffic Generation can lead to unexpected results.\n"
+		"\n"
+		"- Usage of -G in conjunction with -A, -R, -V is not recommended, as\n"
+		"  they overwrite each other. -A, -R and -V exists for backward compatibility.\n"
 
 		);
 	exit(1);
@@ -1445,29 +1450,45 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 	for (section = strtok(params, ":"); section; section = strtok(NULL, ":")) {
 
 		double param1 = 0, param2 = 0, unused;
-		char type, optchar;
+		char endpointchar, typechar, distchar;
 		enum _stochastic_distributions distr = 0;
+		int j, k;
 
-		type = section[0];
+		endpointchar = section[0];
 		if (section[1] == '=')
 			arg = section + 2;
 		else
 			arg = section + 1;
 
-		if (type != 'p' && type != 'q' && type != 'g') {
-			if (type != 'h')
-				fprintf(stderr, "Syntax error in traffic generation option: %c is not a parameter type.\n", type);
+                switch (endpointchar) {
+                        case 's':
+                        j = 0;
+                        k = 1;
+                        break;
 
-			usage_trafgenopt();
-		}
+                        case 'd':
+                        j = 1;
+                        k = 2;
+                        break;
 
-		rc = sscanf(arg, "%c,%lf,%lf,%lf", &optchar, &param1, &param2, &unused);
-		if (rc != 2 && rc != 3) {
+                        case 'b':
+                        j = 0;
+                        k = 2;
+                        break;
+
+                        default:
+                        fprintf(stderr, "Syntax error in traffic generation option: %c is not a endpoint.\n", endpointchar);
+                        usage_flowopt();
+                        usage_trafgenopt();
+                }
+
+		rc = sscanf(arg, "%c,%c,%lf,%lf,%lf", &typechar, &distchar, &param1, &param2, &unused);
+		if (rc != 3 && rc != 4) {
 			fprintf(stderr, "malformed traffic generation parameters\n");
 				usage_trafgenopt();
 		}
 
-		switch (optchar) {
+		switch (distchar) {
 			case 'N':
 			case 'n':
 				distr = NORMAL;
@@ -1534,7 +1555,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 
 
 			default:
-				fprintf(stderr, "Syntax error in traffic generation option: %c is not a distribution.\n", optchar);
+				fprintf(stderr, "Syntax error in traffic generation option: %c is not a distribution.\n", distchar);
 				usage_trafgenopt();
 		}
 
@@ -1542,8 +1563,9 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 		if (current_flow_ids[0] == -1) {
 			int id;
 			for (id = 0; id < MAX_FLOWS; id++) {
-				for (int i = 0; i < 2; i++) {
-					switch (type) {
+				for (int i = j; i < k; i++) {
+					switch (typechar) {
+						case 'P':
 						case 'p':
 							flow[id].settings[i].response_trafgen_options.distribution = distr;
 							flow[id].settings[i].response_trafgen_options.param_one = param1;
@@ -1553,7 +1575,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
 								flow[id].settings[i].maximum_block_size = param2;
 							break;
-
+						case 'Q':
 						case 'q':
 							flow[id].settings[i].request_trafgen_options.distribution = distr;
 							flow[id].settings[i].request_trafgen_options.param_one = param1;
@@ -1563,8 +1585,8 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
 								flow[id].settings[i].maximum_block_size = param2;
 							break;
-
-					       case 'g':
+						case 'G':
+					        case 'g':
 							flow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
 							flow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
 							flow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
@@ -1578,8 +1600,9 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 				if (current_flow_ids[id] == -1)
 					break;
 
-				for (int i = 0; i < 2; i++) {
-					switch (type) {
+				for (int i = j; i < k; i++) {
+					switch (typechar) {
+						case 'P':
 						case 'p':
 							flow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
 							flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
@@ -1589,7 +1612,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							if (distr == UNIFORM)
 								flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
 							break;
-
+						case 'Q':
 						case 'q':
 							flow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
 							flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
@@ -1599,7 +1622,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							if (distr == UNIFORM)
 								flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
 							break;
-
+						case 'G':
 						case 'g':
 							flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.distribution = distr;
 							flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_one = param1;
@@ -1864,9 +1887,11 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				}
 
 				break;
+
 			case 'P':
 				ASSIGN_COMMON_FLOW_SETTING(pushy, 1)
 				break;
+
 			case 'R':
 				if (!*arg) {
 					fprintf(stderr, "-R requires a value for each given endpoint\n");
@@ -1874,14 +1899,28 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				}
 				ASSIGN_ENDPOINT_FLOW_OPTION(rate_str, arg)
 				break;
+
+			case 'S':
+				rc = sscanf(arg, "%u", &optunsigned);
+				ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.distribution, CONSTANT);
+				ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.param_one, optunsigned);
+				for (int id = 0; id < MAX_FLOWS; id++) {
+					for (int i = 0; i < 2; i++) {
+						if ((signed)optunsigned > flow[id].settings[i].maximum_block_size)
+							flow[id].settings[i].maximum_block_size = (signed)optunsigned;
+					}
+				}
+				break;
+
 			case 'T':
-			rc = sscanf(arg, "%lf", &optdouble);
+				rc = sscanf(arg, "%lf", &optdouble);
 				if (rc != 1) {
 					fprintf(stderr, "malformed flow duration\n");
 					usage();
 				}
 				ASSIGN_COMMON_FLOW_SETTING(duration[WRITE], optdouble)
 				break;
+
 			case 'W':
 				rc = sscanf(arg, "%u", &optunsigned);
 				if (rc != 1) {
@@ -1891,6 +1930,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				}
 				ASSIGN_COMMON_FLOW_SETTING(requested_read_buffer_size, optunsigned)
 				break;
+
 			case 'Y':
 				rc = sscanf(arg, "%lf", &optdouble);
 				if (rc != 1 || optdouble < 0) {
@@ -1978,7 +2018,7 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	while ((ch = getopt(argc, argv, "b:c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:LNM:O:P:QR:T:U:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "b:c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:LNM:O:P:QR:S:T:U:W:Y:")) != -1)
 		
 		switch (ch) {
 
@@ -2114,6 +2154,7 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'M':
 		case 'P':
 		case 'R':
+		case 'S':
 		case 'T':
 		case 'W':
 		case 'Y':

@@ -1,5 +1,3 @@
-+Change parameter syntax of traffic generation: instead of -G p=U,#1,#2 use -G x=p,C,U,#1,#2
-+-V (return path blocksize)
 +check if path MTU or interface MTU is returned
 +-h e (examples)
 +investigate -H x=localhost vs. x=127.0.0.1
