@@ -595,7 +595,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"{s:i,s:i,s:i,s:i}" /* bytes */
 			"{s:i,s:i,s:i,s:i}" /* block counts */
 			"{s:d,s:d,s:d,s:d,s:d,s:d}" /* RTT, IAT */
-			"{s:i,s:i}" /* MSS, MTU */
+			"{s:i}" /* MTU */
 			"{s:i,s:i,s:i,s:i,s:i}" /* TCP info */
 			"{s:i,s:i,s:i,s:i,s:i}" /* ...      */
 			"{s:i,s:i,s:i,s:i,s:i}" /* ...      */
@@ -626,8 +626,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"iat_max", report->iat_max,
 			"iat_sum", report->iat_sum,
 
-			"mss", report->mss,
-			"mtu", report->mtu,
+			"pmtu", report->pmtu,
 #ifdef __LINUX__
 			"tcpi_snd_cwnd", (int)report->tcp_info.tcpi_snd_cwnd,
 			"tcpi_snd_ssthresh", (int)report->tcp_info.tcpi_snd_ssthresh,
@@ -643,9 +642,9 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 			"tcpi_rttvar", (int)report->tcp_info.tcpi_rttvar,
 			"tcpi_rto", (int)report->tcp_info.tcpi_rto,
-			"tcpi_last_data_sent", (int)report->tcp_info.tcpi_last_data_sent,
-			"tcpi_last_ack_recv", (int)report->tcp_info.tcpi_last_ack_recv,
+			"tcpi_backoff", (int)report->tcp_info.tcpi_backoff,
 			"tcpi_ca_state", (int)report->tcp_info.tcpi_ca_state,
+			"tcpi_snd_mss", (int)report->tcp_info.tcpi_snd_mss,
 #else
 			"tcpi_snd_cwnd", 0,
 			"tcpi_snd_ssthresh", 0,
@@ -659,9 +658,9 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"tcpi_rtt", 0,
 			"tcpi_rttvar", 0,
 			"tcpi_rto", 0,
-			"tcpi_last_data_sent", 0,
-			"tcpi_last_ack_recv", 0,
+			"tcpi_backoff", 0,
 			"tcpi_ca_state", 0,
+			"tcpi_snd_mss", 0,
 #endif
 
 			"status", report->status

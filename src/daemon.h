@@ -83,8 +83,7 @@ struct _flow
 	char connect_called;
 	char finished[2];
 
-	int mss;
-	int mtu;
+	int pmtu;
 
 	unsigned int congestion_counter;
 

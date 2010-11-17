@@ -223,8 +223,7 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 			return -1;
 		}
 		flow->connect_called = 1;
-		flow->mtu = get_mtu(flow->fd);
-		flow->mss = get_mss(flow->fd);
+		flow->pmtu = get_mtu(flow->fd);
 	}
 
 	/* Altough the server flow might be finished we keep the socket in
@@ -267,8 +266,7 @@ static int prepare_fds() {
 #ifdef __LINUX__
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif
-			flow->mtu = get_mtu(flow->fd);
-			flow->mss = get_mss(flow->fd);
+			flow->pmtu = get_mtu(flow->fd);
 
 			if (flow->settings.reporting_interval)
 				report_flow(flow, INTERVAL);
@@ -354,8 +352,7 @@ static void stop_flow(struct _request_stop_flow *request)
 #ifdef __LINUX__
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif          
-			flow->mtu = get_mtu(flow->fd);
-			flow->mss = get_mss(flow->fd);
+			flow->pmtu = get_mtu(flow->fd);
 
 			if (flow->settings.reporting_interval)
 				report_flow(flow, INTERVAL);
@@ -377,8 +374,7 @@ static void stop_flow(struct _request_stop_flow *request)
 #ifdef __LINUX__        
 		flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif                          
-		flow->mtu = get_mtu(flow->fd);
-		flow->mss = get_mss(flow->fd);
+		flow->pmtu = get_mtu(flow->fd);
 
 		if (flow->settings.reporting_interval)
 			report_flow(flow, INTERVAL);
@@ -491,17 +487,13 @@ static void report_flow(struct _flow* flow, int type)
 	
 #endif
 	if (flow->fd != -1) {
-		/* Get latest MTU and MSS */
-		int mtu, mss;
-		mtu = get_mtu(flow->fd);
-		mss = get_mss(flow->fd);
-		if (mtu != -1)
-			flow->mtu = mtu;
-		if (mss != -1)
-			flow->mss = mss;
+		/* Get latest MTU */
+		int pmtu;
+		pmtu = get_mtu(flow->fd);
+		if (pmtu != -1)
+			flow->pmtu = pmtu;
 	}
-	report->mss = flow->mss;
-	report->mtu = flow->mtu;
+	report->pmtu = flow->pmtu;
 
 	/* Add status flags to report */
 	report->status = 0;
@@ -669,8 +661,7 @@ remove:
 #ifdef __LINUX__
 		if (flow->fd != -1) {
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
-			flow->mtu = get_mtu(flow->fd);
-			flow->mss = get_mss(flow->fd);
+			flow->pmtu = get_mtu(flow->fd);
 
 			report_flow(flow, TOTAL);
 		}
@@ -1266,7 +1257,7 @@ int set_flow_tcp_options(struct _flow *flow)
 	}
 
 	if (flow->settings.lcd && set_so_lcd(flow->fd) == -1) {
-		flow_error(flow, "Unable to set TCP_ICMP: %s", strerror(errno));
+		flow_error(flow, "Unable to set TCP_LCD: %s", strerror(errno));
 		return -1;
 	}
 
