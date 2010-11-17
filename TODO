@@ -1,10 +1,13 @@
++Change parameter syntax of traffic generation: instead of -G p=U,#1,#2 use -G x=p,C,U,#1,#2
 +-V (return path blocksize)
 +check if path MTU or interface MTU is returned
 +-h e (examples)
 +investigate -H x=localhost vs. x=127.0.0.1
-+simplify arbitary socket options
++simplify arbitrary socket options
 +fix crash in conjunction with newer libxmlrpc-c
 +do something with UDP
 +xml style output
 +allow send volume to be specified (instead of duration/rate)
 +meet more the spirit of IPPM (connectivity test, etc.)
++Add optional columns for sender/receiver buffer
++Add flowplotter to tarball?
