@@ -133,7 +133,7 @@ struct _flow_settings
 	int nonagle;
 	char cc_alg[256];
 	int elcn;
-	int icmp;
+	int lcd;
 	int mtcp;
 	int dscp;
 	int ipmtudiscover;

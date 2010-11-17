@@ -1,3 +1,4 @@
++truncate values für interpacket gap
 +check if path MTU or interface MTU is returned
 +-h e (examples)
 +investigate -H x=localhost vs. x=127.0.0.1

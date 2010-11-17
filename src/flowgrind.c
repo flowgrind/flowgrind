@@ -800,7 +800,7 @@ static void init_flows_defaults(void)
 			flow[id].settings[i].cork = 0;
 			flow[id].settings[i].cc_alg[0] = 0;
 			flow[id].settings[i].elcn = 0;
-			flow[id].settings[i].icmp = 0;
+			flow[id].settings[i].lcd = 0;
 			flow[id].settings[i].mtcp = 0;
 			flow[id].settings[i].nonagle = 0;
 			flow[id].settings[i].traffic_dump = 0;
@@ -1855,8 +1855,8 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				else if (!strcmp(arg, "TCP_ELCN")) {
 					ASSIGN_COMMON_FLOW_SETTING(elcn, 1);
 				}
-				else if (!strcmp(arg, "TCP_ICMP")) {
-					ASSIGN_COMMON_FLOW_SETTING(icmp, 1);
+				else if (!strcmp(arg, "TCP_LCD")) {
+					ASSIGN_COMMON_FLOW_SETTING(lcd, 1);
 				}
 				else if (!strcmp(arg, "TCP_MTCP")) {
 					ASSIGN_COMMON_FLOW_SETTING(mtcp, 1);
@@ -2552,7 +2552,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"cc_alg", flow[id].settings[DESTINATION].cc_alg,
 
 		"elcn", flow[id].settings[DESTINATION].elcn,
-		"icmp", flow[id].settings[DESTINATION].icmp,
+		"lcd", flow[id].settings[DESTINATION].lcd,
 		"mtcp", flow[id].settings[DESTINATION].mtcp,
 		"dscp", (int)flow[id].settings[DESTINATION].dscp,
 		"ipmtudiscover", flow[id].settings[DESTINATION].ipmtudiscover,
@@ -2658,7 +2658,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"cc_alg", flow[id].settings[SOURCE].cc_alg,
 
 		"elcn", flow[id].settings[SOURCE].elcn,
-		"icmp", flow[id].settings[SOURCE].icmp,
+		"lcd", flow[id].settings[SOURCE].lcd,
 		"mtcp", flow[id].settings[SOURCE].mtcp,
 		"dscp", (int)flow[id].settings[SOURCE].dscp,
 		"ipmtudiscover", flow[id].settings[SOURCE].ipmtudiscover,
