@@ -158,6 +158,7 @@ int set_nodelay(int fd)
 }
 
 int get_mtu(int fd)
+/* returns path mtu */
 {
 #ifdef SOL_IP
 	int mtu = 0;
@@ -172,17 +173,6 @@ int get_mtu(int fd)
 	UNUSED_ARGUMENT(fd);
 	return 0;
 #endif
-}
-
-int get_mss(int fd)
-{
-	int mss = 0;
-	socklen_t mss_len = sizeof(mss);
-
-	if (getsockopt(fd, SOL_TCP, TCP_MAXSEG, &mss, &mss_len) == -1)
-		return -1;
-
-	return mss;
 }
 
 int set_keepalive(int fd, int how)

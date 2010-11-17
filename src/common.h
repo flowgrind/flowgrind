@@ -176,8 +176,7 @@ struct _report
 #ifdef __LINUX__
 	struct tcp_info tcp_info;
 #endif
-	int mss;
-	int mtu;
+	int pmtu;
 
 	int status;
 

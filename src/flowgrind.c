@@ -105,12 +105,13 @@ const struct _header_info header_info[] = {
 	{ " tret", " [#]", column_type_kernel },
 	{ " fack", " [#]", column_type_kernel },
 	{ " reor", " [#]", column_type_kernel },
+        { " back", " [#]", column_type_kernel },
 	{ " rtt", " [ms]", column_type_kernel },
 	{ " rttvar", " [ms]", column_type_kernel },
 	{ " rto", " [ms]", column_type_kernel },
 	{ " ca state", " ", column_type_kernel },
-	{ " mss", "[B]", column_type_kernel },
-	{ " mtu", "[B]", column_type_kernel },
+        { " smss", "[B] ", column_type_kernel },
+	{ " pmtu", "[B]", column_type_kernel },
 #ifdef DEBUG
 	{ " status", " ", column_type_status }
 #endif
@@ -343,7 +344,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		   double iatmin, double iatavg, double iatmax,
 		   unsigned int cwnd, unsigned int ssth, unsigned int uack, unsigned int sack, unsigned int lost, unsigned int reor,
 		   unsigned int retr, unsigned int tret, unsigned int fack, double linrtt, double linrttvar,
-		   double linrto, int ca_state, int mss, int mtu, char* status, int unit_byte)
+		   double linrto, unsigned int backoff, int ca_state, int snd_mss,  int pmtu, char* status, int unit_byte)
 {
 	int columnWidthChanged = 0;
 
@@ -460,6 +461,10 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	i++;
 
 	/* param str_linrtt */
+	createOutputColumn(headerString1, headerString2, dataString, i, backoff, &column_states[i], 0, &columnWidthChanged);
+	i++;
+
+	/* param str_linrtt */
 	createOutputColumn(headerString1, headerString2, dataString, i, linrtt, &column_states[i], 1, &columnWidthChanged);
 	i++;
 
@@ -490,10 +495,11 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
 	i++;
 
-	createOutputColumn(headerString1, headerString2, dataString, i, mss, &column_states[i], 0, &columnWidthChanged);
+	/* param str_linrtt */
+	createOutputColumn(headerString1, headerString2, dataString, i, snd_mss, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	createOutputColumn(headerString1, headerString2, dataString, i, mtu, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, pmtu, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* status */
@@ -995,12 +1001,12 @@ void print_tcp_report_line(char hash, int id,
 		(unsigned int)r->tcp_info.tcpi_sacked, (unsigned int)r->tcp_info.tcpi_lost, (unsigned int)r->tcp_info.tcpi_reordering,
 		(unsigned int)r->tcp_info.tcpi_retrans, (unsigned int)r->tcp_info.tcpi_retransmits, (unsigned int)r->tcp_info.tcpi_fackets,
 		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3,
-		(double)r->tcp_info.tcpi_rto / 1e3, r->tcp_info.tcpi_ca_state,
+		(double)r->tcp_info.tcpi_rto / 1e3, (unsigned int)r->tcp_info.tcpi_backoff,r->tcp_info.tcpi_ca_state,(unsigned int)r->tcp_info.tcpi_snd_mss,
 #else
 		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0,
 #endif
-		r->mss, r->mtu, comment_buffer, opt.mbyte
+		r->pmtu, comment_buffer, opt.mbyte
 	));
 	strncpy(report_buffer, rep_string, sizeof(report_buffer));
 	report_buffer[sizeof(report_buffer) - 1] = 0;
@@ -1039,9 +1045,6 @@ void report_final(void)
 		for (int endpoint = 0; endpoint < 2; endpoint++) {
 			header_buffer[0] = 0;
 
-			int mtu;
-			int mss;
-
 			CAT("#% 4d %s:", id, endpoint ? "D" : "S");
 
 			CAT(" %s", flow[id].endpoint_options[endpoint].server_address);
@@ -1050,17 +1053,6 @@ void report_final(void)
 			if (strcmp(flow[id].endpoint_options[endpoint].server_address, flow[id].endpoint_options[endpoint].test_address) != 0)
 				CAT("/%s", flow[id].endpoint_options[endpoint].test_address);
 
-			if (flow[id].final_report[endpoint]) {
-				mtu = flow[id].final_report[endpoint]->mtu;
-				mss = flow[id].final_report[endpoint]->mss;
-			}
-			else {
-				mtu = -1;
-				mss = -1;
-			}
-
-			CATC("MSS = %d", mss);
-			CATC("MTU = %d (%s)", mtu, guess_topology(mss, mtu));
 
 			CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
 				flow[id].endpoint_options[endpoint].send_buffer_size_real,
@@ -1069,6 +1061,10 @@ void report_final(void)
 				flow[id].settings[endpoint].requested_read_buffer_size);
 
 			if (flow[id].final_report[endpoint]) {
+				/* SMSS, Path MTU, Interface MTU */
+		                CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
+		                CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
+
 				double thruput_read, thruput_written, transactions_per_sec;
 				double report_time, report_delta_write = 0, report_delta_read = 0, duration_read, duration_write;
 
@@ -2792,9 +2788,9 @@ has_more_reports:
 				int tcpi_rtt;
 				int tcpi_rttvar;
 				int tcpi_rto;
-				int tcpi_last_data_sent;
-				int tcpi_last_ack_recv;
+				int tcpi_backoff;
 				int tcpi_ca_state;
+				int tcpi_snd_mss;
 				int bytes_read_low, bytes_read_high;
 				int bytes_written_low, bytes_written_high;
 
@@ -2804,7 +2800,7 @@ has_more_reports:
 					"{s:i,s:i,s:i,s:i,*}" /* bytes */
 					"{s:i,s:i,s:i,s:i,*}" /* blocks */
 					"{s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT */
-					"{s:i,s:i,*}" /* MSS, MTU */
+					"{s:i,*}" /* MTU */
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
@@ -2835,8 +2831,7 @@ has_more_reports:
 					"iat_max", &report.iat_max,
 					"iat_sum", &report.iat_sum,
 
-					"mss", &report.mss,
-					"mtu", &report.mtu,
+					"pmtu", &report.pmtu,
 
 					"tcpi_snd_cwnd", &tcpi_snd_cwnd,
 					"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
@@ -2852,9 +2847,9 @@ has_more_reports:
 
 					"tcpi_rttvar", &tcpi_rttvar,
 					"tcpi_rto", &tcpi_rto,
-					"tcpi_last_data_sent", &tcpi_last_data_sent,
-					"tcpi_last_ack_recv", &tcpi_last_ack_recv,
+					"tcpi_backoff", &tcpi_backoff,
 					"tcpi_ca_state", &tcpi_ca_state,
+					"tcpi_snd_mss", &tcpi_snd_mss,
 
 					"status", &report.status
 				);
@@ -2880,9 +2875,9 @@ has_more_reports:
 				report.tcp_info.tcpi_rtt = tcpi_rtt;
 				report.tcp_info.tcpi_rttvar = tcpi_rttvar;
 				report.tcp_info.tcpi_rto = tcpi_rto;
-				report.tcp_info.tcpi_last_data_sent = tcpi_last_data_sent;
-				report.tcp_info.tcpi_last_ack_recv = tcpi_last_ack_recv;
+				report.tcp_info.tcpi_backoff = tcpi_backoff;
 				report.tcp_info.tcpi_ca_state = tcpi_ca_state;
+				report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
 #endif
 				report.begin.tv_sec = begin_sec;
 				report.begin.tv_usec = begin_usec;
