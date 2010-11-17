@@ -215,15 +215,15 @@ int set_so_elcn(int fd, int val)
 	return setsockopt(fd, SOL_TCP, TCP_ELCN, &val, sizeof(val));
 }
 
-int set_so_icmp(int fd)
+int set_so_lcd(int fd)
 {
-#ifndef TCP_ICMP
-#define TCP_ICMP 21
+#ifndef TCP_LCD
+#define TCP_LCD 21
 #endif
 	int opt = 1;
-	DEBUG_MSG(LOG_WARNING, "Setting TCP_ICMP on fd %d", fd);
+	DEBUG_MSG(LOG_WARNING, "Setting TCP_LCD on fd %d", fd);
 
-	return setsockopt(fd, SOL_TCP, TCP_ICMP, &opt, sizeof(opt));
+	return setsockopt(fd, SOL_TCP, TCP_LCD, &opt, sizeof(opt));
 
 }
 
