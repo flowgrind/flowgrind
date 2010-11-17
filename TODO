@@ -10,3 +10,4 @@
 +meet more the spirit of IPPM (connectivity test, etc.)
 +Add optional columns for sender/receiver buffer
 +Add flowplotter to tarball?
++Add tcpi_total_retrans as column?
