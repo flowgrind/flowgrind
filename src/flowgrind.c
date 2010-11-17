@@ -1460,27 +1460,27 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 		else
 			arg = section + 1;
 
-                switch (endpointchar) {
-                        case 's':
-                        j = 0;
-                        k = 1;
-                        break;
+		switch (endpointchar) {
+			case 's':
+			j = 0;
+			k = 1;
+			break;
 
-                        case 'd':
-                        j = 1;
-                        k = 2;
-                        break;
+			case 'd':
+			j = 1;
+			k = 2;
+			break;
 
-                        case 'b':
-                        j = 0;
-                        k = 2;
-                        break;
+			case 'b':
+			j = 0;
+			k = 2;
+			break;
 
-                        default:
-                        fprintf(stderr, "Syntax error in traffic generation option: %c is not a endpoint.\n", endpointchar);
-                        usage_flowopt();
-                        usage_trafgenopt();
-                }
+			default:
+			fprintf(stderr, "Syntax error in traffic generation option: %c is not a endpoint.\n", endpointchar);
+			usage_flowopt();
+			usage_trafgenopt();
+		}
 
 		rc = sscanf(arg, "%c,%c,%lf,%lf,%lf", &typechar, &distchar, &param1, &param2, &unused);
 		if (rc != 3 && rc != 4) {
@@ -1586,7 +1586,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 								flow[id].settings[i].maximum_block_size = param2;
 							break;
 						case 'G':
-					        case 'g':
+						case 'g':
 							flow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
 							flow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
 							flow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
