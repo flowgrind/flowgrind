@@ -1265,7 +1265,7 @@ int set_flow_tcp_options(struct _flow *flow)
 		return -1;
 	}
 
-	if (flow->settings.icmp && set_so_icmp(flow->fd) == -1) {
+	if (flow->settings.lcd && set_so_lcd(flow->fd) == -1) {
 		flow_error(flow, "Unable to set TCP_ICMP: %s", strerror(errno));
 		return -1;
 	}

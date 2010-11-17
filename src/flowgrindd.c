@@ -412,7 +412,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"cc_alg", &cc_alg,
 
 		"elcn", &settings.elcn,
-		"icmp", &settings.icmp,
+		"lcd", &settings.lcd,
 		"mtcp", &settings.mtcp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
