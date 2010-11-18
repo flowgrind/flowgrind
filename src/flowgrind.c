@@ -105,12 +105,12 @@ const struct _header_info header_info[] = {
 	{ " tret", " [#]", column_type_kernel },
 	{ " fack", " [#]", column_type_kernel },
 	{ " reor", " [#]", column_type_kernel },
-        { " back", " [#]", column_type_kernel },
+	{ " back", " [#]", column_type_kernel },
 	{ " rtt", " [ms]", column_type_kernel },
 	{ " rttvar", " [ms]", column_type_kernel },
 	{ " rto", " [ms]", column_type_kernel },
 	{ " ca state", " ", column_type_kernel },
-        { " smss", "[B] ", column_type_kernel },
+	{ " smss", "[B] ", column_type_kernel },
 	{ " pmtu", "[B]", column_type_kernel },
 #ifdef DEBUG
 	{ " status", " ", column_type_status }
@@ -661,22 +661,22 @@ static void usage_sockopt(void)
 		}
 
 	fprintf(stderr,
-		"  -O x=TCP_CORK"
+		"  -O x=TCP_CORK\n"
 		"               set TCP_CORK on test socket\n"
-		"  -O x=TCP_NODELAY"
+		"  -O x=TCP_NODELAY\n"
 		"               disable nagle algorithmn\n"
-		"  -O x=SO_DEBUG"
+		"  -O x=SO_DEBUG\n"
 		"               set SO_DEBUG on test socket\n"
 		"  -O x=IP_MTU_DISCOVER\n"
 		"               set IP_MTU_DISCOVER on test socket if not\n"
 		"               already enabled by system default\n"
-		"  -O x=ROUTE_RECORD"
+		"  -O x=ROUTE_RECORD\n"
 		"               set ROUTE_RECORD on test socket\n\n"
 		
 		"the following non-standard socket options are supported:\n"
-		"  -O x=TCP_MTCP"
+		"  -O x=TCP_MTCP\n"
 		"               set TCP_MTCP (15) on test socket\n"
-		"  -O x=TCP_ELCN"
+		"  -O x=TCP_ELCN\n"
 		"               set TCP_ELCN (20) on test socket\n"
 		"  -O x=TCP_LCD set TCP_LCD (21) on test socket\n\n"
 
@@ -1062,8 +1062,8 @@ void report_final(void)
 
 			if (flow[id].final_report[endpoint]) {
 				/* SMSS, Path MTU, Interface MTU */
-		                CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
-		                CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
+				CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
+				CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
 
 				double thruput_read, thruput_written, transactions_per_sec;
 				double report_time, report_delta_write = 0, report_delta_read = 0, duration_read, duration_write;
