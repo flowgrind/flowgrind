@@ -24,6 +24,25 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+
+#ifdef HAVE_LIBNL
+#include <netlink/netlink.h>
+#include <netlink/socket.h>
+#include <netlink/route/addr.h>
+#include <netlink/route/link.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/family.h>
+#include <netlink/genl/ctrl.h>
+#include <netlink/msg.h>
+#include <netlink/attr.h>
+#endif
+
+#ifdef HAVE_LIBPCAP
+#include <pcap.h>
+#include "fg_pcap.h"
+#endif
 
 #include "common.h"
 #include "debug.h"
@@ -157,7 +176,7 @@ int set_nodelay(int fd)
 	return setsockopt(fd, SOL_TCP, TCP_NODELAY, &opt_on, sizeof(opt_on));
 }
 
-int get_mtu(int fd)
+int get_pmtu(int fd)
 /* returns path mtu */
 {
 #ifdef SOL_IP
@@ -173,6 +192,48 @@ int get_mtu(int fd)
 	UNUSED_ARGUMENT(fd);
 	return 0;
 #endif
+}
+
+int get_imtu(int fd)
+/* returns interface mtu */
+{
+	struct sockaddr_storage sa;
+	socklen_t sl = sizeof(sa);
+
+  	struct ifreq ifreqs[20];
+
+   	struct ifconf ifconf;
+   	int nifaces, i, found = 0;
+
+   	memset(&ifconf,0,sizeof(ifconf));
+   	ifconf.ifc_buf = (char*)(ifreqs);
+   	ifconf.ifc_len = sizeof(ifreqs);
+
+	if (getsockname(fd, (struct sockaddr *)&sa, &sl) < 0)
+		return -1;
+	
+	if (ioctl(fd, SIOCGIFCONF, &ifconf) < 0)
+		return -1;
+	
+	nifaces =  ifconf.ifc_len/sizeof(struct ifreq);
+
+	for(i = 0; i < nifaces; i++)
+   	{	
+		if (sockaddr_compare((struct sockaddr *)&ifreqs[i].ifr_addr, (struct sockaddr *)&sa)) {
+			found = 1;
+			break;
+		}
+   	}
+
+	if (ioctl(fd, SIOCGIFMTU, &ifreqs[i]) < 0)
+		return -1;
+
+	DEBUG_MSG(LOG_NOTICE, "interface %s (%s) has mtu %d",
+		  ifreqs[i].ifr_name,
+		  fg_nameinfo((struct sockaddr *)&ifreqs[i].ifr_addr, sizeof(struct sockaddr)),
+		  ifreqs[i].ifr_mtu);
+	
+	return ifreqs[i].ifr_mtu;
 }
 
 int set_keepalive(int fd, int how)
