@@ -23,14 +23,11 @@
 
 #ifdef HAVE_LIBPCAP
 
-#include "pcap.h"
+#include <pcap.h>
 
 #define PCAP_SNAPLEN 90 
 #define PCAP_FILTER "tcp"
 #define PCAP_PROMISC 0
-
-static pcap_if_t 	*alldevs;
-
 
 static char errbuf[PCAP_ERRBUF_SIZE];
 
@@ -69,6 +66,8 @@ void fg_pcap_cleanup(void* arg)
 {	
 	struct _flow * flow;
 	flow = (struct _flow *) arg;
+	if (!dumping)
+		return;
 	DEBUG_MSG(LOG_DEBUG, "fg_pcap_cleanup() called for flow %d", flow->id);
 	pthread_mutex_lock(&pcap_mutex);
 	if (flow->pcap_dumper)

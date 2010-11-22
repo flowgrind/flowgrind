@@ -104,8 +104,8 @@ fi
 AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: yes]] )])
 AS_IF([ test "x$enable_pcap" != "xno"], [
         AC_CHECK_HEADER(pcap.h,
-                AC_CHECK_LIB([pcap], pcap_open_live, [AC_DEFINE(HAVE_LIBPCAP, 1, [Define to 1 if you have the pcap library (-pcap).])],
-                AC_MSG_NOTICE([*** Could not find libpcap: will compile without optional traffic dump feature. ***]),[-pcap]),
+                AC_CHECK_LIB([pcap], pcap_open_live, [AC_DEFINE(HAVE_LIBPCAP, 1, [Define to 1 if you have the pcap library (-lpcap).])],
+                AC_MSG_NOTICE([*** Could not find libpcap: will compile without optional traffic dump feature. ***]),[-lpcap]),
                 AC_MSG_NOTICE([*** Header file pcap.h not found: will compile without optional traffic dump. ***]))
 
         if test -z "$PCAP_CONFIG"; then

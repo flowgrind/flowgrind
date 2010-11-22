@@ -595,7 +595,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"{s:i,s:i,s:i,s:i}" /* bytes */
 			"{s:i,s:i,s:i,s:i}" /* block counts */
 			"{s:d,s:d,s:d,s:d,s:d,s:d}" /* RTT, IAT */
-			"{s:i}" /* MTU */
+			"{s:i,s:i}" /* MTU */
 			"{s:i,s:i,s:i,s:i,s:i}" /* TCP info */
 			"{s:i,s:i,s:i,s:i,s:i}" /* ...      */
 			"{s:i,s:i,s:i,s:i,s:i}" /* ...      */
@@ -627,6 +627,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"iat_sum", report->iat_sum,
 
 			"pmtu", report->pmtu,
+			"imtu", report->imtu,
 #ifdef __LINUX__
 			"tcpi_snd_cwnd", (int)report->tcp_info.tcpi_snd_cwnd,
 			"tcpi_snd_ssthresh", (int)report->tcp_info.tcpi_snd_ssthresh,

@@ -86,7 +86,7 @@ struct _flow {
 	struct _report *final_report[2];
 };
 
-char *guess_topology (int mss, int mtu);
+char *guess_topology (int mtu);
 
 inline static double scale_thruput(double thruput)
 {

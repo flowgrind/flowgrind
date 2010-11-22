@@ -46,6 +46,14 @@
 #include <float.h>
 #endif
 
+#ifndef SOL_TCP
+#define SOL_TCP IPPROTO_TCP
+#endif
+
+#ifndef SOL_IP
+#define SOL_IP IPPROTO_IP
+#endif
+
 #ifdef __SOLARIS__
 #define RANDOM_MAX              4294967295UL    /* 2**32-1 */
 #elif __DARWIN__
@@ -223,7 +231,7 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 			return -1;
 		}
 		flow->connect_called = 1;
-		flow->pmtu = get_mtu(flow->fd);
+		flow->pmtu = get_pmtu(flow->fd);
 	}
 
 	/* Altough the server flow might be finished we keep the socket in
@@ -266,7 +274,7 @@ static int prepare_fds() {
 #ifdef __LINUX__
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif
-			flow->pmtu = get_mtu(flow->fd);
+			flow->pmtu = get_pmtu(flow->fd);
 
 			if (flow->settings.reporting_interval)
 				report_flow(flow, INTERVAL);
@@ -352,7 +360,7 @@ static void stop_flow(struct _request_stop_flow *request)
 #ifdef __LINUX__
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif          
-			flow->pmtu = get_mtu(flow->fd);
+			flow->pmtu = get_pmtu(flow->fd);
 
 			if (flow->settings.reporting_interval)
 				report_flow(flow, INTERVAL);
@@ -374,7 +382,7 @@ static void stop_flow(struct _request_stop_flow *request)
 #ifdef __LINUX__        
 		flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif                          
-		flow->pmtu = get_mtu(flow->fd);
+		flow->pmtu = get_pmtu(flow->fd);
 
 		if (flow->settings.reporting_interval)
 			report_flow(flow, INTERVAL);
@@ -489,10 +497,11 @@ static void report_flow(struct _flow* flow, int type)
 	if (flow->fd != -1) {
 		/* Get latest MTU */
 		int pmtu;
-		pmtu = get_mtu(flow->fd);
+		pmtu = get_pmtu(flow->fd);
 		if (pmtu != -1)
 			flow->pmtu = pmtu;
 	}
+	report->imtu = get_imtu(flow->fd);
 	report->pmtu = flow->pmtu;
 
 	/* Add status flags to report */
@@ -661,7 +670,7 @@ remove:
 #ifdef __LINUX__
 		if (flow->fd != -1) {
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
-			flow->pmtu = get_mtu(flow->fd);
+			flow->pmtu = get_pmtu(flow->fd);
 
 			report_flow(flow, TOTAL);
 		}

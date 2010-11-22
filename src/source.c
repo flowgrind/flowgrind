@@ -202,7 +202,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 		DEBUG_MSG(4, "(early) connecting test socket");
 		connect(flow->fd, flow->addr, flow->addr_len);
 		flow->connect_called = 1;
-		flow->pmtu = get_mtu(flow->fd);
+		flow->pmtu = get_pmtu(flow->fd);
 	}
 
 	request->flow_id = flow->id;

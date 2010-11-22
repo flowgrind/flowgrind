@@ -1062,8 +1062,11 @@ void report_final(void)
 
 			if (flow[id].final_report[endpoint]) {
 				/* SMSS, Path MTU, Interface MTU */
+				
 				CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
 				CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
+				CATC("Interface MTU = %d (%s)", flow[id].final_report[endpoint]->imtu, 
+						guess_topology(flow[id].final_report[endpoint]->imtu));
 
 				double thruput_read, thruput_written, transactions_per_sec;
 				double report_time, report_delta_write = 0, report_delta_read = 0, duration_read, duration_write;
@@ -1356,29 +1359,15 @@ struct _mtu_info {
 #define MTU_LIST_NUM    13
 
 
-char *guess_topology (int mss, int mtu)
+char *guess_topology (int mtu)
 {
 	int i;
 
-#ifdef IP_MTU
 	if (mtu) {
 		for (i = 0; i < MTU_LIST_NUM; i++) {
 			if (mtu == mtu_list[i].mtu) {
 				return mtu_list[i].topology;
 			}
-		}
-	}
-
-	return "unknown";
-#endif
-
-	mtu = 0;
-	for (i = 0; i < MTU_LIST_NUM; i++) {
-		/* Both, IP and TCP headers may vary in size from 20 to 60 */
-		if (((mss + 40) <= mtu_list[i].mtu)
-				&& (mtu_list[i].mtu <= (mss + 120))) {
-
-			return mtu_list[i].topology;
 		}
 	}
 
@@ -2800,7 +2789,7 @@ has_more_reports:
 					"{s:i,s:i,s:i,s:i,*}" /* bytes */
 					"{s:i,s:i,s:i,s:i,*}" /* blocks */
 					"{s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT */
-					"{s:i,*}" /* MTU */
+					"{s:i,s:i,*}" /* MTU */
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
@@ -2832,6 +2821,7 @@ has_more_reports:
 					"iat_sum", &report.iat_sum,
 
 					"pmtu", &report.pmtu,
+					"imtu", &report.imtu,
 
 					"tcpi_snd_cwnd", &tcpi_snd_cwnd,
 					"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,

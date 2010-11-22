@@ -177,7 +177,8 @@ struct _report
 	struct tcp_info tcp_info;
 #endif
 	int pmtu;
-
+	int imtu;
+	
 	int status;
 
 	struct _report* next;

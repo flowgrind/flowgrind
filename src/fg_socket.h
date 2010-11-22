@@ -30,7 +30,8 @@ int set_window_size(int, int);
 int set_window_size_directed(int, int, int);
 
 int set_ip_mtu_discover(int fd);
-int get_mtu(int fd);
+int get_pmtu(int fd);
+int get_imtu(int fd);
 
 const char *fg_nameinfo(const struct sockaddr *sa, socklen_t salen);
 char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b);
