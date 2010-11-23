@@ -925,12 +925,12 @@ void print_tcp_report_line(char hash, int id,
 		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
 		strncat(comment_buffer, (s), sizeof(comment_buffer)-1); }while(0);
 
-	if (r->response_blocks_read)
+	if (r->response_blocks_read && r->rtt_sum)
 		avg_rtt = r->rtt_sum / (double)(r->response_blocks_read);
 	else
 		min_rtt = max_rtt = avg_rtt = INFINITY;
 
-	if (r->request_blocks_read)
+	if (r->request_blocks_read && r->iat_sum)
 		avg_iat = r->iat_sum / (double)(r->request_blocks_read);
 	else
 		min_iat = max_iat = avg_iat = INFINITY;
@@ -1063,9 +1063,12 @@ void report_final(void)
 			if (flow[id].final_report[endpoint]) {
 				/* SMSS, Path MTU, Interface MTU */
 				
-				CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
-				CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
-				CATC("Interface MTU = %d (%s)", flow[id].final_report[endpoint]->imtu, 
+				if (flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0) 
+					CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
+				if (flow[id].final_report[endpoint]->pmtu > 0)
+					CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
+				if (flow[id].final_report[endpoint]->imtu > 0)
+					CATC("Interface MTU = %d (%s)", flow[id].final_report[endpoint]->imtu, 
 						guess_topology(flow[id].final_report[endpoint]->imtu));
 
 				double thruput_read, thruput_written, transactions_per_sec;
