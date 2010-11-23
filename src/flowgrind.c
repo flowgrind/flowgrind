@@ -1053,16 +1053,16 @@ void report_final(void)
                         if (flow[id].endpoint_options[endpoint].server_port != DEFAULT_LISTEN_PORT)
                                 CAT(":%d", flow[id].endpoint_options[endpoint].server_port);
 
-
-			CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
-				flow[id].endpoint_options[endpoint].send_buffer_size_real,
-				flow[id].settings[endpoint].requested_send_buffer_size,
-				flow[id].endpoint_options[endpoint].receive_buffer_size_real,
-				flow[id].settings[endpoint].requested_read_buffer_size);
-
 			if (flow[id].final_report[endpoint]) {
-				/* SMSS, Path MTU, Interface MTU */
+
+                        	CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
+                                	flow[id].endpoint_options[endpoint].send_buffer_size_real,
+                                	flow[id].settings[endpoint].requested_send_buffer_size,
+                                	flow[id].endpoint_options[endpoint].receive_buffer_size_real,
+                                	flow[id].settings[endpoint].requested_read_buffer_size);
+
 				
+				/* SMSS, Path MTU, Interface MTU */
 				if (flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0) 
 					CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
 				if (flow[id].final_report[endpoint]->pmtu > 0)
