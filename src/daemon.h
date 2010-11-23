@@ -122,8 +122,6 @@ struct _flow
 	char* error;
 };
 
-#define MAX_FLOWS       256
-
 extern struct _flow flows[MAX_FLOWS];
 extern unsigned int num_flows;
 
