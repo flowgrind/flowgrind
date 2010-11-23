@@ -1,5 +1,5 @@
-+output interface mtu
-+truncate values für interpacket gap
++truncate values for interpacket gap
++add some way of specifying normal distribution to -R
 +-h e (examples)
 +investigate -H x=localhost vs. x=127.0.0.1
 +simplify arbitrary socket options
