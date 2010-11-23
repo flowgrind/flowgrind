@@ -1047,11 +1047,11 @@ void report_final(void)
 
 			CAT("#% 4d %s:", id, endpoint ? "D" : "S");
 
-			CAT(" %s", flow[id].endpoint_options[endpoint].server_address);
-			if (flow[id].endpoint_options[endpoint].server_port != DEFAULT_LISTEN_PORT)
-				CAT(":%d", flow[id].endpoint_options[endpoint].server_port);
+			CAT(" %s", flow[id].endpoint_options[endpoint].test_address);
 			if (strcmp(flow[id].endpoint_options[endpoint].server_address, flow[id].endpoint_options[endpoint].test_address) != 0)
-				CAT("/%s", flow[id].endpoint_options[endpoint].test_address);
+				CAT("/%s", flow[id].endpoint_options[endpoint].server_address);
+                        if (flow[id].endpoint_options[endpoint].server_port != DEFAULT_LISTEN_PORT)
+                                CAT(":%d", flow[id].endpoint_options[endpoint].server_port);
 
 
 			CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
