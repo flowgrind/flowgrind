@@ -11,7 +11,6 @@
 #include <xmlrpc-c/client.h>
 
 
-#define MAX_FLOWS               256
 #define CONGESTION_LIMIT        10000
 #define DEFAULT_SELECT_TIMEOUT  10000
 
