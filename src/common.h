@@ -46,7 +46,7 @@ void error(int errcode, const char *fmt, ...);
 #define MAX_EXTRA_SOCKET_OPTIONS 10
 #define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
 
-#define MAX_FLOWS              2048 
+#define MAX_FLOWS              2048
 
 enum _extra_socket_option_level
 {
