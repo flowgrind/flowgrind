@@ -627,7 +627,6 @@ static void usage(void)
 		"               same a -G s=g,C,#'\n"
 		"  -U #         Set application buffer size (default: 8192)\n"
 		"               truncates values if used with stochastic traffic generation\n"
-		"               enforces write/read block size if used without traffic gen\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=10,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n",

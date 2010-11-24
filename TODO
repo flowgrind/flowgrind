@@ -4,6 +4,7 @@
 +investigate -H x=localhost vs. x=127.0.0.1
 +simplify arbitrary socket options
 +fix crash in conjunction with newer libxmlrpc-c
++performance optimisations
 +do something with UDP
 +xml style output
 +allow send volume to be specified (instead of duration/rate)
