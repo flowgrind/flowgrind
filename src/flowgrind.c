@@ -1049,16 +1049,16 @@ void report_final(void)
 			CAT(" %s", flow[id].endpoint_options[endpoint].test_address);
 			if (strcmp(flow[id].endpoint_options[endpoint].server_address, flow[id].endpoint_options[endpoint].test_address) != 0)
 				CAT("/%s", flow[id].endpoint_options[endpoint].server_address);
-                        if (flow[id].endpoint_options[endpoint].server_port != DEFAULT_LISTEN_PORT)
-                                CAT(":%d", flow[id].endpoint_options[endpoint].server_port);
+			if (flow[id].endpoint_options[endpoint].server_port != DEFAULT_LISTEN_PORT)
+				CAT(":%d", flow[id].endpoint_options[endpoint].server_port);
 
 			if (flow[id].final_report[endpoint]) {
 
-                        	CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
-                                	flow[id].endpoint_options[endpoint].send_buffer_size_real,
-                                	flow[id].settings[endpoint].requested_send_buffer_size,
-                                	flow[id].endpoint_options[endpoint].receive_buffer_size_real,
-                                	flow[id].settings[endpoint].requested_read_buffer_size);
+				CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
+					flow[id].endpoint_options[endpoint].send_buffer_size_real,
+					flow[id].settings[endpoint].requested_send_buffer_size,
+					flow[id].endpoint_options[endpoint].receive_buffer_size_real,
+					flow[id].settings[endpoint].requested_read_buffer_size);
 
 				
 				/* SMSS, Path MTU, Interface MTU */
