@@ -2,6 +2,7 @@
 +add some way of specifying normal distribution to -R
 +-h e (examples)
 +investigate -H x=localhost vs. x=127.0.0.1
++investigate why libpcap doesnt not work in multiple threads
 +simplify arbitrary socket options
 +fix crash in conjunction with newer libxmlrpc-c
 +performance optimisations
