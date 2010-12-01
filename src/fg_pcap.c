@@ -25,7 +25,7 @@
 
 #include <pcap.h>
 
-#define PCAP_SNAPLEN 90 
+#define PCAP_SNAPLEN 130 
 #define PCAP_FILTER "tcp"
 #define PCAP_PROMISC 0
 
