@@ -1085,7 +1085,7 @@ void report_final(void)
 				duration_read = flow[id].settings[endpoint].duration[READ] + report_delta_read;
 
 				if (flow[id].settings[endpoint].duration[WRITE])
-					CATC("flow duration %.3fs/%.3fs (real/req)",
+					CATC("flow duration = %.3fs/%.3fs (real/req)",
 						duration_write,
 						flow[id].settings[endpoint].duration[WRITE]);
 
@@ -1115,16 +1115,16 @@ void report_final(void)
 				/* transactions */
 				transactions_per_sec = flow[id].final_report[endpoint]->response_blocks_read / MAX(duration_read, duration_write);
 				if (transactions_per_sec)
-					CATC("%.2f transactions/s", transactions_per_sec);
+					CATC("transactions/s = %.2f", transactions_per_sec);
 
 				/* blocks */
 				if (flow[id].final_report[endpoint]->request_blocks_written || flow[id].final_report[endpoint]->request_blocks_read)
-					CATC("%u/%u request blocks (out/in)",
+					CATC("request blocks = %u/%u (out/in)",
 					flow[id].final_report[endpoint]->request_blocks_written,
 					flow[id].final_report[endpoint]->request_blocks_read);
 
 				if (flow[id].final_report[endpoint]->response_blocks_written || flow[id].final_report[endpoint]->response_blocks_read)
-					CATC("%u/%u response blocks (out/in)",
+					CATC("response blocks = %u/%u (out/in)",
 					flow[id].final_report[endpoint]->response_blocks_written,
 					flow[id].final_report[endpoint]->response_blocks_read);
 
@@ -1134,7 +1134,7 @@ void report_final(void)
 					double max_rtt = flow[id].final_report[endpoint]->rtt_max;
 					double avg_rtt;
 					avg_rtt = flow[id].final_report[endpoint]->rtt_sum / (double)(flow[id].final_report[endpoint]->response_blocks_read);
-					CATC("%.3f/%.3f/%.3f RTT (min/avg/max)", min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
+					CATC("RTT = %.3f/%.3f/%.3f (min/avg/max)", min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
 				}
 
 				/* iat */
@@ -1143,7 +1143,7 @@ void report_final(void)
 					double max_iat = flow[id].final_report[endpoint]->iat_max;
 					double avg_iat; 
 					avg_iat = flow[id].final_report[endpoint]->iat_sum / (double)(flow[id].final_report[endpoint]->request_blocks_read);
-					CATC("%.3f/%.3f/%.3f IAT (min/avg/max)", min_iat*1e3, avg_iat*1e3, max_iat*1e3);
+					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)", min_iat*1e3, avg_iat*1e3, max_iat*1e3);
 				}
 
 				free(flow[id].final_report[endpoint]); 
@@ -1354,6 +1354,7 @@ struct _mtu_info {
 	{ 4352,         "FDDI" },                       /* RFC1390 */
 	{ 1500,         "Ethernet/PPP" },               /* RFC894, RFC1548 */
 	{ 1492,         "PPPoE" },                      /* RFC2516 */
+	{ 1472,		"IP-in-IP" },			/* RFC1853 */
 	{ 1006,         "SLIP" },                       /* RFC1055 */
 	{ 576,          "X.25 & ISDN" },                /* RFC1356 */
 	{ 296,          "PPP (low delay)" },
