@@ -1,9 +1,10 @@
-Release 0.5.1 (2010-11-X)
+Release 0.5.5 (2010-12-5)
 - revised docu (help, manpage etc)
 - add transac column, disable blockcount by default
 - reworked timing for throughput calculation
 - reworked final report line
-- dropped complete interval report line
+- minor output improvements
+- dropped useless complete interval report line
 
 Release 0.5 (2010-11-15)
 - removed obsolete fasttime and TSCI2 support
