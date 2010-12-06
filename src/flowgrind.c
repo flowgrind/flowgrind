@@ -606,7 +606,7 @@ static void usage(void)
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
 		"               An endpoint that isn't specified is assumed to be 127.0.0.1\n"
-		"  -L x         Call connect() on test socket immediately before starting to send\n"
+		"  -L           Call connect() on test socket immediately before starting to send\n"
 		"               data (late connect). If not specified the test connection is\n"
 		"               established in the preparation phase before the test starts\n"
 #ifdef HAVE_LIBPCAP
@@ -1113,7 +1113,10 @@ void report_final(void)
 					CATC("through = %.6f/%.6fMbit/s (out/in)", thruput_written, thruput_read);
 
 				/* transactions */
+
 				transactions_per_sec = flow[id].final_report[endpoint]->response_blocks_read / MAX(duration_read, duration_write);
+				if (isnan(transactions_per_sec))
+					transactions_per_sec = 0.0;
 				if (transactions_per_sec)
 					CATC("transactions/s = %.2f", transactions_per_sec);
 
