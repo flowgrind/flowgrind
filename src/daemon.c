@@ -224,8 +224,8 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 		DEBUG_MSG(LOG_ERR, "late connecting test socket "
 				"for flow %d after %.3fs delay",
 				flow->id, flow->settings.delay[WRITE]);
-		rc = connect(flow->fd, flow->addr,
-				flow->addr_len);
+		 rc = connect(flow->fd, flow->addr,
+				flow->addr_len); 
 		if (rc == -1 && errno != EINPROGRESS) {
 			flow_error(flow, "Connect failed: %s", strerror(errno));
 			return -1;
@@ -989,13 +989,11 @@ static int read_data(struct _flow *flow)
 
 	for (;;) {
 		/* make sure to read block header for new block */
-		if (flow->current_block_bytes_read < MIN_BLOCK_SIZE)
+		if (flow->current_block_bytes_read < MIN_BLOCK_SIZE) {
 			rc = try_read_n_bytes(flow,MIN_BLOCK_SIZE-flow->current_block_bytes_read);
-			if (rc == -1)
-				break;
 			if (flow->current_block_bytes_read < MIN_BLOCK_SIZE)
-				continue;
-
+				break;
+		}
 		/* parse data and update status */
 
 		/* parse and check current block size for validity */
@@ -1025,9 +1023,7 @@ static int read_data(struct _flow *flow)
 #endif
 		/* read rest of block, if we have more to read */
 		if (flow->current_block_bytes_read < flow->current_read_block_size)
-			if (try_read_n_bytes(flow,flow->current_read_block_size -
-				      flow->current_block_bytes_read) == -1)
-				break;
+			rc += try_read_n_bytes(flow,flow->current_read_block_size - flow->current_block_bytes_read);
 
 		if (flow->current_block_bytes_read >= flow->current_read_block_size ) {
 #ifdef DEBUG
@@ -1058,7 +1054,7 @@ static int read_data(struct _flow *flow)
 		if (!flow->settings.pushy)
 			break;
 	}
-	return 0;
+	return rc;
 }
 
 static void process_rtt(struct _flow* flow)
