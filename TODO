@@ -5,6 +5,7 @@
 +investigate why libpcap doesnt not work in multiple threads
 +simplify arbitrary socket options
 +fix crash in conjunction with newer libxmlrpc-c
++IPv6
 +performance optimisations
 +do something with UDP
 +xml style output
