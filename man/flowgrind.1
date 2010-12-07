@@ -72,7 +72,7 @@ Use log filename NAME instead. If not specified the current time is used for the
 
 .TP 
 .BR \-m
-Report throughput in 2**20 bytes/second (default: 10**6 bit/sec).
+Report throughput in 2**20 bytes/second (MiB/s) (default: 10**6 bit/sec (Mbit/s)).
 
 .TP 
 .BR \-n " #"
@@ -84,7 +84,7 @@ Overwrite existing log files (default: don't).
 
 .TP 
 .BR \-p
-don't print symbolic values (like INT_MAX) instead of numbers (default off) 
+don't print symbolic values (like INT_MAX) instead of numbers (default: off) 
 
 .TP 
 .BR \-q
@@ -108,7 +108,7 @@ Example: \-T s=5,d=10
 
 .TP
 .BR \-A " x"
-activate minimal request and response size for RTT calculation. (same as -G p=C,16)
+activate minimal request and response size for RTT calculation. (same as -G p=C,24)
 
 .TP 
 .BR \-B " x=#"
@@ -136,13 +136,12 @@ Numbering starts with 0, so \-F 1 refers to the second flow.
 All flow options before the first \-F apply to all flows.
 
 .TP 
-.B "-G [q|p|g]=[C|P|W|U],#1,(#2):<multiple times>"
+.B "-G x=[q|p|g],[C|E|P|N|U],#1,(#2)"
 Activate stochastic traffic generation and set parameters according to the used distribution.
 
 .TP 
-.BR \-H " x=HOST[/RPCADDRESS[:PORT][/REPLYADDRESS]]"
+.BR \-H " x=HOST[/RPCADDRESS[:PORT]]"
 Test from/to HOST. Optional argument is the address and port of the RPC server.
-Third address is for the reply connection.
 An endpoint that isn't specified is assumed to be 127.0.0.1.
 
 .TP 
@@ -185,7 +184,7 @@ p = periodic (default), P = Poisson distributed.
 
 .TP 
 .BR \-T " x=#.#"
-Set flow duration, in seconds (default: s=5,d=0).
+Set flow duration, in seconds (default: s=10,d=0).
 
 .TP 
 .BR \-U #
@@ -206,7 +205,7 @@ Set initial delay before the host starts to send data.
 
 .SS Traffic Generation Options
 
-.BR "-G x=[q|p|g],[C|U|P|W],#1,(#2)"
+.BR "-G x=[q|p|g],[C|U|E|N|L|P|W],#1,(#2)"
 
 Activate stochastic traffic generation and set parameters
 for the chosen distribution.
@@ -230,6 +229,9 @@ constant (param 1: value, param 2: not used)
 .BR U
 uniform (param 1: min, param 2: max)
 
+.BR E
+exponential (param 1: lamba - lifetime, param 2: not used)
+
 .BR N
 normal (param 1: mu \- mean value, param 2: sigma_square \- variance)
 
@@ -247,7 +249,7 @@ with libgsl support.
 
 .BR \-U " #" 
 specify a cap for the calculated values for request and
-response sizes, needed because normal and weibull distributed values are 
+response sizes, needed because the advanced distributed values are 
 unbounded, but we need to know the buffersize (it's not needed for 
 constant values or uniform distribution). Values outside the bounds are 
 recalculated until a valid result occurs but at most 10 times (then 
@@ -257,11 +259,11 @@ the bound value is used).
 
 .TP
 .B flowgrind
-default settings, same as ./flowgrind -H b=127.0.0.1 -T s=10,d=0
+default settings, same as flowgrind -H b=127.0.0.1 -T s=10,d=0
 
 .TP 
 .B flowgrind \-H s=host1,d=host2
-Start bulk TCP transfer with host1 as source and host2 as destination endpoint. Both endpoints need to be running the flowgrind daemon. The default flow options are used, with a flow of 5 seconds duration with data sent from the source to the destination endpoint.
+Start bulk TCP transfer with host1 as source and host2 as destination endpoint. Both endpoints need to be running the flowgrind daemon. The default flow options are used, with a flow of 10 seconds duration with data sent from the source to the destination endpoint.
 
 .TP 
 .B flowgrind \-H s=host1,d=host2 \-T s=0,d=10
@@ -273,7 +275,7 @@ Setup two flows, first flow between 192.168.0.1 and 192.168.0.69, second flow be
 
 .TP
 .B flowgrind \-p \-H s=10.0.0.100/192.168.1.100,d=10.0.0.101/192.168.1.101 \-A s
-Setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP addresses for configuration. Activate minimal response for RTT calculation and show symbolic values.
+Setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP addresses for configuration. Activate minimal response for RTT calculation and show numerical values.
 
 .TP
 .B "flowgrind -G s=q,C,400 -G s=p,N,2000,50 -G s=g,U,0.005,0.01 -U 32000"
@@ -306,7 +308,7 @@ The transmitting goodput of the flow endpoint during this measurement interval, 
 
 .TP
 .B transac
-The number of successfully received response blocks per second (network transactions/s).
+The number of successfully received response blocks per second (we call it network transactions/s).
 
 .TP
 .B requ/resp
@@ -389,8 +391,8 @@ is entered if the RTO expires. Again the size of the congestion window got lower
 .RE
 
 .TP 
-.BR mss " and " mtu
-Maximum segment size and maximum transmission unit in bytes.
+.BR smss " and " pmtu
+Sender maximum segment size and path maximum transmission unit in bytes.
 
 .SS Internal flowgrind state (only enabled in debug builds)
 .TP 

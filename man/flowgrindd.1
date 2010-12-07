@@ -3,7 +3,7 @@
 flowgrindd \- network performance measurement tool daemon
 .SH "SYNOPSIS"
 flowgrindd
-.B \-h|\-v|\-d
+.B \-h|\-v|\-d|\-w DIR/
 .br 
 flowgrindd [options]
 
@@ -31,6 +31,10 @@ Port the XML\-RPC server should listen on.
 .TP 
 .B \-v
 Show version and exit.
+
+.TP
+.B \-w " DIR/"
+Specify target directory for dump files. compiling flowgrind with libpcap support is required. Remember, dumps are save on the machine where the deamon runs and not local.
 
 .TP 
 .B \-d
