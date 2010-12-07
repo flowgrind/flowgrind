@@ -1,8 +1,7 @@
 +truncate values for interpacket gap
 +add some way of specifying normal distribution to -R
-+-h e (examples)
 +investigate -H x=localhost vs. x=127.0.0.1
-+investigate why libpcap doesnt not work in multiple threads
++investigate why libpcap does not work in multiple threads
 +simplify arbitrary socket options
 +fix crash in conjunction with newer libxmlrpc-c
 +IPv6
@@ -10,7 +9,7 @@
 +performance optimisations
 +do something with UDP
 +xml style output
-+allow send volume to be specified (instead of duration/rate)
++allow send volume to be specified (instead of duration)
 +meet more the spirit of IPPM (connectivity test, etc.)
 +Add optional columns for sender/receiver buffer
 +Add flowplotter to tarball?

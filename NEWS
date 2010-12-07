@@ -1,3 +1,9 @@
+Release 0.5.6 (2010-12-X)
+- more updates to manpage and -h
+- fix rare bug with leads to receiver limitation in conjunction with 
+  muliple differently scheduled flows
+- fix pmtu/imtu/smss sometimes diplaying -1
+
 Release 0.5.5 (2010-12-5)
 - revised docu (help, manpage etc)
 - add transac column, disable blockcount by default
