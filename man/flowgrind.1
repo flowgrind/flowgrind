@@ -34,8 +34,8 @@ option.
 Show help and exit.
 
 .TP
-.B \-h [s|g|f]
-show additional help for socket options, traffic generation or flow options.
+.B \-h [s|g]
+show additinal help for socket options and traffic generation. 
 
 .TP 
 .B \-v
@@ -146,19 +146,23 @@ Third address is for the reply connection.
 An endpoint that isn't specified is assumed to be 127.0.0.1.
 
 .TP 
-.BR \-L " x"
+.BR \-L
 Call connect() on test socket immediately before starting to send data (late connect).
 If not specified the test connection is established in the preparation phase before the test starts.
 
 .TP 
-.BR \-N " x"
+.BR \-N
 Call shutdown() after test flow is scheduled to end.
+
+.TP
+.BR \-M " x"
+dump traffic using libpcap.
 
 .TP 
 .BR \-O " x=OPT"
 Set specific socket options on test socket.
 For a list of supported socket options see
-.B \-s
+.B \-h s
 option.
 
 .TP 
@@ -186,6 +190,11 @@ Set flow duration, in seconds (default: s=5,d=0).
 .TP 
 .BR \-U #
 Set application buffer size (default: 8192).
+truncates values if used with stochastic traffic generation.
+
+.TP
+.BR \-S " x=#"
+Set block size, same as -G s=q,C,#.
 
 .TP 
 .BR \-W " x=#"
@@ -197,20 +206,20 @@ Set initial delay before the host starts to send data.
 
 .SS Traffic Generation Options
 
-.BR "-G [q|p|g]=[C|U|P|W],#1,(#2):<multiple times> -U #"
+.BR "-G x=[q|p|g],[C|U|P|W],#1,(#2)"
 
 Activate stochastic traffic generation and set parameters
 for the chosen distribution.
 
 use distribution for the following flow parameter:
 
-.BR q=
+.BR q
 request size (in bytes)
 
-.BR p=
+.BR p
 response size (in bytes)
 
-.BR g=
+.BR g
 request interpacket gap (in s)
                
 possible distributions:
@@ -267,12 +276,12 @@ Setup two flows, first flow between 192.168.0.1 and 192.168.0.69, second flow be
 Setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP addresses for configuration. Activate minimal response for RTT calculation and show symbolic values.
 
 .TP
-.B "flowgrind -G q=C,400:p=N,2000,50:g=U,0.005,0.01 -U 32000"
-.B "q=C,400"
+.B "flowgrind -G s=q,C,400 -G s=p,N,2000,50 -G s=g,U,0.005,0.01 -U 32000"
+.B "q,C,400"
 use constant request size of 400 bytes
-.B "p=N,2000,50"
+.B "p,N,2000,50"
 use normal distributed response size with mean 2000 bytes and variance 50
-.B "g=U,0.005,0.01"
+.B "g,U,0.005,0.01"
 use uniform distributed interpacket gap with min 0.005s and and max 10ms
 .B "-U 32000"
 truncate block sizes at 32 kbytes (needed for normal distribution)
@@ -280,7 +289,7 @@ truncate block sizes at 32 kbytes (needed for normal distribution)
 .SH "OUTPUT COLUMNS"
 .TP 
 .B #
-The endpoint, either S for source or R for destination.
+The endpoint, either S for source or D for destination.
 
 .TP 
 .B ID
@@ -301,7 +310,7 @@ The number of successfully received response blocks per second (network transact
 
 .TP
 .B requ/resp
-The number of request and response block sent during this measurement interval.
+The number of request and response block sent during this measurement interval (column disabled by default)
 
 .TP 
 .BR IAT " and " RTT
@@ -347,6 +356,10 @@ TCP round\-trip time and its variance given in ms.
 .TP
 .B rto (tcpi_rto)
 The retransmission timeout given in ms.
+
+.TP
+.B bkof (tcpi_backoff)
+Number of backoffs.
 
 .TP
 .B ca state (tcpi_ca_state)
