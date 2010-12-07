@@ -6,6 +6,7 @@
 +simplify arbitrary socket options
 +fix crash in conjunction with newer libxmlrpc-c
 +IPv6
++update webpage
 +performance optimisations
 +do something with UDP
 +xml style output
