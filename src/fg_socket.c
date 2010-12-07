@@ -187,7 +187,9 @@ int get_pmtu(int fd)
 	if (getsockopt(fd, SOL_IP, IP_MTU, &mtu, &mtu_len) == -1)
 		return 0;
 
-	return mtu;
+	if (mtu > 0) 
+		return mtu;
+	else return 0;
 #else
 	UNUSED_ARGUMENT(fd);
 	return 0;
@@ -203,7 +205,7 @@ int get_imtu(int fd)
 	struct ifreq ifreqs[20];
 
 	struct ifconf ifconf;
-	int nifaces, i, found = 0;
+	int nifaces, i, mtu, found = 0;
 
 	memset(&ifconf,0,sizeof(ifconf));
 	ifconf.ifc_buf = (char*)(ifreqs);
@@ -233,7 +235,12 @@ int get_imtu(int fd)
 		  fg_nameinfo((struct sockaddr *)&ifreqs[i].ifr_addr, sizeof(struct sockaddr)),
 		  ifreqs[i].ifr_mtu);
 	
-	return ifreqs[i].ifr_mtu;
+	mtu = ifreqs[i].ifr_mtu;
+
+	if (mtu > 0) 
+		return mtu;
+	else 
+		return 0;
 }
 
 int set_keepalive(int fd, int how)
