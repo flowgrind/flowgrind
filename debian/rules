@@ -1,7 +1,8 @@
 #!/usr/bin/make -f
 
 # Using CDBS for packaging
-DEB_DESTDIR = $(CURDIR)/debian/flowgrind
 
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
+
+DEB_DESTDIR = $(CURDIR)/debian/flowgrind
