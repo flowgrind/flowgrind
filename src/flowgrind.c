@@ -738,6 +738,8 @@ static void usage_trafgenopt(void)
 		"\n"
 		"Reminder: \n"
 		"\n"
+		"- The man page contains more explained examples.\n"
+		"\n"
 		"- Using Bidirectional Traffic Generation can lead to unexpected results.\n"
 		"\n"
 		"- Usage of -G in conjunction with -A, -R, -V is not recommended, as\n"

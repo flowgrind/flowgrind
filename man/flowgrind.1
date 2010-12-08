@@ -270,7 +270,7 @@ Start bulk TCP transfer with host1 as source and host2 as destination endpoint. 
 Same as the above but instead with a flow sending data for 10 seconds from the destination to the source endpoint.
 
 .TP 
-.B flowgrind \-n 2 \-H s=192.168.0.1,d=192.168.0.69 \-F 1 \-H s=10.0.0.1,d=10.0.0.2
+.B flowgrind \-n 2 \-F 0 \-H s=192.168.0.1,d=192.168.0.69 \-F 1 \-H s=10.0.0.1,d=10.0.0.2
 Setup two flows, first flow between 192.168.0.1 and 192.168.0.69, second flow between 10.0.0.1 to 10.0.0.2
 
 .TP
@@ -287,6 +287,59 @@ use normal distributed response size with mean 2000 bytes and variance 50
 use uniform distributed interpacket gap with min 0.005s and and max 10ms
 .B "-U 32000"
 truncate block sizes at 32 kbytes (needed for normal distribution)
+
+.SH "Traffic Generation Scenarios"
+The following examples demonstrate how Traffic Generation can be used. These have been incorporated in different tests for flowgrind and have been proven meaningful.
+But as Internet Traffic is diverse, there is no guarantee that these are approicated in every situation.
+
+.TP
+.B Request Response Style (HTTP)
+.TP
+This scenario is based on the work in http://www.3gpp2.org/Public_html/specs/C.R1002-0_v1.0_041221.pdf
+.TP
+.B "flowgrind -r 42 -M s -G s=q,C,350 -G s=p,L,9055,115.17 -U 100000"
+.TP
+.B "-r 42"
+Use random seed 42 to make measurements reproduceable
+.TP
+.B "-M s"
+Dump traffic on sender side
+.TP
+.B "-G s=q,C,350"
+Use constant requests size 350 bytes..TP
+.B "-G s=p,L,9055,115"
+Use lognormal distribution with mean 9055 and variance 115 for response size
+.TP
+.B "-U 100000"
+Truncate response at 100 kbytes
+.TP
+For this scenario we recommened to focus on RTT (lower values are better) and Network Transactions/s as metric (higher values are btter).
+
+.TP
+.B Interactive Session (Telnet)
+.TP
+This scenario emulates a telnet session.
+.TP
+.B flowgrind -G s=q,U,40,10000 -G s=q,U,40,10000 -O b=TCP_NODELAY
+.TP
+.B "-G s=q,U,40,10000 -G s=q,U,40,10000"
+Use Uniform distributed request and response size between 40 bytes and 10 kilobytes
+.TP
+.B "-O b=TCP_NODELAY"
+Set socket options TCP_NODELAY as used by telnet applications.
+.TP
+For this scenario RTT (lower is better) and Network Transactions/s are useful metrics (higher is better).
+
+.TP
+.B Rate Limited (Streaming Media)
+.TP
+This scenario emulates a video stream transfer with a bitrate of 800 kbit/s.
+.TP
+.B "flowgrind -G s=q,C,800 -G s=g,N,0.008,0.01"
+.TP
+Use normal distributed interpacket gap with mean 0.008 and a small variance (0.001). In conjuction with request size 800 bytes a average bitrate of approx 800 kbit/s is achieved. The variance is added to emulate a variable bitrate like it's used in todays video codecs. 
+.TP
+For this scenario the IAT (lower is better) and minimal throughput (higher is better) are interesting metrics.
 
 .SH "OUTPUT COLUMNS"
 .TP 
