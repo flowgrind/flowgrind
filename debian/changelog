@@ -1,3 +1,25 @@
+flowgrind (0.5.5.1) unstable; urgency=low
+
+  Release 0.5.5.1 (2010-12-8):
+  * more updates to manpage and -h.
+  * fix rare bug which leads to receiver limitation in conjunction with 
+    multiple differently scheduled flows
+  * fix pmtu/imtu/smss sometimes diplay -1
+
+ -- Arnd Hannemann <arnd@arndnet.de>  Thu, 09 Dec 2010 10:31:33 -0500
+
+flowgrind (0.5.5) unstable; urgency=low
+
+  Release 0.5.5 (2010-12-5):
+  * revised docu (help, manpage etc).
+  * add transac column, disable blockcount by default.
+  * reworked timing for throughput calculation.
+  * reworked final report line.
+  * minor output improvements.
+  * dropped useless complete interval report line.
+
+ -- Arnd Hannemann <arnd@arndnet.de>  Thu, 09 Dec 2010 10:31:33 -0500
+
 flowgrind (0.5) unstable; urgency=low
 
   * Bump version.

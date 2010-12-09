@@ -3,13 +3,15 @@ Section: net
 Priority: extra
 Maintainer: Christian Samsel <christian.samsel@rwth-aachen.de>
 Build-Depends: debhelper (>= 7), cdbs, autotools-dev, libxmlrpc-c3-dev, libcurl4-dev, libcurl4-gnutls-dev, libgsl0-dev, libpcap-dev 
-Standards-Version: 3.8.0
+Standards-Version: 3.8.3
 Homepage: http://umic-mesh.net/research/flowgrind/
 
 Package: flowgrind
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Distributed network performance measurement tool
+ Flowgrind is a tool similar to iperf, netperf to measure
+ throughput and other metrics for TCP.
  Using the flowgrind controller, flows between any two machines
  running the flowgrindd daemon can be created.
 
@@ -19,11 +21,3 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Debugging version of flowgrind
  This package contains debugging symbols for flowgrind, a
  distributed network performance measurement tool.
-
-Package: flowgrind-doc
-Architecture: all
-Section: doc
-Description: Documentation for flowgrind
- Documentation for the flowgrind distributed network performance
- measurment tool. Using the flowgrind controller, flows between any
- two machines running the flowgrindd daemon can be created.
