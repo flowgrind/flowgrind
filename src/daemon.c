@@ -442,9 +442,9 @@ static void process_requests()
 		}
 		if (rc != 1)
 			pthread_cond_signal(request->condition);
-	};
+	}
 
-	pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&mutex); 
 	DEBUG_MSG(LOG_DEBUG, "process_requests unlocked mutex");
 }
 
@@ -496,13 +496,13 @@ static void report_flow(struct _flow* flow, int type)
 #endif
 	if (flow->fd != -1) {
 		/* Get latest MTU */
-		int pmtu;
-		pmtu = get_pmtu(flow->fd);
-		if (pmtu != -1)
-			flow->pmtu = pmtu;
+		flow->pmtu = get_pmtu(flow->fd);
+		report->pmtu = flow->pmtu;
+		if (type == TOTAL)
+			report->imtu = get_imtu(flow->fd);
+		else
+			report->imtu = 0;
 	}
-	report->imtu = get_imtu(flow->fd);
-	report->pmtu = flow->pmtu;
 
 	/* Add status flags to report */
 	report->status = 0;
