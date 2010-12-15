@@ -503,7 +503,10 @@ static void report_flow(struct _flow* flow, int type)
 		else
 			report->imtu = 0;
 	}
-
+	else {
+	report->imtu = 0;
+	report->pmtu = 0;
+	}
 	/* Add status flags to report */
 	report->status = 0;
 
