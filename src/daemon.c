@@ -224,8 +224,8 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 		DEBUG_MSG(LOG_ERR, "late connecting test socket "
 				"for flow %d after %.3fs delay",
 				flow->id, flow->settings.delay[WRITE]);
-		 rc = connect(flow->fd, flow->addr,
-				flow->addr_len); 
+		rc = connect(flow->fd, flow->addr,
+				flow->addr_len);
 		if (rc == -1 && errno != EINPROGRESS) {
 			flow_error(flow, "Connect failed: %s", strerror(errno));
 			return -1;
@@ -359,7 +359,7 @@ static void stop_flow(struct _request_stop_flow *request)
 
 #ifdef __LINUX__
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
-#endif          
+#endif
 			flow->pmtu = get_pmtu(flow->fd);
 
 			if (flow->settings.reporting_interval)
@@ -379,9 +379,9 @@ static void stop_flow(struct _request_stop_flow *request)
 		if (flow->id != request->flow_id)
 			continue;
 
-#ifdef __LINUX__        
+#ifdef __LINUX__
 		flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
-#endif                          
+#endif
 		flow->pmtu = get_pmtu(flow->fd);
 
 		if (flow->settings.reporting_interval)
@@ -444,7 +444,7 @@ static void process_requests()
 			pthread_cond_signal(request->condition);
 	}
 
-	pthread_mutex_unlock(&mutex); 
+	pthread_mutex_unlock(&mutex);
 	DEBUG_MSG(LOG_DEBUG, "process_requests unlocked mutex");
 }
 
@@ -492,7 +492,6 @@ static void report_flow(struct _flow* flow, int type)
 	report->tcp_info = flow->statistics[type].tcp_info;
 #else
 	memset(&report->tcp_info, 0, sizeof(struct tcp_info));
-	
 #endif
 	if (flow->fd != -1) {
 		/* Get latest MTU */
@@ -596,7 +595,7 @@ static void timer_check()
 	tsc_gettimeofday(&now);
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
-		
+
 		DEBUG_MSG(LOG_DEBUG, "processing timer_check() for flow %d", flow->id);
 
 		if (!flow->settings.reporting_interval)
@@ -625,7 +624,7 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 {
 	unsigned int i = 0;
 	while (i < num_flows) {
-		
+
 		struct _flow *flow = &flows[i];
 
 		DEBUG_MSG(LOG_DEBUG, "processing select() for flow %d", flow->id);
@@ -661,9 +660,9 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 				}
 			}
 			if (FD_ISSET(flow->fd, wfds))
-				
 				if (write_data(flow) == -1)
 					DEBUG_MSG(LOG_ERR, "write_data() failed");
+
 			if (FD_ISSET(flow->fd, rfds))
 				if (read_data(flow) == -1)
 					DEBUG_MSG(LOG_ERR, "read_data() failed");
@@ -948,7 +947,7 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 	msg.msg_iovlen = 1;
 	msg.msg_control = cbuf;
 	msg.msg_controllen = sizeof(cbuf);
-	
+
 	rc = recvmsg(flow->fd, &msg, 0);
 
 	DEBUG_MSG(LOG_DEBUG, "tried reading %d bytes, got %d", bytes, rc);

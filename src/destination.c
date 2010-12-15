@@ -196,7 +196,7 @@ int accept_data(struct _flow *flow)
 
 #ifdef HAVE_LIBPCAP
 	fg_pcap_go(flow);
-#endif 
+#endif
 
 	real_send_buffer_size = set_window_size_directed(flow->fd, flow->settings.requested_send_buffer_size, SO_SNDBUF);
 	if (flow->requested_server_test_port &&

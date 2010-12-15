@@ -61,7 +61,7 @@ enum _column_types
 	column_type_rtt,
 	column_type_iat,
 	column_type_kernel,
-#ifdef DEBUG	
+#ifdef DEBUG
 	column_type_status,
 #endif
 	column_type_other
@@ -204,7 +204,7 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 
 	/* decimal point if necessary */
 	if (numDigitsDecimalPart)
-		lengthData++;	
+		lengthData++;
 
 	lengthHead = MAX(strlen(header->first), strlen(header->second));
 	columnSize = MAX(lengthData, lengthHead);
@@ -280,7 +280,7 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 
 int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRow,
 			   int column, char* value, struct _column_state *column_state,
-			   int *columnWidthChanged) 
+			   int *columnWidthChanged)
 {
 
 	unsigned int maxTooLongColumns = opt.num_flows * 5;
@@ -671,7 +671,7 @@ static void usage_sockopt(void)
 		"               already enabled by system default\n"
 		"  -O x=ROUTE_RECORD\n"
 		"               set ROUTE_RECORD on test socket\n\n"
-		
+
 		"the following non-standard socket options are supported:\n"
 		"  -O x=TCP_MTCP\n"
 		"               set TCP_MTCP (15) on test socket\n"
@@ -1062,14 +1062,14 @@ void report_final(void)
 					flow[id].endpoint_options[endpoint].receive_buffer_size_real,
 					flow[id].settings[endpoint].requested_read_buffer_size);
 
-				
+
 				/* SMSS, Path MTU, Interface MTU */
-				if (flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0) 
+				if (flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0)
 					CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
 				if (flow[id].final_report[endpoint]->pmtu > 0)
 					CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
 				if (flow[id].final_report[endpoint]->imtu > 0)
-					CATC("Interface MTU = %d (%s)", flow[id].final_report[endpoint]->imtu, 
+					CATC("Interface MTU = %d (%s)", flow[id].final_report[endpoint]->imtu,
 						guess_topology(flow[id].final_report[endpoint]->imtu));
 
 				double thruput_read, thruput_written, transactions_per_sec;
@@ -1146,12 +1146,12 @@ void report_final(void)
 				if (flow[id].final_report[endpoint]->request_blocks_read) {
 					double min_iat = flow[id].final_report[endpoint]->iat_min;
 					double max_iat = flow[id].final_report[endpoint]->iat_max;
-					double avg_iat; 
+					double avg_iat;
 					avg_iat = flow[id].final_report[endpoint]->iat_sum / (double)(flow[id].final_report[endpoint]->request_blocks_read);
 					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)", min_iat*1e3, avg_iat*1e3, max_iat*1e3);
 				}
 
-				free(flow[id].final_report[endpoint]); 
+				free(flow[id].final_report[endpoint]);
 
 			}
 
@@ -1214,7 +1214,7 @@ void report_final(void)
 
 		if (adt_too_much_data())
 			log_output("# Note: The Darlington test was done only on the first 1000 samples. The reason for this is that the test gives poor results for a larger sample size (as specified in literature)\n");
-	} 	
+	}
 
 }
 
@@ -1263,13 +1263,13 @@ exit_outer_loop:
 
 		if (!f->finished[endpoint]) {
 			f->finished[endpoint] = 1;
-			if (f->finished[1 - endpoint]) { 
+			if (f->finished[1 - endpoint]) {
 				active_flows--;
 				DEBUG_MSG(LOG_DEBUG, "remaining active flows: %d", active_flows);
 #ifdef DEBUG
 				assert(active_flows >= 0);
 #endif
-			} 
+			}
 		}
 		return;
 	}
@@ -1535,7 +1535,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 					usage_trafgenopt();
 				}
 				break;
-			
+
 
 			case 'C':
 			case 'c':
@@ -2012,7 +2012,7 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 
 	while ((ch = getopt(argc, argv, "b:c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:LNM:O:P:QR:S:T:U:W:Y:")) != -1)
-		
+
 		switch (ch) {
 
 		case 'b':
@@ -2692,7 +2692,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 	struct timeval lastreport_end;
 	struct timeval lastreport_begin;
 	struct timeval now;
-	
+
 	tsc_gettimeofday(&lastreport_end);
 	tsc_gettimeofday(&lastreport_begin);
 	tsc_gettimeofday(&now);
@@ -2914,15 +2914,15 @@ int main(int argc, char *argv[])
 	}
 	DEBUG_MSG(LOG_WARNING, "prepare xmlrpc client");
 	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &rpc_client);
-	
+
 	DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
 	if (!sigint_caught)
 		check_version(rpc_client);
-	
+
 	DEBUG_MSG(LOG_WARNING, "check if flowgrindds are idle");
 	if (!sigint_caught)
 		check_idle(rpc_client);
-	
+
 	DEBUG_MSG(LOG_WARNING, "prepare flows");
 	if (!sigint_caught)
 		prepare_flows(rpc_client);

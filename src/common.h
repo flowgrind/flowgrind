@@ -166,7 +166,7 @@ struct _report
 #else
 	long bytes_read;
 	long bytes_written;
-#endif 
+#endif
 	unsigned int request_blocks_read;
 	unsigned int request_blocks_written;
 	unsigned int response_blocks_read;
@@ -180,7 +180,7 @@ struct _report
 #endif
 	int pmtu;
 	int imtu;
-	
+
 	int status;
 
 	struct _report* next;
