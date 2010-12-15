@@ -182,14 +182,15 @@ int get_pmtu(int fd)
 #ifdef SOL_IP
 	int mtu = 0;
 
-	socklen_t mtu_len = sizeof(mtu);
-
-	if (getsockopt(fd, SOL_IP, IP_MTU, &mtu, &mtu_len) == -1)
+	if (fd < 0)
 		return 0;
 
-	if (mtu > 0) 
+	socklen_t mtu_len = sizeof(mtu);
+
+	if (getsockopt(fd, SOL_IP, IP_MTU, &mtu, &mtu_len) < 0)
+		return 0;
+	else
 		return mtu;
-	else return 0;
 #else
 	UNUSED_ARGUMENT(fd);
 	return 0;
