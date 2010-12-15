@@ -58,7 +58,7 @@ inline static double calculate(enum _stochastic_distributions type, double param
 		case LOGNORMAL:
 			val = dist_normal ( param_one, param_two );
 			DEBUG_MSG(LOG_DEBUG, "calculated lognormal distribution value %f for parameters %f,%f", val, param_one, param_two);
-		break;		
+		break;
 
 		case CONSTANT:
 		/* constant is default */
@@ -77,7 +77,7 @@ int next_request_block_size(struct _flow *flow)
 	int i = 0;
 	/* recalculate values to match prequisits, but at most 10 times */
 	while (( bs < MIN_BLOCK_SIZE || bs > flow->settings.maximum_block_size) && i < MAX_RUNS_PER_DISTRIBUTION) {
-		
+
 		bs = round(calculate(
 			   flow->settings.request_trafgen_options.distribution,
 			   flow->settings.request_trafgen_options.param_one,

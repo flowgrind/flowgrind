@@ -19,13 +19,13 @@
 #include "fg_time.h"
 #include "log.h"
 #include "daemon.h"
-#include "fg_pcap.h" 
+#include "fg_pcap.h"
 
 #ifdef HAVE_LIBPCAP
 
 #include <pcap.h>
 
-#define PCAP_SNAPLEN 130 
+#define PCAP_SNAPLEN 130
 #define PCAP_FILTER "tcp"
 #define PCAP_PROMISC 0
 
@@ -63,7 +63,7 @@ void fg_pcap_init()
 }
 
 void fg_pcap_cleanup(void* arg)
-{	
+{
 	struct _flow * flow;
 	flow = (struct _flow *) arg;
 	if (!dumping)
@@ -71,7 +71,7 @@ void fg_pcap_cleanup(void* arg)
 	DEBUG_MSG(LOG_DEBUG, "fg_pcap_cleanup() called for flow %d", flow->id);
 	pthread_mutex_lock(&pcap_mutex);
 	if (flow->pcap_dumper)
-		pcap_dump_close((pcap_dumper_t *)flow->pcap_dumper); 
+		pcap_dump_close((pcap_dumper_t *)flow->pcap_dumper);
 	flow->pcap_dumper = NULL;
 
 	if (flow->pcap_handle)
@@ -118,7 +118,7 @@ static void* fg_pcap_work(void* arg)
 				"capture for flow.");
 		return 0;
 	}
-	
+
 	/* find approciate (used for test) interface to dump */
 	for (d = alldevs; d; d = d->next) {
 		pcap_addr_t *a;
@@ -132,7 +132,7 @@ static void* fg_pcap_work(void* arg)
 				found = 1;
 				break;
 			}
-		}  
+		}
 		if (found)
 			break;
 	}
@@ -151,22 +151,22 @@ static void* fg_pcap_work(void* arg)
 				     PCAP_PROMISC,
 				     0, /* no read timeout */
 				     errbuf);
-				     
-	if (!flow->pcap_handle) {    
+
+	if (!flow->pcap_handle) {
 		logging_log(LOG_WARNING, "Failed to init pcap on device %s:"
 				" %s", d->name, errbuf);
-		return 0;     
-	}       
-	
-	
+		return 0;
+	}
+
+
 	if (pcap_lookupnet(d->name, &net, &mask, errbuf) < 0) {
 		logging_log(LOG_WARNING, "pcap: netmask lookup failed: %s", errbuf);
 		return 0;
-	}       
-	
+	}
+
 	/* We rely on a non-blocking dispatch loop */
 	if (pcap_setnonblock((pcap_t *)flow->pcap_handle, 1 /* non-blocking */ , errbuf) < 0) {
-		logging_log(LOG_WARNING, "pcap: failed to set non-blocking: %s", 
+		logging_log(LOG_WARNING, "pcap: failed to set non-blocking: %s",
 				 errbuf );
 		return 0;
 	}
@@ -175,39 +175,39 @@ static void* fg_pcap_work(void* arg)
 	if (pcap_compile((pcap_t *)flow->pcap_handle, &pcap_program, PCAP_FILTER, 1, mask) < 0) {
 		logging_log(LOG_WARNING, "pcap: failed compiling filter '%s': %s", PCAP_FILTER, pcap_geterr((pcap_t *)flow->pcap_handle));
 		return 0;
-	}       
-	
+	}
+
 	/* attach filter to interface */
 	if (pcap_setfilter((pcap_t *)flow->pcap_handle, &pcap_program) < 0) {
 		logging_log(LOG_WARNING, "pcap: failed to set filter: %s", pcap_geterr((pcap_t *)flow->pcap_handle));
 		return 0;
-	} 
+	}
 
 	/* generate a nice filename */
 	dump_filename[0] = '\0';
-	
+
 	/* prefix */
 	if (dump_filename_prefix_server)
 		strcat(dump_filename, dump_filename_prefix_server);
 	if (dump_filename_prefix_client)
 		strcat(dump_filename, dump_filename_prefix_client);
-		
+
 	/* timestamp */
 	tsc_gettimeofday(&now);
 	strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
 	strcat(dump_filename, buf);
-	
+
 	/* hostname */
 	hostname[0]= '\0';
 	if (!gethostname(hostname, 59)) {
 		strcat(dump_filename, "-");
 		strcat(dump_filename, hostname);
-	}       
-	
+	}
+
 	/* interface */
 	strcat(dump_filename, "-");
 	strcat(dump_filename, d->name);
-	
+
 	/* suffix */
 	strcat(dump_filename, ".pcap");
 
@@ -238,7 +238,7 @@ static void* fg_pcap_work(void* arg)
 		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets dropped by kernel for flow %d", p_stats.ps_drop, flow->id);
 		pthread_testcancel(); /* cancellation point */
 	}
-	pthread_cleanup_pop(1); 
+	pthread_cleanup_pop(1);
 
 }
 
@@ -247,7 +247,7 @@ void fg_pcap_go(struct _flow *flow)
 	int rc;
 	if (!flow->settings.traffic_dump)
 		return;
-	
+
 	if (dumping) {
 		logging_log(LOG_WARNING, "pcap: dumping already in progress on this host");
 		return;
@@ -256,7 +256,7 @@ void fg_pcap_go(struct _flow *flow)
 	DEBUG_MSG(LOG_DEBUG, "called fg_pcap_go() for flow %d", flow->id);
 	dumping = 1;
 	rc = pthread_create(&flow->pcap_thread, NULL, fg_pcap_work, (void*) flow);
-	
+
 	if (rc) {
 		logging_log(LOG_WARNING, "Could not start pcap thread: %s", strerror(errno) );
 	}
