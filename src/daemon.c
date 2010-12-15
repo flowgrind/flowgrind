@@ -141,6 +141,10 @@ static inline int flow_block_scheduled(struct timeval *now, struct _flow *flow)
 void uninit_flow(struct _flow *flow)
 {
 	DEBUG_MSG(LOG_DEBUG,"uninit_flow() called for flow %d",flow->id);
+        if (flow->fd != -1)
+                close(flow->fd);
+        if (flow->listenfd_data != -1)
+                close(flow->listenfd_data);
 #ifdef HAVE_LIBPCAP
 	int rc;
 	if (flow->settings.traffic_dump && flow->pcap_thread) {
@@ -150,11 +154,6 @@ void uninit_flow(struct _flow *flow)
 	}
 	fg_pcap_cleanup(flow);
 #endif
-
-	if (flow->fd != -1)
-		close(flow->fd);
-	if (flow->listenfd_data != -1)
-		close(flow->listenfd_data);
 	free(flow->read_block);
 	free(flow->write_block);
 	free(flow->addr);
@@ -661,11 +660,11 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 			}
 			if (FD_ISSET(flow->fd, wfds))
 				if (write_data(flow) == -1)
-					DEBUG_MSG(LOG_ERR, "write_data() failed");
+					goto remove;
 
 			if (FD_ISSET(flow->fd, rfds))
 				if (read_data(flow) == -1)
-					DEBUG_MSG(LOG_ERR, "read_data() failed");
+					goto remove;
 		}
 		i++;
 		continue;

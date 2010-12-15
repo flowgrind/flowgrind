@@ -227,9 +227,6 @@ static void* fg_pcap_work(void* arg)
 				"dumping stopped for flow %d.", flow->id);
 			pthread_exit(0); /*cleanup automatically called */
 		}
-		/* if we did only received a few packets, we wait some time */
-		if (rc < 20)
-			usleep( 50000 );
 #ifdef DEBUG
 		pcap_stats((pcap_t *)flow->pcap_handle, &p_stats);
 #endif
