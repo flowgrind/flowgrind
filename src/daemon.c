@@ -141,18 +141,18 @@ static inline int flow_block_scheduled(struct timeval *now, struct _flow *flow)
 void uninit_flow(struct _flow *flow)
 {
 	DEBUG_MSG(LOG_DEBUG,"uninit_flow() called for flow %d",flow->id);
-        if (flow->fd != -1)
-                close(flow->fd);
-        if (flow->listenfd_data != -1)
-                close(flow->listenfd_data);
+	if (flow->fd != -1)
+		close(flow->fd);
+	if (flow->listenfd_data != -1)
+		close(flow->listenfd_data);
 #ifdef HAVE_LIBPCAP
 	int rc;
 	if (flow->settings.traffic_dump && flow->pcap_thread) {
 		rc = pthread_cancel(flow->pcap_thread);
 		if (rc)
 			logging_log(LOG_WARNING, "failed to cancel dump thread: %s", strerror(errno));
+		fg_pcap_cleanup(flow);
 	}
-	fg_pcap_cleanup(flow);
 #endif
 	free(flow->read_block);
 	free(flow->write_block);
