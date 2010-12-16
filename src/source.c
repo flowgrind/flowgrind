@@ -198,7 +198,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 #endif
 #ifdef HAVE_LIBPCAP
-        fg_pcap_go(flow);
+	fg_pcap_go(flow);
 #endif
 	if (!flow->source_settings.late_connect) {
 		DEBUG_MSG(4, "(early) connecting test socket");

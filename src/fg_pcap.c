@@ -219,7 +219,7 @@ static void* fg_pcap_work(void* arg)
 		logging_log(LOG_WARNING, "pcap: failed to open dump file writing: %s", pcap_geterr((pcap_t *)flow->pcap_handle));
 		goto remove;
 	}
-	
+
 	/* barrier: dump is ready */
 	pthread_barrier_wait(&pcap_barrier);
 	for (;;) {

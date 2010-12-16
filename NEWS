@@ -1,5 +1,6 @@
 Release 0.6 (2011-X-X)
 - fix wierd behavior if no connection could be established
+- ensure dump starts before test connection to catch the initial syn
 
 Release 0.5.5.2 (2010-12-10)
 - dont slow down sender by only calling get_imtu for final report
