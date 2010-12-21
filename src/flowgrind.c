@@ -1153,8 +1153,9 @@ void report_final(void)
 
 				free(flow[id].final_report[endpoint]);
 
+			} else {
+				CATC("ERR: no final report received");
 			}
-
 			if (flow[id].endpoint_options[endpoint].rate_str)
 				CATC("rate = %s", flow[id].endpoint_options[endpoint].rate_str);
 			if (flow[id].settings[endpoint].elcn)
