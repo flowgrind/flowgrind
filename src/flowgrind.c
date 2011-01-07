@@ -490,7 +490,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else if (ca_state)
 		sprintf(tmp, "unknown!(%d)", ca_state);
 	else
-		strcpy(tmp, "none");
+		strcpy(tmp, "err");
 
 	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
 	i++;
