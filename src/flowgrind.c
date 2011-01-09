@@ -530,7 +530,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 static void usage(void)
 {
 	fprintf(stderr,
-		"Usage  %2$s [-h|-s|-v]\n"
+		"Usage  %2$s [-h|-v]\n"
 		"       %2$s [general options] [flow options]\n\n"
 
 		"flowgrind allows you to generate traffic among hosts in your network.\n\n"
@@ -649,14 +649,15 @@ static void usage_sockopt(void)
 		/* Read and print available congestion control algorithms */
 		fd = open("/proc/sys/net/ipv4/tcp_available_congestion_control/", O_RDONLY);
 		if (fd != -1) {
-			fprintf(stderr, "               The following list contains possible values for ALG:\n"
-				"                 ");
+			fprintf(stderr, "\n               The following list contains possible values for ALG:\n"
+				"               ");
 			char buffer[1024];
 			int r;
 			while ((r = read(fd, buffer, 1024)) > 0)
 				if (fwrite(buffer, r, 1, stderr) != 1)
 				      fprintf(stderr, "fwrite() failed: %s\n", strerror(errno));
 			close(fd);
+			fprintf(stderr, "\n");
 		}
 
 	fprintf(stderr,
@@ -743,7 +744,7 @@ static void usage_trafgenopt(void)
 		"- Using Bidirectional Traffic Generation can lead to unexpected results.\n"
 		"\n"
 		"- Usage of -G in conjunction with -A, -R, -V is not recommended, as\n"
-		"  they overwrite each other. -A, -R and -V exists for backward compatibility.\n"
+		"  they overwrite each other. -A, -R and -V exist for backward compatibility.\n"
 
 		);
 	exit(1);
