@@ -682,7 +682,7 @@ static void usage_sockopt(void)
 
 		"x can be replaced with 's' for source or 'd' for destination\n\n"
 
-		"Examples:\n"
+		"Example:\n"
 		"  flowgrind -H s=host1,d=host2 -O s=TCP_CONG_MODULE=reno,d=SO_DEBUG\n"
 		);
 	exit(1);
