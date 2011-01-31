@@ -1,6 +1,7 @@
 +investigate ca state
 +truncate values for interpacket gap
 +add some way of specifying normal distribution to -R
++add interleaving threshold
 +investigate -H x=localhost vs. x=127.0.0.1
 +investigate why libpcap does not work in multiple threads
 +simplify arbitrary socket options

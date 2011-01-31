@@ -1,5 +1,5 @@
 Release 0.5.6 (2011-1-8)
-- fix wierd behavior if no connection could be established
+- fix weird behavior if no connection could be established
 - ensure dump starts before test connection to catch the initial syn
 
 Release 0.5.5.2 (2010-12-10)
