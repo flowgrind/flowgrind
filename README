@@ -12,7 +12,7 @@ Instructions to run a test
 
 1. Start  flowgrindd  on all machines that should be the endpoint of a flow.
 2. Execute  flowgrind  on some machine (not necessarily one of the endpoints)
-   with the host names of the endpoints passed through the -H option. 
+   with the host names of the endpoints passed through the -H option.
 
 Example
 -------
@@ -33,8 +33,8 @@ Flowgrind uses two connections:
 - The test connection for the flows
 - The RPC connections for the communication between flowgrind and flowgrindd
 
-In order not to influence the test connection, the RPC control connection 
-can be sent over different interfaces/routes. typical scenario: Test WiFi 
+In order to not influence the test connection, the RPC control connection
+can be sent over different interfaces/routes. A typical scenario: Test WiFi
 connection and control over wired connection.
 Therefore there are two addresses:
 The test address and the control address. An unspecified control address
@@ -56,5 +56,5 @@ So our host argument will be this:
   -H s=192.168.0.1/10.0.0.1,d=192.168.0.2/10.0.0.2
 
 In words: Test from 192.168.0.1 to 192.168.0.2 on the nodes identified by
-10.0.0.1 and 10.0.0.2 respectively. 
+10.0.0.1 and 10.0.0.2 respectively.
 
