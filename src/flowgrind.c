@@ -1656,6 +1656,9 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
+	/* only for validity check of addresses */
+	struct sockaddr_in6 source_in6;
+	source_in6.sin6_family = AF_INET6;
 
 	#define ASSIGN_ENDPOINT_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
 			if (current_flow_ids[0] == -1) { \
@@ -1806,10 +1809,12 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					else
 						rpc_address = arg;
 
-					sepptr = strchr(arg, ':');
-					if (sepptr) {
-						fprintf(stderr, "port not allowed in test address\n");
-						usage();
+					/* IPv6 Address? */
+					if (strchr(arg, ':')) {
+						if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
+							fprintf(stderr, "invalid IPv6 address for test address\n");
+							usage();
+						}
 					}
 
 					sepptr = strchr(rpc_address, ':');
