@@ -3,6 +3,10 @@
 
 #include "common.h"
 
+#ifdef HAVE_LIBGSL
+#include <gsl/gsl_rng.h>
+#endif
+
 void *daemon_main(void* ptr);
 
 pthread_t daemon_thread;
@@ -119,6 +123,11 @@ struct _flow
 	struct pcap_t          	*pcap_handle;
 	struct pcap_dumper_t   	*pcap_dumper;
 #endif
+
+#ifdef HAVE_LIBGSL
+        gsl_rng * r;
+#endif 
+
 	char* error;
 };
 
