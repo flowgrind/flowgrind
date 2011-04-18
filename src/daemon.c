@@ -323,6 +323,8 @@ static void start_flows(struct _request_start_flows *request)
 
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
+	        /* initalize random number generator etc */
+	        init_math_functions(flow, flow->settings.random_seed);
 
 		/* READ and WRITE */
 		for (int j = 0; j < 2; j++) {
@@ -1003,14 +1005,14 @@ static int read_data(struct _flow *flow)
 		if (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.maximum_block_size )
 			flow->current_read_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring", flow->id, optint);
+			logging_log(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring (max: %d)", flow->id, optint,flow->settings.maximum_block_size);
 
 		/* parse and check current request size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->request_block_size );
 		if (optint == -1 || optint == 0  || (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.maximum_block_size ) )
 			requested_response_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring", flow->id, optint);
+			logging_log(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring (max: %d)", flow->id, optint, flow->settings.maximum_block_size);
 #ifdef DEBUG
 		if (requested_response_block_size == -1) {
 			DEBUG_MSG(LOG_NOTICE, "processing response block on flow %d size: %d",

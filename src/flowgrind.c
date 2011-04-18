@@ -33,7 +33,6 @@
 #include "fg_socket.h"
 #include "debug.h"
 #include "flowgrind.h"
-#include "fg_math.h"
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -1565,20 +1564,12 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							flow[id].settings[i].response_trafgen_options.distribution = distr;
 							flow[id].settings[i].response_trafgen_options.param_one = param1;
 							flow[id].settings[i].response_trafgen_options.param_two = param2;
-							if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
-								flow[id].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
-								flow[id].settings[i].maximum_block_size = param2;
 							break;
 						case 'Q':
 						case 'q':
 							flow[id].settings[i].request_trafgen_options.distribution = distr;
 							flow[id].settings[i].request_trafgen_options.param_one = param1;
 							flow[id].settings[i].request_trafgen_options.param_two = param2;
-							if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
-								flow[id].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
-								flow[id].settings[i].maximum_block_size = param2;
 							break;
 						case 'G':
 						case 'g':
@@ -1587,8 +1578,15 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							flow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
 							break;
 						}
+				/* sanity check for max block size */
+					for (int i = 0; i < 2; i++) {
+	                                	if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
+		                                	flow[id].settings[i].maximum_block_size = param1;
+                        	        	if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
+         		                        	flow[id].settings[i].maximum_block_size = param2;
 					}
 				}
+			}
 		} else {
 			int id;
 			for (id = 0; id < MAX_FLOWS; id++) {
@@ -1602,20 +1600,12 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							flow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
 							flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
 							flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
-							if (distr == CONSTANT)
-								flow[current_flow_ids[id]].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM)
-								flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
 							break;
 						case 'Q':
 						case 'q':
 							flow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
 							flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
 							flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
-							if (distr == CONSTANT)
-								flow[current_flow_ids[id]].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM)
-								flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
 							break;
 						case 'G':
 						case 'g':
@@ -1625,9 +1615,17 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							break;
 						}
 					}
-				}
+                                /* sanity check for max block size */
+                                for (int i = 0; i < 2; i++) {
+					if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
+						flow[id].settings[i].maximum_block_size = param1;
+					if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
+						flow[id].settings[i].maximum_block_size = param2;
+                                }
+
 			}
 		}
+	}
 }
 
 
