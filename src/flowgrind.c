@@ -573,7 +573,6 @@ static void usage(void)
 		"  -o           Overwrite existing log files (default: don't)\n"
 		"  -p           Don't print symbolic values (like INT_MAX) instead of numbers\n"
 		"  -q           Be quiet, do not log to screen (default: off)\n"
-		"  -r #         Use random seed # (default: read /dev/urandom)\n"
 		"  -w           Write output to logfile (default: off)\n\n"
 
 		"Flow options:\n\n"
@@ -605,6 +604,7 @@ static void usage(void)
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
 		"               An endpoint that isn't specified is assumed to be 127.0.0.1\n"
+		"  -J #         Use random seed # (default: read /dev/urandom)\n"
 		"  -L           Call connect() on test socket immediately before starting to send\n"
 		"               data (late connect). If not specified the test connection is\n"
 		"               established in the preparation phase before the test starts\n"
@@ -1580,10 +1580,10 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 						}
 				/* sanity check for max block size */
 					for (int i = 0; i < 2; i++) {
-	                                	if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
-		                                	flow[id].settings[i].maximum_block_size = param1;
-                        	        	if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
-         		                        	flow[id].settings[i].maximum_block_size = param2;
+						if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
+							flow[id].settings[i].maximum_block_size = param1;
+						if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
+							flow[id].settings[i].maximum_block_size = param2;
 					}
 				}
 			}
@@ -1615,13 +1615,13 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							break;
 						}
 					}
-                                /* sanity check for max block size */
-                                for (int i = 0; i < 2; i++) {
+				/* sanity check for max block size */
+				for (int i = 0; i < 2; i++) {
 					if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
 						flow[id].settings[i].maximum_block_size = param1;
 					if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
 						flow[id].settings[i].maximum_block_size = param2;
-                                }
+				}
 
 			}
 		}
@@ -1833,6 +1833,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				}
 				break;
 
+
 			case 'M':
 				ASSIGN_COMMON_FLOW_SETTING(traffic_dump, 1)
 				break;
@@ -2011,7 +2012,7 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	while ((ch = getopt(argc, argv, "b:c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:LNM:O:P:QR:S:T:U:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "b:c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:")) != -1)
 
 		switch (ch) {
 
@@ -2080,7 +2081,7 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'r':
 			rc = sscanf(optarg, "%d", &optint);
 			if (rc != 1) {
-				fprintf(stderr, "random seed must be a valid integer");
+				fprintf(stderr, "random seed must be a valid integer\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(random_seed, optint);
@@ -2120,6 +2121,15 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'G':
 			parse_trafgen_option(optarg, current_flow_ids);
 			break;
+		case 'J':
+			rc = sscanf(optarg, "%d", &optint);
+			if (rc != 1) {
+				fprintf(stderr, "random seed must be a valid integer\n");
+					usage();
+			}
+			ASSIGN_FLOW_OPTION(random_seed, optint);
+			break;
+
 
 		case 'L':
 			ASSIGN_FLOW_OPTION(late_connect, 1)

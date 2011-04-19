@@ -125,8 +125,8 @@ struct _flow
 #endif
 
 #ifdef HAVE_LIBGSL
-        gsl_rng * r;
-#endif 
+	gsl_rng * r;
+#endif
 
 	char* error;
 };
