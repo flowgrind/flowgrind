@@ -85,7 +85,7 @@ static inline double
 rn_uniform(struct _flow *flow) {
 #ifndef HAVE_LIBGSL
 	UNUSED_ARGUMENT(flow);
-#endif  
+#endif
 
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;

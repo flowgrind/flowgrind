@@ -107,7 +107,7 @@ int next_request_block_size(struct _flow *flow)
 int next_response_block_size(struct _flow *flow)
 {
 	int bs = round(calculate(
-			   flow,	
+			   flow,
 			   flow->settings.response_trafgen_options.distribution,
 			   flow->settings.response_trafgen_options.param_one,
 			   flow->settings.response_trafgen_options.param_two

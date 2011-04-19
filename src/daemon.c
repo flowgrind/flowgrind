@@ -323,8 +323,8 @@ static void start_flows(struct _request_start_flows *request)
 
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
-	        /* initalize random number generator etc */
-	        init_math_functions(flow, flow->settings.random_seed);
+		/* initalize random number generator etc */
+		init_math_functions(flow, flow->settings.random_seed);
 
 		/* READ and WRITE */
 		for (int j = 0; j < 2; j++) {
