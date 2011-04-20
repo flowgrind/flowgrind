@@ -125,7 +125,7 @@ struct _flow_settings
 	int shutdown;
 
 	int write_rate;
-	int random_seed;
+	unsigned int random_seed;
 
 	int flow_control;
 
