@@ -836,6 +836,14 @@ static void init_flows_defaults(void)
 		flow[id].shutdown = 0;
 		flow[id].byte_counting = 0;
 		flow[id].random_seed = 0;
+		
+		int data = open("/dev/urandom", O_RDONLY);
+		int rc = read(data, &flow[id].random_seed, sizeof (int) );
+		close(data);
+		if(rc == -1) {
+			error(ERR_FATAL, "read /dev/urandom failed: %s", strerror(errno));
+		}
+
 	}
 }
 
@@ -1053,6 +1061,8 @@ void report_final(void)
 				CAT("/%s", flow[id].endpoint_options[endpoint].server_address);
 			if (flow[id].endpoint_options[endpoint].server_port != DEFAULT_LISTEN_PORT)
 				CAT(":%d", flow[id].endpoint_options[endpoint].server_port);
+
+			CATC("random seed: %u", flow[id].random_seed);
 
 			if (flow[id].final_report[endpoint]) {
 
@@ -2079,9 +2089,9 @@ static void parse_cmdline(int argc, char **argv) {
 			break;
 
 		case 'r':
-			rc = sscanf(optarg, "%d", &optint);
+			rc = sscanf(optarg, "%u", &optint);
 			if (rc != 1) {
-				fprintf(stderr, "random seed must be a valid integer\n");
+				fprintf(stderr, "random seed must be a valid unsigned integer\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(random_seed, optint);
@@ -2122,9 +2132,9 @@ static void parse_cmdline(int argc, char **argv) {
 			parse_trafgen_option(optarg, current_flow_ids);
 			break;
 		case 'J':
-			rc = sscanf(optarg, "%d", &optint);
+			rc = sscanf(optarg, "%u", &optint);
 			if (rc != 1) {
-				fprintf(stderr, "random seed must be a valid integer\n");
+				fprintf(stderr, "random seed must be a valid unsigned integer\n");
 					usage();
 			}
 			ASSIGN_FLOW_OPTION(random_seed, optint);

@@ -1,4 +1,6 @@
-Release 0.5.6.1 (2011-4-18)
+Release 0.5.6.1 (2011-X-X))
+- output random seed in final report
+- indicate that random seed is actually a flow and not a global option
 - fix random seed handling with parallel flows
 - fix parameter parsing for uniform distribution
 
@@ -37,7 +39,7 @@ Release 0.5 (2010-11-15)
 - always print final report
 - bugfixes (oh-rly?)
 
-Release 0.4a (2010-8-10)
+Release 0.4.1 (2010-8-10)
 - bugfixes
 - block count column
 
