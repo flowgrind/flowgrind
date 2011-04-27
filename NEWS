@@ -1,4 +1,4 @@
-Release 0.5.6.X (2011-X-X))
+Release 0.5.7 (2011-4-27)
 - fix crash with newer xml-rpc version
 - output random seed in final report
 - indicate that random seed is actually a flow and not a global option
