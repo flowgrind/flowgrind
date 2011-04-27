@@ -836,7 +836,7 @@ static void init_flows_defaults(void)
 		flow[id].shutdown = 0;
 		flow[id].byte_counting = 0;
 		flow[id].random_seed = 0;
-		
+
 		int data = open("/dev/urandom", O_RDONLY);
 		int rc = read(data, &flow[id].random_seed, sizeof (int) );
 		close(data);
