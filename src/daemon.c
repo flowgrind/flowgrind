@@ -809,7 +809,7 @@ void init_flow(struct _flow* flow, int is_source)
 		flow->statistics[i].response_blocks_read = 0;
 		flow->statistics[i].response_blocks_written = 0;
 
-		flow->statistics[i].rtt_min = FLT_MAX; 
+		flow->statistics[i].rtt_min = FLT_MAX;
 		flow->statistics[i].rtt_max = FLT_MIN;
 		flow->statistics[i].rtt_sum = 0.0F;
 
