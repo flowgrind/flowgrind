@@ -555,11 +555,11 @@ static void report_flow(struct _flow* flow, int type)
 		flow->statistics[INTERVAL].request_blocks_written = 0;
 		flow->statistics[INTERVAL].response_blocks_written = 0;
 
-		flow->statistics[INTERVAL].rtt_min = +INFINITY;
-		flow->statistics[INTERVAL].rtt_max = -INFINITY;
+		flow->statistics[INTERVAL].rtt_min = FLT_MAX;
+		flow->statistics[INTERVAL].rtt_max = FLT_MIN;
 		flow->statistics[INTERVAL].rtt_sum = 0.0F;
-		flow->statistics[INTERVAL].iat_min = +INFINITY;
-		flow->statistics[INTERVAL].iat_max = -INFINITY;
+		flow->statistics[INTERVAL].iat_min = FLT_MAX;
+		flow->statistics[INTERVAL].iat_max = FLT_MIN;
 		flow->statistics[INTERVAL].iat_sum = 0.0F;
 	}
 
@@ -809,13 +809,13 @@ void init_flow(struct _flow* flow, int is_source)
 		flow->statistics[i].response_blocks_read = 0;
 		flow->statistics[i].response_blocks_written = 0;
 
-		flow->statistics[i].rtt_min = +INFINITY;
-		flow->statistics[i].rtt_max = -INFINITY;
-		flow->statistics[i].rtt_sum = 0.0;
+		flow->statistics[i].rtt_min = FLT_MAX; 
+		flow->statistics[i].rtt_max = FLT_MIN;
+		flow->statistics[i].rtt_sum = 0.0F;
 
-		flow->statistics[i].iat_min = +INFINITY;
-		flow->statistics[i].iat_max = -INFINITY;
-		flow->statistics[i].iat_sum = 0.0;
+		flow->statistics[i].iat_min = FLT_MAX;
+		flow->statistics[i].iat_max = FLT_MIN;
+		flow->statistics[i].iat_sum = 0.0F;
 	}
 
 	flow->congestion_counter = 0;

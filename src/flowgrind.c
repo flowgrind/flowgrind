@@ -1255,9 +1255,9 @@ exit_outer_loop:
 		/* Record ADT data on first flow */
 		double delta = time_diff(&report->begin, &report->end);
 		adt_add_data(report->bytes_written / delta, endpoint, adt_throughput);
-		if (report->iat_sum != INFINITY)
+		if (report->iat_sum != FLT_MAX)
 			adt_add_data(report->iat_sum, endpoint, adt_iat);
-		if (report->rtt_sum != INFINITY)
+		if (report->rtt_sum != FLT_MAX)
 			adt_add_data(report->rtt_sum, endpoint, adt_rtt);
 	}
 
