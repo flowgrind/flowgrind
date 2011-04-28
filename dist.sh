@@ -33,7 +33,7 @@ if [ $? -ne 0 ]; then
 fi
 $SVN revert INSTALL
 find . -type d -name ".svn" | xargs rm -r
-rm -r config.h.in~ autom4te.cache ChangeLog dist.sh 
+rm -r config.h.in~ autom4te.cache ChangeLog dist.sh RELEASEWORKFLOW 
 
 cd ..
 
