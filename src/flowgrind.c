@@ -1456,7 +1456,8 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 		double param1 = 0, param2 = 0, unused;
 		char endpointchar, typechar, distchar;
 		enum _stochastic_distributions distr = 0;
-		int j, k;
+		int j = 0;
+		int k = 0;
 
 		endpointchar = section[0];
 		if (section[1] == '=')
