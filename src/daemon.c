@@ -27,6 +27,7 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <inttypes.h>
+#include <float.h>
 
 #include "common.h"
 #include "debug.h"
@@ -41,10 +42,6 @@
 #include "source.h"
 #include "destination.h"
 #include "trafgen.h"
-
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP

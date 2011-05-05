@@ -12,16 +12,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <float.h>
+#include <fenv.h>
 
 #include "common.h"
 #include "debug.h"
 #include "fg_math.h"
 #include "daemon.h"
-
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#include <fenv.h>
-#endif
 
 #ifdef HAVE_LIBGSL
 #include <gsl/gsl_rng.h>
