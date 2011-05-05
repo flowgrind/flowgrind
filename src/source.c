@@ -26,6 +26,7 @@
 #include <sys/time.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <float.h>
 
 #include "common.h"
 #include "debug.h"
@@ -35,10 +36,6 @@
 #include "fg_math.h"
 #include "log.h"
 #include "daemon.h"
-
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
 
 void remove_flow(unsigned int i);
 
