@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <math.h>
 #include <netdb.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
@@ -21,7 +22,6 @@
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/utsname.h>
 #include <time.h>
@@ -355,8 +355,11 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	char headerString1[250];
 	char headerString2[250];
 	static char outputString[1000];
+#ifdef __LINUX__
 	char tmp[100];
-
+#else
+	UNUSED_ARGUMENT(ca_state);
+#endif
 	/* output string
 	param # + flow_id */
 	if (hash)
@@ -474,7 +477,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	/* param str_linrto */
 	createOutputColumn(headerString1, headerString2, dataString, i, linrto, &column_states[i], 1, &columnWidthChanged);
 	i++;
-
+#ifdef __LINUX__
 	/* param ca_state */
 	if (ca_state == TCP_CA_Open)
 		strcpy(tmp, "open");
@@ -490,9 +493,9 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		sprintf(tmp, "unknown!(%d)", ca_state);
 	else
 		strcpy(tmp, "err");
-
 	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
 	i++;
+#endif
 
 	/* param str_linrtt */
 	createOutputColumn(headerString1, headerString2, dataString, i, snd_mss, &column_states[i], 0, &columnWidthChanged);
@@ -998,7 +1001,7 @@ void print_tcp_report_line(char hash, int id,
 	char rep_string[4000];
 #ifndef __LINUX__
 	/* dont show linux kernel output if there is no linux OS */
-	column_type_kernel = 0;
+	visible_columns[column_type_kernel] = 0;
 #endif
 	strcpy(rep_string, createOutput(hash, id, type,
 		time1, time2, thruput, transac,
@@ -1009,11 +1012,14 @@ void print_tcp_report_line(char hash, int id,
 		(unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, (unsigned int)r->tcp_info.tcpi_unacked,
 		(unsigned int)r->tcp_info.tcpi_sacked, (unsigned int)r->tcp_info.tcpi_lost, (unsigned int)r->tcp_info.tcpi_reordering,
 		(unsigned int)r->tcp_info.tcpi_retrans, (unsigned int)r->tcp_info.tcpi_retransmits, (unsigned int)r->tcp_info.tcpi_fackets,
-		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3,
-		(double)r->tcp_info.tcpi_rto / 1e3, (unsigned int)r->tcp_info.tcpi_backoff,r->tcp_info.tcpi_ca_state,(unsigned int)r->tcp_info.tcpi_snd_mss,
+		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
+		(unsigned int)r->tcp_info.tcpi_backoff, r->tcp_info.tcpi_ca_state, (unsigned int)r->tcp_info.tcpi_snd_mss,
 #else
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0,
+		0, 0, 0, 
+		0, 0, 0,
+		0, 0, 0,
+		0, 0, 0, 
+		0, 0, 0,
 #endif
 		r->pmtu, comment_buffer, opt.mbyte
 	));
@@ -1072,10 +1078,12 @@ void report_final(void)
 					flow[id].endpoint_options[endpoint].receive_buffer_size_real,
 					flow[id].settings[endpoint].requested_read_buffer_size);
 
-
+	
 				/* SMSS, Path MTU, Interface MTU */
+#ifdef __LINUX__
 				if (flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0)
 					CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
+#endif
 				if (flow[id].final_report[endpoint]->pmtu > 0)
 					CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
 				if (flow[id].final_report[endpoint]->imtu > 0)

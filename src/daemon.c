@@ -488,8 +488,6 @@ static void report_flow(struct _flow* flow, int type)
 
 #ifdef __LINUX__
 	report->tcp_info = flow->statistics[type].tcp_info;
-#else
-	memset(&report->tcp_info, 0, sizeof(struct tcp_info));
 #endif
 	if (flow->fd != -1) {
 		/* Get latest MTU */
