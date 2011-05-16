@@ -2,30 +2,38 @@
 #include "config.h"
 #endif
 
-#include <arpa/inet.h>
-#ifdef DEBUG
-#include <assert.h>
-#endif
-#include <errno.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <stdio.h>
+
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+ 
+#include <unistd.h>
+#include <syslog.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
-#include <syslog.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
+
+#ifdef DEBUG
+#include <assert.h>
+#endif
 
 #ifdef HAVE_LIBNL
 #include <netlink/netlink.h>
@@ -288,13 +296,15 @@ int set_so_lcd(int fd)
 
 int set_ip_mtu_discover(int fd)
 {
-#ifdef SOL_IP
+#ifdef __LINUX__
 	const int dummy = IP_PMTUDISC_DO;
 
 	DEBUG_MSG(LOG_WARNING, "Setting IP_MTU_DISCOVERY on fd %d", fd);
 	return setsockopt(fd, SOL_IP, IP_MTU_DISCOVER, &dummy, sizeof(dummy)) ;
 
 #else
+UNUSED_ARGUMENT(fd);
+DEBUG_MSG(LOG_ERR, "Cannot set IP_MTU_DISCOVERY for OS other than Linux");
 return -1;
 #endif
 
