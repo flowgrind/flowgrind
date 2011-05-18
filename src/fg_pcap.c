@@ -62,7 +62,9 @@ void fg_pcap_init()
 	}
 #endif
 	pthread_mutex_init(&pcap_mutex, NULL);
+#ifndef __DARWIN__
 	pthread_barrier_init(&pcap_barrier, NULL, 2);
+#endif
 	return;
 }
 
@@ -224,7 +226,9 @@ static void* fg_pcap_work(void* arg)
 	}
 
 	/* barrier: dump is ready */
+#ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
+#endif
 	for (;;) {
 		rc = pcap_dispatch((pcap_t *)flow->pcap_handle, -1, &pcap_dump, (u_char *)flow->pcap_dumper);
 
@@ -245,7 +249,9 @@ static void* fg_pcap_work(void* arg)
 	pthread_cleanup_pop(1);
 
 remove:
+#ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
+#endif
 	return 0;
 
 }
@@ -265,7 +271,9 @@ void fg_pcap_go(struct _flow *flow)
 	dumping = 1;
 	rc = pthread_create(&flow->pcap_thread, NULL, fg_pcap_work, (void*) flow);
 	/* barrier: dump thread is ready (or aborted) */
+#ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
+#endif
 	if (rc) {
 		logging_log(LOG_WARNING, "Could not start pcap thread: %s", strerror(errno) );
 	}

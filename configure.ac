@@ -1,7 +1,9 @@
-
 AC_INIT([Flowgrind],[0.5.7],[flowgrind@umic-mesh.net],[flowgrind],[http://www.umic-mesh.net/downloads/flowgrind.html])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
+AC_PREREQ(2.61)
+
+AC_USE_SYSTEM_EXTENSIONS
 
 # Checks for programs.
 AC_PROG_CC
@@ -30,9 +32,10 @@ case $host in
     ;;
 esac
 
-
 AC_C_CONST
 AC_C_INLINE
+
+AC_GNU_SOURCE
 
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
@@ -86,11 +89,11 @@ AC_CONFIG_FILES([ \
 ])
 
 
-AC_CHECK_LIB([m], [log])
-AC_CHECK_LIB([socket], [socket])
-AC_CHECK_LIB([nsl], [socket])
-AC_CHECK_LIB([resolv], [herror])
-AC_CHECK_LIB([rt], [nanosleep])
+AC_SEARCH_LIBS([log], [m])
+AC_SEARCH_LIBS([clock_gettime], [rt])
+AC_SEARCH_LIBS([socket], [socket])
+
+AC_SUBST(LIBS)
 
 AC_ARG_ENABLE(debug,[AS_HELP_STRING(--enable-debug, enable debugging output and symbols [[default: no]] )])
 
