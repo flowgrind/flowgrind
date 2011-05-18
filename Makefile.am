@@ -1,5 +1,5 @@
 SUBDIRS = src
-EXTRA_DIST = configure make-version.pl
+EXTRA_DIST = build-aux/config.rpath configure make-version.pl RELEASEWORKFLOW reformat-code.sh
 CLEANFILES = svnversion.h
 BUILT_SOURCES = svnversion.h
 

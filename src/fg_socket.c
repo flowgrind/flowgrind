@@ -35,18 +35,6 @@
 #include <assert.h>
 #endif
 
-#ifdef HAVE_LIBNL
-#include <netlink/netlink.h>
-#include <netlink/socket.h>
-#include <netlink/route/addr.h>
-#include <netlink/route/link.h>
-#include <netlink/genl/genl.h>
-#include <netlink/genl/family.h>
-#include <netlink/genl/ctrl.h>
-#include <netlink/msg.h>
-#include <netlink/attr.h>
-#endif
-
 #ifdef HAVE_LIBPCAP
 #include <pcap.h>
 #include "fg_pcap.h"

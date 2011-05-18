@@ -12,6 +12,8 @@ AC_PROG_CPP
 AM_C_PROTOTYPES
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
+AC_LIB_RPATH
+gl_THREADLIB_EARLY
 
 # Checks for host-system types
 AC_CANONICAL_HOST
@@ -69,22 +71,38 @@ AC_CHECK_FUNCS([ \
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
-        syslog.h \
-        sys/time.h \
-        sys/socket.h \
-        sys/param.h \
-        sys/ioctl.h \
-        netinet/in.h \
-        netdb.h \
-        limits.h \
-        fcntl.h \
-        arpa/inet.h \
-        float.h \
+	arpa/inet.h \
+	errno.h \
+	fcntl.h \
+	fenv.h \
+	float.h \
+	getopt.h \
+	limits.h \
+	math.h \
+	netdb.h \
+	net/if.h \
+	netinet/if_ether.h \
+	netinet/in.h \
+	netinet/in_systm.h \
+	netinet/ip.h \
+	netinet/tcp.h \
+	pthread.h \
+	signal.h \
+	stdarg.h \
+	stdio.h \
+	stdlib.h \
+	sys/ioctl.h \
+	syslog.h \
+	sys/param.h \
+	sys/time.h \
+	sys/uio.h \
+	sys/utsname.h \
+	time.h \
 ])
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([ \
-        Makefile
+AC_CONFIG_FILES([
+        Makefile \
         src/Makefile \
 ])
 
@@ -92,6 +110,8 @@ AC_CONFIG_FILES([ \
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_SEARCH_LIBS([socket], [socket])
+
+gl_THREADLIB
 
 AC_SUBST(LIBS)
 
