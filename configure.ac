@@ -13,7 +13,6 @@ AM_C_PROTOTYPES
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
 AC_LIB_RPATH
-gl_THREADLIB_EARLY
 
 # Checks for host-system types
 AC_CANONICAL_HOST
@@ -128,8 +127,7 @@ AC_CONFIG_FILES([
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_SEARCH_LIBS([socket], [socket])
-
-gl_THREADLIB
+AC_SEARCH_LIBS([pthread_mutex_lock], [pthread])
 
 AC_SUBST(LIBS)
 
