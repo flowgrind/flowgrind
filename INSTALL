@@ -34,6 +34,10 @@ Building flowgrind
 
    e.g. disable libgsl and libpcap with: --disable-gsl --disable-pcap
 
+   FreeBSD might require 
+   CFLAGS=-I/usr/local/include LDFLAGS=-L/usr/local/lib ./configure
+   to successfully detect all libaries.
+ 
 5. Run make to compile flowgrind. This creates src/flowgrind and src/flowgrindd
 
 6. Optionally run (sudo) make install to copy the binaries to the installation prefix.
