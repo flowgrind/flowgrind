@@ -6,14 +6,15 @@
 #endif
 
 #include <limits.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
-#include <netinet/tcp.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/tcp.h>
 
 #define UNUSED_ARGUMENT(x) (void)x
 

@@ -12,5 +12,4 @@
 +xml style output
 +allow send volume to be specified (instead of duration)
 +Add optional columns for sender/receiver buffer
-+Add flowplotter to tarball?
-+Add tcpi_total_retrans as column?
++replace pthread barrier for mac os x
