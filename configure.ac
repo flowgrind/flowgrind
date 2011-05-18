@@ -66,10 +66,12 @@ AC_CHECK_FUNCS([ \
 	strchr \
 	strerror \
 	uname \
-])
+], [], [AC_MSG_ERROR(required function not found.)]
+)
 
 
 AC_HEADER_STDC
+
 AC_CHECK_HEADERS([ \
 	arpa/inet.h \
 	errno.h \
@@ -80,11 +82,8 @@ AC_CHECK_HEADERS([ \
 	limits.h \
 	math.h \
 	netdb.h \
-	net/if.h \
-	netinet/if_ether.h \
-	netinet/in.h \
-	netinet/in_systm.h \
-	netinet/ip.h \
+        netinet/in.h \
+        netinet/in_systm.h \
 	netinet/tcp.h \
 	pthread.h \
 	signal.h \
@@ -98,6 +97,25 @@ AC_CHECK_HEADERS([ \
 	sys/uio.h \
 	sys/utsname.h \
 	time.h \
+	], [], [AC_MSG_ERROR(required header not found.)]
+)
+
+AC_CHECK_HEADERS(net/if.h, [], [AC_MSG_ERROR(required header not found.)], [
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <stddef.h>
+  #include <sys/types.h>
+  #include <sys/socket.h>
+])
+
+AC_CHECK_HEADERS(netinet/if_ether.h netinet/ip.h, [], [AC_MSG_ERROR(required header not found.)], [
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <stddef.h>
+  #include <sys/types.h>
+  #include <sys/socket.h>
+  #include <netinet/in.h>
+  #include <netinet/in_systm.h>
 ])
 
 AC_CONFIG_HEADERS([config.h])
