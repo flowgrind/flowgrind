@@ -265,7 +265,8 @@ static int prepare_fds() {
 
 		if (started &&
 			(flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(&now, flow, READ) && !flow_sending(&now, flow, READ))) &&
-			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))) {
+			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))
+		) {
 
 #ifdef __LINUX__
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
@@ -275,7 +276,6 @@ static int prepare_fds() {
 			if (flow->settings.reporting_interval)
 				report_flow(flow, INTERVAL);
 			report_flow(flow, TOTAL);
-
 			uninit_flow(flow);
 			remove_flow(--i);
 			continue;
@@ -293,7 +293,6 @@ static int prepare_fds() {
 		if (flow->fd != -1) {
 			FD_SET(flow->fd, &efds);
 			maxfd = MAX(maxfd, flow->fd);
-
 			prepare_wfds(&now, flow, &wfds);
 			prepare_rfds(&now, flow, &rfds);
 		}
@@ -626,9 +625,12 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 		DEBUG_MSG(LOG_DEBUG, "processing select() for flow %d", flow->id);
 
 		if (flow->listenfd_data != -1 && FD_ISSET(flow->listenfd_data, rfds)) {
+			DEBUG_MSG(LOG_DEBUG, "ready for accept");
 			if (flow->state == GRIND_WAIT_ACCEPT) {
-				if (accept_data(flow) == -1)
+				if (accept_data(flow) == -1) {
+					DEBUG_MSG(LOG_ERR, "accept_data() failed");
 					goto remove;
+				}
 			}
 		}
 
@@ -656,17 +658,21 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 				}
 			}
 			if (FD_ISSET(flow->fd, wfds))
-				if (write_data(flow) == -1)
+				if (write_data(flow) == -1) {
+					DEBUG_MSG(LOG_ERR, "write_data() failed");
 					goto remove;
+				}
 
 			if (FD_ISSET(flow->fd, rfds))
-				if (read_data(flow) == -1)
+				if (read_data(flow) == -1) {
+					DEBUG_MSG(LOG_ERR, "read_data() failed");
 					goto remove;
+				}
 		}
 		i++;
 		continue;
 remove:
-#ifdef __LINUX__
+#ifdef __LINUX_
 		if (flow->fd != -1) {
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 		}
@@ -854,6 +860,8 @@ static int write_data(struct _flow *flow)
 						"for flow %d", flow->id);
 				break;
 			}
+	                DEBUG_MSG(LOG_WARNING, "write() returned %d on flow %d, fd %d: %s", rc, flow->id, 
+					flow->fd, strerror(errno));
 			flow_error(flow, "Premature end of test: %s",
 					strerror(errno));
 			return rc;
