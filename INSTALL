@@ -37,6 +37,7 @@ Building flowgrind
    FreeBSD might require 
    CFLAGS=-I/usr/local/include LDFLAGS=-L/usr/local/lib ./configure
    to successfully detect all libaries.
+   Also sysctl net.inet6.ip6.v6only=0 (disables ipv6) might be required for FreeBSD.
  
 5. Run make to compile flowgrind. This creates src/flowgrind and src/flowgrindd
 

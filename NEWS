@@ -1,3 +1,9 @@
+Release 0.5.8 (2011-5-X)
+- small bugfixes
+- autoconf fixes to improve portability
+- FreeBSD Support (disable IPv6 via sysctl net.inet6.ip6.v6only=0)
+  tested with FreeBSD 8.2
+
 Release 0.5.7 (2011-4-27)
 - fix crash with newer xml-rpc version
 - output random seed in final report
