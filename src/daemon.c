@@ -1218,9 +1218,11 @@ int apply_extra_socket_options(struct _flow *flow)
 			case level_ipproto_ip:
 				level = IPPROTO_IP;
 				break;
+#ifndef __DARWIN__
 			case level_ipproto_sctp:
 				level = IPPROTO_SCTP;
 				break;
+#endif
 			case level_ipproto_tcp:
 				level = IPPROTO_TCP;
 				break;
