@@ -20,9 +20,9 @@ const char *debug_timestamp(void);
 
 #define DEBUG_MSG(message_level, msg, args...) \
 		if (debug_level>=message_level) { \
-			fprintf(stderr, "%s %s:%d  [%d/%hu] " msg "\n", \
+			fprintf(stderr, "%s %s:%d  [%d/%d] " msg "\n", \
 					debug_timestamp(), __FUNCTION__, \
-					__LINE__, getpid(), (unsigned short)pthread_self(), ##args); \
+					__LINE__, getpid(), (unsigned int)pthread_self()%USHRT_MAX, ##args); \
 		}
 #else
 
