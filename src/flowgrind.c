@@ -137,13 +137,13 @@ void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void grind_flows(xmlrpc_client *rpc_client);
 
 /* New output determines the number of digits before the comma */
-int det_output_column_size(long value) {
+int det_output_column_size(double value) {
 	int i = 1;
 	double dez = 10.0;
 
 	if (value < 0)
 		i++;
-	while ((abs(value) / (dez - 1)) > 1) {
+	while ((abs(value) / (dez - 1.0)) > 1.0) {
 		i++;
 		dez *= 10;
 	}
@@ -192,11 +192,11 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 				break;
 
 			default:
-				lengthData = det_output_column_size(value) + numDigitsDecimalPart;
+				lengthData = det_output_column_size(value) + numDigitsDecimalPart + 1;
 			}
 		}
 	else {
-		lengthData = det_output_column_size(value) + numDigitsDecimalPart;
+		lengthData = det_output_column_size(value) + numDigitsDecimalPart + 1;
 	}
 	/* leading space */
 	lengthData++;

@@ -669,12 +669,10 @@ remove:
 #ifdef __LINUX__
 		if (flow->fd != -1) {
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
-			flow->pmtu = get_pmtu(flow->fd);
-
-			report_flow(flow, TOTAL);
 		}
 #endif
-
+                flow->pmtu = get_pmtu(flow->fd);
+                report_flow(flow, TOTAL);
 		uninit_flow(flow);
 		remove_flow(i);
 		DEBUG_MSG(LOG_ERR, "removed flow %d", flow->id);
