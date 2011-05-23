@@ -6,8 +6,7 @@
 +investigate why libpcap does not work in multiple threads
 +simplify arbitrary socket options
 +IPv6
-+update webpage
-+performance optimisations
++support modular congestion control framework in FreeBSD 9.0
 +do something with UDP
 +xml style output
 +allow send volume to be specified (instead of duration)
