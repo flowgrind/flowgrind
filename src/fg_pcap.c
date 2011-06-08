@@ -58,7 +58,7 @@ void fg_pcap_init()
 			if (a->next)
 				strncat(devdes, ", ", sizeof(devdes));
 		}
-		DEBUG_MSG(LOG_ERR, "pcap: found pcapabple device (%s)", devdes);
+		DEBUG_MSG(LOG_ERR, "pcap: found pcapable device (%s)", devdes);
 	}
 #endif
 	pthread_mutex_init(&pcap_mutex, NULL);
