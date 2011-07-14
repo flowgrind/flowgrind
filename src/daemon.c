@@ -677,8 +677,8 @@ remove:
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 		}
 #endif
-                flow->pmtu = get_pmtu(flow->fd);
-                report_flow(flow, TOTAL);
+		flow->pmtu = get_pmtu(flow->fd);
+		report_flow(flow, TOTAL);
 		uninit_flow(flow);
 		remove_flow(i);
 		DEBUG_MSG(LOG_ERR, "removed flow %d", flow->id);
@@ -860,7 +860,7 @@ static int write_data(struct _flow *flow)
 						"for flow %d", flow->id);
 				break;
 			}
-	                DEBUG_MSG(LOG_WARNING, "write() returned %d on flow %d, fd %d: %s", rc, flow->id, 
+			DEBUG_MSG(LOG_WARNING, "write() returned %d on flow %d, fd %d: %s", rc, flow->id,
 					flow->fd, strerror(errno));
 			flow_error(flow, "Premature end of test: %s",
 					strerror(errno));

@@ -1015,10 +1015,10 @@ void print_tcp_report_line(char hash, int id,
 		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
 		(unsigned int)r->tcp_info.tcpi_backoff, r->tcp_info.tcpi_ca_state, (unsigned int)r->tcp_info.tcpi_snd_mss,
 #else
-		0, 0, 0, 
 		0, 0, 0,
 		0, 0, 0,
-		0, 0, 0, 
+		0, 0, 0,
+		0, 0, 0,
 		0, 0, 0,
 #endif
 		r->pmtu, comment_buffer, opt.mbyte
@@ -1078,7 +1078,7 @@ void report_final(void)
 					flow[id].endpoint_options[endpoint].receive_buffer_size_real,
 					flow[id].settings[endpoint].requested_read_buffer_size);
 
-	
+
 				/* SMSS, Path MTU, Interface MTU */
 #ifdef __LINUX__
 				if (flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0)
