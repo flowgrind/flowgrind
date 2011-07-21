@@ -1,0 +1,8 @@
+Add UMIC-Mesh.net Repository:
+sudo add-apt-repository ppa:umic-mesh/flowgrind
+
+Update Package List:
+sudo apt-get update
+
+Install Flowgrind:
+sudo aptitude install flowgrind

@@ -1,0 +1,30 @@
+Install required libaries:
+
+xmlrpc-c
+cd /usr/ports/net/xmlrpc-c; make install clean (activate curl)
+
+Install optional libaries:
+
+libGSL
+cd /usr/ports/math/gsl; make install clean
+
+libpcap
+cd /usr/ports/lib/pcap: make install clean
+
+
+extract flowgrind archive:
+tar xjvf flowgrind-*.tar.bz2
+cd flowgrind-*
+
+configure sources:
+
+CFLAGS=-I/usr/local/include LDFLAGS=-L/usr/local/lib ./configure
+
+build sources:
+make
+
+install it
+make install
+
+Hint:
+currently sysctl net.inet6.ip6.v6only=0 (disables ipv6) might be required.
