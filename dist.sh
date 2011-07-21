@@ -1,5 +1,4 @@
 #!/bin/sh
-
 VERSION=$1
 
 if [ "$VERSION" = "" ]; then
@@ -31,9 +30,11 @@ if [ $? -ne 0 ]; then
 	echo "'autoreconf -i' failed. See error messages above."
 	exit 1
 fi
+
 $SVN revert INSTALL
 find . -type d -name ".svn" | xargs rm -r
 rm -r config.h.in~ autom4te.cache ChangeLog dist.sh RELEASEWORKFLOW 
+./reformat-code.sh
 
 cd ..
 
