@@ -91,12 +91,10 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 void flow_error(struct _flow *flow, const char *fmt, ...)
 {
 	char str[1000];
-
-	int n;
 	va_list ap;
 
 	va_start(ap, fmt);
-	n = vsnprintf(str, 1000, fmt, ap);
+	vsnprintf(str, 1000, fmt, ap);
 	va_end(ap);
 	str[sizeof(str) - 1] = 0;
 	flow->error = malloc(strlen(str) + 1);
@@ -106,12 +104,10 @@ void flow_error(struct _flow *flow, const char *fmt, ...)
 void request_error(struct _request *request, const char *fmt, ...)
 {
 	char str[1000];
-
-	int n;
 	va_list ap;
 
 	va_start(ap, fmt);
-	n = vsnprintf(str, 1000, fmt, ap);
+	vsnprintf(str, 1000, fmt, ap);
 	va_end(ap);
 	str[sizeof(str) - 1] = 0;
 	request->error = malloc(strlen(str) + 1);
