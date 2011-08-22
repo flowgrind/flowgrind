@@ -1,10 +1,10 @@
-Build essentials:
+build essentials:
 sudo aptitude install build-essential
 
-Required libaries:
+required libraries:
 sudo aptitude install libxmlrpc-c3-dev libcurl4-gnutls-dev
 
-optional libaries:
+optional libraries:
 sudo aptitude install libpcap0.8-dev
 sudo aptitude install libgsl0-dev
 
