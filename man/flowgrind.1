@@ -91,10 +91,6 @@ don't print symbolic values (like INT_MAX) instead of numbers (default: off)
 Be quiet, do not log to screen (default: off).
 
 .TP 
-.BR \-r " #"
-use random seed # (default: read /dev/urandom). Used for traffic generation.
-
-.TP 
 .BR \-w
 Write output to logfile (default: off).
 
@@ -136,13 +132,17 @@ Numbering starts with 0, so \-F 1 refers to the second flow.
 All flow options before the first \-F apply to all flows.
 
 .TP 
-.B "-G x=[q|p|g],[C|E|P|N|U],#1,(#2)"
+.BR "-G x=[q|p|g],[C|E|P|N|U],#1,(#2)"
 Activate stochastic traffic generation and set parameters according to the used distribution.
 
 .TP 
 .BR \-H " x=HOST[/RPCADDRESS[:PORT]]"
 Test from/to HOST. Optional argument is the address and port of the RPC server.
 An endpoint that isn't specified is assumed to be 127.0.0.1.
+
+.TP
+.BR \-J " #"
+Use random seed # (default: read /dev/urandom).
 
 .TP 
 .BR \-L

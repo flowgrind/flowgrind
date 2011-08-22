@@ -1,3 +1,14 @@
+flowgrind (0.5.7) unstable; urgency=low
+
+  Release: 0.5.7 (2011-4-27):
+  * fix crash with newer xml-rpc version
+  * output random seed in final report
+  * indicate that random seed is actually a flow and not a global option
+  * fix random seed handling with parallel flows
+  * fix parameter parsing for uniform distribution
+
+ -- Christian Samsel <christian.samsel@rwth-aachen.de>  Thu, 28 Apr 2011 14:50:19 +0200
+
 flowgrind (0.5.5.1) unstable; urgency=low
 
   Release 0.5.5.1 (2010-12-8):

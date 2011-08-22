@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <math.h>
 #include <netdb.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
@@ -21,7 +22,6 @@
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/utsname.h>
 #include <time.h>
@@ -33,7 +33,6 @@
 #include "fg_socket.h"
 #include "debug.h"
 #include "flowgrind.h"
-#include "fg_math.h"
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -138,13 +137,13 @@ void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void grind_flows(xmlrpc_client *rpc_client);
 
 /* New output determines the number of digits before the comma */
-int det_output_column_size(long value) {
+int det_output_column_size(double value) {
 	int i = 1;
 	double dez = 10.0;
 
 	if (value < 0)
 		i++;
-	while ((abs(value) / (dez - 1)) > 1) {
+	while ((abs(value) / (dez - 1.0)) > 1.0) {
 		i++;
 		dez *= 10;
 	}
@@ -193,11 +192,11 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 				break;
 
 			default:
-				lengthData = det_output_column_size(value) + numDigitsDecimalPart;
+				lengthData = det_output_column_size(value) + numDigitsDecimalPart + 1;
 			}
 		}
 	else {
-		lengthData = det_output_column_size(value) + numDigitsDecimalPart;
+		lengthData = det_output_column_size(value) + numDigitsDecimalPart + 1;
 	}
 	/* leading space */
 	lengthData++;
@@ -356,8 +355,11 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	char headerString1[250];
 	char headerString2[250];
 	static char outputString[1000];
+#ifdef __LINUX__
 	char tmp[100];
-
+#else
+	UNUSED_ARGUMENT(ca_state);
+#endif
 	/* output string
 	param # + flow_id */
 	if (hash)
@@ -475,7 +477,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	/* param str_linrto */
 	createOutputColumn(headerString1, headerString2, dataString, i, linrto, &column_states[i], 1, &columnWidthChanged);
 	i++;
-
+#ifdef __LINUX__
 	/* param ca_state */
 	if (ca_state == TCP_CA_Open)
 		strcpy(tmp, "open");
@@ -491,9 +493,9 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		sprintf(tmp, "unknown!(%d)", ca_state);
 	else
 		strcpy(tmp, "err");
-
 	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
 	i++;
+#endif
 
 	/* param str_linrtt */
 	createOutputColumn(headerString1, headerString2, dataString, i, snd_mss, &column_states[i], 0, &columnWidthChanged);
@@ -574,7 +576,6 @@ static void usage(void)
 		"  -o           Overwrite existing log files (default: don't)\n"
 		"  -p           Don't print symbolic values (like INT_MAX) instead of numbers\n"
 		"  -q           Be quiet, do not log to screen (default: off)\n"
-		"  -r #         Use random seed # (default: read /dev/urandom)\n"
 		"  -w           Write output to logfile (default: off)\n\n"
 
 		"Flow options:\n\n"
@@ -606,6 +607,7 @@ static void usage(void)
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
 		"               An endpoint that isn't specified is assumed to be 127.0.0.1\n"
+		"  -J #         Use random seed # (default: read /dev/urandom)\n"
 		"  -L           Call connect() on test socket immediately before starting to send\n"
 		"               data (late connect). If not specified the test connection is\n"
 		"               established in the preparation phase before the test starts\n"
@@ -837,6 +839,14 @@ static void init_flows_defaults(void)
 		flow[id].shutdown = 0;
 		flow[id].byte_counting = 0;
 		flow[id].random_seed = 0;
+
+		int data = open("/dev/urandom", O_RDONLY);
+		int rc = read(data, &flow[id].random_seed, sizeof (int) );
+		close(data);
+		if(rc == -1) {
+			error(ERR_FATAL, "read /dev/urandom failed: %s", strerror(errno));
+		}
+
 	}
 }
 
@@ -991,7 +1001,7 @@ void print_tcp_report_line(char hash, int id,
 	char rep_string[4000];
 #ifndef __LINUX__
 	/* dont show linux kernel output if there is no linux OS */
-	column_type_kernel = 0;
+	visible_columns[column_type_kernel] = 0;
 #endif
 	strcpy(rep_string, createOutput(hash, id, type,
 		time1, time2, thruput, transac,
@@ -1002,11 +1012,14 @@ void print_tcp_report_line(char hash, int id,
 		(unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, (unsigned int)r->tcp_info.tcpi_unacked,
 		(unsigned int)r->tcp_info.tcpi_sacked, (unsigned int)r->tcp_info.tcpi_lost, (unsigned int)r->tcp_info.tcpi_reordering,
 		(unsigned int)r->tcp_info.tcpi_retrans, (unsigned int)r->tcp_info.tcpi_retransmits, (unsigned int)r->tcp_info.tcpi_fackets,
-		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3,
-		(double)r->tcp_info.tcpi_rto / 1e3, (unsigned int)r->tcp_info.tcpi_backoff,r->tcp_info.tcpi_ca_state,(unsigned int)r->tcp_info.tcpi_snd_mss,
+		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
+		(unsigned int)r->tcp_info.tcpi_backoff, r->tcp_info.tcpi_ca_state, (unsigned int)r->tcp_info.tcpi_snd_mss,
 #else
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0,
+		0, 0, 0,
+		0, 0, 0,
+		0, 0, 0,
+		0, 0, 0,
+		0, 0, 0,
 #endif
 		r->pmtu, comment_buffer, opt.mbyte
 	));
@@ -1055,6 +1068,8 @@ void report_final(void)
 			if (flow[id].endpoint_options[endpoint].server_port != DEFAULT_LISTEN_PORT)
 				CAT(":%d", flow[id].endpoint_options[endpoint].server_port);
 
+			CATC("random seed: %u", flow[id].random_seed);
+
 			if (flow[id].final_report[endpoint]) {
 
 				CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
@@ -1065,8 +1080,10 @@ void report_final(void)
 
 
 				/* SMSS, Path MTU, Interface MTU */
+#ifdef __LINUX__
 				if (flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0)
 					CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
+#endif
 				if (flow[id].final_report[endpoint]->pmtu > 0)
 					CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
 				if (flow[id].final_report[endpoint]->imtu > 0)
@@ -1246,9 +1263,9 @@ exit_outer_loop:
 		/* Record ADT data on first flow */
 		double delta = time_diff(&report->begin, &report->end);
 		adt_add_data(report->bytes_written / delta, endpoint, adt_throughput);
-		if (report->iat_sum != INFINITY)
+		if (report->iat_sum != FLT_MAX)
 			adt_add_data(report->iat_sum, endpoint, adt_iat);
-		if (report->rtt_sum != INFINITY)
+		if (report->rtt_sum != FLT_MAX)
 			adt_add_data(report->rtt_sum, endpoint, adt_rtt);
 	}
 
@@ -1447,7 +1464,8 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 		double param1 = 0, param2 = 0, unused;
 		char endpointchar, typechar, distchar;
 		enum _stochastic_distributions distr = 0;
-		int j, k;
+		int j = 0;
+		int k = 0;
 
 		endpointchar = section[0];
 		if (section[1] == '=')
@@ -1565,20 +1583,12 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							flow[id].settings[i].response_trafgen_options.distribution = distr;
 							flow[id].settings[i].response_trafgen_options.param_one = param1;
 							flow[id].settings[i].response_trafgen_options.param_two = param2;
-							if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
-								flow[id].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
-								flow[id].settings[i].maximum_block_size = param2;
 							break;
 						case 'Q':
 						case 'q':
 							flow[id].settings[i].request_trafgen_options.distribution = distr;
 							flow[id].settings[i].request_trafgen_options.param_one = param1;
 							flow[id].settings[i].request_trafgen_options.param_two = param2;
-							if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
-								flow[id].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
-								flow[id].settings[i].maximum_block_size = param2;
 							break;
 						case 'G':
 						case 'g':
@@ -1587,8 +1597,15 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							flow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
 							break;
 						}
+				/* sanity check for max block size */
+					for (int i = 0; i < 2; i++) {
+						if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
+							flow[id].settings[i].maximum_block_size = param1;
+						if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
+							flow[id].settings[i].maximum_block_size = param2;
 					}
 				}
+			}
 		} else {
 			int id;
 			for (id = 0; id < MAX_FLOWS; id++) {
@@ -1602,20 +1619,12 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							flow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
 							flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
 							flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
-							if (distr == CONSTANT)
-								flow[current_flow_ids[id]].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM)
-								flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
 							break;
 						case 'Q':
 						case 'q':
 							flow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
 							flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
 							flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
-							if (distr == CONSTANT)
-								flow[current_flow_ids[id]].settings[i].maximum_block_size = param1;
-							if (distr == UNIFORM)
-								flow[current_flow_ids[id]].settings[i].maximum_block_size = param2;
 							break;
 						case 'G':
 						case 'g':
@@ -1625,9 +1634,17 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							break;
 						}
 					}
+				/* sanity check for max block size */
+				for (int i = 0; i < 2; i++) {
+					if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
+						flow[id].settings[i].maximum_block_size = param1;
+					if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
+						flow[id].settings[i].maximum_block_size = param2;
 				}
+
 			}
 		}
+	}
 }
 
 
@@ -1840,6 +1857,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				}
 				break;
 
+
 			case 'M':
 				ASSIGN_COMMON_FLOW_SETTING(traffic_dump, 1)
 				break;
@@ -2018,7 +2036,7 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	while ((ch = getopt(argc, argv, "b:c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:LNM:O:P:QR:S:T:U:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "b:c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:")) != -1)
 
 		switch (ch) {
 
@@ -2085,9 +2103,9 @@ static void parse_cmdline(int argc, char **argv) {
 			break;
 
 		case 'r':
-			rc = sscanf(optarg, "%d", &optint);
+			rc = sscanf(optarg, "%u", &optint);
 			if (rc != 1) {
-				fprintf(stderr, "random seed must be a valid integer");
+				fprintf(stderr, "random seed must be a valid unsigned integer\n");
 				usage();
 			}
 			ASSIGN_FLOW_OPTION(random_seed, optint);
@@ -2127,6 +2145,15 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'G':
 			parse_trafgen_option(optarg, current_flow_ids);
 			break;
+		case 'J':
+			rc = sscanf(optarg, "%u", &optint);
+			if (rc != 1) {
+				fprintf(stderr, "random seed must be a valid unsigned integer\n");
+					usage();
+			}
+			ASSIGN_FLOW_OPTION(random_seed, optint);
+			break;
+
 
 		case 'L':
 			ASSIGN_FLOW_OPTION(late_connect, 1)
