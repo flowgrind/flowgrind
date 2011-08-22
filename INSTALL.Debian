@@ -1,0 +1,19 @@
+build essentials:
+sudo aptitude install build-essential
+
+required libraries:
+sudo aptitude install libxmlrpc-c3-dev libcurl4-gnutls-dev
+
+optional libraries:
+sudo aptitude install libpcap0.8-dev
+sudo aptitude install libgsl0-dev
+
+extract archive:
+tar xjvf flowgrind-*.tar.bz2
+cd flowgrind-*
+
+build debian package:
+dpkg-buildpackage -rfakeroot -uc -b
+
+install resulting packages:
+deb -i *.dpkg

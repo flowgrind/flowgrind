@@ -1,0 +1,17 @@
+Update configure.ac
+Update NEWS
+Update debian/changelog
+
+svn cp svn+ssh://svn.umic-mesh.net/umic-mesh/projects/flowgrind/trunk svn+ssh://svn.umic-mesh.net/umic-mesh/projects/flowgrind/tags/flowgrind-X.X.X
+dist.sh X.X.X
+
+Update Website
+
+Update Launchpad
+
+# PPA
+tar xfj flowgrind-X.X.X.tar.bz2
+cd flowgrind-*
+debuild -S -sa
+cd ..
+dput ppa:umic-mesh/flowgrind  flowgrind_0.5.7ppa1_source.changes

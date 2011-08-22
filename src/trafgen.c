@@ -25,38 +25,38 @@
 
 #define MAX_RUNS_PER_DISTRIBUTION 10
 
-inline static double calculate(enum _stochastic_distributions type, double param_one, double param_two) {
+inline static double calculate(struct _flow *flow, enum _stochastic_distributions type, double param_one, double param_two) {
 
 	double val = 0;
 
 	switch (type) {
 		case NORMAL:
-			val = dist_normal ( param_one, param_two );
+			val = dist_normal (flow, param_one, param_two );
 			DEBUG_MSG(LOG_DEBUG, "calculated normal distribution value %f for parameters %f,%f", val, param_one, param_two);
 		break;
 
 		case UNIFORM:
-			val = dist_uniform ( param_one, param_two );
+			val = dist_uniform (flow, param_one, param_two );
 			DEBUG_MSG(LOG_DEBUG, "calculated uniform distribution value %f", val);
 		break;
 
 		case WEIBULL:
-			val = dist_weibull ( param_one, param_two );
+			val = dist_weibull (flow, param_one, param_two );
 			DEBUG_MSG(LOG_DEBUG, "calculated weibull distribution value %f for parameters %f,%f", val, param_one, param_two);
 		break;
 
 		case EXPONENTIAL:
-			val = dist_exponential (param_one);
+			val = dist_exponential (flow, param_one);
 			DEBUG_MSG(LOG_DEBUG, "calculated exponential distribution value %f for parameters %f", val, param_one);
 		break;
 
 		case PARETO:
-			val = dist_pareto (param_one, param_two);
+			val = dist_pareto (flow, param_one, param_two);
 			DEBUG_MSG(LOG_DEBUG, "calculated pareto distribution value %f for parameters %f,%f", val, param_one, param_two);
 		break;
 
 		case LOGNORMAL:
-			val = dist_normal ( param_one, param_two );
+			val = dist_normal (flow, param_one, param_two );
 			DEBUG_MSG(LOG_DEBUG, "calculated lognormal distribution value %f for parameters %f,%f", val, param_one, param_two);
 		break;
 
@@ -79,6 +79,7 @@ int next_request_block_size(struct _flow *flow)
 	while (( bs < MIN_BLOCK_SIZE || bs > flow->settings.maximum_block_size) && i < MAX_RUNS_PER_DISTRIBUTION) {
 
 		bs = round(calculate(
+			   flow,
 			   flow->settings.request_trafgen_options.distribution,
 			   flow->settings.request_trafgen_options.param_one,
 			   flow->settings.request_trafgen_options.param_two
@@ -105,7 +106,9 @@ int next_request_block_size(struct _flow *flow)
 
 int next_response_block_size(struct _flow *flow)
 {
-	int bs = round(calculate(flow->settings.response_trafgen_options.distribution,
+	int bs = round(calculate(
+			   flow,
+			   flow->settings.response_trafgen_options.distribution,
 			   flow->settings.response_trafgen_options.param_one,
 			   flow->settings.response_trafgen_options.param_two
 			   ));
@@ -134,7 +137,8 @@ double next_interpacket_gap(struct _flow *flow) {
 	if (flow->settings.write_rate)
 		gap = (double)1.0/flow->settings.write_rate;
 	else
-		gap = calculate(flow->settings.interpacket_gap_trafgen_options.distribution,
+		gap = calculate(flow,
+				flow->settings.interpacket_gap_trafgen_options.distribution,
 				       flow->settings.interpacket_gap_trafgen_options.param_one,
 				       flow->settings.interpacket_gap_trafgen_options.param_two
 				      );

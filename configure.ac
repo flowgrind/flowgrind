@@ -1,7 +1,9 @@
-
-AC_INIT([Flowgrind],[0.5.6],[flowgrind@umic-mesh.net],[flowgrind],[http://www.umic-mesh.net/downloads/flowgrind.html])
+AC_INIT([Flowgrind],[0.5.8pre],[flowgrind@umic-mesh.net],[flowgrind],[http://www.umic-mesh.net/downloads/flowgrind.html])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
+AC_PREREQ(2.61)
+
+AC_USE_SYSTEM_EXTENSIONS
 
 # Checks for programs.
 AC_PROG_CC
@@ -10,6 +12,7 @@ AC_PROG_CPP
 AM_C_PROTOTYPES
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
+AC_LIB_RPATH
 
 # Checks for host-system types
 AC_CANONICAL_HOST
@@ -30,9 +33,10 @@ case $host in
     ;;
 esac
 
-
 AC_C_CONST
 AC_C_INLINE
+
+AC_GNU_SOURCE
 
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
@@ -61,36 +65,71 @@ AC_CHECK_FUNCS([ \
 	strchr \
 	strerror \
 	uname \
-])
+], [], [AC_MSG_ERROR(required function not found.)]
+)
 
 
 AC_HEADER_STDC
+
 AC_CHECK_HEADERS([ \
-        syslog.h \
-        sys/time.h \
-        sys/socket.h \
-        sys/param.h \
-        sys/ioctl.h \
+	arpa/inet.h \
+	errno.h \
+	fcntl.h \
+	fenv.h \
+	float.h \
+	getopt.h \
+	limits.h \
+	math.h \
+	netdb.h \
         netinet/in.h \
-        netdb.h \
-        limits.h \
-        fcntl.h \
-        arpa/inet.h \
-        float.h \
+        netinet/in_systm.h \
+	netinet/tcp.h \
+	pthread.h \
+	signal.h \
+	stdarg.h \
+	stdio.h \
+	stdlib.h \
+	sys/ioctl.h \
+	syslog.h \
+	sys/param.h \
+	sys/time.h \
+	sys/uio.h \
+	sys/utsname.h \
+	time.h \
+	], [], [AC_MSG_ERROR(required header not found.)]
+)
+
+AC_CHECK_HEADERS(net/if.h, [], [AC_MSG_ERROR(required header not found.)], [
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <stddef.h>
+  #include <sys/types.h>
+  #include <sys/socket.h>
+])
+
+AC_CHECK_HEADERS(netinet/if_ether.h netinet/ip.h, [], [AC_MSG_ERROR(required header not found.)], [
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <stddef.h>
+  #include <sys/types.h>
+  #include <sys/socket.h>
+  #include <netinet/in.h>
+  #include <netinet/in_systm.h>
 ])
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([ \
-        Makefile
+AC_CONFIG_FILES([
+        Makefile \
         src/Makefile \
 ])
 
 
-AC_CHECK_LIB([m], [log])
-AC_CHECK_LIB([socket], [socket])
-AC_CHECK_LIB([nsl], [socket])
-AC_CHECK_LIB([resolv], [herror])
-AC_CHECK_LIB([rt], [nanosleep])
+AC_SEARCH_LIBS([log], [m])
+AC_SEARCH_LIBS([clock_gettime], [rt])
+AC_SEARCH_LIBS([socket], [socket])
+AC_SEARCH_LIBS([pthread_mutex_lock], [pthread])
+
+AC_SUBST(LIBS)
 
 AC_ARG_ENABLE(debug,[AS_HELP_STRING(--enable-debug, enable debugging output and symbols [[default: no]] )])
 

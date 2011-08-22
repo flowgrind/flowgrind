@@ -23,7 +23,7 @@ IUSE="debug gsl pcap"
 
 RDEPEND="gsl?  ( sci-libs/gsl )
          pcap? ( sys-libs/libcap )
-         <dev-libs/xmlrpc-c-1.14[curl]"
+         dev-libs/xmlrpc-c[curl]"
 DEPEND="${RDEPEND}"
 
 if [[ ${PV} == "9999" ]] ; then

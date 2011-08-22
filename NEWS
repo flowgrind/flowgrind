@@ -1,3 +1,16 @@
+Release 0.5.8 (2011-5-X)
+- small bugfixes
+- autoconf fixes to improve portability
+- FreeBSD Support (disable IPv6 via sysctl net.inet6.ip6.v6only=0)
+  tested with FreeBSD 8.2
+
+Release 0.5.7 (2011-4-27)
+- fix crash with newer xml-rpc version
+- output random seed in final report
+- indicate that random seed is actually a flow and not a global option
+- fix random seed handling with parallel flows
+- fix parameter parsing for uniform distribution
+
 Release 0.5.6 (2011-1-8)
 - fix weird behavior if no connection could be established
 - ensure dump starts before test connection to catch the initial syn
@@ -33,7 +46,7 @@ Release 0.5 (2010-11-15)
 - always print final report
 - bugfixes (oh-rly?)
 
-Release 0.4a (2010-8-10)
+Release 0.4.1 (2010-8-10)
 - bugfixes
 - block count column
 

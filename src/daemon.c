@@ -27,6 +27,7 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <inttypes.h>
+#include <float.h>
 
 #include "common.h"
 #include "debug.h"
@@ -41,10 +42,6 @@
 #include "source.h"
 #include "destination.h"
 #include "trafgen.h"
-
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -268,7 +265,8 @@ static int prepare_fds() {
 
 		if (started &&
 			(flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(&now, flow, READ) && !flow_sending(&now, flow, READ))) &&
-			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))) {
+			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))
+		) {
 
 #ifdef __LINUX__
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
@@ -278,7 +276,6 @@ static int prepare_fds() {
 			if (flow->settings.reporting_interval)
 				report_flow(flow, INTERVAL);
 			report_flow(flow, TOTAL);
-
 			uninit_flow(flow);
 			remove_flow(--i);
 			continue;
@@ -296,7 +293,6 @@ static int prepare_fds() {
 		if (flow->fd != -1) {
 			FD_SET(flow->fd, &efds);
 			maxfd = MAX(maxfd, flow->fd);
-
 			prepare_wfds(&now, flow, &wfds);
 			prepare_rfds(&now, flow, &rfds);
 		}
@@ -323,6 +319,8 @@ static void start_flows(struct _request_start_flows *request)
 
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
+		/* initalize random number generator etc */
+		init_math_functions(flow, flow->settings.random_seed);
 
 		/* READ and WRITE */
 		for (int j = 0; j < 2; j++) {
@@ -489,8 +487,6 @@ static void report_flow(struct _flow* flow, int type)
 
 #ifdef __LINUX__
 	report->tcp_info = flow->statistics[type].tcp_info;
-#else
-	memset(&report->tcp_info, 0, sizeof(struct tcp_info));
 #endif
 	if (flow->fd != -1) {
 		/* Get latest MTU */
@@ -553,11 +549,11 @@ static void report_flow(struct _flow* flow, int type)
 		flow->statistics[INTERVAL].request_blocks_written = 0;
 		flow->statistics[INTERVAL].response_blocks_written = 0;
 
-		flow->statistics[INTERVAL].rtt_min = +INFINITY;
-		flow->statistics[INTERVAL].rtt_max = -INFINITY;
+		flow->statistics[INTERVAL].rtt_min = FLT_MAX;
+		flow->statistics[INTERVAL].rtt_max = FLT_MIN;
 		flow->statistics[INTERVAL].rtt_sum = 0.0F;
-		flow->statistics[INTERVAL].iat_min = +INFINITY;
-		flow->statistics[INTERVAL].iat_max = -INFINITY;
+		flow->statistics[INTERVAL].iat_min = FLT_MAX;
+		flow->statistics[INTERVAL].iat_max = FLT_MIN;
 		flow->statistics[INTERVAL].iat_sum = 0.0F;
 	}
 
@@ -629,9 +625,12 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 		DEBUG_MSG(LOG_DEBUG, "processing select() for flow %d", flow->id);
 
 		if (flow->listenfd_data != -1 && FD_ISSET(flow->listenfd_data, rfds)) {
+			DEBUG_MSG(LOG_DEBUG, "ready for accept");
 			if (flow->state == GRIND_WAIT_ACCEPT) {
-				if (accept_data(flow) == -1)
+				if (accept_data(flow) == -1) {
+					DEBUG_MSG(LOG_ERR, "accept_data() failed");
 					goto remove;
+				}
 			}
 		}
 
@@ -659,25 +658,27 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 				}
 			}
 			if (FD_ISSET(flow->fd, wfds))
-				if (write_data(flow) == -1)
+				if (write_data(flow) == -1) {
+					DEBUG_MSG(LOG_ERR, "write_data() failed");
 					goto remove;
+				}
 
 			if (FD_ISSET(flow->fd, rfds))
-				if (read_data(flow) == -1)
+				if (read_data(flow) == -1) {
+					DEBUG_MSG(LOG_ERR, "read_data() failed");
 					goto remove;
+				}
 		}
 		i++;
 		continue;
 remove:
-#ifdef __LINUX__
+#ifdef __LINUX_
 		if (flow->fd != -1) {
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
-			flow->pmtu = get_pmtu(flow->fd);
-
-			report_flow(flow, TOTAL);
 		}
 #endif
-
+		flow->pmtu = get_pmtu(flow->fd);
+		report_flow(flow, TOTAL);
 		uninit_flow(flow);
 		remove_flow(i);
 		DEBUG_MSG(LOG_ERR, "removed flow %d", flow->id);
@@ -807,13 +808,13 @@ void init_flow(struct _flow* flow, int is_source)
 		flow->statistics[i].response_blocks_read = 0;
 		flow->statistics[i].response_blocks_written = 0;
 
-		flow->statistics[i].rtt_min = +INFINITY;
-		flow->statistics[i].rtt_max = -INFINITY;
-		flow->statistics[i].rtt_sum = 0.0;
+		flow->statistics[i].rtt_min = FLT_MAX;
+		flow->statistics[i].rtt_max = FLT_MIN;
+		flow->statistics[i].rtt_sum = 0.0F;
 
-		flow->statistics[i].iat_min = +INFINITY;
-		flow->statistics[i].iat_max = -INFINITY;
-		flow->statistics[i].iat_sum = 0.0;
+		flow->statistics[i].iat_min = FLT_MAX;
+		flow->statistics[i].iat_max = FLT_MIN;
+		flow->statistics[i].iat_sum = 0.0F;
 	}
 
 	flow->congestion_counter = 0;
@@ -859,6 +860,8 @@ static int write_data(struct _flow *flow)
 						"for flow %d", flow->id);
 				break;
 			}
+			DEBUG_MSG(LOG_WARNING, "write() returned %d on flow %d, fd %d: %s", rc, flow->id,
+					flow->fd, strerror(errno));
 			flow_error(flow, "Premature end of test: %s",
 					strerror(errno));
 			return rc;
@@ -1003,14 +1006,14 @@ static int read_data(struct _flow *flow)
 		if (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.maximum_block_size )
 			flow->current_read_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring", flow->id, optint);
+			logging_log(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring (max: %d)", flow->id, optint,flow->settings.maximum_block_size);
 
 		/* parse and check current request size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->request_block_size );
 		if (optint == -1 || optint == 0  || (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.maximum_block_size ) )
 			requested_response_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring", flow->id, optint);
+			logging_log(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring (max: %d)", flow->id, optint, flow->settings.maximum_block_size);
 #ifdef DEBUG
 		if (requested_response_block_size == -1) {
 			DEBUG_MSG(LOG_NOTICE, "processing response block on flow %d size: %d",
@@ -1221,9 +1224,11 @@ int apply_extra_socket_options(struct _flow *flow)
 			case level_ipproto_ip:
 				level = IPPROTO_IP;
 				break;
+#ifndef __DARWIN__
 			case level_ipproto_sctp:
 				level = IPPROTO_SCTP;
 				break;
+#endif
 			case level_ipproto_tcp:
 				level = IPPROTO_TCP;
 				break;

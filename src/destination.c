@@ -24,6 +24,7 @@
 #include <sys/time.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <float.h>
 
 #include "common.h"
 #include "debug.h"
@@ -33,10 +34,6 @@
 #include "fg_math.h"
 #include "log.h"
 #include "daemon.h"
-
-#ifdef HAVE_FLOAT_H
-#include <float.h>
-#endif
 
 void remove_flow(unsigned int i);
 
@@ -113,6 +110,7 @@ static int create_listen_socket(struct _flow *flow, char *bind_addr, unsigned sh
 		close(fd);
 		return -1;
 	}
+	DEBUG_MSG(LOG_DEBUG, "listening on port %d", port);
 	*listen_port = (unsigned short)port;
 
 	return fd;
@@ -216,10 +214,8 @@ int accept_data(struct _flow *flow)
 				flow->real_listen_receive_buffer_size, real_receive_buffer_size);
 		return -1;
 	}
-
 	if (set_flow_tcp_options(flow) == -1)
 		return -1;
-
 	DEBUG_MSG(LOG_NOTICE, "data socket accepted");
 	flow->state = GRIND;
 	flow->connect_called = 1;
