@@ -1,4 +1,4 @@
-.TH "flowgrind" "1" "November 2010" "" "Flowgrind Manual"
+.TH "flowgrind" "1" "February 2012" "" "Flowgrind Manual"
 .SH "NAME"
 flowgrind \- network performance measurement tool
 .SH "SYNOPSIS"
@@ -259,7 +259,11 @@ the bound value is used).
 
 .TP
 .B flowgrind
-default settings, same as flowgrind -H b=127.0.0.1 -T s=10,d=0
+Testing localhost IPv4 TCP performance with default settings, same as flowgrind -H b=127.0.0.1 -T s=10,d=0
+
+.TP
+.B flowgrind -H b=::1/127.0.0.1
+Testing localhost IPv6 TCP performance with default settings.
 
 .TP 
 .B flowgrind \-H s=host1,d=host2
@@ -478,6 +482,15 @@ Normal activity, some data got transmitted or received.
 .B o
 Flow has zero duration in that direction, no data is going to be exchanged.
 .RE
+
+.SH "BUGS"
+.PP
+.B IPv6
+control connections do not work currently because of the way libxmlrpc is used in flowgrind.
+
+.PP
+.B If you have found a bug,
+please report it here: https://bugs.launchpad.net/flowgrind/+filebug
 
 .SH "SEE ALSO"
 flowgrindd(1),
