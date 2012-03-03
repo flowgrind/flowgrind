@@ -100,7 +100,7 @@ static int dispatch_request(struct _request *request, int type)
 
 	/* Create synchronization mutex */
 	if (pthread_cond_init(&cond, NULL)) {
-		request_error(request, "Could not create synchonization mutex");
+		request_error(request, "Could not create synchronization mutex");
 		return -1;
 	}
 	request->condition = &cond;
@@ -477,6 +477,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 
 	strcpy(settings.cc_alg, cc_alg);
 	strcpy(settings.bind_address, bind_address);
+	DEBUG_MSG(LOG_WARNING, "bind_address=%s", bind_address);
 	request = malloc(sizeof(struct _request_add_flow_destination));
 	request->settings = settings;
 	rc = dispatch_request((struct _request*)request, REQUEST_ADD_DESTINATION);

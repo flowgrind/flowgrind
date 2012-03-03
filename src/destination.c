@@ -154,6 +154,8 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		uninit_flow(flow);
 		num_flows--;
 		return;
+	} else {
+		DEBUG_MSG(LOG_WARNING, "listening on %s port %u for data connection", flow->settings.bind_address, server_data_port);
 	}
 
 	flow->real_listen_send_buffer_size = set_window_size_directed(flow->listenfd_data, flow->settings.requested_send_buffer_size, SO_SNDBUF);

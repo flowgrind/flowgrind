@@ -125,7 +125,7 @@ static void* fg_pcap_work(void* arg)
 		goto remove;
 	}
 
-	/* find approciate (used for test) interface to dump */
+	/* find appropriate (used for test) interface to dump */
 	for (d = alldevs; d; d = d->next) {
 		pcap_addr_t *a;
 		for (a = d->addresses; a; a = a->next) {

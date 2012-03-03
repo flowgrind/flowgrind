@@ -804,7 +804,6 @@ static void init_flows_defaults(void)
 			strcpy(flow[id].endpoint_options[i].server_address, "127.0.0.1");
 			flow[id].endpoint_options[i].server_port = DEFAULT_LISTEN_PORT;
 			strcpy(flow[id].endpoint_options[i].test_address, "127.0.0.1");
-			strcpy(flow[id].endpoint_options[i].bind_address, "");
 
 			flow[id].settings[i].pushy = 0;
 			flow[id].settings[i].cork = 0;
@@ -1673,6 +1672,9 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
+	/* only for validity check of addresses */
+	struct sockaddr_in6 source_in6;
+	source_in6.sin6_family = AF_INET6;
 
 	#define ASSIGN_ENDPOINT_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
 			if (current_flow_ids[0] == -1) { \
@@ -1823,10 +1825,12 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					else
 						rpc_address = arg;
 
-					sepptr = strchr(arg, ':');
-					if (sepptr) {
-						fprintf(stderr, "port not allowed in test address\n");
-						usage();
+					/* IPv6 Address? */
+					if (strchr(arg, ':')) {
+						if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
+							fprintf(stderr, "invalid IPv6 address for test address\n");
+							usage();
+						}
 					}
 
 					sepptr = strchr(rpc_address, ':');
@@ -2532,7 +2536,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		")",
 
 		/* general flow settings */
-		"bind_address", flow[id].endpoint_options[DESTINATION].bind_address,
+		"bind_address", flow[id].endpoint_options[DESTINATION].test_address,
 
 		"write_delay", flow[id].settings[DESTINATION].delay[WRITE],
 		"write_duration", flow[id].settings[DESTINATION].duration[WRITE],
@@ -2637,7 +2641,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		")",
 
 		/* general flow settings */
-		"bind_address", flow[id].endpoint_options[SOURCE].bind_address,
+		"bind_address", flow[id].endpoint_options[SOURCE].test_address,
 
 		"write_delay", flow[id].settings[SOURCE].delay[WRITE],
 		"write_duration", flow[id].settings[SOURCE].duration[WRITE],
