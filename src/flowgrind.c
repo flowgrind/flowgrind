@@ -804,7 +804,6 @@ static void init_flows_defaults(void)
 			strcpy(flow[id].endpoint_options[i].server_address, "127.0.0.1");
 			flow[id].endpoint_options[i].server_port = DEFAULT_LISTEN_PORT;
 			strcpy(flow[id].endpoint_options[i].test_address, "127.0.0.1");
-			strcpy(flow[id].endpoint_options[i].bind_address, "");
 
 			flow[id].settings[i].pushy = 0;
 			flow[id].settings[i].cork = 0;
@@ -2537,7 +2536,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		")",
 
 		/* general flow settings */
-		"bind_address", flow[id].endpoint_options[DESTINATION].bind_address,
+		"bind_address", flow[id].endpoint_options[DESTINATION].test_address,
 
 		"write_delay", flow[id].settings[DESTINATION].delay[WRITE],
 		"write_duration", flow[id].settings[DESTINATION].duration[WRITE],
@@ -2642,7 +2641,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		")",
 
 		/* general flow settings */
-		"bind_address", flow[id].endpoint_options[SOURCE].bind_address,
+		"bind_address", flow[id].endpoint_options[SOURCE].test_address,
 
 		"write_delay", flow[id].settings[SOURCE].delay[WRITE],
 		"write_duration", flow[id].settings[SOURCE].duration[WRITE],

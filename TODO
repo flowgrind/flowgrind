@@ -5,7 +5,7 @@
 +investigate -H x=localhost vs. x=127.0.0.1
 +investigate why libpcap does not work in multiple threads
 +simplify arbitrary socket options
-+IPv6
++IPv6 for control connections (libxmlrpclib >= 1.30 needed)
 +support modular congestion control framework in FreeBSD 9.0
 +do something with UDP
 +xml style output
