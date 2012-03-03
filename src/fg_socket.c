@@ -202,7 +202,7 @@ int get_imtu(int fd)
 	struct ifreq ifreqs[20];
 
 	struct ifconf ifconf;
-	int nifaces, i, mtu, found = 0;
+	int nifaces, i, mtu = 0;
 
 	memset(&ifconf,0,sizeof(ifconf));
 	ifconf.ifc_buf = (char*)(ifreqs);
@@ -218,10 +218,8 @@ int get_imtu(int fd)
 
 	for(i = 0; i < nifaces; i++)
 	{
-		if (sockaddr_compare((struct sockaddr *)&ifreqs[i].ifr_addr, (struct sockaddr *)&sa)) {
-			found = 1;
+		if (sockaddr_compare((struct sockaddr *)&ifreqs[i].ifr_addr, (struct sockaddr *)&sa))
 			break;
-		}
 	}
 
 	if (ioctl(fd, SIOCGIFMTU, &ifreqs[i]) < 0)
