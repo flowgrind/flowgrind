@@ -1,3 +1,14 @@
+flowgrind (0.5.8) unstable; urgency=low
+
+  Release: 0.5.8 (2012-3-3):
+  * ipv6 works for test connections
+  (not for control)
+  * FreeBSD Support
+  * autoconf fixes to improve portability
+  * small bug and coding style fixes
+
+ -- Christian Samsel <christian.samsel@rwth-aachen.de>  Sun, 04 Mar 2012 10:36:23 +0100
+
 flowgrind (0.5.7) unstable; urgency=low
 
   Release: 0.5.7 (2011-4-27):
