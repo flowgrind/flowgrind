@@ -18,7 +18,7 @@ if [ "$AUTORECONF" = "" ]; then
 	exit 1
 fi
 
-$SVN co svn+ssh://svn.umic-mesh.net/umic-mesh/projects/flowgrind/tags/flowgrind-$VERSION
+$SVN co svn://svn.umic-mesh.net/flowgrind/tags/flowgrind-$VERSION
 if [ $? -ne 0 ]; then
 	echo "Exporting subversion tag 'flowgrind-$VERSION' failed."
 	exit 1
