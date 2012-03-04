@@ -14,7 +14,7 @@ if [[ ${PV} == "9999" ]] ; then
 	SLOT="svn"
 	KEYWORDS=""
 else
-	SRC_URI="http://www.umic-mesh.net/downloads/files/${P}.tar.bz2"
+	SRC_URI="https://launchpad.net/flowgrind/trunk/${P}/+download/${P}.tar.bz2"
 	SLOT="0"
 	KEYWORDS="~amd64 ~x86"
 fi
@@ -47,5 +47,5 @@ src_install() {
 	emake DESTDIR="${D}" install || die
 	prepalldocs
 	doman man/*.1 || die
-	dodoc AUTHORS ChangeLog NEWS README TODO || die
+	dodoc AUTHORS NEWS README TODO || die
 }
