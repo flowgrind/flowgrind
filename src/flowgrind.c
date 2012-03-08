@@ -1362,11 +1362,11 @@ void close_flows(void)
 		close_flow(id);
 }
 
-
-struct _mtu_info {
+/* Mapping of common MTU sizes to network technologies */
+struct _mtu_hint {
 	int mtu;
 	char *topology;
-} mtu_list[] = {
+} mtu_hints[] = {
 	{ 65535,        "Hyperchannel" },               /* RFC1374 */
 	{ 17914,        "16 MB/s Token Ring" },
 	{ 16436,        "Linux Loopback device" },
@@ -1378,11 +1378,12 @@ struct _mtu_info {
 	{ 1500,         "Ethernet/PPP" },               /* RFC894, RFC1548 */
 	{ 1492,         "PPPoE" },                      /* RFC2516 */
 	{ 1472,		"IP-in-IP" },			/* RFC1853 */
+	{ 1280,		"IPv6 Tunnel" },		/* RFC4213 */
 	{ 1006,         "SLIP" },                       /* RFC1055 */
 	{ 576,          "X.25 & ISDN" },                /* RFC1356 */
 	{ 296,          "PPP (low delay)" },
 };
-#define MTU_LIST_NUM    13
+#define MTU_HINTS_NUM 15
 
 
 char *guess_topology (int mtu)
@@ -1390,9 +1391,9 @@ char *guess_topology (int mtu)
 	int i;
 
 	if (mtu) {
-		for (i = 0; i < MTU_LIST_NUM; i++) {
-			if (mtu == mtu_list[i].mtu) {
-				return mtu_list[i].topology;
+		for (i = 0; i < MTU_HINTS_NUM; i++) {
+			if (mtu == mtu_hints[i].mtu) {
+				return mtu_hints[i].topology;
 			}
 		}
 	}
