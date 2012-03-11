@@ -1,0 +1,38 @@
+
+# /
+/tmp
+/configure
+/config.log
+/config.status
+/config.h
+/config.h.in
+/configure.scan
+/Makefile
+/Makefile.in
+/svnversion.h
+/stamp-h1
+/flowlog-*
+/*.pcap
+/config.h
+/.nfs*
+/cscope.out
+/autom4te.cache
+/aclocal.m4
+
+# /build-aux/
+/build-aux/compile
+/build-aux/config.guess
+/build-aux/config.sub
+/build-aux/depcomp
+/build-aux/install-sh
+/build-aux/missing
+
+# /src/
+/src/new
+/src/Makefile
+/src/Makefile.in
+/src/flowgrind
+/src/flowgrindd
+/src/flowgrind-stop
+/src/.deps
+/src/.nfs*
