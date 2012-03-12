@@ -19,12 +19,12 @@ Building flowgrind
 ==================
 
 1. a) Extract source tarball OR
-   b) Checkout flowgrind from the SVN repository
-      (e.g. svn co svn://svn.umic-mesh.net/flowgrind/trunk)
+   b) Checkout flowgrind from the git repository
+      (e.g. git clone git://github.com/flowgrind/flowgrind.git)
 
 2. cd into the flowgrind directory
 
-3. Only if using a copy from the SVN repositry run
+3. Only if using a copy from the git repositry run
      autoreconf -i
 
 4. Run  ./configure  to build the makefiles. If this step fails, you are
