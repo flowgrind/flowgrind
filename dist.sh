@@ -2,13 +2,13 @@
 VERSION=$1
 
 if [ "$VERSION" = "" ]; then
-	echo "Usage: $0 VERSION\n    Where VERSION is the version number of an svn tag."
+	echo "Usage: $0 VERSION\n    Where VERSION is the version number of an git tag."
 	exit 1
 fi
 
-SVN=`which svn`
-if [ "$SVN" = "" ]; then
-	echo "The subversion command 'svn' is not installed."
+GIT=`which git`
+if [ "$GIT" = "" ]; then
+	echo "The 'git' is not installed."
 	exit 1
 fi
 
@@ -18,21 +18,29 @@ if [ "$AUTORECONF" = "" ]; then
 	exit 1
 fi
 
-$SVN co svn://svn.umic-mesh.net/flowgrind/tags/flowgrind-$VERSION
+$GIT clone git://github.com/flowgrind/flowgrind.git flowgrind-$VERSION
 if [ $? -ne 0 ]; then
-	echo "Exporting subversion tag 'flowgrind-$VERSION' failed."
+	echo "cloning master 'flowgrind' failed."
 	exit 1
 fi
 
 cd flowgrind-$VERSION
+
+$GIT checkout tags/flowgrind-$VERSION
+
+if [ $? -ne 0 ]; then
+	echo "switching to tag 'flowgrind-$VERSION' failed."
+	exit 1
+fi
+
 $AUTORECONF -i
 if [ $? -ne 0 ]; then
 	echo "'autoreconf -i' failed. See error messages above."
 	exit 1
 fi
 
-$SVN revert INSTALL
-find . -type d -name ".svn" | xargs rm -r
+$GIT checkout -- INSTALL
+find . -type d -name ".git" | xargs rm -r
 rm -r config.h.in~ autom4te.cache ChangeLog dist.sh RELEASEWORKFLOW 
 ./reformat-code.sh
 
