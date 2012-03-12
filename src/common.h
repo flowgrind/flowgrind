@@ -18,10 +18,10 @@
 
 #define UNUSED_ARGUMENT(x) (void)x
 
-#include "svnversion.h"
+#include "gitversion.h"
 
-#ifdef SVNVERSION
-#define FLOWGRIND_VERSION SVNVERSION
+#ifdef GITVERSION
+#define FLOWGRIND_VERSION GITVERSION
 #elif defined PACKAGE_VERSION
 #define FLOWGRIND_VERSION PACKAGE_VERSION
 #else
