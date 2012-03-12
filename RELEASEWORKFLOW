@@ -2,9 +2,9 @@ Update configure.ac
 Update NEWS
 Update debian/changelog
 
-svn commit -m "prepare flowgrind-X.X.X"
+git commit -m "prepare flowgrind-X.X.X"
 
-svn cp svn+ssh://svn.umic-mesh.net/umic-mesh/projects/flowgrind/trunk svn+ssh://svn.umic-mesh.net/umic-mesh/projects/flowgrind/tags/flowgrind-X.X.X -m "tag flowgrind-X.X.X"
+git tag -s -m "tag flowgrind-X.X.X" flowgrind-X.X.X `git rev-parse HEAD`
 dist.sh X.X.X
 
 Update Website
