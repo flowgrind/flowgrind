@@ -7,14 +7,16 @@ EAPI="2"
 inherit eutils
 
 DESCRIPTION="network performance measurement tool"
-HOMEPAGE="http://www.umic-mesh.net/research/flowgrind"
+HOMEPAGE="https://launchpad.net/flowgrind"
 if [[ ${PV} == "9999" ]] ; then
-	inherit subversion autotools
-	ESVN_REPO_URI="svn://svn.umic-mesh.net/flowgrind/trunk/"
-	SLOT="svn"
+	inherit git-2 autotools
+	EGIT_REPO_URI="git://github.com/${PN}/${PN}.git 
+				   http://github.com/${PN}/${PN}.git"
+	EGIT_BRANCH="master"
+	SLOT="git"
 	KEYWORDS=""
 else
-	SRC_URI="https://launchpad.net/flowgrind/trunk/${P}/+download/${P}.tar.bz2"
+	SRC_URI="https://launchpad.net/${PN}/trunk/${P}/+download/${P}.tar.bz2"
 	SLOT="0"
 	KEYWORDS="~amd64 ~x86"
 fi
