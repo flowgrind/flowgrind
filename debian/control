@@ -4,7 +4,9 @@ Priority: extra
 Maintainer: Christian Samsel <christian.samsel@rwth-aachen.de>
 Build-Depends: debhelper (>= 7), cdbs, autotools-dev, libxmlrpc-c3-dev, libcurl4-gnutls-dev, libgsl0-dev, libpcap-dev 
 Standards-Version: 3.8.3
-Homepage: http://umic-mesh.net/research/flowgrind/
+Homepage: http://launchpad.net/flowgrind/
+Vcs-Git: git://github.com/flowgrind/flowgrind.git
+Vcs-Browser: https://github.com/flowgrind/flowgrind
 
 Package: flowgrind
 Architecture: any
