@@ -9,7 +9,6 @@
 /configure.scan
 /Makefile
 /Makefile.in
-/svnversion.h
 /stamp-h1
 /flowlog-*
 /*.pcap
@@ -18,6 +17,7 @@
 /cscope.out
 /autom4te.cache
 /aclocal.m4
+/gitversion.h
 
 # /build-aux/
 /build-aux/compile
@@ -36,3 +36,4 @@
 /src/flowgrind-stop
 /src/.deps
 /src/.nfs*
+/src/*.o
