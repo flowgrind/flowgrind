@@ -248,8 +248,11 @@ int set_keepalive(int fd, int how)
 int set_congestion_control(int fd, const char *cc_alg)
 {
 #ifdef __LINUX__
-	DEBUG_MSG(LOG_NOTICE, "Setting cc_alg=\"%s\" for fd %d", cc_alg, fd);
+	DEBUG_MSG(LOG_NOTICE, "Setting cc_alg=\"%s\" for fd %d (linux)", cc_alg, fd);
 	return setsockopt(fd, IPPROTO_TCP, TCP_CONG_MODULE, cc_alg, strlen(cc_alg));
+#elif __FREEBSD__
+	DEBUG_MSG(LOG_NOTICE, "Setting cc_alg=\"%s\" for fd %d (freebsd)", cc_alg, fd);
+        return setsockopt(fd, IPPROTO_TCP, TCP_CONGESTION, cc_alg, strlen(cc_alg));
 #else
 	UNUSED_ARGUMENT(fd);
 	UNUSED_ARGUMENT(cc_alg);

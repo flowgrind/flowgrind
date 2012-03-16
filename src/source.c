@@ -130,6 +130,8 @@ int add_flow_source(struct _request_add_flow_source *request)
 {
 #ifdef __LINUX__
 	socklen_t opt_len = 0;
+#elif __FREEBSD__
+	socklen_t opt_len = 0;
 #endif
 	struct _flow *flow;
 
@@ -187,8 +189,18 @@ int add_flow_source(struct _request_add_flow_source *request)
 	opt_len = sizeof(request->cc_alg);
 	if (getsockopt(flow->fd, IPPROTO_TCP, TCP_CONG_MODULE,
 				request->cc_alg, &opt_len) == -1) {
-		request_error(&request->r, "failed to determine actual congestion control algorithm: %s",
+		request_error(&request->r, "failed to determine actual congestion control algorithm (linux): %s",
 			strerror(errno));
+		uninit_flow(flow);
+		num_flows--;
+		return -1;
+	}
+#elif __FREEBSD__
+	opt_len = sizeof(request->cc_alg);
+	if (getsockopt(flow->fd, IPPROTO_TCP, TCP_CONGESTION,
+	                        request->cc_alg, &opt_len) == -1) {
+		request_error(&request->r, "failed to determine actual congestion control algorithm (freebsd): %s",
+		 strerror(errno));
 		uninit_flow(flow);
 		num_flows--;
 		return -1;

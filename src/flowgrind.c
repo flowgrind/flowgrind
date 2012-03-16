@@ -641,10 +641,12 @@ static void usage(void)
 
 static void usage_sockopt(void)
 {
-	int fd;
-
 	fprintf(stderr,
 		"The following list contains possible values that can be set on the test socket:\n"
+	       );
+#ifdef __LINUX__
+	int fd;
+	fprintf(stderr,
 		"  -O x=TCP_CONG_MODULE=ALG\n"
 		"               set congestion control algorithm ALG.\n");
 
@@ -661,7 +663,25 @@ static void usage_sockopt(void)
 			close(fd);
 			fprintf(stderr, "\n");
 		}
+#elif __FREEBSD__
+        FILE *fp;
+        fprintf(stderr,
+                "  -O x=TCP_CONGESTION=ALG\n"
+                "               set congestion control algorithm ALG.\n");
 
+                /* Read and print available congestion control algorithms */
+                fp = popen("/sbin/sysctl -n net.inet.tcp.cc.available", "r");
+                if (fp != NULL) {
+                        fprintf(stderr, "\n               The following list contains possible values for ALG:\n"
+                                "               ");
+                        char buffer[1024];
+			while (fgets(buffer, 1024, fp) != NULL)
+    				printf("%s", buffer);
+
+                        pclose(fp);    
+                        fprintf(stderr, "\n");
+                }   
+#endif
 	fprintf(stderr,
 		"  -O x=TCP_CORK\n"
 		"               set TCP_CORK on test socket\n"
@@ -1088,6 +1108,10 @@ void report_final(void)
 				if (flow[id].final_report[endpoint]->imtu > 0)
 					CATC("Interface MTU = %d (%s)", flow[id].final_report[endpoint]->imtu,
 						guess_topology(flow[id].final_report[endpoint]->imtu));
+				
+				if (flow[id].settings[endpoint].cc_alg[0])
+					CATC("cc = %s", flow[id].settings[endpoint].cc_alg);
+
 
 				double thruput_read, thruput_written, transactions_per_sec;
 				double report_time, report_delta_write = 0, report_delta_read = 0, duration_read, duration_write;
@@ -1370,6 +1394,7 @@ struct _mtu_hint {
 	{ 65535,        "Hyperchannel" },               /* RFC1374 */
 	{ 17914,        "16 MB/s Token Ring" },
 	{ 16436,        "Linux Loopback device" },
+        { 16384,        "FreeBSD Loopback device" },
 	{ 16352,        "Darwin Loopback device"},
 	{ 9000,         "Gigabit Ethernet (Jumboframes)"},
 	{ 8166,         "802.4 Token Bus" },            /* RFC1042 */
@@ -1383,7 +1408,7 @@ struct _mtu_hint {
 	{ 576,          "X.25 & ISDN" },                /* RFC1356 */
 	{ 296,          "PPP (low delay)" },
 };
-#define MTU_HINTS_NUM 15
+#define MTU_HINTS_NUM 16
 
 
 char *guess_topology (int mtu)
@@ -1893,6 +1918,15 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					}
 					ASSIGN_COMMON_FLOW_SETTING_STR(cc_alg, arg + 16);
 				}
+
+                                else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
+                                        if (strlen(arg + 16) >= sizeof(flow[0].settings[SOURCE].cc_alg)) {
+                                                fprintf(stderr, "Too large string for TCP_CONGESTION value");
+                                                usage_sockopt();
+                                        }
+                                        ASSIGN_COMMON_FLOW_SETTING_STR(cc_alg, arg + 15);
+                                }
+
 				else if (!strcmp(arg, "SO_DEBUG")) {
 					ASSIGN_COMMON_FLOW_SETTING(so_debug, 1);
 				}
