@@ -49,6 +49,10 @@ void error(int errcode, const char *fmt, ...);
 
 #define MAX_FLOWS              2048
 
+#ifndef TCP_CA_NAME_MAX
+#define TCP_CA_NAME_MAX 16
+#endif
+
 enum _extra_socket_option_level
 {
 	level_sol_socket,
@@ -134,7 +138,7 @@ struct _flow_settings
 
 	int cork;
 	int nonagle;
-	char cc_alg[256];
+	char cc_alg[TCP_CA_NAME_MAX];
 	int elcn;
 	int lcd;
 	int mtcp;

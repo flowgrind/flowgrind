@@ -239,7 +239,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		settings.maximum_block_size < MIN_BLOCK_SIZE ||
 		strlen(destination_host) >= sizeof(source_settings.destination_host) - 1||
 		source_settings.destination_port <= 0 || source_settings.destination_port > 65535 ||
-		strlen(cc_alg) > 255 ||
+		strlen(cc_alg) > TCP_CA_NAME_MAX ||
 		settings.num_extra_socket_options < 0 || settings.num_extra_socket_options > MAX_EXTRA_SOCKET_OPTIONS ||
 		xmlrpc_array_size(env, extra_options) != settings.num_extra_socket_options ||
 		settings.dscp < 0 || settings.dscp > 255 ||
@@ -430,7 +430,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		settings.requested_send_buffer_size < 0 || settings.requested_read_buffer_size < 0 ||
 		settings.maximum_block_size < MIN_BLOCK_SIZE ||
 		settings.write_rate < 0 ||
-		strlen(cc_alg) > 255 ||
+		strlen(cc_alg) > TCP_CA_NAME_MAX ||
 		settings.num_extra_socket_options < 0 || settings.num_extra_socket_options > MAX_EXTRA_SOCKET_OPTIONS ||
 		xmlrpc_array_size(env, extra_options) != settings.num_extra_socket_options) {
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Flow settings incorrect");

@@ -187,7 +187,7 @@ struct _request_add_flow_source
 
 	/* The request reply */
 	int flow_id;
-	char cc_alg[256];
+	char cc_alg[TCP_CA_NAME_MAX];
 	int real_send_buffer_size;
 	int real_read_buffer_size;
 };
