@@ -24,7 +24,7 @@ LICENSE="GPL-2"
 IUSE="debug gsl pcap"
 
 RDEPEND="gsl?  ( sci-libs/gsl )
-         pcap? ( sys-libs/libcap )
+         pcap? ( net-libs/libpcap )
          dev-libs/xmlrpc-c[curl]"
 DEPEND="${RDEPEND}"
 
