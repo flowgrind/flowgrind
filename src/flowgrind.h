@@ -14,6 +14,12 @@
 #define CONGESTION_LIMIT        10000
 #define DEFAULT_SELECT_TIMEOUT  10000
 
+#ifdef __LINUX__
+#define SYSCTL_VAR_AVAILABLE_CONGESTION "net.ipv4.tcp_available_congestion_control"
+#elif __FREEBSD__
+#define SYSCTL_VAR_AVAILABLE_CONGESTION "net.inet.tcp.cc.available"
+#endif
+
 struct _opt {
 	unsigned short num_flows;
 	double reporting_interval;

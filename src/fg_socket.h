@@ -8,14 +8,6 @@
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 
-#ifndef TCP_CONG_MODULE
-#define TCP_CONG_MODULE 13
-#endif
-
-#ifndef TCP_CONGESTION
-#define TCP_CONGESTION 0x40
-#endif
-
 int set_congestion_control(int fd, const char *cc_alg);
 int set_so_debug(int fd);
 int set_keepalive(int fd, int how);

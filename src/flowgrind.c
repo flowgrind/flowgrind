@@ -641,46 +641,29 @@ static void usage(void)
 
 static void usage_sockopt(void)
 {
+#ifdef TCP_CONGESTION
+	FILE *fp;
+	char buf1[1024];
+
 	fprintf(stderr,
 		"The following list contains possible values that can be set on the test socket:\n"
-	       );
-#ifdef __LINUX__
-	int fd;
-	fprintf(stderr,
-		"  -O x=TCP_CONG_MODULE=ALG\n"
+		"  -O x=TCP_CONGESTION=ALG\n"
 		"               set congestion control algorithm ALG.\n");
 
-		/* Read and print available congestion control algorithms */
-		fd = open("/proc/sys/net/ipv4/tcp_available_congestion_control/", O_RDONLY);
-		if (fd != -1) {
-			fprintf(stderr, "\n               The following list contains possible values for ALG:\n"
+	/* Read and print available congestion control algorithms */
+	sprintf(buf1, "/sbin/sysctl -n %s", SYSCTL_VAR_AVAILABLE_CONGESTION);
+	fp = popen(buf1, "r");
+
+	if (fp != NULL) {
+		fprintf(stderr, "\n               The following list contains possible values for ALG:\n"
 				"               ");
-			char buffer[1024];
-			int r;
-			while ((r = read(fd, buffer, 1024)) > 0)
-				if (fwrite(buffer, r, 1, stderr) != 1)
-				      fprintf(stderr, "fwrite() failed: %s\n", strerror(errno));
-			close(fd);
-			fprintf(stderr, "\n");
-		}
-#elif __FREEBSD__
-        FILE *fp;
-        fprintf(stderr,
-                "  -O x=TCP_CONGESTION=ALG\n"
-                "               set congestion control algorithm ALG.\n");
+		char buf2[1024];
+		while (fgets(buf2, 1024, fp) != NULL)
+			printf("%s", buf2);
 
-                /* Read and print available congestion control algorithms */
-                fp = popen("/sbin/sysctl -n net.inet.tcp.cc.available", "r");
-                if (fp != NULL) {
-                        fprintf(stderr, "\n               The following list contains possible values for ALG:\n"
-                                "               ");
-                        char buffer[1024];
-			while (fgets(buffer, 1024, fp) != NULL)
-    				printf("%s", buffer);
-
-                        pclose(fp);    
-                        fprintf(stderr, "\n");
-                }   
+		pclose(fp);
+		fprintf(stderr, "\n");
+	}
 #endif
 	fprintf(stderr,
 		"  -O x=TCP_CORK\n"
@@ -705,7 +688,7 @@ static void usage_sockopt(void)
 		"x can be replaced with 's' for source or 'd' for destination\n\n"
 
 		"Example:\n"
-		"  flowgrind -H s=host1,d=host2 -O s=TCP_CONG_MODULE=reno,d=SO_DEBUG\n"
+		"  flowgrind -H s=host1,d=host2 -O s=TCP_CONGESTION=reno,d=SO_DEBUG\n"
 		);
 	exit(1);
 }
@@ -1108,7 +1091,7 @@ void report_final(void)
 				if (flow[id].final_report[endpoint]->imtu > 0)
 					CATC("Interface MTU = %d (%s)", flow[id].final_report[endpoint]->imtu,
 						guess_topology(flow[id].final_report[endpoint]->imtu));
-				
+
 				if (flow[id].settings[endpoint].cc_alg[0])
 					CATC("cc = %s", flow[id].settings[endpoint].cc_alg);
 
@@ -1394,7 +1377,7 @@ struct _mtu_hint {
 	{ 65535,        "Hyperchannel" },               /* RFC1374 */
 	{ 17914,        "16 MB/s Token Ring" },
 	{ 16436,        "Linux Loopback device" },
-        { 16384,        "FreeBSD Loopback device" },
+	{ 16384,        "FreeBSD Loopback device" },
 	{ 16352,        "Darwin Loopback device"},
 	{ 9000,         "Gigabit Ethernet (Jumboframes)"},
 	{ 8166,         "802.4 Token Bus" },            /* RFC1042 */
@@ -1910,7 +1893,8 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 				else if (!strcmp(arg, "ROUTE_RECORD")) {
 					ASSIGN_COMMON_FLOW_SETTING(route_record, 1);
-				}
+				
+				/* keep TCP_CONG_MODULE for backward compatibility */}
 				else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
 					if (strlen(arg + 16) >= sizeof(flow[0].settings[SOURCE].cc_alg)) {
 						fprintf(stderr, "Too large string for TCP_CONG_MODULE value");
@@ -1919,13 +1903,13 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					ASSIGN_COMMON_FLOW_SETTING_STR(cc_alg, arg + 16);
 				}
 
-                                else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
-                                        if (strlen(arg + 16) >= sizeof(flow[0].settings[SOURCE].cc_alg)) {
-                                                fprintf(stderr, "Too large string for TCP_CONGESTION value");
-                                                usage_sockopt();
-                                        }
-                                        ASSIGN_COMMON_FLOW_SETTING_STR(cc_alg, arg + 15);
-                                }
+				else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
+					if (strlen(arg + 16) >= sizeof(flow[0].settings[SOURCE].cc_alg)) {
+						fprintf(stderr, "Too large string for TCP_CONGESTION value");
+						usage_sockopt();
+					}
+					ASSIGN_COMMON_FLOW_SETTING_STR(cc_alg, arg + 15);
+				}
 
 				else if (!strcmp(arg, "SO_DEBUG")) {
 					ASSIGN_COMMON_FLOW_SETTING(so_debug, 1);
