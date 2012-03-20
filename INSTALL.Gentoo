@@ -1,15 +1,30 @@
-Copy provided ebuild files into local portage overlay (e.g. /usr/local/portage)
+Optional prerequisites
+----------------------
+if you want to use all flowgrind features, enable some use flags:
 
-cp -R gentoo/net-analyzer/ /usr/local/portage
-
-Set wanted keyword for release version:
-echo "net-analyzer/flowgrind ~amd64" > /etc/portage/package.keywords/flowgrind 
-(OR)
-Set wanted keyword for git version:
-echo "net-analyzer/flowgrind ** > /etc/portage/package.keywords/flowgrind 
-
-(optional) enable use flags for optional feature sets:
 euse --enable gsl; euse --enable pcap
 
-Install flowgrind:
+
+RELASE VERSION Installation
+---------------------------
+
+Straight forward Installation using Portage:
+
+echo "net-analyzer/flowgrind ~amd64" >> /etc/portage/package.keywords/flowgrind
+emerge flowgrind
+
+
+GIT VERSION Installation
+------------------------
+
+if you want to install the GIT version from the git repository, you can
+use the provided ebuild with git support:
+
+copy ebuild files into local portage overlay (e.g. /usr/local/portage)
+
+tar xfvj flowgrind-*.tar.bz2
+cp -R flowgrind-*/gentoo/net-analyzer/ /usr/local/portage
+
+unmask and emerge:
+echo "net-analyzer/flowgrind ** > /etc/portage/package.keywords/flowgrind 
 emerge flowgrind
