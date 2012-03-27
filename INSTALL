@@ -24,7 +24,7 @@ Building flowgrind
 
 2. cd into the flowgrind directory
 
-3. Only if using a copy from the git repositry run
+3. Only if using a copy from the git repository run
      autoreconf -i
 
 4. Run  ./configure  to build the makefiles. If this step fails, you are

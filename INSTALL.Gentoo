@@ -5,7 +5,7 @@ if you want to use all flowgrind features, enable some use flags:
 euse --enable gsl; euse --enable pcap
 
 
-RELASE VERSION Installation
+RELEASE VERSION Installation
 ---------------------------
 
 Straight forward Installation using Portage:
