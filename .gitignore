@@ -1,3 +1,7 @@
+# wildcards
+*~
+.DS_Store*
+*.swp
 
 # /
 /tmp
@@ -6,6 +10,7 @@
 /config.status
 /config.h
 /config.h.in
+/gitversion.h
 /configure.scan
 /Makefile
 /Makefile.in
@@ -15,9 +20,9 @@
 /config.h
 /.nfs*
 /cscope.out
+/*.kdev4
 /autom4te.cache
 /aclocal.m4
-/gitversion.h
 
 # /build-aux/
 /build-aux/compile
