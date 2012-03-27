@@ -7,5 +7,4 @@ for i in *.[hc]; do sed -e "s/[ \t]*$//" $i > new2/$i; done
 mv new2/* .
 
 rm new[12] -rf
-rm new67890 -rf
 cd ..
