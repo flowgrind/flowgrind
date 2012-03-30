@@ -2,6 +2,7 @@
 *~
 .DS_Store*
 *.swp
+.nfs*
 
 # /
 /tmp
@@ -18,7 +19,6 @@
 /flowlog-*
 /*.pcap
 /config.h
-/.nfs*
 /cscope.out
 /*.kdev4
 /autom4te.cache

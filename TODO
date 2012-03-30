@@ -1,14 +1,12 @@
-+investigate ca state
 +truncate values for interpacket gap
 +add some way of specifying normal distribution to -R
 +add interleaving threshold
-+investigate -H x=localhost vs. x=127.0.0.1
 +investigate why libpcap does not work in multiple threads
 +simplify arbitrary socket options
 +IPv6 for control connections (libxmlrpclib >= 1.30 needed)
-+support modular congestion control framework in FreeBSD 9.0
 +do something with UDP
 +xml style output
 +allow send volume to be specified (instead of duration)
 +Add optional columns for sender/receiver buffer
 +replace pthread barrier for mac os x
++add gpl header to every source file
