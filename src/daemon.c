@@ -151,6 +151,7 @@ void uninit_flow(struct _flow *flow)
 	free(flow->write_block);
 	free(flow->addr);
 	free(flow->error);
+	free_math_functions(flow);
 }
 
 void remove_flow(unsigned int i)

@@ -79,6 +79,13 @@ init_math_functions (struct _flow *flow, unsigned long seed) {
 #endif
 }
 
+extern void
+free_math_functions (struct _flow *flow) {
+#ifdef HAVE_LIBGSL
+	gsl_rng_free(flow->r);
+#endif
+}
+
 static inline double
 rn_uniform(struct _flow *flow) {
 #ifndef HAVE_LIBGSL

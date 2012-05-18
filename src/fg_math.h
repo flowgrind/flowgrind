@@ -2,6 +2,7 @@
 
 /* initalization for random number generator */
 extern void init_math_functions (struct _flow *flow, unsigned long seed);
+extern void free_math_functions (struct _flow *flow);
 
 /* basic probability distributions */
 extern int      dist_bernoulli  (struct _flow *flow, const double p);
