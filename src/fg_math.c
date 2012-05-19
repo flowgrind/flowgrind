@@ -83,6 +83,8 @@ extern void
 free_math_functions (struct _flow *flow) {
 #ifdef HAVE_LIBGSL
 	gsl_rng_free(flow->r);
+#else
+	UNUSED_ARGUMENT(flow);
 #endif
 }
 
