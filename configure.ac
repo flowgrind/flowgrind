@@ -9,7 +9,6 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CPP
-AM_C_PROTOTYPES
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
 AC_LIB_RPATH
@@ -89,6 +88,7 @@ AC_CHECK_HEADERS([ \
 	stdarg.h \
 	stdio.h \
 	stdlib.h \
+	string.h \
 	sys/ioctl.h \
 	syslog.h \
 	sys/param.h \
