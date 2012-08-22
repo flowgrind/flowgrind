@@ -127,7 +127,7 @@ AC_CONFIG_FILES([
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_SEARCH_LIBS([socket], [socket])
-AC_SEARCH_LIBS([pthread_mutex_lock], [pthread])
+AC_SEARCH_LIBS([pthread_create], [pthread])
 
 AC_SUBST(LIBS)
 
