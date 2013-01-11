@@ -1,3 +1,4 @@
+# source code
 Update configure.ac
 Update NEWS
 Update debian/changelog
@@ -5,15 +6,19 @@ Update debian/changelog
 git commit -m "prepare flowgrind-X.X.X"
 
 git tag -s -m "tag flowgrind-X.X.X" flowgrind-X.X.X `git rev-parse HEAD`
+
+git push origin flowgrind-X.X.X
+
 dist.sh X.X.X
 
-Update Website
-
-Update Launchpad
+# Launchpad
+create milestone
+add download
+add announcement
 
 # PPA
-tar xfj flowgrind-X.X.X.tar.bz2
+tar xfj flowgrind-*.tar.bz2
 cd flowgrind-*
 debuild -S -sa
 cd ..
-dput ppa:umic-mesh/flowgrind  flowgrind_0.5.7ppa1_source.changes
+dput ppa:umic-mesh/flowgrind  flowgrind_*.changes
