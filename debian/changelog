@@ -1,8 +1,15 @@
+flowgrind (0.5.9) unstable; urgency=low
+
+  Release: 0.5.9 (2013-1-11):
+  * support for pluggable congestion control modules in FreeBSD 9
+  * minor compile and bugs fixes (thanks flameeyes)
+
+ -- Christian Samsel <christian.samsel@rwth-aachen.de>  Fri, 11 Jan 2013 11:27:45 +0100
+
 flowgrind (0.5.8) unstable; urgency=low
 
   Release: 0.5.8 (2012-3-3):
-  * ipv6 works for test connections
-  (not for control)
+  * ipv6 works for test connections (not for control)
   * FreeBSD Support
   * autoconf fixes to improve portability
   * small bug and coding style fixes

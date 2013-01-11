@@ -1,5 +1,6 @@
-Release 0.5.9 (2012-X-X)
+Release 0.5.9 (2012-11-1)
 - Support for pluggable congestion control modules in FreeBSD 9
+- minor compile and bugs fixes (thanks flameeyes)
 
 Release 0.5.8 (2012-3-3)
 - ipv6 works for test connections
