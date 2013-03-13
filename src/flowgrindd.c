@@ -19,6 +19,7 @@
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #endif
+#include <netdb.h>
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
@@ -36,6 +37,7 @@
 #endif
 
 unsigned port = DEFAULT_LISTEN_PORT;
+char *rpc_bind_addr = NULL;
 
 static char progname[50] = "flowgrindd";
 
@@ -43,11 +45,12 @@ static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
 #ifdef HAVE_LIBPCAP
-		"Usage: %1$s [-p#] [-d] [-w DIR/] [-v]\n"
+		"Usage: %1$s [-p#] [-b addr] [-d] [-w DIR/] [-v]\n"
 #else
-		"Usage: %1$s [-p#] [-d] [-v]\n"
+		"Usage: %1$s [-p#] [-b addr] [-d] [-v]\n"
 #endif
 		"\t-p#\t\tXML-RPC server port\n"
+		"\t-b addr\t\tXML-RPC server bind address\n"
 #ifdef DEBUG
 		"\t-d\t\tincrease debug verbosity, add multiple times (no daemon, log to stderr)\n"
 #else
@@ -814,6 +817,57 @@ void create_daemon_thread()
 	}
 }
 
+/* creates listen socket for the xmlrpc server */
+static int bind_rpc_server(char *bind_addr, unsigned int port) {
+	int rc;
+	int fd;
+	int optval;
+	struct addrinfo hints, *res, *ressave;
+	char tmp_port[100];
+
+	bzero(&hints, sizeof(struct addrinfo));
+	hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	sprintf(tmp_port, "%u", port);
+
+	if ((rc = getaddrinfo(bind_addr, tmp_port,
+	                        &hints, &res)) != 0) {
+		logging_log(LOG_ALERT, "Failed to find address to bind rpc_server: %s\n",
+			gai_strerror(rc));
+		return -1;
+	}
+	ressave = res;
+
+	/* try to bind the first succeeding socket of
+	   the returned addresses (libxmlrpc only supports one fd)
+	*/
+	do {
+		fd = socket(res->ai_family, res->ai_socktype,
+		res->ai_protocol);
+		if (fd < 0)
+			continue;
+		/* ignore old client connections in TIME_WAIT */
+		optval = 1;
+		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+		/* Disable Nagle algorithm to reduce latency */
+		setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
+
+		if (bind(fd, res->ai_addr, res->ai_addrlen) == 0)
+			break;
+
+		close(fd);
+	} while ((res = res->ai_next) != NULL);
+
+	if (res == NULL) {
+		logging_log(LOG_ALERT, "failed to bind RPC listen socket: %s\n", strerror(errno));
+		freeaddrinfo(ressave);
+		return -1;
+	}
+
+	return fd;
+}
+
 static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 {
 	xmlrpc_server_abyss_parms serverparm;
@@ -833,9 +887,9 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	   like a normal API.  We select the modern form by setting
 	   config_file_name to NULL:
 	*/
-	serverparm.config_file_name = NULL;
-	serverparm.registryP            = registryP;
-	serverparm.port_number    = port;
+	serverparm.config_file_name	= NULL;
+	serverparm.registryP		= registryP;
+	serverparm.socket_bound		= 1;
 	serverparm.log_file_name        = NULL; /*"/tmp/xmlrpc_log";*/
 
 	/* Increase HTTP keep-alive duration. Using defaults the amount of
@@ -844,14 +898,21 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	serverparm.keepalive_timeout = 60;
 	serverparm.keepalive_max_conn = 1000;
 
+	/* Explicitly set HTTP timeout to workaround a bug in certain libxmlprc versions */
+	serverparm.timeout = 15;
+
+	/* Disable introspection */
+	serverparm.dont_advertise = 1;
+
 	logging_log(LOG_NOTICE, "Running XML-RPC server on port %u", port);
 	printf("Running XML-RPC server...\n");
 
-	xmlrpc_server_abyss(env, &serverparm, XMLRPC_APSIZE(keepalive_max_conn));
+	serverparm.socket_handle = bind_rpc_server(rpc_bind_addr, port);
+	xmlrpc_server_abyss(env, &serverparm, XMLRPC_APSIZE(socket_handle));
 
-    if (env->fault_occurred) {
-	fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-		env->fault_string, env->fault_code);
+	if (env->fault_occurred) {
+		logging_log(LOG_ALERT, "XML-RPC Fault: %s (%d)\n",
+			env->fault_string, env->fault_code);
 	}
 	/* xmlrpc_server_abyss() never returns */
 }
@@ -866,9 +927,9 @@ static void parse_option(int argc, char ** argv) {
 				{"debug", 0, 0, 'd'},
 				{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "dDhp:vVw:W:", lo, 0)) != -1) {
+	while ((ch = getopt_long(argc, argv, "dDhp:vVw:W:b:", lo, 0)) != -1) {
 #else
-	while ((ch = getopt(argc, argv, "dDhp:vVw:W:")) != -1) {
+	while ((ch = getopt(argc, argv, "dDhp:vVw:W:b:")) != -1) {
 #endif
 		switch (ch) {
 		case 'h':
@@ -888,8 +949,17 @@ static void parse_option(int argc, char ** argv) {
 					"parse port number.\n");
 				usage();
 			}
+			// TODO check if port is in valid range
 			break;
-
+		case 'b':
+			rpc_bind_addr = malloc(strlen(optarg)+1);
+			rc = sscanf(optarg, "%s", rpc_bind_addr);
+			if (rc != 1) {
+				fprintf(stderr, "failed to "
+					"parse bind address.\n");
+				usage();
+			}
+			break;
 		case 'v':
 		case 'V':
 			fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
@@ -901,6 +971,7 @@ static void parse_option(int argc, char ** argv) {
 			dump_filename_prefix_server = optarg;
 			break;
 #endif
+
 		default:
 			usage();
 		}

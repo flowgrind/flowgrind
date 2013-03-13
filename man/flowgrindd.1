@@ -1,9 +1,9 @@
-.TH "flowgrindd" "1" "November 2010" "" "Flowgrind Manual"
+.TH "flowgrindd" "1" "March 2013" "" "Flowgrind Manual"
 .SH "NAME"
 flowgrindd \- network performance measurement tool daemon
 .SH "SYNOPSIS"
 flowgrindd
-.B \-h|\-v|\-d|\-w DIR/
+.B \-p#|-b addr|\-h|\-v|\-d|\-w DIR/
 .br 
 flowgrindd [options]
 
@@ -29,12 +29,17 @@ Show help and exit.
 Port the XML\-RPC server should listen on.
 
 .TP 
+.BR \-b " addr"
+Address the XML\-RPC server should listen on. An easy way to enable support for IPv6 control-connections
+is to specify the IPv6 wildcard address "::".
+
+.TP 
 .B \-v
 Show version and exit.
 
 .TP
 .B \-w " DIR/"
-Specify target directory for dump files. compiling flowgrind with libpcap support is required. Remember, dumps are save on the machine where the deamon runs and not local.
+Specify target directory for dump files. Compiling flowgrind with libpcap support is required. Remember, dumps are save on the machine where the daemon runs and not local.
 
 .TP 
 .B \-d
