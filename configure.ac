@@ -80,8 +80,8 @@ AC_CHECK_HEADERS([ \
 	limits.h \
 	math.h \
 	netdb.h \
-        netinet/in.h \
-        netinet/in_systm.h \
+	netinet/in.h \
+	netinet/in_systm.h \
 	netinet/tcp.h \
 	pthread.h \
 	signal.h \
@@ -181,11 +181,11 @@ AS_IF([ test "x$enable_gsl" != "xno"], [
 ])
 
 if test -z "$CURL_CONFIG"; then
-        AC_PATH_PROG(CURL_CONFIG, curl-config, no)
+	AC_PATH_PROG(CURL_CONFIG, curl-config, no)
 fi
 
 if test "x$CURL_CONFIG" = "xno" ; then
-        AC_MSG_ERROR(required curl-config not found in path.)
+	AC_MSG_ERROR(required curl-config not found in path.)
 fi
 
 CURL_CFLAGS=`$CURL_CONFIG --cflags`
@@ -195,11 +195,11 @@ AC_SUBST(CURL_CFLAGS)
 AC_SUBST(CURL_LDADD)
 
 if test -z "$XMLRPC_C_CONFIG"; then
-        AC_PATH_PROG(XMLRPC_C_CONFIG, xmlrpc-c-config, no)
+	AC_PATH_PROG(XMLRPC_C_CONFIG, xmlrpc-c-config, no)
 fi
-  
+
 if test "x$XMLRPC_C_CONFIG" = "xno"; then
-	AC_MSG_ERROR(xmlrpc-c-config not found in path.)
+	AC_MSG_ERROR([xmlrpc-c-config not found in path.])
 fi
 
 if ! $XMLRPC_C_CONFIG --features | grep "curl-client" > /dev/null; then
@@ -209,6 +209,11 @@ fi
 if ! $XMLRPC_C_CONFIG --features | grep "abyss-server" > /dev/null; then
 	AC_MSG_ERROR([xmlrpc-c needs to be compiled with abyss-server enabled.])
 fi
+
+XMLRPC_C_VERSION=`$XMLRPC_C_CONFIG --version`
+XMLRPC_C_VERSION_INT=`echo $XMLRPC_C_VERSION | sed "s/\.//g"`
+AC_MSG_NOTICE("xmlrpc-c found in version $XMLRPC_C_VERSION ($XMLRPC_C_VERSION_INT)")
+AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION_INT], [$XMLRPC_C_VERSION_INT], [Integer representation of the current xmlrpc-c version])
 
 XMLRPC_C_CLIENT_CFLAGS=`xmlrpc-c-config client --cflags`
 XMLRPC_C_CLIENT_LDADD=`xmlrpc-c-config client --ldadd`
