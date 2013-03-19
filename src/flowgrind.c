@@ -1823,6 +1823,8 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					 */
 					char url[1000];
 					int port = DEFAULT_LISTEN_PORT;
+					int extra_rpc = 0;
+					int is_ipv6 = 0;
 					char *sepptr, *rpc_address = 0;
 
 					/* RPC address */
@@ -1830,6 +1832,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					if (sepptr) {
 						*sepptr = '\0';
 						rpc_address = sepptr + 1;
+						extra_rpc = 1;
 					}
 					else
 						rpc_address = arg;
@@ -1837,27 +1840,58 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					/* IPv6 Address? */
 					if (strchr(arg, ':')) {
 						if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
-							fprintf(stderr, "invalid IPv6 address for test address\n");
+							fprintf(stderr, "invalid IPv6 address "
+							         "'%s' for test connection\n", arg);
 							usage();
 						}
+						if (!extra_rpc)
+							is_ipv6 = 1;
 					}
 
-					sepptr = strchr(rpc_address, ':');
-					if (sepptr) {
-						*sepptr = '\0';
-						port = atoi(sepptr + 1);
-						if (port < 1 || port > 65535) {
-							fprintf(stderr, "invalid port for test host\n");
+					if (extra_rpc) {
+						/* Now it's getting tricky... */
+						/* 1st case: IPv6 with port, e.g. "[a:b::c]a:5999"  */
+						if ((sepptr = strchr(rpc_address, ']'))) {
+						    is_ipv6 = 1;
+							*sepptr = '\0';
+							if (rpc_address[0] == '[')
+								rpc_address++;
+							sepptr++;
+						    if (sepptr != '\0' && *sepptr == ':')
+								sepptr++;
+							port = atoi(sepptr);
+						} else if ((sepptr = strchr(rpc_address, ':'))) {
+							/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
+							if (strchr(sepptr, ':')) {
+								is_ipv6 = 1;
+							} else {
+							/* 3rd case: IPv4 or name with port 1.2.3.4:5999*/
+								*sepptr = '\0';
+								sepptr++;
+								if ((*sepptr != '\0') && (*sepptr == ':'))
+										sepptr++;
+								port = atoi(sepptr);
+							}
+						}
+						if (is_ipv6 && (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)) {
+							fprintf(stderr, "invalid IPv6 address "
+								 "'%s' for RPC connection\n", arg);
 							usage();
 						}
-					}
+						if (port < 1 || port > 65535) {
+							fprintf(stderr, "invalid port for RPC connection \n");
+							usage();
+						}
+					} /* end of extra rpc address parsing */
 
 					if (!*arg) {
 						fprintf(stderr, "No test host given in argument\n");
 						usage();
 					}
-
-					sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
+				    if (is_ipv6)
+						sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
+					else
+						sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
 					ASSIGN_ENDPOINT_FLOW_OPTION_STR(server_url, url);
 					ASSIGN_ENDPOINT_FLOW_OPTION_STR(server_address, rpc_address);
 					ASSIGN_ENDPOINT_FLOW_OPTION_STR(test_address, arg);
