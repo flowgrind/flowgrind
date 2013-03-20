@@ -1,17 +1,43 @@
 /*
-*  C Implementation: adt
+* adt.c C Implementation of the Anderson-Darling Test
 *
-* Description:
-* Anderson Darling Test
-* Code based on RFC2330
+* Code is based on code snippets found in RFC 2330
+* RFC 2330 contains the following Copyright Statement:
 *
-* Author:  (C) 2008
+* Copyright (C) The Internet Society (1998).  All Rights Reserved.
 *
-* Copyright: See COPYING file that comes with this distribution
+* This document and translations of it may be copied and furnished to
+* others, and derivative works that comment on or otherwise explain it
+* or assist in its implementation may be prepared, copied, published
+* and distributed, in whole or in part, without restriction of any
+* kind, provided that the above copyright notice and this paragraph are
+* included on all such copies and derivative works. However, this
+* document itself may not be modified in any way, such as by removing
+* the copyright notice or references to the Internet Society or other
+* Internet organizations, except as needed for the purpose of
+* developing Internet standards in which case the procedures for
+* copyrights defined in the Internet Standards process must be
+* followed, or as required to translate it into languages other than
+* English.
+*
+* The limited permissions granted above are perpetual and will not be
+* revoked by the Internet Society or its successors or assigns.
+*
+* This document and the information contained herein is provided on an
+* "AS IS" basis and THE INTERNET SOCIETY AND THE INTERNET ENGINEERING
+* TASK FORCE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+* BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION
+* HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF
+* MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 *
 */
 
 #include "adt.h"
+
+/**
+ * Number of datapoints considered for test.
+ */ 
+#define MAXANDERSONSIZE 1000
 
 /* Returns the raw A^2 test statistic for n sorted samples
  * z[0] .. z[n-1], for z ~ Unif(0,1).
@@ -58,9 +84,7 @@ double exp_A2_known_mean(double x[], int n, double mean);
 double unif_A2_known_range(double x[], int n,
 		double min_val, double max_val);
 
-
 /* Array to hold data points */
-#define MAXANDERSONSIZE 1000
 double adt_data[2][adt_type_max][MAXANDERSONSIZE];
 
 static int adt_num_data_points[2][adt_type_max];

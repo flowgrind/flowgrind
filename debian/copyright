@@ -1,23 +1,24 @@
-This package was debianized by Tim Kosse <tim.kosse@gmx.de> on
+This package was first debianized by Tim Kosse <tim.kosse@gmx.de> on
 Mon, 06 Jul 2009 11:21:28 +0200.
 
-It was downloaded from http://umic-mesh.net/research/flowgrind/
+It was downloaded from https://launchpad.net/flowgrind/+download
 
 Upstream Authors:
 
-    Tim Kosse <tim.kosse@gmx.de>
-    Daniel Schaffrath <daniel.schaffrath@mac.com>
-    Christian Samsel <christian.samsel@rwth-aachen.de>
+	Tim Kosse <tim.kosse@gmx.de>
+	Daniel Schaffrath <daniel.schaffrath@mac.com>
+	Christian Samsel <christian.samsel@rwth-aachen.de>
+	Arnd Hannemann <arnd@arndnet.de>
 
 Copyright:
-
-    Copyright (C) 2008 Daniel Schaffrath
-    Copyright (C) 2009 Tim Kosse
+	Copyright (C) 2013 Arnd Hannemann
+	Copyright (C) 2010-2013 Christian Samsel
+	Copyright (C) 2009 Tim Kosse
+	Copyright (C) 2007-2008 Daniel Schaffrath
 
 License:
 
-    /usr/share/common-licenses/GPL-2
+	/usr/share/common-licenses/GPL-2
 
 The Debian packaging is copyright 2009, Tim Kosse <tim.kosse@gmx.de> and
 is licensed under the GPL, see `/usr/share/common-licenses/GPL-2'.
-
