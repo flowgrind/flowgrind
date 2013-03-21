@@ -215,10 +215,10 @@ XMLRPC_C_VERSION_INT=`echo $XMLRPC_C_VERSION | sed "s/\.//g"`
 AC_MSG_NOTICE("xmlrpc-c found in version $XMLRPC_C_VERSION ($XMLRPC_C_VERSION_INT)")
 AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION_INT], [$XMLRPC_C_VERSION_INT], [Integer representation of the current xmlrpc-c version])
 
-XMLRPC_C_CLIENT_CFLAGS=`xmlrpc-c-config client --cflags`
-XMLRPC_C_CLIENT_LDADD=`xmlrpc-c-config client --ldadd`
-XMLRPC_C_SERVER_CFLAGS=`xmlrpc-c-config abyss-server --cflags`
-XMLRPC_C_SERVER_LDADD=`xmlrpc-c-config abyss-server --ldadd`
+XMLRPC_C_CLIENT_CFLAGS=`$XMLRPC_C_CONFIG client --cflags`
+XMLRPC_C_CLIENT_LDADD=`$XMLRPC_C_CONFIG client --ldadd`
+XMLRPC_C_SERVER_CFLAGS=`$XMLRPC_C_CONFIG abyss-server --cflags`
+XMLRPC_C_SERVER_LDADD=`$XMLRPC_C_CONFIG abyss-server --ldadd`
 
 AC_SUBST(XMLRPC_C_CLIENT_CFLAGS)
 AC_SUBST(XMLRPC_C_CLIENT_LDADD)
