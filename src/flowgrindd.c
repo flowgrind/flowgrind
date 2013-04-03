@@ -894,6 +894,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 {
 	xmlrpc_server_abyss_parms serverparm;
 	xmlrpc_registry * registryP;
+	memset(&serverparm, 0, sizeof(serverparm));
 
 	registryP = xmlrpc_registry_new(env);
 
@@ -919,9 +920,6 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	 */
 	serverparm.keepalive_timeout = 60;
 	serverparm.keepalive_max_conn = 1000;
-
-	/* Explicitly set HTTP timeout to workaround a bug in certain libxmlprc versions */
-	serverparm.timeout = 15;
 
 	/* Disable introspection */
 	serverparm.dont_advertise = 1;
