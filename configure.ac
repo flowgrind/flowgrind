@@ -211,9 +211,14 @@ if ! $XMLRPC_C_CONFIG --features | grep "abyss-server" > /dev/null; then
 fi
 
 XMLRPC_C_VERSION=`$XMLRPC_C_CONFIG --version`
-XMLRPC_C_VERSION_INT=`echo $XMLRPC_C_VERSION | sed "s/\.//g"`
-AC_MSG_NOTICE("xmlrpc-c found in version $XMLRPC_C_VERSION ($XMLRPC_C_VERSION_INT)")
-AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION_INT], [$XMLRPC_C_VERSION_INT], [Integer representation of the current xmlrpc-c version])
+
+AC_CHECK_MEMBERS(struct xmlrpc_curl_xportparms.dont_advertise,,,
+         [   
+         #include <xmlrpc-c/client.h>
+         #include <xmlrpc-c/transport.h>
+         ]) 
+AC_MSG_NOTICE([xmlrpc-c found in version $XMLRPC_C_VERSION])
+AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION], [$XMLRPC_C_VERSION], [the current xmlrpc-c version])
 
 XMLRPC_C_CLIENT_CFLAGS=`$XMLRPC_C_CONFIG client --cflags`
 XMLRPC_C_CLIENT_LDADD=`$XMLRPC_C_CONFIG client --ldadd`

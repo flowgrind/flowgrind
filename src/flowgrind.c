@@ -3005,14 +3005,14 @@ void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
 	struct xmlrpc_clientparms clientParms;
 	size_t clientParms_cpsize = XMLRPC_CPSIZE(transport);
 
-	/* Since version 1.22 xmlrpclib will automatically generate a
+	/* Since version 1.21 xmlrpclib will automatically generate a
 	 * rather long user_agent, we will do a lot of RPC calls so let's
 	 * spare some bytes and omit this header */
-#if XMLRPC_C_VERSION_INT >= 12200
+#ifdef HAVE_STRUCT_XMLRPC_CURL_XPORTPARMS_DONT_ADVERTISE
 	struct xmlrpc_curl_xportparms curlParms;
+	memset(&curlParms, 0, sizeof(curlParms));
 
-	curlParms.user_agent        = NULL;
-	curlParms.dont_advertise    = 1;
+	curlParms.dont_advertise = 1;
 
 	clientParms.transportparmsP    = &curlParms;
 	clientParms.transportparm_size = XMLRPC_CXPSIZE(dont_advertise);
