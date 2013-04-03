@@ -2472,6 +2472,12 @@ void check_version(xmlrpc_client *rpc_client)
 
 		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j], "get_version", &resultP,
 		"()");
+		if ((rpc_env.fault_occurred) && (strcasestr(rpc_env.fault_string,"response code is 400"))) {
+			fprintf(stderr, "FATAL: node %s could not parse request.\n "
+				"You are probably trying to use a numeric IPv6 "
+				"address and the node's libxmlrpc is too old, please upgrade!\n",
+				unique_servers[j]);
+		}
 		die_if_fault_occurred(&rpc_env);
 
 		if (resultP) {
