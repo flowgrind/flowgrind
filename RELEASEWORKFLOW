@@ -19,6 +19,7 @@ add announcement
 # PPA
 tar xfj flowgrind-*.tar.bz2
 cd flowgrind-*
+vi debian/changelog (e.g. unstable -> lucid)
 debuild -S -sa
 cd ..
 dput ppa:umic-mesh/flowgrind  flowgrind_*.changes

@@ -41,8 +41,10 @@ fi
 
 $GIT checkout -- INSTALL
 find . -type d -name ".git" | xargs rm -r
-rm -r config.h.in~ autom4te.cache ChangeLog dist.sh RELEASEWORKFLOW 
+
 ./reformat-code.sh
+
+rm -r autom4te.cache ChangeLog dist.sh RELEASEWORKFLOW .gitignore reformat-code.sh
 
 cd ..
 
@@ -51,6 +53,8 @@ if [ $? -ne 0 ]; then
 	echo "failed to create the tarball."
 	exit 1
 fi
+
+gpg --armor --sign --detach-sig flowgrind-$VERSION.tar.bz2
 
 rm -r flowgrind-$VERSION
 
