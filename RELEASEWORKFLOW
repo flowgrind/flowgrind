@@ -3,7 +3,7 @@ Update configure.ac
 Update NEWS
 Update debian/changelog
 
-git commit -m "prepare flowgrind-X.X.X"
+git commit -a -m "prepare flowgrind-X.X.X"
 
 git tag -s -m "tag flowgrind-X.X.X" flowgrind-X.X.X `git rev-parse HEAD`
 

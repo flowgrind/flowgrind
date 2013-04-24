@@ -1,3 +1,7 @@
+Release 0.6.0 (2013-4-24)
+- full IPv6 support (control and test connection)
+  Thanks Arnd.
+
 Release 0.5.9 (2012-11-1)
 - Support for pluggable congestion control modules in FreeBSD 9
 - minor compile and bugs fixes (thanks flameeyes)

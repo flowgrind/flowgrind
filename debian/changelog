@@ -1,3 +1,13 @@
+
+
+flowgrind (0.6.0) unstable; urgency=low
+
+  Release: 0.6.0 (2013-4-24):
+    * Full IPv6 Support 
+
+ -- Christian Samsel <christian.samsel@rwth-aachen.de>  Wed, 24 Apr 2013 10:45:05 +0200 
+
+
 flowgrind (0.5.9) unstable; urgency=low
 
   Release: 0.5.9 (2013-1-11):
