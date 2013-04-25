@@ -1,20 +1,29 @@
 #!/bin/sh
 
+NOGIT='/*#define GITVERSION ""*/'
 GIT=`which git`
 if [ "$GIT" = "" ]; then
 	echo "The 'git' command is not installed."
-	echo "/*#define GITVERSION \"\"*/" >gitversion.h
+	if ! echo $NOGIT | md5sum - | sed 's|-|gitversion.h|' | md5sum -c
+	then
+		echo "$NOGIT" >gitversion.h
+	fi
 	exit 0 
 fi
 
 if [ ! -d .git ]; then
 	echo "This is not a git release."
-	echo "/*#define GITVERSION \"\"*/" >gitversion.h
+	if ! echo $NOGIT | md5sum - | sed 's|-|gitversion.h|' | md5sum -c
+	then
+		echo "$NOGIT" >gitversion.h
+	fi
 	exit 0
 fi
 
 VERSION=$($GIT describe --always --abbrev=6)
 
-echo "#define GITVERSION \"$VERSION\"" >gitversion.h
-
-
+VGIT="#define GITVERSION \"$VERSION\""
+if ! echo $VGIT | md5sum - | sed 's|-|gitversion.h|' | md5sum -c
+then
+	echo "$VGIT" >gitversion.h
+fi
