@@ -17,15 +17,14 @@ Description: Distributed network performance measurement tool
  In Flowgrinds distributed architecture, the flowgrind controller
  is used to schedule flows between and collect live samples from
  nodes running the flowgrindd daemon.
-.
-Features:
-	* Measure bandwith, delay, IAT and sample TCP kernel metrics (tcp_info)
-	* Bulk transfers, rate-limited flows, sophisticated request/response test
-	* Report observed MSS/MTU size
-	* Set buffer size on per flow basis
-	* Set congestion control algorithm, DSCP field etc.
-	* Uses asynchronous I/O to improve fairness between flows
-	* Gnuplot compatible configureable output format
+ Features:
+  * Measure bandwith, delay, IAT and sample TCP kernel metrics (tcp_info)
+  * Bulk transfers, rate-limited flows, sophisticated request/response test
+  * Report observed MSS/MTU size
+  * Set buffer size on per flow basis
+  * Set congestion control algorithm, DSCP field etc.
+  * Uses asynchronous I/O to improve fairness between flows
+  * Gnuplot compatible configureable output format
 Tag: admin::benchmarking, implemented-in::c, interface::commandline, network::client, network::server, protocol::ethernet, protocol::ip, protocol::ipv6, protocol::tcp, role::program, scope::utility, use::analysing, use::checking, use::monitor, works-with::network-traffic
 
 Package: flowgrind-dbg
