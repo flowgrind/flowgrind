@@ -1,30 +1,35 @@
-Install required libaries:
-
-xmlrpc-c
-cd /usr/ports/net/xmlrpc-c; make install clean (activate curl)
-
-Install optional libaries:
-
-libGSL
-cd /usr/ports/math/gsl; make install clean
-
-libpcap
-cd /usr/ports/lib/pcap: make install clean
+Tested with
+-----------
+FreeBSD 9.1-RELEASE
 
 
-extract flowgrind archive:
-tar xjvf flowgrind-*.tar.bz2
-cd flowgrind-*
+RELEASE VERSION installation
+----------------------------
+Straight forward installation using port tree:
+  cd /usr/ports/benchmarks/flowgrind; make install clean
 
-configure sources:
 
-CFLAGS=-I/usr/local/include LDFLAGS=-L/usr/local/lib ./configure
+TARBALL VERSION Installation
+----------------------------
+Install required xmlrpc-c library:
+  cd /usr/ports/net/xmlrpc-c; make install clean (activate curl)
 
-build sources:
-make
+Install optional libGSL and libpcap library if you want to
+use all flowgrind features:
+  cd /usr/ports/math/gsl; make install clean
+  cd /usr/ports/net/libpcap; make install clean
 
-install it
-make install
+Extract archive:
+  tar xjvf flowgrind-*.tar.bz2
+  cd flowgrind-*
 
-Hint:
-currently sysctl net.inet6.ip6.v6only=0 (disables ipv6) might be required.
+Configure sources:
+  CFLAGS=-I/usr/local/include LDFLAGS=-L/usr/local/lib ./configure
+
+Build and installl flowgrind:
+  make && make install
+
+
+Hint
+----
+Currently sysctl net.inet6.ip6.v6only=0 (disables ipv6) might be required.
