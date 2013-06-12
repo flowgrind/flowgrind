@@ -1,8 +1,16 @@
+Tested with
+-----------
+Ubuntu 13.04  (Raring Ringtail)
+
+
+PPA VERSION Installation
+------------------------
+
 Add UMIC-Mesh.net Repository:
-sudo add-apt-repository ppa:umic-mesh/flowgrind
+  sudo add-apt-repository ppa:umic-mesh/flowgrind
 
 Update Package List:
-sudo apt-get update
+  sudo apt-get update
 
-Install Flowgrind:
-sudo aptitude install flowgrind
+Install flowgrind:
+  sudo aptitude install flowgrind
