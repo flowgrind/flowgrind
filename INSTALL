@@ -1,23 +1,19 @@
-                             Compiling flowgrind
-                             ===================
-
 Dependencies
-============
-
+------------
 Flowgrind depends on the following tools and libraries:
-- GNU build tools 
-- libxmlrpc-c with curl transport and abyss server 
+  - GNU build tools
+  - libxmlrpc-c with curl transport and abyss server
 
 These libraries as well as their headers and tools need to be installed
 (install appropriate -dev packages too).
 
 The following dependencies are optional and only required for advanced features:
-- libpcap (for automatic dump, optional)
-- libgsl (for advanced traffic generation, optional)
+  - libpcap (for automatic dump, optional)
+  - libgsl (for advanced traffic generation, optional)
+
 
 Building flowgrind
-==================
-
+------------------
 1. a) Extract source tarball OR
    b) Checkout flowgrind from the git repository
       (e.g. git clone git://github.com/flowgrind/flowgrind.git)
