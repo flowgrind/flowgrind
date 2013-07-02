@@ -132,7 +132,7 @@ int set_window_size(int fd, int window)
 	return send < receive? send: receive;
 }
 
-int set_dscp(int fd, uint8_t dscp)
+int set_dscp(int fd, int dscp)
 {
 	int optname = IP_TOS;
 	int optlevel = IPPROTO_IP;

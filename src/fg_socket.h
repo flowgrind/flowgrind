@@ -19,7 +19,7 @@ int set_so_elcn(int fd, int val);
 int set_so_lcd(int fd);
 int set_tcp_mtcp(int fd);
 int set_tcp_nodelay(int fd);
-int set_dscp(int sock, uint8_t dscp);
+int set_dscp(int sock, int dscp);
 int set_tcp_cork(int fd);
 int toggle_tcp_cork(int fd);
 int set_window_size(int, int);
