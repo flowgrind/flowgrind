@@ -1,7 +1,15 @@
+flowgrind (0.6.1) unstable; urgency=low
+
+  Release: 0.6.1 (2013-7-5):
+  * Closes LP#1196940, LP#1196972
+
+ -- Christian Samsel <christian.samsel@rwth-aachen.de>  Fri, 05 Jul 2013 15:31:26 +0200
+
+
 flowgrind (0.6.0) unstable; urgency=low
 
   Release: 0.6.0 (2013-4-24):
-    * Full IPv6 Support 
+  * Full IPv6 Support 
 
  -- Christian Samsel <christian.samsel@rwth-aachen.de>  Wed, 24 Apr 2013 10:45:05 +0200 
 
