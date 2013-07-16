@@ -1023,8 +1023,8 @@ void print_tcp_report_line(char hash, int id,
 	transac = (double)r->response_blocks_read / (time2 - time1);
 
 	char rep_string[4000];
-#ifndef __LINUX__
-	/* dont show linux kernel output if there is no linux OS */
+#if !(defined __LINUX__ || defined __FreeBSD__)
+	/* don't show tcp kernel output if there is no linux or freebsd OS */
 	visible_columns[column_type_kernel] = 0;
 #endif
 	strcpy(rep_string, createOutput(hash, id, type,
@@ -1038,6 +1038,12 @@ void print_tcp_report_line(char hash, int id,
 		(unsigned int)r->tcp_info.tcpi_retrans, (unsigned int)r->tcp_info.tcpi_retransmits, (unsigned int)r->tcp_info.tcpi_fackets,
 		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
 		(unsigned int)r->tcp_info.tcpi_backoff, r->tcp_info.tcpi_ca_state, (unsigned int)r->tcp_info.tcpi_snd_mss,
+#elif __FreeBSD__
+        (unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, 0,
+        0, 0, 0,
+        0, 0, 0,
+        (double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
+        0, 0, (unsigned int)r->tcp_info.tcpi_snd_mss,
 #else
 		0, 0, 0,
 		0, 0, 0,
@@ -2990,6 +2996,13 @@ has_more_reports:
 				report.tcp_info.tcpi_backoff = tcpi_backoff;
 				report.tcp_info.tcpi_ca_state = tcpi_ca_state;
 				report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
+#elif __FreeBSD__
+                report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
+                report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
+                report.tcp_info.tcpi_rtt = tcpi_rtt;
+                report.tcp_info.tcpi_rttvar = tcpi_rttvar;
+                report.tcp_info.tcpi_rto = tcpi_rto;
+                report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
 #endif
 				report.begin.tv_sec = begin_sec;
 				report.begin.tv_usec = begin_usec;

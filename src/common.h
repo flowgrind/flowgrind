@@ -180,7 +180,7 @@ struct _report
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 	struct tcp_info tcp_info;
 #endif
 	int pmtu;

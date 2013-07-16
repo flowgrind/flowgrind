@@ -258,7 +258,7 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 	return 0;
 }
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 int get_tcp_info(struct _flow *flow, struct tcp_info *info);
 #endif
 static void report_flow(struct _flow* flow, int type);
@@ -286,7 +286,7 @@ static int prepare_fds() {
 			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))
 		) {
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif
 			flow->pmtu = get_pmtu(flow->fd);
@@ -372,7 +372,7 @@ static void stop_flow(struct _request_stop_flow *request)
 		for (unsigned int i = 0; i < num_flows; i++) {
 			struct _flow *flow = &flows[i];
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif
 			flow->pmtu = get_pmtu(flow->fd);
@@ -394,7 +394,7 @@ static void stop_flow(struct _request_stop_flow *request)
 		if (flow->id != request->flow_id)
 			continue;
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 		flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 #endif
 		flow->pmtu = get_pmtu(flow->fd);
@@ -503,7 +503,7 @@ static void report_flow(struct _flow* flow, int type)
 	report->iat_max = flow->statistics[type].iat_max;
 	report->iat_sum = flow->statistics[type].iat_sum;
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 	report->tcp_info = flow->statistics[type].tcp_info;
 #endif
 	if (flow->fd != -1) {
@@ -579,7 +579,7 @@ static void report_flow(struct _flow* flow, int type)
 	DEBUG_MSG(LOG_DEBUG, "report_flow finished for flow %d (type %d)", flow->id, type);
 }
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 int get_tcp_info(struct _flow *flow, struct tcp_info *info)
 {
 	struct tcp_info tmp_info;
@@ -617,7 +617,7 @@ static void timer_check()
 		if (!time_is_after(&now, &flow->next_report_time))
 			continue;
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 		if (flow->fd != -1)
 			flow->statistics[INTERVAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info) ? 0 : 1;
 #endif
@@ -690,7 +690,7 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 		i++;
 		continue;
 remove:
-#ifdef __LINUX_
+#if (defined __LINUX__ || defined __FreeBSD__)
 		if (flow->fd != -1) {
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 		}
