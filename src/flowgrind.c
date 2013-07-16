@@ -536,8 +536,8 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else
 		strcpy(tmp, "err");
 	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
-	i++;
 #endif
+	i++;
 
 	/* param str_linrtt */
 	createOutputColumn(headerString1, headerString2, dataString, i, snd_mss, &column_states[i], 0, &columnWidthChanged);
