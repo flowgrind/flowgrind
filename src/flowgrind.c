@@ -117,7 +117,8 @@ const struct _header_info header_info[] = {
 	{ " min IAT", " [ms]", column_type_iat },
 	{ " avg IAT", " [ms]", column_type_iat },
 	{ " max IAT", " [ms]", column_type_iat },
-	{ " cwnd", " [#]", column_type_kernel },
+#ifdef __LINUX__
+    { " cwnd", " [#]", column_type_kernel },
 	{ " ssth", " [#]", column_type_kernel },
 	{ " uack", " [#]", column_type_kernel },
 	{ " sack", " [#]", column_type_kernel },
@@ -133,6 +134,25 @@ const struct _header_info header_info[] = {
 	{ " ca state", " ", column_type_kernel },
 	{ " smss", "[B] ", column_type_kernel },
 	{ " pmtu", "[B]", column_type_kernel },
+#elif __FreeBSD__
+    { " cwnd", " [B]", column_type_kernel },
+    { " ssth", " [B]", column_type_kernel },
+    { " uack", " [B]", column_type_kernel },
+    { " sack", " [B]", column_type_kernel },
+    { " lost", " [B]", column_type_kernel },
+    { " retr", " [B]", column_type_kernel },
+    { " tret", " [B]", column_type_kernel },
+    { " fack", " [B]", column_type_kernel },
+    { " reor", " [B]", column_type_kernel },
+    { " bkof", " [B]", column_type_kernel },
+    { " rtt", " [ms]", column_type_kernel },
+    { " rttvar", " [ms]", column_type_kernel },
+    { " rto", " [ms]", column_type_kernel },
+    { " ca state", " ", column_type_kernel },
+    { " smss", "[B] ", column_type_kernel },
+    { " pmtu", "[B]", column_type_kernel },
+#endif
+
 #ifdef DEBUG
 	{ " status", " ", column_type_status }
 #endif
