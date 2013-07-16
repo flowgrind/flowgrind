@@ -1,3 +1,7 @@
+Release 0.6.1 (2013-7-5)
+- Closes LP#1196940, LP#1196972 
+  Thanks Lars and Arnd.
+
 Release 0.6.0 (2013-4-24)
 - full IPv6 support (control and test connection)
   Thanks Arnd.
