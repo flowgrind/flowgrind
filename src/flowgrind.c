@@ -144,7 +144,7 @@ const struct _header_info header_info[] = {
         { " rttvar", " [ms]", column_type_kernel },
         { " rto", " [ms]", column_type_kernel }, 
         { " ca state", " ", column_type_kernel },
-        { " smss", "[B] ", column_type_kernel },
+        { " smss", "[B]", column_type_kernel },
         { " pmtu", "[B]", column_type_kernel },
 	
 #ifdef DEBUG
