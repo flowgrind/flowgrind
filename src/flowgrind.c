@@ -117,7 +117,8 @@ const struct _header_info header_info[] = {
 	{ " min IAT", " [ms]", column_type_iat },
 	{ " avg IAT", " [ms]", column_type_iat },
 	{ " max IAT", " [ms]", column_type_iat },
-	{ " cwnd", " [#]", column_type_kernel },
+#ifdef __LINUX__
+    { " cwnd", " [#]", column_type_kernel },
 	{ " ssth", " [#]", column_type_kernel },
 	{ " uack", " [#]", column_type_kernel },
 	{ " sack", " [#]", column_type_kernel },
@@ -133,6 +134,25 @@ const struct _header_info header_info[] = {
 	{ " ca state", " ", column_type_kernel },
 	{ " smss", "[B] ", column_type_kernel },
 	{ " pmtu", "[B]", column_type_kernel },
+#elif __FreeBSD__
+    { " cwnd", " [B]", column_type_kernel },
+    { " ssth", " [B]", column_type_kernel },
+    { " uack", " [B]", column_type_kernel },
+    { " sack", " [B]", column_type_kernel },
+    { " lost", " [B]", column_type_kernel },
+    { " retr", " [B]", column_type_kernel },
+    { " tret", " [B]", column_type_kernel },
+    { " fack", " [B]", column_type_kernel },
+    { " reor", " [B]", column_type_kernel },
+    { " bkof", " [B]", column_type_kernel },
+    { " rtt", " [ms]", column_type_kernel },
+    { " rttvar", " [ms]", column_type_kernel },
+    { " rto", " [ms]", column_type_kernel },
+    { " ca state", " ", column_type_kernel },
+    { " smss", "[B] ", column_type_kernel },
+    { " pmtu", "[B]", column_type_kernel },
+#endif
+
 #ifdef DEBUG
 	{ " status", " ", column_type_status }
 #endif
@@ -516,8 +536,8 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else
 		strcpy(tmp, "err");
 	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
-	i++;
 #endif
+	i++;
 
 	/* param str_linrtt */
 	createOutputColumn(headerString1, headerString2, dataString, i, snd_mss, &column_states[i], 0, &columnWidthChanged);
@@ -1023,8 +1043,8 @@ void print_tcp_report_line(char hash, int id,
 	transac = (double)r->response_blocks_read / (time2 - time1);
 
 	char rep_string[4000];
-#ifndef __LINUX__
-	/* dont show linux kernel output if there is no linux OS */
+#if !(defined __LINUX__ || defined __FreeBSD__)
+	/* don't show tcp kernel output if there is no linux or freebsd OS */
 	visible_columns[column_type_kernel] = 0;
 #endif
 	strcpy(rep_string, createOutput(hash, id, type,
@@ -1038,6 +1058,12 @@ void print_tcp_report_line(char hash, int id,
 		(unsigned int)r->tcp_info.tcpi_retrans, (unsigned int)r->tcp_info.tcpi_retransmits, (unsigned int)r->tcp_info.tcpi_fackets,
 		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
 		(unsigned int)r->tcp_info.tcpi_backoff, r->tcp_info.tcpi_ca_state, (unsigned int)r->tcp_info.tcpi_snd_mss,
+#elif __FreeBSD__
+        (unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, 0,
+        0, 0, 0,
+        0, 0, 0,
+        (double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
+        0, 0, (unsigned int)r->tcp_info.tcpi_snd_mss,
 #else
 		0, 0, 0,
 		0, 0, 0,
@@ -2990,6 +3016,13 @@ has_more_reports:
 				report.tcp_info.tcpi_backoff = tcpi_backoff;
 				report.tcp_info.tcpi_ca_state = tcpi_ca_state;
 				report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
+#elif __FreeBSD__
+                report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
+                report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
+                report.tcp_info.tcpi_rtt = tcpi_rtt;
+                report.tcp_info.tcpi_rttvar = tcpi_rttvar;
+                report.tcp_info.tcpi_rto = tcpi_rto;
+                report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
 #endif
 				report.begin.tv_sec = begin_sec;
 				report.begin.tv_usec = begin_usec;

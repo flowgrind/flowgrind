@@ -60,7 +60,7 @@
 
 void remove_flow(unsigned int i);
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 int get_tcp_info(struct _flow *flow, struct tcp_info *info);
 #endif
 
