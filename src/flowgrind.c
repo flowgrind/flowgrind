@@ -642,7 +642,7 @@ static void usage(void)
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
-		"               An endpoint that isn't specified is assumed to be 127.0.0.1\n"
+		"               An endpoint that isn't specified is assumed to be localhost\n"
 		"  -J #         Use random seed # (default: read /dev/urandom)\n"
 		"  -L           Call connect() on test socket immediately before starting to send\n"
 		"               data (late connect). If not specified the test connection is\n"
@@ -839,10 +839,10 @@ static void init_flows_defaults(void)
 			flow[id].settings[i].request_trafgen_options.param_one = 8192;
 			flow[id].settings[i].response_trafgen_options.param_one = 0;
 			flow[id].settings[i].route_record = 0;
-			strcpy(flow[id].endpoint_options[i].server_url, "http://127.0.0.1:5999/RPC2");
-			strcpy(flow[id].endpoint_options[i].server_address, "127.0.0.1");
+			strcpy(flow[id].endpoint_options[i].server_url, "http://localhost:5999/RPC2");
+			strcpy(flow[id].endpoint_options[i].server_address, "localhost");
 			flow[id].endpoint_options[i].server_port = DEFAULT_LISTEN_PORT;
-			strcpy(flow[id].endpoint_options[i].test_address, "127.0.0.1");
+			strcpy(flow[id].endpoint_options[i].test_address, "localhost");
 
 			flow[id].settings[i].pushy = 0;
 			flow[id].settings[i].cork = 0;
