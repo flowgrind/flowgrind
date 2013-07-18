@@ -118,7 +118,7 @@ const struct _header_info header_info[] = {
 	{ " avg IAT", " [ms]", column_type_iat },
 	{ " max IAT", " [ms]", column_type_iat },
 #ifdef __LINUX__
-    { " cwnd", " [#]", column_type_kernel },
+	{ " cwnd", " [#]", column_type_kernel },
 	{ " ssth", " [#]", column_type_kernel },
 	{ " uack", " [#]", column_type_kernel },
 	{ " sack", " [#]", column_type_kernel },
@@ -128,31 +128,25 @@ const struct _header_info header_info[] = {
 	{ " fack", " [#]", column_type_kernel },
 	{ " reor", " [#]", column_type_kernel },
 	{ " bkof", " [#]", column_type_kernel },
-	{ " rtt", " [ms]", column_type_kernel },
-	{ " rttvar", " [ms]", column_type_kernel },
-	{ " rto", " [ms]", column_type_kernel },
-	{ " ca state", " ", column_type_kernel },
-	{ " smss", "[B] ", column_type_kernel },
-	{ " pmtu", "[B]", column_type_kernel },
 #elif __FreeBSD__
-    { " cwnd", " [B]", column_type_kernel },
-    { " ssth", " [B]", column_type_kernel },
-    { " uack", " [B]", column_type_kernel },
-    { " sack", " [B]", column_type_kernel },
-    { " lost", " [B]", column_type_kernel },
-    { " retr", " [B]", column_type_kernel },
-    { " tret", " [B]", column_type_kernel },
-    { " fack", " [B]", column_type_kernel },
-    { " reor", " [B]", column_type_kernel },
-    { " bkof", " [B]", column_type_kernel },
-    { " rtt", " [ms]", column_type_kernel },
-    { " rttvar", " [ms]", column_type_kernel },
-    { " rto", " [ms]", column_type_kernel },
-    { " ca state", " ", column_type_kernel },
-    { " smss", "[B] ", column_type_kernel },
-    { " pmtu", "[B]", column_type_kernel },
+	{ " cwnd", " [B]", column_type_kernel },
+	{ " ssth", " [B]", column_type_kernel },
+	{ " uack", " [B]", column_type_kernel },
+	{ " sack", " [B]", column_type_kernel },
+	{ " lost", " [B]", column_type_kernel },
+	{ " retr", " [B]", column_type_kernel },
+	{ " tret", " [B]", column_type_kernel },
+	{ " fack", " [B]", column_type_kernel },
+	{ " reor", " [B]", column_type_kernel },
+	{ " bkof", " [B]", column_type_kernel },
 #endif
-
+        { " rtt", " [ms]", column_type_kernel },
+        { " rttvar", " [ms]", column_type_kernel },
+        { " rto", " [ms]", column_type_kernel }, 
+        { " ca state", " ", column_type_kernel },
+        { " smss", "[B] ", column_type_kernel },
+        { " pmtu", "[B]", column_type_kernel },
+	
 #ifdef DEBUG
 	{ " status", " ", column_type_status }
 #endif
@@ -1059,11 +1053,11 @@ void print_tcp_report_line(char hash, int id,
 		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
 		(unsigned int)r->tcp_info.tcpi_backoff, r->tcp_info.tcpi_ca_state, (unsigned int)r->tcp_info.tcpi_snd_mss,
 #elif __FreeBSD__
-        (unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, 0,
-        0, 0, 0,
-        0, 0, 0,
-        (double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
-        0, 0, (unsigned int)r->tcp_info.tcpi_snd_mss,
+		(unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, 0,
+		0, 0, 0,
+		0, 0, 0,
+		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
+		0, 0, (unsigned int)r->tcp_info.tcpi_snd_mss,
 #else
 		0, 0, 0,
 		0, 0, 0,
@@ -1889,7 +1883,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 					if (strchr(arg, ':')) {
 						if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
 							fprintf(stderr, "invalid IPv6 address "
-							         "'%s' for test connection\n", arg);
+								 "'%s' for test connection\n", arg);
 							usage();
 						}
 						if (!extra_rpc)
@@ -3017,12 +3011,12 @@ has_more_reports:
 				report.tcp_info.tcpi_ca_state = tcpi_ca_state;
 				report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
 #elif __FreeBSD__
-                report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
-                report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
-                report.tcp_info.tcpi_rtt = tcpi_rtt;
-                report.tcp_info.tcpi_rttvar = tcpi_rttvar;
-                report.tcp_info.tcpi_rto = tcpi_rto;
-                report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
+		report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
+		report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
+		report.tcp_info.tcpi_rtt = tcpi_rtt;
+		report.tcp_info.tcpi_rttvar = tcpi_rttvar;
+		report.tcp_info.tcpi_rto = tcpi_rto;
+		report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
 #endif
 				report.begin.tv_sec = begin_sec;
 				report.begin.tv_usec = begin_usec;

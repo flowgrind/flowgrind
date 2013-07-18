@@ -36,7 +36,7 @@
 
 /**
  * Number of datapoints considered for test.
- */ 
+ */
 #define MAXANDERSONSIZE 1000
 
 /* Returns the raw A^2 test statistic for n sorted samples
