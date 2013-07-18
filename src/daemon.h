@@ -111,7 +111,7 @@ struct _flow
 		double iat_min, iat_max, iat_sum;
 		double rtt_min, rtt_max, rtt_sum;
 
-#ifdef __LINUX__
+#if (defined __LINUX__ || defined __FreeBSD__)
 		int has_tcp_info;
 		struct tcp_info tcp_info;
 #endif

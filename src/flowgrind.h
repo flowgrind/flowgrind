@@ -16,7 +16,7 @@
 
 #ifdef __LINUX__
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.ipv4.tcp_available_congestion_control"
-#elif __FREEBSD__
+#elif __FreeBSD__
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.inet.tcp.cc.available"
 #endif
 
