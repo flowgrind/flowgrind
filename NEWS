@@ -1,3 +1,10 @@
+Release 0.6.2 (2013-X-X)
+- Output tcp_info kernel variables under FreeBSD,
+  thanks Alexander.
+- Set localhost as default flow target/source instead
+  of 127.0.0.1 to obey OS defaults in regards to
+  IPv4 vs IPv6.
+
 Release 0.6.1 (2013-7-5)
 - Closes LP#1196940, LP#1196972 
   Thanks Lars and Arnd.
