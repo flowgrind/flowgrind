@@ -1,4 +1,4 @@
-.TH "flowgrind" "1" "April 2013" "" "Flowgrind Manual"
+.TH "flowgrind" "1" "July 2013" "" "Flowgrind Manual"
 .SH "NAME"
 flowgrind \- network performance measurement tool
 .SH "SYNOPSIS"
@@ -12,7 +12,7 @@ controller, tests can be setup between hosts running
 .BR flowgrindd "(1) ,"
 the flowgrind daemon.
 
-Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the TCP metrics returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
+Flowgrind performs extensive TCP tests. On Linux and FreeBSD systems flowgrind collects and reports the TCP metrics returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
 
 Each test connection is called a flow and
 .B flowgrindd
@@ -382,7 +382,7 @@ The 1\-way and 2\-way block (application layer) delays respectively block IAT an
 .SS Kernel metrics (TCP_INFO)
 .TP 
 .B cwnd (tcpi_cwnd)
-Size of TCP congestion window in number of segments. All TCP specific metrics are obtained from the Linux kernel through the TCP_INFO socket option at the end of every reporting interval.
+Size of TCP congestion window in number of segments (Linux) or bytes (FreeBSD). All TCP specific metrics are obtained from the kernel through the TCP_INFO socket option at the end of every reporting interval.
 
 .TP 
 .B ssth (tcpi_snd_sshtresh)
@@ -406,7 +406,7 @@ Number of retransmissions of the same segment due a retransmission timeout.
 
 .TP
 .B fack (tcpi_fackets)
-Number of segments between SND.UND and the highest selectively acknowledged sequence number.
+Number of segments between SND.UNA and the highest selectively acknowledged sequence number.
 
 .TP
 .B reor (tcpi_reordering)

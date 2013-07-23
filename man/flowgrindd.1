@@ -1,4 +1,4 @@
-.TH "flowgrindd" "1" "March 2013" "" "Flowgrind Manual"
+.TH "flowgrindd" "1" "July 2013" "" "Flowgrind Manual"
 .SH "NAME"
 flowgrindd \- network performance measurement tool daemon
 .SH "SYNOPSIS"
@@ -15,7 +15,7 @@ controller, tests can be setup between hosts running
 .BR flowgrindd ","
 the flowgrind daemon.
 
-Flowgrind performs extensive TCP tests. On systems running the Linux kernel flowgrind collects and reports the TCP metrics returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
+Flowgrind performs extensive TCP tests. On systems running Linux or FreeBSD flowgrindd collects and reports the TCP metrics returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
 
 The flowgrind daemon needs to be running on every host that is supposed to be endpoint of a flow.
 
