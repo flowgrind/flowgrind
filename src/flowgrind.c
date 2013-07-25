@@ -1303,7 +1303,7 @@ void report_flow(const char* server_url, struct _report* report)
 exit_outer_loop:
 
 	if (id >= opt.num_flows) {
-		DEBUG_MSG(LOG_ERR, "Got report from nonexistant flow, ignoring");
+		DEBUG_MSG(LOG_ERR, "Got report from nonexistent flow, ignoring");
 		return;
 	}
 
@@ -1351,7 +1351,7 @@ static void sigint_handler(int sig)
 	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
 
 	if (sigint_caught == 0) {
-		fprintf(stderr, "# received SIGNT, trying to gracefully close flows. Press CTRL+C again to force termination.\n");
+		fprintf(stderr, "# received SIGINT, trying to gracefully close flows. Press CTRL+C again to force termination.\n");
 		sigint_caught = 1;
 	}
 	else
