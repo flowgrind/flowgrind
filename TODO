@@ -3,7 +3,6 @@
 +add interleaving threshold
 +investigate why libpcap does not work in multiple threads
 +simplify arbitrary socket options
-+IPv6 for control connections (libxmlrpclib >= 1.30 needed)
 +do something with UDP
 +xml style output
 +allow send volume to be specified (instead of duration)
@@ -11,3 +10,4 @@
 +replace pthread barrier for mac os x
 +add gpl header to every source file
 +add c style comments to functions for doxygen help
++allow for heterogeneous OS-Environments (measure Linux against FreebSD)
