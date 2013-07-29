@@ -514,10 +514,9 @@ static void report_flow(struct _flow* flow, int type)
 			report->imtu = get_imtu(flow->fd);
 		else
 			report->imtu = 0;
-	}
-	else {
-	report->imtu = 0;
-	report->pmtu = 0;
+	} else {
+		report->imtu = 0;
+		report->pmtu = 0;
 	}
 	/* Add status flags to report */
 	report->status = 0;
@@ -554,7 +553,6 @@ static void report_flow(struct _flow* flow, int type)
 		else
 			report->status |= 'n';
 	}
-
 
 	/* New report interval, reset old data */
 	if (type == INTERVAL) {
