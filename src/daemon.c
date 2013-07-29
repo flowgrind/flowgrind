@@ -1188,16 +1188,14 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 
 						break;
 					}
-				}
-				else {
+				} else {
 					logging_log(LOG_WARNING,
 						"Premature end of test: %s, abort flow",
 						strerror(errno));
 					flow->finished[READ] = 1;
 					break;
 				}
-			}
-			else {
+			} else {
 				flow->current_block_bytes_written += rc;
 				for (int i = 0; i < 2; i++) {
 					flow->statistics[i].bytes_written += rc;
@@ -1217,7 +1215,6 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 				}
 			}
 		}
-
 }
 
 
