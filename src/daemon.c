@@ -514,10 +514,9 @@ static void report_flow(struct _flow* flow, int type)
 			report->imtu = get_imtu(flow->fd);
 		else
 			report->imtu = 0;
-	}
-	else {
-	report->imtu = 0;
-	report->pmtu = 0;
+	} else {
+		report->imtu = 0;
+		report->pmtu = 0;
 	}
 	/* Add status flags to report */
 	report->status = 0;
@@ -554,7 +553,6 @@ static void report_flow(struct _flow* flow, int type)
 		else
 			report->status |= 'n';
 	}
-
 
 	/* New report interval, reset old data */
 	if (type == INTERVAL) {
@@ -1190,16 +1188,14 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 
 						break;
 					}
-				}
-				else {
+				} else {
 					logging_log(LOG_WARNING,
 						"Premature end of test: %s, abort flow",
 						strerror(errno));
 					flow->finished[READ] = 1;
 					break;
 				}
-			}
-			else {
+			} else {
 				flow->current_block_bytes_written += rc;
 				for (int i = 0; i < 2; i++) {
 					flow->statistics[i].bytes_written += rc;
@@ -1219,7 +1215,6 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 				}
 			}
 		}
-
 }
 
 
