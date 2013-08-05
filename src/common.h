@@ -28,6 +28,9 @@
 #define FLOWGRIND_VERSION "(n/a)"
 #endif
 
+/* Flowgrind's xmlrpc API version in integer representation */
+#define FLOWGRIND_API_VERSION 3
+
 #define DEFAULT_LISTEN_PORT     5999
 
 #define ERR_FATAL       0

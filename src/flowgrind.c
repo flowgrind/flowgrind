@@ -2503,7 +2503,8 @@ void check_version(xmlrpc_client *rpc_client)
 
 		if (resultP) {
 			char* version;
-			xmlrpc_decompose_value(&rpc_env, resultP, "s", &version);
+			xmlrpc_decompose_value(&rpc_env, resultP, "{s:s,*}",
+						"version", &version);
 			die_if_fault_occurred(&rpc_env);
 
 			if (strcmp(version, FLOWGRIND_VERSION)) {

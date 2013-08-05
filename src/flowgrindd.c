@@ -36,6 +36,7 @@
 #include <signal.h>
 #include <syslog.h>
 #include <string.h>
+#include <sys/utsname.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #ifdef HAVE_GETOPT_LONG
@@ -768,20 +769,29 @@ cleanup:
 	return ret;
 }
 
-/* This method returns the version number of flowgrindd as string. */
+/* This method returns version information of flowgrindd and OS as an xmlrpc struct */
 static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
 	UNUSED_ARGUMENT(param_array);
 	UNUSED_ARGUMENT(user_data);
+	struct utsname buf;
 
 	xmlrpc_value *ret = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method get_version called");
 
-	/* Return our result. */
-	ret = xmlrpc_build_value(env, "s", FLOWGRIND_VERSION);
+	if (uname(&buf)) {
+		logging_log(LOG_WARNING, "uname() failed %s", strerror(errno));
+		exit(1);
+	}
+
+	ret = xmlrpc_build_value(env, "{s:s,s:i,s:s,s:s}",
+				 "version", FLOWGRIND_VERSION,
+				 "api_version", FLOWGRIND_API_VERSION,
+				 "os_name", buf.sysname,
+				 "os_release", buf.release);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_version failed: %s", env->fault_string);
