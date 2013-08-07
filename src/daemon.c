@@ -73,11 +73,11 @@
 #endif
 
 #ifdef __SOLARIS__
-#define RANDOM_MAX              4294967295UL    /* 2**32-1 */
+#define RANDOM_MAX  4294967295UL    /* 2**32-1 */
 #elif __DARWIN__
-#define RANDOM_MAX              LONG_MAX        /* Darwin */
+#define RANDOM_MAX  LONG_MAX        /* Darwin */
 #else
-#define RANDOM_MAX              RAND_MAX        /* Linux, FreeBSD */
+#define RANDOM_MAX  RAND_MAX        /* Linux, FreeBSD */
 #endif
 
 #define CONGESTION_LIMIT 10000
@@ -107,7 +107,8 @@ char dumping = 0;
 
 static void process_rtt(struct _flow* flow);
 static void process_iat(struct _flow* flow);
-static void send_response(struct _flow* flow, int requested_response_block_size);
+static void send_response(struct _flow* flow,
+		          int requested_response_block_size);
 
 void flow_error(struct _flow *flow, const char *fmt, ...)
 {
@@ -135,15 +136,18 @@ void request_error(struct _request *request, const char *fmt, ...)
 	strcpy(request->error, str);
 }
 
-static inline int flow_in_delay(struct timeval *now, struct _flow *flow, int direction)
+static inline int flow_in_delay(struct timeval *now, struct _flow *flow,
+				int direction)
 {
 	return time_is_after(&flow->start_timestamp[direction], now);
 }
 
 
-static inline int flow_sending(struct timeval *now, struct _flow *flow, int direction)
+static inline int flow_sending(struct timeval *now, struct _flow *flow,
+			       int direction)
 {
-	return !flow_in_delay(now, flow, direction) && (flow->settings.duration[direction] < 0 ||
+	return !flow_in_delay(now, flow, direction) &&
+		(flow->settings.duration[direction] < 0 ||
 		 time_diff_now(&flow->stop_timestamp[direction]) < 0.0);
 }
 
@@ -164,7 +168,8 @@ void uninit_flow(struct _flow *flow)
 	if (flow->settings.traffic_dump && flow->pcap_thread) {
 		rc = pthread_cancel(flow->pcap_thread);
 		if (rc)
-			logging_log(LOG_WARNING, "failed to cancel dump thread: %s", strerror(errno));
+			logging_log(LOG_WARNING, "failed to cancel dump "
+				    "thread: %s", strerror(errno));
 		fg_pcap_cleanup(flow);
 	}
 #endif
@@ -189,7 +194,8 @@ static void prepare_wfds(struct timeval *now, struct _flow *flow, fd_set *wfds)
 	int rc = 0;
 
 	if (flow_in_delay(now, flow, WRITE)) {
-		DEBUG_MSG(LOG_WARNING, "flow %i not started yet (delayed)", flow->id);
+		DEBUG_MSG(LOG_WARNING, "flow %i not started yet (delayed)",
+			  flow->id);
 		return;
 	}
 
@@ -198,20 +204,22 @@ static void prepare_wfds(struct timeval *now, struct _flow *flow, fd_set *wfds)
 		assert(!flow->finished[WRITE]);
 #endif
 		if (flow_block_scheduled(now, flow)) {
-			DEBUG_MSG(LOG_DEBUG, "adding sock of flow %d to wfds", flow->id);
+			DEBUG_MSG(LOG_DEBUG, "adding sock of flow %d to wfds",
+				  flow->id);
 			FD_SET(flow->fd, wfds);
 		} else {
-			DEBUG_MSG(LOG_DEBUG, "no block for flow %d scheduled yet", flow->id);
+			DEBUG_MSG(LOG_DEBUG, "no block for flow %d scheduled "
+				  "yet", flow->id);
 		}
 	} else if (!flow->finished[WRITE]) {
 		flow->finished[WRITE] = 1;
 		if (flow->settings.shutdown) {
-			DEBUG_MSG(LOG_WARNING, "shutting down flow %d (WR)", flow->id);
-			rc = shutdown(flow->fd, SHUT_WR);
-			if (rc == -1) {
-				error(ERR_WARNING, "shutdown() SHUT_WR failed: %s",
-						strerror(errno));
-			}
+			DEBUG_MSG(LOG_WARNING, "shutting down flow %d (WR)",
+				  flow->id);
+			rc = shutdown(flow->fd,SHUT_WR);
+			if (rc == -1)
+				error(ERR_WARNING, "shutdown() SHUT_WR failed: "
+				      "%s", strerror(errno));
 		}
 	}
 
@@ -224,22 +232,21 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 
 	if (!flow_in_delay(now, flow, READ) && !flow_sending(now, flow, READ)) {
 		if (!flow->finished[READ] && flow->settings.shutdown) {
-			error(ERR_WARNING, "server flow %u missed to shutdown", flow->id);
+			error(ERR_WARNING, "server flow %u missed to shutdown",
+			      flow->id);
 			rc = shutdown(flow->fd, SHUT_RD);
-			if (rc == -1) {
+			if (rc == -1)
 				error(ERR_WARNING, "shutdown SHUT_RD "
-						"failed: %s", strerror(errno));
-			}
+				      "failed: %s", strerror(errno));
 			flow->finished[READ] = 1;
 		}
 	}
 
 	if (flow->source_settings.late_connect && !flow->connect_called ) {
-		DEBUG_MSG(LOG_ERR, "late connecting test socket "
-				"for flow %d after %.3fs delay",
-				flow->id, flow->settings.delay[WRITE]);
-		rc = connect(flow->fd, flow->addr,
-				flow->addr_len);
+		DEBUG_MSG(LOG_ERR, "late connecting test socket for flow %d "
+			  "after %.3fs delay",
+			  flow->id, flow->settings.delay[WRITE]);
+		rc = connect(flow->fd, flow->addr, flow->addr_len);
 		if (rc == -1 && errno != EINPROGRESS) {
 			flow_error(flow, "Connect failed: %s", strerror(errno));
 			return -1;
@@ -251,7 +258,8 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 	/* Altough the server flow might be finished we keep the socket in
 	 * rfd in order to check for buggy servers */
 	if (flow->connect_called && !flow->finished[READ]) {
-		DEBUG_MSG(LOG_DEBUG, "adding sock of flow %d to rfds", flow->id);
+		DEBUG_MSG(LOG_DEBUG, "adding sock of flow %d to rfds",
+			  flow->id);
 		FD_SET(flow->fd, rfds);
 	}
 
@@ -282,12 +290,20 @@ static int prepare_fds() {
 		struct _flow *flow = &flows[i++];
 
 		if (started &&
-			(flow->finished[READ] || !flow->settings.duration[READ] || (!flow_in_delay(&now, flow, READ) && !flow_sending(&now, flow, READ))) &&
-			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))
-		) {
+		    (flow->finished[READ] ||
+		     !flow->settings.duration[READ] ||
+		     (!flow_in_delay(&now, flow, READ) &&
+		      !flow_sending(&now, flow, READ))) &&
+		    (flow->finished[WRITE] ||
+		     !flow->settings.duration[WRITE] ||
+		     (!flow_in_delay(&now, flow, WRITE) &&
+		      !flow_sending(&now, flow, WRITE)))) {
 
 #if (defined __LINUX__ || defined __FreeBSD__)
-			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+			flow->statistics[TOTAL].has_tcp_info =
+				get_tcp_info(flow,
+					     &flow->statistics[TOTAL].tcp_info)
+					? 0 : 1;
 #endif
 			flow->pmtu = get_pmtu(flow->fd);
 
@@ -299,8 +315,8 @@ static int prepare_fds() {
 			continue;
 		}
 
-
-		if (flow->state == GRIND_WAIT_ACCEPT && flow->listenfd_data != -1) {
+		if (flow->state == GRIND_WAIT_ACCEPT &&
+		    flow->listenfd_data != -1) {
 			FD_SET(flow->listenfd_data, &rfds);
 			maxfd = MAX(maxfd, flow->listenfd_data);
 		}
@@ -326,8 +342,8 @@ static void start_flows(struct _request_start_flows *request)
 
 #if 0
 	if (start.tv_sec < request->start_timestamp) {
-		/* If the clock is synchronized between nodes, all nodes will start
-		   at the same time regardless of any RPC delays */
+		/* If the clock is synchronized between nodes, all nodes will
+		 * start at the same time regardless of any RPC delays */
 		start.tv_sec = request->start_timestamp;
 		start.tv_usec = 0;
 	}
@@ -343,19 +359,24 @@ static void start_flows(struct _request_start_flows *request)
 		/* READ and WRITE */
 		for (int j = 0; j < 2; j++) {
 			flow->start_timestamp[j] = start;
-			time_add(&flow->start_timestamp[j], flow->settings.delay[j]);
+			time_add(&flow->start_timestamp[j],
+				 flow->settings.delay[j]);
 			if (flow->settings.duration[j] >= 0) {
-				flow->stop_timestamp[j] = flow->start_timestamp[j];
-				time_add(&flow->stop_timestamp[j], flow->settings.duration[j]);
+				flow->stop_timestamp[j] =
+					flow->start_timestamp[j];
+				time_add(&flow->stop_timestamp[j],
+					 flow->settings.duration[j]);
 			}
 		}
-		flow->next_write_block_timestamp = flow->start_timestamp[WRITE];
+		flow->next_write_block_timestamp =
+			flow->start_timestamp[WRITE];
 
 		tsc_gettimeofday(&flow->last_report_time);
 		flow->first_report_time = flow->last_report_time;
 		flow->next_report_time = flow->last_report_time;
 
-		time_add(&flow->next_report_time, flow->settings.reporting_interval);
+		time_add(&flow->next_report_time,
+			 flow->settings.reporting_interval);
 	}
 
 	started = 1;
@@ -373,7 +394,10 @@ static void stop_flow(struct _request_stop_flow *request)
 			struct _flow *flow = &flows[i];
 
 #if (defined __LINUX__ || defined __FreeBSD__)
-			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+			flow->statistics[TOTAL].has_tcp_info =
+				get_tcp_info(flow,
+					     &flow->statistics[TOTAL].tcp_info)
+					? 0 : 1;
 #endif
 			flow->pmtu = get_pmtu(flow->fd);
 
@@ -395,7 +419,10 @@ static void stop_flow(struct _request_stop_flow *request)
 			continue;
 
 #if (defined __LINUX__ || defined __FreeBSD__)
-		flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+		flow->statistics[TOTAL].has_tcp_info =
+			get_tcp_info(flow,
+				     &flow->statistics[TOTAL].tcp_info)
+				? 0 : 1;
 #endif
 		flow->pmtu = get_pmtu(flow->fd);
 
@@ -425,18 +452,21 @@ static void process_requests()
 			break;
 	}
 
-	while (requests)
-	{
+	while (requests) {
 		struct _request* request = requests;
 		requests = requests->next;
 		rc = 0;
 
 		switch (request->type) {
 		case REQUEST_ADD_DESTINATION:
-			add_flow_destination((struct _request_add_flow_destination *)request);
+			add_flow_destination((struct
+						_request_add_flow_destination
+						*)request);
 			break;
 		case REQUEST_ADD_SOURCE:
-			rc = add_flow_source((struct _request_add_flow_source *)request);
+			rc = add_flow_source((struct
+						_request_add_flow_source
+						*)request);
 			break;
 		case REQUEST_START_FLOWS:
 			start_flows((struct _request_start_flows *)request);
@@ -446,7 +476,8 @@ static void process_requests()
 			break;
 		case REQUEST_GET_STATUS:
 			{
-				struct _request_get_status *r = (struct _request_get_status *)request;
+				struct _request_get_status *r =
+					(struct _request_get_status *)request;
 				r->started = started;
 				r->num_flows = num_flows;
 			}
@@ -464,13 +495,14 @@ static void process_requests()
 }
 
 /*
- * Prepare a report.
- * type is either INTERVAL or TOTAL
+ * Prepare a report. type is either INTERVAL or TOTAL
  */
 static void report_flow(struct _flow* flow, int type)
 {
-	DEBUG_MSG(LOG_DEBUG, "report_flow called for flow %d (type %d)", flow->id, type);
-	struct _report* report = (struct _report*)malloc(sizeof(struct _report));
+	DEBUG_MSG(LOG_DEBUG, "report_flow called for flow %d (type %d)",
+		  flow->id, type);
+	struct _report* report =
+		(struct _report*)malloc(sizeof(struct _report));
 
 	report->id = flow->id;
 	report->type = type;
@@ -484,17 +516,22 @@ static void report_flow(struct _flow* flow, int type)
 	flow->last_report_time = report->end;
 
 	/* abort if we were scheduled way to early for a interval report */
-	if (time_diff(&report->begin,&report->end) < 0.2 * flow->settings.reporting_interval && type == INTERVAL)
-	{	free(report);
+	if (time_diff(&report->begin,&report->end) < 0.2 *
+			flow->settings.reporting_interval && type == INTERVAL){
+		free(report);
 		return;
 	}
+
 	report->bytes_read = flow->statistics[type].bytes_read;
 	report->bytes_written = flow->statistics[type].bytes_written;
-	report->request_blocks_read = flow->statistics[type].request_blocks_read;
-	report->response_blocks_read = flow->statistics[type].response_blocks_read;
-	report->request_blocks_written = flow->statistics[type].request_blocks_written;
-	report->response_blocks_written = flow->statistics[type].response_blocks_written;
-
+	report->request_blocks_read =
+		flow->statistics[type].request_blocks_read;
+	report->response_blocks_read =
+		flow->statistics[type].response_blocks_read;
+	report->request_blocks_written =
+		flow->statistics[type].request_blocks_written;
+	report->response_blocks_written =
+		flow->statistics[type].response_blocks_written;
 
 	report->rtt_min = flow->statistics[type].rtt_min;
 	report->rtt_max = flow->statistics[type].rtt_max;
@@ -574,7 +611,8 @@ static void report_flow(struct _flow* flow, int type)
 	}
 
 	add_report(report);
-	DEBUG_MSG(LOG_DEBUG, "report_flow finished for flow %d (type %d)", flow->id, type);
+	DEBUG_MSG(LOG_DEBUG, "report_flow finished for flow %d (type %d)",
+		  flow->id, type);
 }
 
 #if (defined __LINUX__ || defined __FreeBSD__)
@@ -587,7 +625,7 @@ int get_tcp_info(struct _flow *flow, struct tcp_info *info)
 	rc = getsockopt(flow->fd, IPPROTO_TCP, TCP_INFO, &tmp_info, &info_len);
 	if (rc == -1) {
 		error(ERR_WARNING, "getsockopt() failed: %s",
-				strerror(errno));
+		      strerror(errno));
 		return -1;
 	}
 	*info = tmp_info;
@@ -607,7 +645,8 @@ static void timer_check()
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
 
-		DEBUG_MSG(LOG_DEBUG, "processing timer_check() for flow %d", flow->id);
+		DEBUG_MSG(LOG_DEBUG, "processing timer_check() for flow %d",
+			  flow->id);
 
 		if (!flow->settings.reporting_interval)
 			continue;
@@ -617,12 +656,16 @@ static void timer_check()
 
 #if (defined __LINUX__ || defined __FreeBSD__)
 		if (flow->fd != -1)
-			flow->statistics[INTERVAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info) ? 0 : 1;
+			flow->statistics[INTERVAL].has_tcp_info =
+				get_tcp_info(flow,
+					     &flow->statistics[INTERVAL].tcp_info)
+					? 0 : 1;
 #endif
 		report_flow(flow, INTERVAL);
 
 		do {
-			time_add(&flow->next_report_time, flow->settings.reporting_interval);
+			time_add(&flow->next_report_time,
+				 flow->settings.reporting_interval);
 		} while (time_is_after(&now, &flow->next_report_time));
 	}
 	DEBUG_MSG(LOG_DEBUG, "finished timer_check()");
@@ -638,38 +681,41 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 
 		struct _flow *flow = &flows[i];
 
-		DEBUG_MSG(LOG_DEBUG, "processing select() for flow %d", flow->id);
+		DEBUG_MSG(LOG_DEBUG, "processing select() for flow %d",
+			  flow->id);
 
-		if (flow->listenfd_data != -1 && FD_ISSET(flow->listenfd_data, rfds)) {
+		if (flow->listenfd_data != -1 &&
+		    FD_ISSET(flow->listenfd_data, rfds)) {
 			DEBUG_MSG(LOG_DEBUG, "ready for accept");
 			if (flow->state == GRIND_WAIT_ACCEPT) {
 				if (accept_data(flow) == -1) {
-					DEBUG_MSG(LOG_ERR, "accept_data() failed");
+					DEBUG_MSG(LOG_ERR, "accept_data() "
+						  "failed");
 					goto remove;
 				}
 			}
 		}
 
 		if (flow->fd != -1) {
-
 			if (FD_ISSET(flow->fd, efds)) {
 				int error_number, rc;
-				socklen_t error_number_size = sizeof(error_number);
-				DEBUG_MSG(LOG_DEBUG, "sock of flow %d in efds", flow->id);
+				socklen_t error_number_size =
+					sizeof(error_number);
+				DEBUG_MSG(LOG_DEBUG, "sock of flow %d in efds",
+					  flow->id);
 				rc = getsockopt(flow->fd, SOL_SOCKET,
 						SO_ERROR,
 						(void *)&error_number,
 						&error_number_size);
 				if (rc == -1) {
 					error(ERR_WARNING, "failed to get "
-							"errno for non-blocking "
-							"connect: %s",
-							strerror(errno));
+					      "errno for non-blocking connect: "
+					      "%s", strerror(errno));
 					goto remove;
 				}
 				if (error_number != 0) {
 					fprintf(stderr, "connect: %s\n",
-							strerror(error_number));
+						strerror(error_number));
 					goto remove;
 				}
 			}
@@ -690,7 +736,10 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 remove:
 #if (defined __LINUX__ || defined __FreeBSD__)
 		if (flow->fd != -1) {
-			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
+			flow->statistics[TOTAL].has_tcp_info =
+				get_tcp_info(flow,
+					     &flow->statistics[TOTAL].tcp_info)
+					? 0 : 1;
 		}
 #endif
 		flow->pmtu = get_pmtu(flow->fd);
@@ -709,13 +758,15 @@ void* daemon_main(void* ptr __attribute__((unused)))
 
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 10000;
-		DEBUG_MSG(LOG_DEBUG, "calling select() need_timeout: %i", need_timeout);
-		int rc = select(maxfd + 1, &rfds, &wfds, &efds, need_timeout ? &timeout : 0);
+		DEBUG_MSG(LOG_DEBUG, "calling select() need_timeout: %i",
+			  need_timeout);
+		int rc = select(maxfd + 1, &rfds, &wfds, &efds, need_timeout
+				? &timeout : 0);
 		if (rc < 0) {
 			if (errno == EINTR)
 				continue;
 			error(ERR_FATAL, "select() failed: %s",
-					strerror(errno));
+			      strerror(errno));
 			exit(1);
 		}
 		DEBUG_MSG(LOG_DEBUG, "select() finished");
@@ -724,7 +775,6 @@ void* daemon_main(void* ptr __attribute__((unused)))
 			process_requests();
 
 		timer_check();
-
 		process_select(&rfds, &wfds, &efds);
 	}
 }
@@ -749,7 +799,6 @@ void add_report(struct _report* report)
 		reports = report;
 
 	reports_last = report;
-
 	pending_reports++;
 
 	pthread_mutex_unlock(&mutex);
@@ -771,8 +820,7 @@ struct _report* get_reports(int *has_more)
 		pending_reports = 0;
 		reports = NULL;
 		reports_last = 0;
-	}
-	else {
+	} else {
 		/* Split off first 50 items */
 		struct _report* tmp;
 		for (unsigned int i = 0; i < max_reports - 1; i++)
@@ -848,20 +896,27 @@ static int write_data(struct _flow *flow)
 
 		/* fill buffer with new data */
 		if (flow->current_block_bytes_written == 0) {
-			flow->current_write_block_size = next_request_block_size(flow);
+			flow->current_write_block_size =
+				next_request_block_size(flow);
 			response_block_size = next_response_block_size(flow);
 			/* serialize data:
 			 * this_block_size */
-			((struct _block *)flow->write_block)->this_block_size = htonl(flow->current_write_block_size);
+			((struct _block *)flow->write_block)->this_block_size =
+				htonl(flow->current_write_block_size);
 			/* requested_block_size */
-			((struct _block *)flow->write_block)->request_block_size = htonl(response_block_size);
-			/* write rtt data (will be echoed back by the receiver in the response packet) */
-			tsc_gettimeofday((struct timeval *)( flow->write_block + 2 * (sizeof (int32_t)) ));
+			((struct _block *)flow->write_block)->request_block_size =
+				htonl(response_block_size);
+			/* write rtt data (will be echoed back by the receiver
+			 * in the response packet) */
+			tsc_gettimeofday((struct timeval *)
+					 (flow->write_block +
+					  2 * (sizeof (int32_t))));
 
-			DEBUG_MSG(LOG_DEBUG, "wrote new request data to out buffer bs = %d, rqs = %d, on flow %d",
-					ntohl(((struct _block *)flow->write_block)->this_block_size),
-					ntohl(((struct _block *)flow->write_block)->request_block_size),
-					flow->id);
+			DEBUG_MSG(LOG_DEBUG, "wrote new request data to out "
+				  "buffer bs = %d, rqs = %d, on flow %d",
+				  ntohl(((struct _block *)flow->write_block)->this_block_size),
+				  ntohl(((struct _block *)flow->write_block)->request_block_size),
+				  flow->id);
 		}
 
 		rc = write(flow->fd,
@@ -873,68 +928,74 @@ static int write_data(struct _flow *flow)
 		if (rc == -1) {
 			if (errno == EAGAIN) {
 				logging_log(LOG_WARNING, "write queue limit hit "
-						"for flow %d", flow->id);
+					    "for flow %d", flow->id);
 				break;
 			}
-			DEBUG_MSG(LOG_WARNING, "write() returned %d on flow %d, fd %d: %s", rc, flow->id,
-					flow->fd, strerror(errno));
+			DEBUG_MSG(LOG_WARNING, "write() returned %d on flow %d, "
+				   "fd %d: %s", rc, flow->id, flow->fd,
+				   strerror(errno));
 			flow_error(flow, "Premature end of test: %s",
-					strerror(errno));
+				   strerror(errno));
 			return rc;
 		}
 
 		if (rc == 0) {
-			DEBUG_MSG(LOG_CRIT, "flow %d sent zero bytes. what does that mean?", flow->id);
+			DEBUG_MSG(LOG_CRIT, "flow %d sent zero bytes. what "
+				  "does that mean?", flow->id);
 			return rc;
 		}
 
-		DEBUG_MSG(LOG_DEBUG, "flow %d sent %d request bytes of %u (before = %u)", flow->id, rc,
-				flow->current_write_block_size,
-				flow->current_block_bytes_written);
+		DEBUG_MSG(LOG_DEBUG, "flow %d sent %d request bytes of %u "
+			  "(before = %u)", flow->id, rc,
+	                  flow->current_write_block_size,
+			  flow->current_block_bytes_written);
 
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 2; i++)
 			flow->statistics[i].bytes_written += rc;
-		}
+
 		flow->current_block_bytes_written += rc;
 
-		if (flow->current_block_bytes_written >= flow->current_write_block_size) {
+		if (flow->current_block_bytes_written >=
+		    flow->current_write_block_size) {
 #ifdef DEBUG
-			assert(flow->current_block_bytes_written == flow->current_write_block_size);
+			assert(flow->current_block_bytes_written ==
+			       flow->current_write_block_size);
 #endif
 			/* we just finished writing a block */
 			flow->current_block_bytes_written = 0;
 			tsc_gettimeofday(&flow->last_block_written);
-			for (int i = 0; i < 2; i++) {
+			for (int i = 0; i < 2; i++)
 				flow->statistics[i].request_blocks_written++;
-			}
 
 			interpacket_gap = next_interpacket_gap(flow);
 
-			/* if we calculated a non-zero packet add relative time to the next write stamp
-			 * which is then checked in the select call */
+			/* if we calculated a non-zero packet add relative time
+			 * to the next write stamp which is then checked in the
+			 * select call */
 			if (interpacket_gap) {
 				time_add(&flow->next_write_block_timestamp,
-						interpacket_gap);
-				if (time_is_after(&flow->last_block_written, &flow->next_write_block_timestamp)) {
-					DEBUG_MSG(LOG_WARNING, "incipient congestion on "
-							"flow %u new block scheduled "
-							"for %s, %.6lfs before now.",
-							flow->id,
-							ctime_us(&flow->next_write_block_timestamp),
-							time_diff(&flow->next_write_block_timestamp, &flow->last_block_written));
+					 interpacket_gap);
+				if (time_is_after(&flow->last_block_written,
+						  &flow->next_write_block_timestamp)) {
+					DEBUG_MSG(LOG_WARNING, "incipient "
+						  "congestion on flow %u new "
+						  "block scheduled for %s, "
+						  "%.6lfs before now.",
+						   flow->id,
+					           ctime_us(&flow->next_write_block_timestamp),
+						   time_diff(&flow->next_write_block_timestamp,
+							     &flow->last_block_written));
 					flow->congestion_counter++;
 					if (flow->congestion_counter >
-							CONGESTION_LIMIT &&
-							flow->settings.flow_control) {
+					    CONGESTION_LIMIT &&
+					    flow->settings.flow_control)
 						return -1;
-					}
-
 				}
 			}
 			if (flow->settings.cork && toggle_tcp_cork(flow->fd) == -1)
-				DEBUG_MSG(LOG_NOTICE, "failed to recork test socket "
-						"for flow %d: %s",
-						flow->id, strerror(errno));
+				DEBUG_MSG(LOG_NOTICE, "failed to recork test "
+					  "socket for flow %d: %s",
+					  flow->id, strerror(errno));
 		}
 
 		if (!flow->settings.pushy)
@@ -972,31 +1033,32 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 
 	if (rc == -1) {
 		if (errno == EAGAIN)
-			flow_error(flow, "Premature end of test: %s", strerror(errno));
+			flow_error(flow, "Premature end of test: %s",
+				   strerror(errno));
 			return -1;
 	}
 
 	if (rc == 0) {
-		DEBUG_MSG(LOG_ERR, "server shut down test socket of flow %d", flow->id);
+		DEBUG_MSG(LOG_ERR, "server shut down test socket of "
+			  "flow %d", flow->id);
 		if (!flow->finished[READ] || !flow->settings.shutdown)
-			error(ERR_WARNING, "Premature shutdown of server flow");
+			error(ERR_WARNING, "Premature shutdown of server "
+			      "flow");
 			flow->finished[READ] = 1;
 			return -1;
 	}
 
-
 	DEBUG_MSG(LOG_DEBUG, "flow %d received %u bytes", flow->id, rc);
 
 	flow->current_block_bytes_read += rc;
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 2; i++)
 		flow->statistics[i].bytes_read += rc;
-	}
 
 #ifdef DEBUG
-	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, len = %zu",
+	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg))
+		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, "
+			  "len = %zu",
 		flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
-	}
 #endif
 
 	return rc;
@@ -1011,7 +1073,8 @@ static int read_data(struct _flow *flow)
 	for (;;) {
 		/* make sure to read block header for new block */
 		if (flow->current_block_bytes_read < MIN_BLOCK_SIZE) {
-			rc = try_read_n_bytes(flow,MIN_BLOCK_SIZE-flow->current_block_bytes_read);
+			rc = try_read_n_bytes(flow,
+					      MIN_BLOCK_SIZE-flow->current_block_bytes_read);
 			if (flow->current_block_bytes_read < MIN_BLOCK_SIZE)
 				break;
 		}
@@ -1019,57 +1082,71 @@ static int read_data(struct _flow *flow)
 
 		/* parse and check current block size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->this_block_size );
-		if (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.maximum_block_size )
+		if (optint >= MIN_BLOCK_SIZE &&
+		    optint <= flow->settings.maximum_block_size )
 			flow->current_read_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal cbs %d, ignoring (max: %d)", flow->id, optint,flow->settings.maximum_block_size);
+			logging_log(LOG_WARNING, "flow %d parsed illegal cbs %d, "
+				    "ignoring (max: %d)", flow->id, optint,
+				    flow->settings.maximum_block_size);
 
 		/* parse and check current request size for validity */
 		optint = ntohl( ((struct _block *)flow->read_block)->request_block_size );
-		if (optint == -1 || optint == 0  || (optint >= MIN_BLOCK_SIZE && optint <= flow->settings.maximum_block_size ) )
+		if (optint == -1 || optint == 0  ||
+		    (optint >= MIN_BLOCK_SIZE &&
+		     optint <= flow->settings.maximum_block_size))
 			requested_response_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal qbs %d, ignoring (max: %d)", flow->id, optint, flow->settings.maximum_block_size);
+			logging_log(LOG_WARNING, "flow %d parsed illegal qbs "
+				    "%d, ignoring (max: %d)",
+				    flow->id,
+				    optint,
+				    flow->settings.maximum_block_size);
 #ifdef DEBUG
-		if (requested_response_block_size == -1) {
-			DEBUG_MSG(LOG_NOTICE, "processing response block on flow %d size: %d",
-					flow->id,
-					flow->current_read_block_size);
-		} else {
-			DEBUG_MSG(LOG_NOTICE, "processing request block on flow %d size: %d, request: %d",
-					flow->id,
-					flow->current_read_block_size,
-					requested_response_block_size);
-		}
+		if (requested_response_block_size == -1)
+			DEBUG_MSG(LOG_NOTICE, "processing response block on "
+				  "flow %d size: %d", flow->id,
+				  flow->current_read_block_size);
+		else
+			DEBUG_MSG(LOG_NOTICE, "processing request block on "
+				  "flow %d size: %d, request: %d",
+				  flow->id,
+				  flow->current_read_block_size,
+				  requested_response_block_size);
 #endif
 		/* read rest of block, if we have more to read */
-		if (flow->current_block_bytes_read < flow->current_read_block_size)
-			rc += try_read_n_bytes(flow,flow->current_read_block_size - flow->current_block_bytes_read);
+		if (flow->current_block_bytes_read <
+		    flow->current_read_block_size)
+			rc += try_read_n_bytes(flow,
+					       flow->current_read_block_size -
+					       flow->current_block_bytes_read);
 
-		if (flow->current_block_bytes_read >= flow->current_read_block_size ) {
+		if (flow->current_block_bytes_read >=
+		    flow->current_read_block_size ) {
 #ifdef DEBUG
-			assert(flow->current_block_bytes_read == flow->current_read_block_size);
+			assert(flow->current_block_bytes_read ==
+					flow->current_read_block_size);
 #endif
 			flow->current_block_bytes_read = 0;
 
 			if (requested_response_block_size == -1) {
-				/* This is a response block, consider DATA as RTT  */
-				for (int i = 0; i < 2; i++) {
+				/* this is a response block, consider DATA as
+				 * RTT  */
+				for (int i = 0; i < 2; i++)
 					flow->statistics[i].response_blocks_read++;
-				}
 				process_rtt(flow);
 
 			} else {
 				/* this is a request block, calculate IAT */
-				for (int i = 0; i < 2; i++) {
+				for (int i = 0; i < 2; i++)
 					flow->statistics[i].request_blocks_read++;
-				}
 				process_iat(flow);
 
 				/* send response if requested */
-				if ( requested_response_block_size >= (signed)MIN_BLOCK_SIZE && !flow->finished[READ])
-					send_response(flow, requested_response_block_size);
-
+				if (requested_response_block_size >=
+				    (signed)MIN_BLOCK_SIZE && !flow->finished[READ])
+					send_response(flow,
+						      requested_response_block_size);
 			}
 		}
 		if (!flow->settings.pushy)
@@ -1082,15 +1159,17 @@ static void process_rtt(struct _flow* flow)
 {
 	double current_rtt = .0;
 	struct timeval now;
-	struct timeval *data = (struct timeval *)(flow->read_block + 2*(sizeof (int32_t)) );
+	struct timeval *data = (struct timeval *)
+		(flow->read_block + 2*(sizeof (int32_t)) );
 
 	tsc_gettimeofday(&now);
 	current_rtt = time_diff(data, &now);
 
 	if (current_rtt < 0) {
-		logging_log(LOG_CRIT, "received malformed rtt block of flow %d (rtt = %.3lfms), ignoring",
-				     flow->id,
-				     current_rtt * 1e3);
+		logging_log(LOG_CRIT, "received malformed rtt block of flow %d "
+			    "(rtt = %.3lfms), ignoring",
+			    flow->id,
+			    current_rtt * 1e3);
 		current_rtt = NAN;
 	}
 
@@ -1104,9 +1183,9 @@ static void process_rtt(struct _flow* flow)
 		}
 	}
 
-	DEBUG_MSG(LOG_NOTICE, "processed RTT of flow %d (%.3lfms)", flow->id, current_rtt * 1e3);
+	DEBUG_MSG(LOG_NOTICE, "processed RTT of flow %d (%.3lfms)",
+		  flow->id, current_rtt * 1e3);
 }
-
 
 static void process_iat(struct _flow* flow)
 {
@@ -1116,16 +1195,16 @@ static void process_iat(struct _flow* flow)
 	tsc_gettimeofday(&now);
 
 	if (flow->last_block_read.tv_sec ||
-	    flow->last_block_read.tv_usec) {
+	    flow->last_block_read.tv_usec)
 		current_iat = time_diff(&flow->last_block_read, &now);
-	} else {
+	else
 		current_iat = NAN;
-	}
 
 	if (current_iat < 0) {
-		logging_log(LOG_CRIT, "calculated malformed iat of flow %d (iat = %.3lfms) (clock skew?), ignoring",
-				     flow->id,
-				     current_iat * 1e3);
+		logging_log(LOG_CRIT, "calculated malformed iat of flow %d "
+			    "(iat = %.3lfms) (clock skew?), ignoring",
+			    flow->id,
+			    current_iat * 1e3);
 		current_iat = NAN;
 	}
 
@@ -1138,125 +1217,135 @@ static void process_iat(struct _flow* flow)
 			flow->statistics[i].iat_sum += current_iat;
 		}
 	}
-	DEBUG_MSG(LOG_NOTICE, "processed IAT flow %d (%.3lfms)", flow->id, current_iat * 1e3);
+	DEBUG_MSG(LOG_NOTICE, "processed IAT flow %d (%.3lfms)",
+		  flow->id, current_iat * 1e3);
 }
 
 static void send_response(struct _flow* flow, int requested_response_block_size)
 {
-		int rc;
-		int try = 0;
+	int rc;
+	int try = 0;
 #ifdef DEBUG
-		assert(!flow->current_block_bytes_written);
+	assert(!flow->current_block_bytes_written);
 #endif
-		 /* write requested block size as current size */
-		((struct _block *)flow->write_block)->this_block_size = htonl(requested_response_block_size);
-		/* rqs = -1 indicates response block */
-		((struct _block *)flow->write_block)->request_block_size = htonl(-1);
-		/* copy rtt data from received block to response block (echo back) */
-		((struct _block *)flow->write_block)->data = ((struct _block *)flow->read_block)->data;
-		/* workaround for 64bit sender and 32bit receiver:
-		 * we check if the timeeval is 64bit and then echo the missing 32bit back, too */
-		if (( ((struct _block *)flow->write_block)->data.tv_sec) || ((struct _block *)flow->write_block)->data.tv_usec)
-			((struct _block *)flow->write_block)->data2 = ((struct _block *)flow->read_block)->data2;
+	/* write requested block size as current size */
+	((struct _block *)flow->write_block)->this_block_size =
+		htonl(requested_response_block_size);
+	/* rqs = -1 indicates response block */
+	((struct _block *)flow->write_block)->request_block_size = htonl(-1);
+	/* copy rtt data from received block to response block (echo back) */
+	((struct _block *)flow->write_block)->data =
+		((struct _block *)flow->read_block)->data;
+	/* workaround for 64bit sender and 32bit receiver: we check if the
+	 * timeeval is 64bit and then echo the missing 32bit back, too */
+	if ((((struct _block *)flow->write_block)->data.tv_sec) ||
+	    ((struct _block *)flow->write_block)->data.tv_usec)
+		((struct _block *)flow->write_block)->data2 =
+			((struct _block *)flow->read_block)->data2;
 
-		DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, rqs = %d on flow %d",
-			ntohl(((struct _block *)flow->write_block)->this_block_size),
-			ntohl(((struct _block *)flow->write_block)->request_block_size),
-			flow->id);
+	DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, "
+		  "rqs = %d on flow %d",
+		  ntohl(((struct _block *)flow->write_block)->this_block_size),
+		  ntohl(((struct _block *)flow->write_block)->request_block_size),
+		  flow->id);
 
-		/* send data out until block is finished (or abort if 0 zero bytes are send CONGESTION_LIMIT times) */
-		for (;;) {
-			rc = write(flow->fd,
-				   flow->write_block + flow->current_block_bytes_written,
-				   requested_response_block_size - flow->current_block_bytes_written);
+	/* send data out until block is finished (or abort if 0 zero bytes are
+	 * send CONGESTION_LIMIT times) */
+	for (;;) {
+		rc = write(flow->fd,
+			   flow->write_block + flow->current_block_bytes_written,
+			   requested_response_block_size -
+				flow->current_block_bytes_written);
 
-			DEBUG_MSG(LOG_NOTICE, "send %d bytes response (rqs %d) on flow %d",
-					      rc,
-					      requested_response_block_size,flow->id);
+		DEBUG_MSG(LOG_NOTICE, "send %d bytes response (rqs %d) on flow "
+			  "%d", rc, requested_response_block_size,flow->id);
 
-			if (rc == -1) {
-				if (errno == EAGAIN) {
-					DEBUG_MSG(LOG_DEBUG,
-						"%s, still trying to send response block (write queue hit limit)",
-						strerror(errno));
-					try++;
-					if (try >= CONGESTION_LIMIT && !flow->current_block_bytes_written) {
-						logging_log(LOG_WARNING,
-							    "tried to send response block %d times without success, dropping (%s)",
-							    try,
-							    strerror(errno));
-
-						break;
-					}
-				} else {
+		if (rc == -1) {
+			if (errno == EAGAIN) {
+				DEBUG_MSG(LOG_DEBUG,
+					  "%s, still trying to send response "
+					  "block (write queue hit limit)",
+					  strerror(errno));
+				try++;
+				if (try >= CONGESTION_LIMIT &&
+				    !flow->current_block_bytes_written) {
 					logging_log(LOG_WARNING,
-						"Premature end of test: %s, abort flow",
-						strerror(errno));
-					flow->finished[READ] = 1;
-					break;
+						    "tried to send response "
+						    "block %d times without "
+						    "success, dropping (%s)",
+						    try, strerror(errno));
+						break;
 				}
 			} else {
-				flow->current_block_bytes_written += rc;
-				for (int i = 0; i < 2; i++) {
-					flow->statistics[i].bytes_written += rc;
-				}
-				if (flow->current_block_bytes_written >=
-				    (unsigned int)requested_response_block_size) {
+				logging_log(LOG_WARNING,
+					    "Premature end of test: %s, abort "
+					    "flow", strerror(errno));
+				flow->finished[READ] = 1;
+				break;
+			}
+		} else {
+			flow->current_block_bytes_written += rc;
+			for (int i = 0; i < 2; i++)
+				flow->statistics[i].bytes_written += rc;
+
+			if (flow->current_block_bytes_written >=
+			    (unsigned int)requested_response_block_size) {
 #ifdef DEBUG
-					assert(flow->current_block_bytes_written == (unsigned int)requested_response_block_size);
+				assert(flow->current_block_bytes_written ==
+					(unsigned int)requested_response_block_size);
 #endif
-					/* just finish sending response block */
-					flow->current_block_bytes_written = 0;
-					tsc_gettimeofday(&flow->last_block_written);
-					for (int i = 0; i < 2; i++) {
-						flow->statistics[i].response_blocks_written++;
-					}
-					break;
-				}
+				/* just finish sending response block */
+				flow->current_block_bytes_written = 0;
+				tsc_gettimeofday(&flow->last_block_written);
+				for (int i = 0; i < 2; i++)
+					flow->statistics[i].response_blocks_written++;
+				break;
 			}
 		}
+	}
 }
 
 
 int apply_extra_socket_options(struct _flow *flow)
 {
-	int i;
-
-	for (i = 0; i < flow->settings.num_extra_socket_options; i++) {
-
+	for (int i = 0; i < flow->settings.num_extra_socket_options; i++) {
 		int level, res;
-		const struct _extra_socket_options *option = &flow->settings.extra_socket_options[i];
+		const struct _extra_socket_options *option =
+			&flow->settings.extra_socket_options[i];
 
 		switch (option->level) {
-			case level_sol_socket:
-				level = SOL_SOCKET;
-				break;
-			case level_sol_tcp:
-				level = SOL_TCP;
-				break;
-			case level_ipproto_ip:
-				level = IPPROTO_IP;
-				break;
+		case level_sol_socket:
+			level = SOL_SOCKET;
+			break;
+		case level_sol_tcp:
+			level = SOL_TCP;
+			break;
+		case level_ipproto_ip:
+			level = IPPROTO_IP;
+			break;
 #ifndef __DARWIN__
-			case level_ipproto_sctp:
-				level = IPPROTO_SCTP;
-				break;
+		case level_ipproto_sctp:
+			level = IPPROTO_SCTP;
+			break;
 #endif
-			case level_ipproto_tcp:
-				level = IPPROTO_TCP;
-				break;
-			case level_ipproto_udp:
-				level = IPPROTO_UDP;
-				break;
-			default:
-				flow_error(flow, "Unknown socket option level: %d", option->level);
-				return -1;
+		case level_ipproto_tcp:
+			level = IPPROTO_TCP;
+			break;
+		case level_ipproto_udp:
+			level = IPPROTO_UDP;
+			break;
+		default:
+			flow_error(flow, "Unknown socket option level: %d",
+				   option->level);
+			return -1;
 		}
 
-		res = setsockopt(flow->fd, level, option->optname, option->optval, option->optlen);
+		res = setsockopt(flow->fd, level, option->optname,
+				 option->optval, option->optlen);
 
 		if (res == -1) {
-			flow_error(flow, "Unable to set socket option %d: %s", option->optname, strerror(errno));
+			flow_error(flow, "Unable to set socket option %d: %s",
+				   option->optname, strerror(errno));
 			return -1;
 		}
 	}
@@ -1269,60 +1358,63 @@ int set_flow_tcp_options(struct _flow *flow)
 {
 	set_non_blocking(flow->fd);
 
-	if (*flow->settings.cc_alg && set_congestion_control(
-				flow->fd, flow->settings.cc_alg) == -1) {
-		flow_error(flow, "Unable to set congestion control algorithm: %s",
-				strerror(errno));
+	if (*flow->settings.cc_alg &&
+	    set_congestion_control(flow->fd, flow->settings.cc_alg) == -1) {
+		flow_error(flow, "Unable to set congestion control "
+			   "algorithm: %s", strerror(errno));
 		return -1;
 	}
-
-	if (flow->settings.elcn && set_so_elcn(flow->fd, flow->settings.elcn) == -1) {
-		flow_error(flow, "Unable to set TCP_ELCN: %s", strerror(errno));
+	if (flow->settings.elcn &&
+	    set_so_elcn(flow->fd, flow->settings.elcn) == -1) {
+		flow_error(flow, "Unable to set TCP_ELCN: %s",
+			   strerror(errno));
 		return -1;
 	}
-
 	if (flow->settings.lcd && set_so_lcd(flow->fd) == -1) {
-		flow_error(flow, "Unable to set TCP_LCD: %s", strerror(errno));
+		flow_error(flow, "Unable to set TCP_LCD: %s",
+			   strerror(errno));
 		return -1;
 	}
-
 	if (flow->settings.cork && set_tcp_cork(flow->fd) == -1) {
-		flow_error(flow, "Unable to set TCP_CORK: %s", strerror(errno));
+		flow_error(flow, "Unable to set TCP_CORK: %s",
+			   strerror(errno));
 		return -1;
 	}
-
 	if (flow->settings.so_debug && set_so_debug(flow->fd) == -1) {
-		flow_error(flow, "Unable to set SO_DEBUG: %s", strerror(errno));
+		flow_error(flow, "Unable to set SO_DEBUG: %s",
+			   strerror(errno));
 		return -1;
 	}
-
 	if (flow->settings.mtcp && set_tcp_mtcp(flow->fd) == -1) {
-		flow_error(flow, "Unable to set TCP_MTCP: %s", strerror(errno));
+		flow_error(flow, "Unable to set TCP_MTCP: %s",
+			   strerror(errno));
 		return -1;
 	}
-
 	if (flow->settings.nonagle && set_tcp_nodelay(flow->fd) == -1) {
-		flow_error(flow, "Unable to set TCP_NODELAY: %s", strerror(errno));
+		flow_error(flow, "Unable to set TCP_NODELAY: %s",
+			   strerror(errno));
 		return -1;
 	}
-
 	if (flow->settings.route_record && set_route_record(flow->fd) == -1) {
-		flow_error(flow, "Unable to set route record option: %s", strerror(errno));
+		flow_error(flow, "Unable to set route record option: %s",
+			   strerror(errno));
 		return -1;
 	}
-
-	if (flow->settings.dscp && set_dscp(flow->fd, flow->settings.dscp) == -1) {
-		flow_error(flow, "Unable to set DSCP value: %s", strerror(errno));
+	if (flow->settings.dscp &&
+	    set_dscp(flow->fd, flow->settings.dscp) == -1) {
+		flow_error(flow, "Unable to set DSCP value: %s",
+			   strerror(errno));
 		return -1;
 	}
-
-	if (flow->settings.ipmtudiscover && set_ip_mtu_discover(flow->fd) == -1) {
-		flow_error(flow, "Unable to set IP_MTU_DISCOVER value: %s", strerror(errno));
+	if (flow->settings.ipmtudiscover &&
+	    set_ip_mtu_discover(flow->fd) == -1) {
+		flow_error(flow, "Unable to set IP_MTU_DISCOVER value: %s",
+			   strerror(errno));
 		return -1;
 	}
-
 	if (apply_extra_socket_options(flow) == -1)
 		return -1;
 
 	return 0;
 }
+
