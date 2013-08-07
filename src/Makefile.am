@@ -5,7 +5,7 @@ sbin_PROGRAMS = flowgrindd
 noinst_HEADERS = common.h debug.h
 
 flowgrind_SOURCES = common.c debug.c fg_socket.c fg_time.c fg_math.h fg_math.c \
-		    flowgrind.h flowgrind.c adt.c adt.h
+		    flowgrind.h flowgrind.c
 flowgrind_LDADD = $(LIBS) $(CURL_LDADD) $(XMLRPC_C_CLIENT_LDADD) $(GSL_LDADD)
 flowgrind_CFLAGS = $(AM_CFLAGS) $(CURL_CFLAGS) $(XMLRPC_C_CLIENT_CFLAGS) $(GSL_CFLAGS)
 
