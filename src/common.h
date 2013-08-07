@@ -161,11 +161,12 @@ struct _flow_settings
 	int num_extra_socket_options;
 };
 
-
+/* Report (measurement sample) of a flow */
 struct _report
 {
 	int id;
-	int type; /* INTERVAL or TOTAL */
+	/* Is this an INTERVAL or TOTAL (final) report? */
+	int type;
 	struct timeval begin;
 	struct timeval end;
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT

@@ -62,7 +62,10 @@
 FILE *log_stream = NULL;
 char *log_filename = NULL;
 char sigint_caught = 0;
+
+/* Unique XMLRPC URLs (one server may handle several flows) */
 char unique_servers[MAX_FLOWS * 2][1000];
+unsigned int num_unique_servers = 0;
 
 static char progname[50] = "flowgrind";
 
@@ -70,7 +73,6 @@ struct _opt opt;
 static struct _flow flow[MAX_FLOWS];
 
 int active_flows = 0;
-unsigned int num_unique_servers = 0;
 
 enum _column_types
 {
@@ -1286,6 +1288,7 @@ void report_final(void)
 
 }
 
+/* This functions allots an report received from one daemon to the proper flow */
 void report_flow(const char* server_url, struct _report* report)
 {
 	int endpoint;
