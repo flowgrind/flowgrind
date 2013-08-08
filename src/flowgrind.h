@@ -46,6 +46,15 @@ enum endpoint {
 	DESTINATION
 };
 
+/* Infos about a flowgrind daemon (potentially managing multiple flows) */
+struct _daemon {
+	/* XMLRPC URL for this daemon */
+	char server_url[1000];
+	/* For convenience: name and port of the XMLRPC server */
+	char server_name[257];
+	unsigned short server_port;
+};
+
 /* Flow options specific to source or destination */
 struct _flow_endpoint {
 	/* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
@@ -60,10 +69,8 @@ struct _flow_endpoint {
 	struct timeval flow_stop_timestamp;
 
 	char *rate_str;
-
-	char server_url[1000];
-	char server_address[1000];
-	unsigned short server_port;
+	/* Pointer to the daemon managing this endpoint */
+	struct _daemon* daemon;
 	char test_address[1000];
 	char bind_address[1000];
 };
