@@ -53,6 +53,13 @@ struct _daemon {
 	/* For convenience: name and port of the XMLRPC server */
 	char server_name[257];
 	unsigned short server_port;
+
+	/* Flowgrind API version supported by this daemon */
+	int api_version;
+
+	/* Information about the OS of the daemon */
+	char os_name[257];
+	char os_release[257];
 };
 
 /* Flow options specific to source or destination */

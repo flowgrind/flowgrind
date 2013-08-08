@@ -1132,6 +1132,8 @@ void report_final(void)
 				CAT("/%s", flow[id].endpoint_options[endpoint].daemon->server_name);
 			if (flow[id].endpoint_options[endpoint].daemon->server_port != DEFAULT_LISTEN_PORT)
 				CAT(":%d", flow[id].endpoint_options[endpoint].daemon->server_port);
+			CAT(" (%s %s)", flow[id].endpoint_options[endpoint].daemon->os_name,
+					flow[id].endpoint_options[endpoint].daemon->os_release);
 
 			CATC("random seed: %u", flow[id].random_seed);
 
@@ -2527,15 +2529,26 @@ void check_version(xmlrpc_client *rpc_client)
 
 		if (resultP) {
 			char* version;
-			xmlrpc_decompose_value(&rpc_env, resultP, "{s:s,*}",
-						"version", &version);
+			int api_version;
+			char* os_name;
+			char* os_release;
+			xmlrpc_decompose_value(&rpc_env, resultP, "{s:s,s:i,s:s,s:s,*}",
+						"version", &version,
+						"api_version", &api_version,
+						"os_name", &os_name,
+						"os_release", &os_release);
 			die_if_fault_occurred(&rpc_env);
 
 			if (strcmp(version, FLOWGRIND_VERSION)) {
 				mismatch = 1;
 				fprintf(stderr, "Warning: Node %s uses version %s\n", unique_servers[j].server_url, version);
 			}
+			unique_servers[j].api_version = api_version;
+			strncpy(unique_servers[j].os_name, os_name, 256);
+			strncpy(unique_servers[j].os_release, os_release, 256);
 			free(version);
+			free(os_name);
+			free(os_release);
 			xmlrpc_DECREF(resultP);
 		}
 	}
