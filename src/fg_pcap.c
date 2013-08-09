@@ -63,7 +63,8 @@ void fg_pcap_init()
 	char devdes[200];
 #endif
 	if (pcap_findalldevs(&alldevs, errbuf) == -1) {
-		logging_log(LOG_WARNING,"Error in pcap_findalldevs: %s\n", errbuf);
+		logging_log(LOG_WARNING,"Error in pcap_findalldevs: %s\n",
+			    errbuf);
 		return;
 	}
 #ifdef DEBUG
@@ -74,7 +75,8 @@ void fg_pcap_init()
 			char addr[100];
 			if (!a->addr)
 				continue;
-			snprintf(addr, sizeof(addr), "a=%s", fg_nameinfo(a->addr, sizeof(struct sockaddr)));
+			snprintf(addr, sizeof(addr), "a=%s",
+				 fg_nameinfo(a->addr, sizeof(struct sockaddr)));
 			strncat(devdes, addr, sizeof(devdes)-1);
 			if (a->next)
 				strncat(devdes, ", ", sizeof(devdes));
@@ -111,8 +113,9 @@ void fg_pcap_cleanup(void* arg)
 
 static void* fg_pcap_work(void* arg)
 {
-	/* note: all the wierd casts in this function are completely useless, execpt they
-	 * cirumvent strange compiler warnings because of libpcap typedef woo's */
+	/* note: all the wierd casts in this function are completely useless,
+	 * execpt they cirumvent strange compiler warnings because of libpcap
+	 * typedef woo's */
 
 #ifdef DEBUG
 	struct pcap_stat p_stats;
@@ -141,8 +144,8 @@ static void* fg_pcap_work(void* arg)
 	pthread_cleanup_push(fg_pcap_cleanup, (void*) flow);
 
 	if (getsockname(flow->fd, (struct sockaddr *)&sa, &sl) == -1) {
-		logging_log(LOG_WARNING, "getsockname() failed. Eliding packet "
-				"capture for flow.");
+		logging_log(LOG_WARNING, "getsockname() failed. Eliding "
+			    "packet capture for flow.");
 		goto remove;
 	}
 
@@ -152,10 +155,12 @@ static void* fg_pcap_work(void* arg)
 		for (a = d->addresses; a; a = a->next) {
 			if (!a->addr)
 				continue;
-			if (sockaddr_compare(a->addr, (struct sockaddr *)&sa)) {
-				DEBUG_MSG(LOG_NOTICE, "pcap: data connection inbound "
-						"from %s (%s)", d->name,
-						fg_nameinfo(a->addr, sizeof(struct sockaddr)));
+			if (sockaddr_compare(a->addr,
+					     (struct sockaddr *)&sa)) {
+				DEBUG_MSG(LOG_NOTICE, "pcap: data connection "
+					  "inbound from %s (%s)", d->name,
+					  fg_nameinfo(a->addr,
+						      sizeof(struct sockaddr)));
 				found = 1;
 				break;
 			}
@@ -166,47 +171,55 @@ static void* fg_pcap_work(void* arg)
 
 	if (!found) {
 		logging_log(LOG_WARNING, "Failed to determine interface "
-				"for data connection. No pcap support.");
+			    "for data connection. No pcap support.");
 		goto remove;
 	}
 
 	/* Make sure errbuf contains zero-length string in order to enable
 	 * pcap_open_live to report warnings. */
 	errbuf[0] = '\0';
-	flow->pcap_handle = (struct pcap_t *)pcap_open_live(d->name,
-				     PCAP_SNAPLEN,
-				     PCAP_PROMISC,
-				     0, /* no read timeout */
-				     errbuf);
+	flow->pcap_handle =
+		(struct pcap_t *)pcap_open_live(d->name, PCAP_SNAPLEN,
+						PCAP_PROMISC,
+						0, /* no read timeout */
+						errbuf);
 
 	if (!flow->pcap_handle) {
 		logging_log(LOG_WARNING, "Failed to init pcap on device %s:"
-				" %s", d->name, errbuf);
+			    " %s", d->name, errbuf);
 		goto remove;
 	}
 
 
 	if (pcap_lookupnet(d->name, &net, &mask, errbuf) < 0) {
-		logging_log(LOG_WARNING, "pcap: netmask lookup failed: %s", errbuf);
+		logging_log(LOG_WARNING, "pcap: netmask lookup failed: %s",
+			    errbuf);
 		goto remove;
 	}
 
 	/* We rely on a non-blocking dispatch loop */
-	if (pcap_setnonblock((pcap_t *)flow->pcap_handle, 1 /* non-blocking */ , errbuf) < 0) {
-		logging_log(LOG_WARNING, "pcap: failed to set non-blocking: %s",
-				 errbuf );
+	if (pcap_setnonblock((pcap_t *)flow->pcap_handle,
+			     1 /* non-blocking */,
+			     errbuf) < 0) {
+		logging_log(LOG_WARNING, "pcap: failed to set non-blocking: "
+			    "%s", errbuf);
 		goto remove;
 	}
 
 	/* compile filter */
-	if (pcap_compile((pcap_t *)flow->pcap_handle, &pcap_program, PCAP_FILTER, 1, mask) < 0) {
-		logging_log(LOG_WARNING, "pcap: failed compiling filter '%s': %s", PCAP_FILTER, pcap_geterr((pcap_t *)flow->pcap_handle));
+	if (pcap_compile((pcap_t *)flow->pcap_handle,
+			 &pcap_program, PCAP_FILTER, 1, mask) < 0) {
+		logging_log(LOG_WARNING, "pcap: failed compiling filter "
+			    "'%s': %s", PCAP_FILTER,
+			    pcap_geterr((pcap_t *)flow->pcap_handle));
 		goto remove;
 	}
 
 	/* attach filter to interface */
-	if (pcap_setfilter((pcap_t *)flow->pcap_handle, &pcap_program) < 0) {
-		logging_log(LOG_WARNING, "pcap: failed to set filter: %s", pcap_geterr((pcap_t *)flow->pcap_handle));
+	if (pcap_setfilter((pcap_t *)flow->pcap_handle,
+			   &pcap_program) < 0) {
+		logging_log(LOG_WARNING, "pcap: failed to set filter: "
+			    "%s", pcap_geterr((pcap_t *)flow->pcap_handle));
 		goto remove;
 	}
 
@@ -221,7 +234,8 @@ static void* fg_pcap_work(void* arg)
 
 	/* timestamp */
 	tsc_gettimeofday(&now);
-	strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
+	strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S",
+		 localtime(&now.tv_sec));
 	strcat(dump_filename, buf);
 
 	/* hostname */
@@ -240,9 +254,13 @@ static void* fg_pcap_work(void* arg)
 
 	DEBUG_MSG(LOG_NOTICE, "dumping to \"%s\"", dump_filename);
 
-	flow->pcap_dumper = (struct pcap_dumper_t *)pcap_dump_open((pcap_t *)flow->pcap_handle, dump_filename);
+	flow->pcap_dumper = (struct pcap_dumper_t *)pcap_dump_open(
+				(pcap_t *)flow->pcap_handle, dump_filename);
+
 	if (!flow->pcap_dumper) {
-		logging_log(LOG_WARNING, "pcap: failed to open dump file writing: %s", pcap_geterr((pcap_t *)flow->pcap_handle));
+		logging_log(LOG_WARNING, "pcap: failed to open dump file "
+			    "writing: %s",
+			    pcap_geterr((pcap_t *)flow->pcap_handle));
 		goto remove;
 	}
 
@@ -251,21 +269,29 @@ static void* fg_pcap_work(void* arg)
 	pthread_barrier_wait(&pcap_barrier);
 #endif
 	for (;;) {
-		rc = pcap_dispatch((pcap_t *)flow->pcap_handle, -1, &pcap_dump, (u_char *)flow->pcap_dumper);
+		rc = pcap_dispatch((pcap_t *)flow->pcap_handle, -1,
+				   &pcap_dump, (u_char *)flow->pcap_dumper);
 
 		if (rc < 0) {
-			logging_log(LOG_WARNING, "pcap_dispatch() failed. Packet "
-				"dumping stopped for flow %d.", flow->id);
-			pthread_exit(0); /*cleanup automatically called */
+			logging_log(LOG_WARNING, "pcap_dispatch() failed. "
+				    "Packet dumping stopped for flow %d.",
+				    flow->id);
+			/* cleanup automatically called */
+			pthread_exit(0);
 		}
 #ifdef DEBUG
 		pcap_stats((pcap_t *)flow->pcap_handle, &p_stats);
 #endif
-		DEBUG_MSG(LOG_NOTICE, "pcap: finished dumping %u packets for flow %d", rc, flow->id);
-		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets received by filter for flow %d", p_stats.ps_recv, flow->id);
-		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets dropped by kernel for flow %d", p_stats.ps_drop, flow->id);
+		DEBUG_MSG(LOG_NOTICE, "pcap: finished dumping %u packets for "
+			  "flow %d", rc, flow->id);
+		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets received by filter for "
+			  "flow %d", p_stats.ps_recv, flow->id);
+		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets dropped by kernel for "
+			  "flow %d", p_stats.ps_drop, flow->id);
 		if (rc == 0)
-			pthread_testcancel(); /* if no packets are received try if we should cancel */
+			/* if no packets are received try
+			 * if we should cancel */
+			pthread_testcancel();
 	}
 	pthread_cleanup_pop(1);
 
@@ -284,20 +310,22 @@ void fg_pcap_go(struct _flow *flow)
 		return;
 
 	if (dumping) {
-		logging_log(LOG_WARNING, "pcap: dumping already in progress on this host");
+		logging_log(LOG_WARNING, "pcap: dumping already in progress "
+			    "on this host");
 		return;
 	}
 
 	DEBUG_MSG(LOG_DEBUG, "called fg_pcap_go() for flow %d", flow->id);
 	dumping = 1;
-	rc = pthread_create(&flow->pcap_thread, NULL, fg_pcap_work, (void*) flow);
+	rc = pthread_create(&flow->pcap_thread, NULL, fg_pcap_work,
+			    (void*)flow);
 	/* barrier: dump thread is ready (or aborted) */
 #ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
 #endif
-	if (rc) {
-		logging_log(LOG_WARNING, "Could not start pcap thread: %s", strerror(errno) );
-	}
+	if (rc)
+		logging_log(LOG_WARNING, "Could not start pcap thread: %s",
+			    strerror(errno) );
 	return;
 }
 

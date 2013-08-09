@@ -66,10 +66,11 @@ const char *debug_timestamp()
 	if (!first.tv_sec && !first.tv_usec)
 		last = first = now;
 
-	len = strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S", localtime(&now.tv_sec));
+	len = strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S",
+		       localtime(&now.tv_sec));
 	snprintf(buf+len, sizeof(buf)-len, ".%06ld [+%8.6lf] (%8.6lf)",
-			(long)now.tv_usec, time_diff(&last, &now),
-			time_diff(&first, &now));
+		 (long)now.tv_usec, time_diff(&last, &now),
+		 time_diff(&first, &now));
 	last = now;
 	return buf;
 }

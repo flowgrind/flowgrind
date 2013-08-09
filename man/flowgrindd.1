@@ -1,4 +1,4 @@
-.TH "flowgrindd" "1" "July 2013" "" "Flowgrind Manual"
+.TH "flowgrindd" "9" "August 2013" "" "Flowgrind Manual"
 .SH "NAME"
 flowgrindd \- network performance measurement tool daemon
 .SH "SYNOPSIS"
@@ -32,6 +32,10 @@ Port the XML\-RPC server should listen on.
 .BR \-b " addr"
 Address the XML\-RPC server should listen on. An easy way to enable support for IPv6 control-connections
 is to specify the IPv6 wildcard address "::".
+
+.TP
+.BR \-c " #"
+Bound daemon to specific CPU. First CPU is 0.
 
 .TP 
 .B \-v
