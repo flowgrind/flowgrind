@@ -990,6 +990,7 @@ void print_tcp_report_line(char hash, int id,
 	char report_buffer[4000] = "";
 	double thruput;
 	double transac;
+	unsigned int i;
 
 #define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
 		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
@@ -1057,34 +1058,27 @@ void print_tcp_report_line(char hash, int id,
 	transac = (double)r->response_blocks_read / (time2 - time1);
 
 	char rep_string[4000];
-#if !(defined __LINUX__ || defined __FreeBSD__)
+
 	/* don't show tcp kernel output if there is no linux or freebsd OS */
 	visible_columns[column_type_kernel] = 0;
-#endif
+	for (i = 0; i < num_unique_servers; i++) {
+		if ((!strcmp(unique_servers[i].os_name, "Linux")) ||
+		    (!strcmp(unique_servers[i].os_name, "FreeBSD"))) {
+			visible_columns[column_type_kernel] = 1;
+			break;
+		}
+	}
+
 	strcpy(rep_string, createOutput(hash, id, type,
 		time1, time2, thruput, transac,
 		(unsigned int)r->request_blocks_written,(unsigned int)r->response_blocks_written,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
-#ifdef __LINUX__
 		(unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, (unsigned int)r->tcp_info.tcpi_unacked,
 		(unsigned int)r->tcp_info.tcpi_sacked, (unsigned int)r->tcp_info.tcpi_lost, (unsigned int)r->tcp_info.tcpi_reordering,
 		(unsigned int)r->tcp_info.tcpi_retrans, (unsigned int)r->tcp_info.tcpi_retransmits, (unsigned int)r->tcp_info.tcpi_fackets,
 		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
 		(unsigned int)r->tcp_info.tcpi_backoff, r->tcp_info.tcpi_ca_state, (unsigned int)r->tcp_info.tcpi_snd_mss,
-#elif __FreeBSD__
-		(unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, 0,
-		0, 0, 0,
-		0, 0, 0,
-		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
-		0, 0, (unsigned int)r->tcp_info.tcpi_snd_mss,
-#else
-		0, 0, 0,
-		0, 0, 0,
-		0, 0, 0,
-		0, 0, 0,
-		0, 0, 0,
-#endif
 		r->pmtu, comment_buffer, opt.mbyte
 	));
 	strncpy(report_buffer, rep_string, sizeof(report_buffer));
@@ -1147,10 +1141,8 @@ void report_final(void)
 
 
 				/* SMSS, Path MTU, Interface MTU */
-#ifdef __LINUX__
 				if (flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0)
 					CATC("SMSS = %d", flow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
-#endif
 				if (flow[id].final_report[endpoint]->pmtu > 0)
 					CATC("Path MTU = %d", flow[id].final_report[endpoint]->pmtu);
 				if (flow[id].final_report[endpoint]->imtu > 0)
@@ -2906,6 +2898,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 	}
 }
 
+/* Poll the daemons for reports */
 static void fetch_reports(xmlrpc_client *rpc_client) {
 
 	xmlrpc_value * resultP = 0;
@@ -3039,7 +3032,9 @@ has_more_reports:
 				report.bytes_written = (uint32_t)bytes_written_low;
 #endif
 
-#ifdef __LINUX__
+				/* Kernel metrics (tcp_info). Other OS than Linux may not send
+				 * valid values here, for the moment we don't care and handle
+				 * this in the output/display routines */
 				report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
 				report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
 				report.tcp_info.tcpi_unacked = tcpi_unacked;
@@ -3055,14 +3050,7 @@ has_more_reports:
 				report.tcp_info.tcpi_backoff = tcpi_backoff;
 				report.tcp_info.tcpi_ca_state = tcpi_ca_state;
 				report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
-#elif __FreeBSD__
-		report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
-		report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
-		report.tcp_info.tcpi_rtt = tcpi_rtt;
-		report.tcp_info.tcpi_rttvar = tcpi_rttvar;
-		report.tcp_info.tcpi_rto = tcpi_rto;
-		report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
-#endif
+
 				report.begin.tv_sec = begin_sec;
 				report.begin.tv_usec = begin_usec;
 				report.end.tv_sec = end_sec;
