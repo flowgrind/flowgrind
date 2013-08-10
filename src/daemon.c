@@ -258,9 +258,7 @@ static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
 	return 0;
 }
 
-#if (defined __LINUX__ || defined __FreeBSD__)
-int get_tcp_info(struct _flow *flow, struct tcp_info *info);
-#endif
+int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info);
 static void report_flow(struct _flow* flow, int type);
 
 static int prepare_fds() {
@@ -286,9 +284,9 @@ static int prepare_fds() {
 			(flow->finished[WRITE] || !flow->settings.duration[WRITE] || (!flow_in_delay(&now, flow, WRITE) && !flow_sending(&now, flow, WRITE)))
 		) {
 
-#if (defined __LINUX__ || defined __FreeBSD__)
+			/* On Other OSes than Linux or FreeBSD, tcp_info will contain all zeroes */
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
-#endif
+
 			flow->pmtu = get_pmtu(flow->fd);
 
 			if (flow->settings.reporting_interval)
@@ -372,9 +370,7 @@ static void stop_flow(struct _request_stop_flow *request)
 		for (unsigned int i = 0; i < num_flows; i++) {
 			struct _flow *flow = &flows[i];
 
-#if (defined __LINUX__ || defined __FreeBSD__)
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
-#endif
 			flow->pmtu = get_pmtu(flow->fd);
 
 			if (flow->settings.reporting_interval)
@@ -394,9 +390,9 @@ static void stop_flow(struct _request_stop_flow *request)
 		if (flow->id != request->flow_id)
 			continue;
 
-#if (defined __LINUX__ || defined __FreeBSD__)
+		/* On Other OSes than Linux or FreeBSD, tcp_info will contain all zeroes */
 		flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
-#endif
+
 		flow->pmtu = get_pmtu(flow->fd);
 
 		if (flow->settings.reporting_interval)
@@ -503,9 +499,10 @@ static void report_flow(struct _flow* flow, int type)
 	report->iat_max = flow->statistics[type].iat_max;
 	report->iat_sum = flow->statistics[type].iat_sum;
 
-#if (defined __LINUX__ || defined __FreeBSD__)
+	/* Currently this will only contain useful information on Linux
+	 * and FreeBSD */
 	report->tcp_info = flow->statistics[type].tcp_info;
-#endif
+
 	if (flow->fd != -1) {
 		/* Get latest MTU */
 		flow->pmtu = get_pmtu(flow->fd);
@@ -577,12 +574,15 @@ static void report_flow(struct _flow* flow, int type)
 	DEBUG_MSG(LOG_DEBUG, "report_flow finished for flow %d (type %d)", flow->id, type);
 }
 
-#if (defined __LINUX__ || defined __FreeBSD__)
-int get_tcp_info(struct _flow *flow, struct tcp_info *info)
+/* Fills the given _fg_tcp_info with the values of the OS specific tcp_info,
+ * returns 0 on success */
+int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
 {
+#if (defined __LINUX__ || defined __FreeBSD__)
 	struct tcp_info tmp_info;
 	socklen_t info_len = sizeof(tmp_info);
 	int rc;
+	memset(info, 0, sizeof(struct _fg_tcp_info));
 
 	rc = getsockopt(flow->fd, IPPROTO_TCP, TCP_INFO, &tmp_info, &info_len);
 	if (rc == -1) {
@@ -590,11 +590,29 @@ int get_tcp_info(struct _flow *flow, struct tcp_info *info)
 				strerror(errno));
 		return -1;
 	}
-	*info = tmp_info;
+	#define CPY_INFO_MEMBER(a) info->a = (int) tmp_info.a;
+	CPY_INFO_MEMBER(tcpi_snd_cwnd);
+	CPY_INFO_MEMBER(tcpi_snd_ssthresh);
+	CPY_INFO_MEMBER(tcpi_rtt);
+	CPY_INFO_MEMBER(tcpi_rttvar);
+	CPY_INFO_MEMBER(tcpi_rto);
+	CPY_INFO_MEMBER(tcpi_snd_mss);
 
+	/* FreeBSD 9.1 doesn't fill these members */
+#ifdef __LINUX__
+	CPY_INFO_MEMBER(tcpi_backoff);
+	CPY_INFO_MEMBER(tcpi_unacked);
+	CPY_INFO_MEMBER(tcpi_sacked);
+	CPY_INFO_MEMBER(tcpi_retrans);
+	CPY_INFO_MEMBER(tcpi_retransmits);
+	CPY_INFO_MEMBER(tcpi_fackets);
+	CPY_INFO_MEMBER(tcpi_reordering);
+#endif
+#else
+	memset(info, 0, sizeof(_fg_tcp_info);
+#endif
 	return 0;
 }
-#endif
 
 static void timer_check()
 {
@@ -615,10 +633,10 @@ static void timer_check()
 		if (!time_is_after(&now, &flow->next_report_time))
 			continue;
 
-#if (defined __LINUX__ || defined __FreeBSD__)
+		/* On Other OSes than Linux or FreeBSD, tcp_info will contain all zeroes */
 		if (flow->fd != -1)
 			flow->statistics[INTERVAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[INTERVAL].tcp_info) ? 0 : 1;
-#endif
+
 		report_flow(flow, INTERVAL);
 
 		do {
@@ -688,11 +706,9 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 		i++;
 		continue;
 remove:
-#if (defined __LINUX__ || defined __FreeBSD__)
 		if (flow->fd != -1) {
 			flow->statistics[TOTAL].has_tcp_info = get_tcp_info(flow, &flow->statistics[TOTAL].tcp_info) ? 0 : 1;
 		}
-#endif
 		flow->pmtu = get_pmtu(flow->fd);
 		report_flow(flow, TOTAL);
 		uninit_flow(flow);

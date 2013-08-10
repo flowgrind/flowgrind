@@ -113,7 +113,7 @@ struct _flow
 
 #if (defined __LINUX__ || defined __FreeBSD__)
 		int has_tcp_info;
-		struct tcp_info tcp_info;
+		struct _fg_tcp_info tcp_info;
 #endif
 
 	} statistics[2];

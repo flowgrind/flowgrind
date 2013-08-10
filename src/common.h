@@ -161,6 +161,27 @@ struct _flow_settings
 	int num_extra_socket_options;
 };
 
+/* Flowgrinds view on the tcp_info struct for
+ * serialization / deserialization */
+struct _fg_tcp_info
+{
+	int tcpi_snd_cwnd;
+	int tcpi_snd_ssthresh;
+	int tcpi_unacked;
+	int tcpi_sacked;
+	int tcpi_lost;
+	int tcpi_retrans;
+	int tcpi_retransmits;
+	int tcpi_fackets;
+	int tcpi_reordering;
+	int tcpi_rtt;
+	int tcpi_rttvar;
+	int tcpi_rto;
+	int tcpi_backoff;
+	int tcpi_snd_mss;
+	int tcpi_ca_state;
+};
+
 /* Report (measurement sample) of a flow */
 struct _report
 {
@@ -184,9 +205,10 @@ struct _report
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;
 
-#if (defined __LINUX__ || defined __FreeBSD__)
-	struct tcp_info tcp_info;
-#endif
+	/* on the Daemon this is filled from the os specific
+	 * tcp_info struct */
+	struct _fg_tcp_info tcp_info;
+
 	int pmtu;
 	int imtu;
 
