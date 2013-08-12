@@ -951,7 +951,7 @@ static struct _daemon * get_daemon_by_url(const char* server_url, const char* se
 	unsigned int i;
 	/* If we have already a daemon for this URL return a pointer to it */
 	for (i = 0; i < num_unique_servers; i++) {
-		if (strcmp(unique_servers[i].server_url, server_url))
+		if (!strcmp(unique_servers[i].server_url, server_url))
 			return &unique_servers[i];
 	}
 	/* didn't find anything, seems to be a new one */
@@ -1961,6 +1961,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 					daemon = get_daemon_by_url(url, rpc_address, port);
 					ASSIGN_ENDPOINT_FLOW_OPTION(daemon, daemon);
+					ASSIGN_ENDPOINT_FLOW_OPTION_STR(test_address, arg);
 				}
 				break;
 
