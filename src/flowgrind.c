@@ -119,6 +119,14 @@ const struct _header_info header_info[] = {
 	{ " min IAT", " [ms]", column_type_iat },
 	{ " avg IAT", " [ms]", column_type_iat },
 	{ " max IAT", " [ms]", column_type_iat },
+
+/* While Linux uses an segment based TCP-Stack, and values
+ * like cwnd are measured in number of segments, FreeBSDs
+ * and probably most other BSDs stack is based on Bytes. */
+/* FIXME: The header format should not be based on the OS the
+ * controller is compiled on. However, including the header
+ * on every report when doing FreeBSD <-> Linux measurements
+ * does not seem a good idea either. */
 #ifdef __LINUX__
 	{ " cwnd", " [#]", column_type_kernel },
 	{ " ssth", " [#]", column_type_kernel },
@@ -130,7 +138,7 @@ const struct _header_info header_info[] = {
 	{ " fack", " [#]", column_type_kernel },
 	{ " reor", " [#]", column_type_kernel },
 	{ " bkof", " [#]", column_type_kernel },
-#elif __FreeBSD__
+#else
 	{ " cwnd", " [B]", column_type_kernel },
 	{ " ssth", " [B]", column_type_kernel },
 	{ " uack", " [B]", column_type_kernel },
@@ -374,6 +382,21 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 	return 0;
 }
 
+/* Values for Linux tcpi_state, if not compiled on Linux
+ * FIXME: If the daemon (e.g. on FreeBSD) does not report
+ * the ca state it will always displayed as "open" */
+#ifndef __LINUX__
+enum tcp_ca_state
+{
+	TCP_CA_Open = 0,
+	TCP_CA_Disorder = 1,
+	TCP_CA_CWR = 2,
+	TCP_CA_Recovery = 3,
+	TCP_CA_Loss = 4
+};
+#endif
+
+/* Output a single report (with header if width has changed */
 char *createOutput(char hash, int id, int type, double begin, double end,
 		   double throughput, double transac,
 		   unsigned int request_blocks, unsigned int response_blocks,
@@ -393,11 +416,8 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	char headerString1[250];
 	char headerString2[250];
 	static char outputString[1000];
-#ifdef __LINUX__
 	char tmp[100];
-#else
-	UNUSED_ARGUMENT(ca_state);
-#endif
+
 	/* output string
 	param # + flow_id */
 	if (hash)
@@ -515,7 +535,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	/* param str_linrto */
 	createOutputColumn(headerString1, headerString2, dataString, i, linrto, &column_states[i], 1, &columnWidthChanged);
 	i++;
-#ifdef __LINUX__
+
 	/* param ca_state */
 	if (ca_state == TCP_CA_Open)
 		strcpy(tmp, "open");
@@ -527,12 +547,10 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		strcpy(tmp, "recover");
 	else if (ca_state == TCP_CA_Loss)
 		strcpy(tmp, "loss");
-	else if (ca_state)
-		sprintf(tmp, "unknown!(%d)", ca_state);
 	else
-		strcpy(tmp, "err");
+		strcpy(tmp, "unknown");
+
 	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
-#endif
 	i++;
 
 	/* param str_linrtt */

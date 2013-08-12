@@ -386,31 +386,31 @@ Size of TCP congestion window in number of segments (Linux) or bytes (FreeBSD). 
 
 .TP 
 .B ssth (tcpi_snd_sshtresh)
-The slowstart threshold of the sender in number of segments.
+The slowstart threshold of the sender in number of segments (Linux) or bytes (FreeBSD).
 
 .TP 
 .BR "uack (tcpi_unacked) " "and" " sack (tcpi_sacked)"
-Statistics about the number of unacknowledged and selectively acknowledged segments.
+Statistics about the number of unacknowledged and selectively acknowledged segments. (Linux only)
 
 .TP 
 .B lost (tcpi_lost)
-Number of segments assumed lost at the end of the reporting interval.
+Number of segments assumed lost at the end of the reporting interval. (Linux only)
 
 .TP 
 .B retr (tcpi_retrans)
-Number of unacknowledged retransmitted segments.
+Number of unacknowledged retransmitted segments. (Linux only)
 
 .TP
 .B tret (tcpi_retransmits)
-Number of retransmissions of the same segment due a retransmission timeout.
+Number of retransmissions of the same segment due a retransmission timeout. (Linux only)
 
 .TP
 .B fack (tcpi_fackets)
-Number of segments between SND.UNA and the highest selectively acknowledged sequence number.
+Number of segments between SND.UNA and the highest selectively acknowledged sequence number. (Linux only)
 
 .TP
 .B reor (tcpi_reordering)
-Segment reordering metric. The Linux kernel can detect and cope with reordering without loss of performance if the distance a segment gets displaced does not exceed the reordering metric.
+Segment reordering metric. The Linux kernel can detect and cope with reordering without loss of performance if the distance a segment gets displaced does not exceed the reordering metric. (Linux only)
 
 .TP
 .BR "rtt (tcpi_rtt) " "and" " rttvar (tcpi_rttvar)"
@@ -422,11 +422,11 @@ The retransmission timeout given in ms.
 
 .TP
 .B bkof (tcpi_backoff)
-Number of backoffs.
+Number of backoffs. (Linux only)
 
 .TP
 .B ca state (tcpi_ca_state)
-Internal state of congestion control state machine as implemented in the Linux kernel. Can be one of open, disorder, cwr, recovery or loss.
+Internal state of congestion control state machine as implemented in the Linux kernel. Can be one of open, disorder, cwr, recovery or loss. (Linux only)
 
 .RS 8
 
@@ -436,7 +436,7 @@ is the normal state. It indicates that there are no issues with the connection.
 
 .TP 
 .B Disorder
-is similar to Open but is entered upon receiving duplicate ACKs or selective acknowledgements as special attention might be neded in the near future.
+is similar to Open but is entered upon receiving duplicate ACKs or selective acknowledgements as special attention might be needed in the near future.
 
 .TP 
 .B CWR
@@ -501,6 +501,11 @@ Numerical
 control connections may not work correctly if the flowgrind daemon was compiled
 against an older version of libxmlrpc, because the libxmlrpc server is stumbling
 about the colons in the HTTP host header.
+
+.PP
+Not all kernel statistics are available on
+.B FreeBSD.
+Those will be always displayed as zero (or in case of ca state as "open").
 
 .PP
 .B If you have found a bug,
