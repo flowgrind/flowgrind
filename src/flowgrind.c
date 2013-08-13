@@ -50,7 +50,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
-#include "adt.h"
 #include "common.h"
 #include "fg_socket.h"
 #include "debug.h"
@@ -167,12 +166,6 @@ struct _column_state column_states[sizeof(header_info) / sizeof(struct _header_i
 
 /* Array for the dynamical output, show all except status by default */
 int visible_columns[10] = {1, 1, 1, 1, 0, 1, 1, 1, 1, 1};
-
-/* these are the 2 parameters for the ADT test. If the user wants to test for
- * Exponential only ADT1 will be used and will represent the mean if the user
- * wants to test for the uniform then ADT1 is the lower bound and ADT2 the
- * upper bound */
-double ADT[adt_type_max][2];
 
 xmlrpc_env rpc_env;
 static void die_if_fault_occurred(xmlrpc_env *env);
@@ -599,14 +592,6 @@ static void usage(void)
 		"  -v           Print version information and exit\n\n"
 
 		"General options:\n\n"
-
-		"  -b mean1,mean2,mean3\n"
-		"               Means for computing Anderson-Darling Test for exponential\n"
-		"               distribution\n"
-		"               OR\n"
-		"  -b lwr_bound1,lwr_bound2,lwr_bound3,upr_bound1,upr_bound2,upr_bound3\n"
-		"               lower and upper bounds for computing the A2 test for uniform\n"
-		"               distribution with the given bounds\n"
 #ifdef DEBUG
 		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-kernel,-status\n"
 #else
@@ -833,14 +818,6 @@ static void init_options_defaults(void)
 	opt.log_filename_prefix = "flowgrind-";
 	opt.dont_log_logfile = 1;
 	opt.symbolic = 1;
-}
-
-static void init_adt_defaults(void)
-{
-	int i, j;
-	for (j = 0; j < 2; j++)
-		for (i = 0; i < adt_type_max; i++)
-			ADT[i][j] = 0.05;
 }
 
 static void init_flows_defaults(void)
@@ -1122,7 +1099,6 @@ void report_final(void)
 	int id = 0;
 	char header_buffer[600] = "";
 	char header_nibble[600] = "";
-	int i, j;
 
 	for (id = 0; id < opt.num_flows; id++) {
 
@@ -1279,41 +1255,7 @@ void report_final(void)
 			log_output(header_buffer);
 
 		}
-	}
 
-	/* now depending on which test the user wanted we make the function calls */
-	if (opt.doAnderson) {
-		char report_string[400];
-		const char names[][20] = {"Throughput", "IAT", "RTT"};
-
-		if (opt.doAnderson == 1) {
-			log_output("# Anderson-Darling test statistic (A2) for Exponential Distribution\n");
-			for (i = 0; i < 2; i++)
-				for (j = 0; j < 3; j++) {
-					double result = adt_get_result_mean(i, j, ADT[j][0]);
-					sprintf(report_string, "# A2 \t%s for \t%s \twith mean %-5.3f: \t%-5.3f\n",
-						names[j], i ? "destination" : "source     ", ADT[j][0],
-						result);
-					log_output(report_string);
-				}
-		}
-		else if (opt.doAnderson == 2) {
-			log_output("# Anderson-Darling test statistic (A2) for Uniform Distribution\n");
-
-			for (i = 0; i < 2; i++)
-				for (j = 0; j < 3; j++) {
-					double result = adt_get_result_range(i, j, ADT[j][0], ADT[j][1]);
-					sprintf(report_string, "# A2 \t%s for \t%s \twith bounds %-5.3f, %-5.3f: \t%-5.3f\n",
-						names[j], i ? "destination" : "source     ",
-						ADT[j][0],
-						ADT[j][1],
-						result);
-					log_output(report_string);
-				}
-		}
-
-		if (adt_too_much_data())
-			log_output("# Note: The Darlington test was done only on the first 1000 samples. The reason for this is that the test gives poor results for a larger sample size (as specified in literature)\n");
 	}
 
 }
@@ -1344,16 +1286,6 @@ exit_outer_loop:
 	if (id >= opt.num_flows) {
 		DEBUG_MSG(LOG_ERR, "Got report from nonexistent flow, ignoring");
 		return;
-	}
-
-	if (opt.doAnderson && !id && report->type == INTERVAL) {
-		/* Record ADT data on first flow */
-		double delta = time_diff(&report->begin, &report->end);
-		adt_add_data(report->bytes_written / delta, endpoint, adt_throughput);
-		if (report->iat_sum != FLT_MAX)
-			adt_add_data(report->iat_sum, endpoint, adt_iat);
-		if (report->rtt_sum != FLT_MAX)
-			adt_add_data(report->rtt_sum, endpoint, adt_rtt);
 	}
 
 	if (f->start_timestamp[endpoint].tv_sec == 0) {
@@ -1510,39 +1442,6 @@ static void parse_help_option(char *params) {
 	}
 
 }
-
-static int parse_adt_option(char *params) {
-
-
-	init_adt_defaults();
-
-	int i=0;
-	char field [ 32 ];
-	int n;
-	char c[1];
-	strncpy (c, params, 1);
-
-	while (sscanf(params, "%31[^,]%n", field, &n) == 1 ) {
-		ADT[i % 3][i / 3] = atof(field);
-
-		i++;
-		params += n; /* advance the pointer by the number of characters read */
-		if ( *params != ',' ){
-			break; /* didn't find an expected delimiter, done? */
-		}
-		++params; /* skip the delimiter */
-	}
-
-	if (i == 3)
-		opt.doAnderson = 1;
-	else if (i == 6)
-		opt.doAnderson = 2;
-	else
-		return 0;
-
-	return 1;
-}
-
 
 static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 	int rc;
@@ -2172,16 +2071,9 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	while ((ch = getopt(argc, argv, "b:c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:")) != -1)
 
 		switch (ch) {
-
-		case 'b':
-			if (!parse_adt_option(optarg)) {
-				fprintf(stderr, "Failed to parse adt options\n");
-				usage();
-			}
-			break;
 
 		case 'c':
 			parse_visible_param(optarg);

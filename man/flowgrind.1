@@ -343,7 +343,7 @@ For this scenario RTT (lower is better) and Network Transactions/s are useful me
 .TP
 This scenario emulates a video stream transfer with a bitrate of 800 kbit/s.
 .TP
-.B "flowgrind -G s=q,C,800 -G s=g,N,0.008,0.01"
+.B "flowgrind -G s=q,C,800 -G s=g,N,0.008,0.001"
 .TP
 Use normal distributed interpacket gap with mean 0.008 and a small variance (0.001). In conjuction with request size 800 bytes a average bitrate of approx 800 kbit/s is achieved. The variance is added to emulate a variable bitrate like it's used in todays video codecs. 
 .TP

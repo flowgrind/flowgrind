@@ -44,6 +44,14 @@
 #endif
 #include <netdb.h>
 
+/* CPU affinity */
+#ifdef __LINUX__
+#include <sched.h>
+#elif __FreeBSD__
+#include <sys/param.h>
+#include <sys/cpuset.h>
+#endif
+
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
@@ -61,24 +69,25 @@
 
 unsigned port = DEFAULT_LISTEN_PORT;
 char *rpc_bind_addr = NULL;
-
+int cpu = -1;				    /* No CPU affinity */
 static char progname[50] = "flowgrindd";
 
 static void __attribute__((noreturn)) usage(void)
 {
 	fprintf(stderr,
 #ifdef HAVE_LIBPCAP
-		"Usage: %1$s [-p#] [-b addr] [-d] [-w DIR/] [-v]\n"
+		"Usage: %1$s [-p #] [-b addr] [-d] [-c #] [-w dir/] [-v]\n"
 #else
-		"Usage: %1$s [-p#] [-b addr] [-d] [-v]\n"
+		"Usage: %1$s [-p #] [-b addr] [-d] [-c #] [-v]\n"
 #endif
-		"\t-p#\t\tXML-RPC server port\n"
+		"\t-p #\t\tXML-RPC server port\n"
 		"\t-b addr\t\tXML-RPC server bind address\n"
 #ifdef DEBUG
 		"\t-d\t\tincrease debug verbosity, add multiple times (no daemon, log to stderr)\n"
 #else
 		"\t-d\t\tdon't fork into background\n"
 #endif
+        "\t-c #\t\tbound daemon to specific CPU\n"
 #ifdef HAVE_LIBPCAP
 		"\t-w\t\ttarget directory for dumps\n"
 #endif
@@ -930,7 +939,43 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	/* xmlrpc_server_abyss() never returns */
 }
 
-static void parse_option(int argc, char ** argv) {
+void set_affinity(int cpu)
+{
+#ifdef __LINUX__
+	typedef cpu_set_t fg_cpuset;
+#elif __FreeBSD__
+	typedef cpuset_t fg_cpuset;
+#endif
+	int rc;
+	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);   /* number of cores */
+	fg_cpuset cpuset;			    /* define cpu_set bit mask */
+
+	/* sanity check */
+	if (cpu > ncpu) {
+		logging_log(LOG_WARNING, "CPU binding failed. Given cpu number "
+			    "is higher then the available cores");
+		return;
+	}
+
+	CPU_ZERO(&cpuset);	/* initialize to 0, i.e. no CPUs selected. */
+	CPU_SET(cpu, &cpuset);	/* set bit that represents the given core */
+
+#ifdef __LINUX__
+	rc = sched_setaffinity(getpid(), sizeof(cpuset), &cpuset);
+#elif __FreeBSD__
+	rc = cpuset_setaffinity(CPU_LEVEL_WHICH, CPU_WHICH_TID, -1,
+			        sizeof(cpuset), &cpuset);
+#endif
+	if (rc)
+		logging_log(LOG_WARNING, "failed to bind %s (PID %d) to "
+			    "CPU %i\n", progname, getpid(), cpu);
+	else
+		DEBUG_MSG(LOG_WARNING, "bind %s (PID %d) to CPU %i\n"
+			  progname, getpid(), cpu);
+}
+
+static void parse_option(int argc, char ** argv)
+{
 	int ch, rc;
 	int argcorig = argc;
 #ifdef HAVE_GETOPT_LONG
@@ -940,9 +985,9 @@ static void parse_option(int argc, char ** argv) {
 				{"debug", 0, 0, 'd'},
 				{0, 0, 0, 0}
 				};
-	while ((ch = getopt_long(argc, argv, "dDhp:vVw:W:b:", lo, 0)) != -1) {
+	while ((ch = getopt_long(argc, argv, "dDhp:vVw:W:b:c:", lo, 0)) != -1) {
 #else
-	while ((ch = getopt(argc, argv, "dDhp:vVw:W:b:")) != -1) {
+	while ((ch = getopt(argc, argv, "dDhp:vVw:W:b:c:")) != -1) {
 #endif
 		switch (ch) {
 		case 'h':
@@ -954,7 +999,13 @@ static void parse_option(int argc, char ** argv) {
 			log_type = LOGTYPE_STDERR;
 			increase_debuglevel();
 			break;
-
+		case 'c':
+			rc = sscanf(optarg, "%i", &cpu);
+			if (rc != 1) {
+				fprintf(stderr, "failed to "
+					"parse CPU number.\n");
+			}
+			break;
 		case 'p':
 			rc = sscanf(optarg, "%u", &port);
 			if (rc != 1) {
@@ -1044,6 +1095,8 @@ int main(int argc, char ** argv)
 		logging_log(LOG_NOTICE, "flowgrindd daemonized");
 	}
 
+    if (cpu >= 0)
+        set_affinity(cpu);
 	create_daemon_thread();
 
 	xmlrpc_env_init(&env);

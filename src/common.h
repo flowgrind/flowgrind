@@ -28,13 +28,12 @@
 #define FLOWGRIND_VERSION "(n/a)"
 #endif
 
-/* Flowgrind's xmlrpc API version in integer representation */
 #define FLOWGRIND_API_VERSION 3
 
-#define DEFAULT_LISTEN_PORT     5999
+#define DEFAULT_LISTEN_PORT 5999
 
-#define ERR_FATAL       0
-#define ERR_WARNING     1
+#define ERR_FATAL 0
+#define ERR_WARNING 1
 
 #define ASSIGN_MIN(s, c) if ((s)>(c)) (s) = (c)
 #define ASSIGN_MAX(s, c) if ((s)<(c)) (s) = (c)
@@ -50,7 +49,7 @@ void error(int errcode, const char *fmt, ...);
 #define MAX_EXTRA_SOCKET_OPTIONS 10
 #define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
 
-#define MAX_FLOWS              2048
+#define MAX_FLOWS 2048
 
 #ifndef TCP_CA_NAME_MAX
 #define TCP_CA_NAME_MAX 16

@@ -119,9 +119,9 @@ struct _flow
 	} statistics[2];
 
 #ifdef HAVE_LIBPCAP
-	pthread_t 		 pcap_thread;
-	struct pcap_t          	*pcap_handle;
-	struct pcap_dumper_t   	*pcap_dumper;
+	pthread_t pcap_thread;
+	struct pcap_t *pcap_handle;
+	struct pcap_dumper_t *pcap_dumper;
 #endif
 
 #ifdef HAVE_LIBGSL
