@@ -22,7 +22,8 @@ const char *debug_timestamp(void);
 		if (debug_level>=message_level) { \
 			fprintf(stderr, "%s %s:%d  [%d/%d] " msg "\n", \
 					debug_timestamp(), __FUNCTION__, \
-					__LINE__, getpid(), (unsigned int)pthread_self()%USHRT_MAX, ##args); \
+					__LINE__, getpid(), \
+					(unsigned int)pthread_self()%USHRT_MAX, ##args); \
 		}
 #else
 

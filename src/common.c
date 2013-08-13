@@ -32,8 +32,7 @@
 #include "common.h"
 #include "debug.h"
 
-void
-error(int errcode, const char *fmt, ...)
+void error(int errcode, const char *fmt, ...)
 {
 	va_list ap;
 	const char *prefix;
