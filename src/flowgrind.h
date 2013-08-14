@@ -20,6 +20,7 @@
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.inet.tcp.cc.available"
 #endif
 
+/* global controller options */
 struct _opt {
 	unsigned short num_flows;
 	double reporting_interval;
@@ -45,9 +46,25 @@ enum endpoint {
 	DESTINATION
 };
 
+/* Infos about a flowgrind daemon (potentially managing multiple flows) */
+struct _daemon {
+	/* XMLRPC URL for this daemon */
+	char server_url[1000];
+	/* For convenience: name and port of the XMLRPC server */
+	char server_name[257];
+	unsigned short server_port;
+
+	/* Flowgrind API version supported by this daemon */
+	int api_version;
+
+	/* Information about the OS of the daemon */
+	char os_name[257];
+	char os_release[257];
+};
+
+/* Flow options specific to source or destination */
 struct _flow_endpoint {
-	/* Flow options only affecting source or destination
-	 * SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
+	/* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
 
 	/* SO_SNDBUF */
 	int send_buffer_size_real;
@@ -59,14 +76,13 @@ struct _flow_endpoint {
 	struct timeval flow_stop_timestamp;
 
 	char *rate_str;
-
-	char server_url[1000];
-	char server_address[1000];
-	unsigned short server_port;
+	/* Pointer to the daemon managing this endpoint */
+	struct _daemon* daemon;
 	char test_address[1000];
 	char bind_address[1000];
 };
 
+/* All flow specific settings */
 struct _flow {
 
 	enum protocol proto;
@@ -78,12 +94,12 @@ struct _flow {
 
 	unsigned int random_seed;
 
+	/* For the following arrays,
+	 * 0 stands for source
+	 * 1 for destination */
 	int endpoint_id[2];
 
 	struct timeval start_timestamp[2];
-
-	// 0 for source
-	// 1 for destination
 	struct _flow_endpoint endpoint_options[2];
 	struct _flow_settings settings[2];
 

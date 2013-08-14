@@ -36,6 +36,7 @@
 #include <signal.h>
 #include <syslog.h>
 #include <string.h>
+#include <sys/utsname.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #ifdef HAVE_GETOPT_LONG
@@ -656,7 +657,9 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 			"pmtu", report->pmtu,
 			"imtu", report->imtu,
-#ifdef __LINUX__
+
+/* Currently, not all members of the TCP_INFO socket option are used by the
+ * FreeBSD kernel. Other members will contain zeroes */
 			"tcpi_snd_cwnd", (int)report->tcp_info.tcpi_snd_cwnd,
 			"tcpi_snd_ssthresh", (int)report->tcp_info.tcpi_snd_ssthresh,
 			"tcpi_unacked", (int)report->tcp_info.tcpi_unacked,
@@ -673,41 +676,6 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"tcpi_ca_state", (int)report->tcp_info.tcpi_ca_state,
 			"tcpi_snd_mss", (int)report->tcp_info.tcpi_snd_mss,
 
-/* Currently, not all members of the TCP_INFO socket option are used by the
- * FreeBSD kernel. Only useful members are used */
-#elif __FreeBSD__
-			"tcpi_snd_cwnd", (int)report->tcp_info.tcpi_snd_cwnd,
-			"tcpi_snd_ssthresh", (int)report->tcp_info.tcpi_snd_ssthresh,
-	    		"tcpi_unacked", 0,
-	    		"tcpi_sacked", 0,
-	    		"tcpi_lost", 0,
-	    		"tcpi_retrans", 0,
-	    		"tcpi_retransmits", 0,
-	    		"tcpi_fackets", 0,
-	    		"tcpi_reordering", 0,
-	    		"tcpi_rtt", (int)report->tcp_info.tcpi_rtt,
-	    		"tcpi_rttvar", (int)report->tcp_info.tcpi_rttvar,
-	    		"tcpi_rto", (int)report->tcp_info.tcpi_rto,
-	    		"tcpi_backoff", 0,
-	    		"tcpi_ca_state", 0,
-	    		"tcpi_snd_mss", (int)report->tcp_info.tcpi_snd_mss,
-#else
-			"tcpi_snd_cwnd", 0,
-			"tcpi_snd_ssthresh", 0,
-			"tcpi_unacked", 0,
-			"tcpi_sacked", 0,
-			"tcpi_lost", 0,
-			"tcpi_retrans", 0,
-			"tcpi_retransmits", 0,
-			"tcpi_fackets", 0,
-			"tcpi_reordering", 0,
-			"tcpi_rtt", 0,
-			"tcpi_rttvar", 0,
-			"tcpi_rto", 0,
-			"tcpi_backoff", 0,
-			"tcpi_ca_state", 0,
-			"tcpi_snd_mss", 0,
-#endif
 			"status", report->status
 		);
 
@@ -777,20 +745,29 @@ cleanup:
 	return ret;
 }
 
-/* This method returns the version number of flowgrindd as string. */
+/* This method returns version information of flowgrindd and OS as an xmlrpc struct */
 static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
 {
 	UNUSED_ARGUMENT(param_array);
 	UNUSED_ARGUMENT(user_data);
+	struct utsname buf;
 
 	xmlrpc_value *ret = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method get_version called");
 
-	/* Return our result. */
-	ret = xmlrpc_build_value(env, "s", FLOWGRIND_VERSION);
+	if (uname(&buf)) {
+		logging_log(LOG_WARNING, "uname() failed %s", strerror(errno));
+		exit(1);
+	}
+
+	ret = xmlrpc_build_value(env, "{s:s,s:i,s:s,s:s}",
+				 "version", FLOWGRIND_VERSION,
+				 "api_version", FLOWGRIND_API_VERSION,
+				 "os_name", buf.sysname,
+				 "os_release", buf.release);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_version failed: %s", env->fault_string);

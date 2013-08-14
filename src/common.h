@@ -28,6 +28,9 @@
 #define FLOWGRIND_VERSION "(n/a)"
 #endif
 
+/* Flowgrind's xmlrpc API version in integer representation */
+#define FLOWGRIND_API_VERSION 3
+
 #define DEFAULT_LISTEN_PORT 5999
 
 #define ERR_FATAL 0
@@ -158,11 +161,33 @@ struct _flow_settings
 	int num_extra_socket_options;
 };
 
+/* Flowgrinds view on the tcp_info struct for
+ * serialization / deserialization */
+struct _fg_tcp_info
+{
+	int tcpi_snd_cwnd;
+	int tcpi_snd_ssthresh;
+	int tcpi_unacked;
+	int tcpi_sacked;
+	int tcpi_lost;
+	int tcpi_retrans;
+	int tcpi_retransmits;
+	int tcpi_fackets;
+	int tcpi_reordering;
+	int tcpi_rtt;
+	int tcpi_rttvar;
+	int tcpi_rto;
+	int tcpi_backoff;
+	int tcpi_snd_mss;
+	int tcpi_ca_state;
+};
 
+/* Report (measurement sample) of a flow */
 struct _report
 {
 	int id;
-	int type; /* INTERVAL or TOTAL */
+	/* Is this an INTERVAL or TOTAL (final) report? */
+	int type;
 	struct timeval begin;
 	struct timeval end;
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
@@ -180,9 +205,10 @@ struct _report
 	double rtt_min, rtt_max, rtt_sum;
 	double iat_min, iat_max, iat_sum;
 
-#if (defined __LINUX__ || defined __FreeBSD__)
-	struct tcp_info tcp_info;
-#endif
+	/* on the Daemon this is filled from the os specific
+	 * tcp_info struct */
+	struct _fg_tcp_info tcp_info;
+
 	int pmtu;
 	int imtu;
 
