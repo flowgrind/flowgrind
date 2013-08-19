@@ -2153,7 +2153,6 @@ static void parse_cmdline(int argc, char **argv) {
 
 		case 'F':
 			tok = strtok(optarg, ",");
-			id = 0;
 			while (tok) {
 				rc = sscanf(tok, "%d", &optint);
 				if (rc != 1) {
