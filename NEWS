@@ -4,6 +4,9 @@ Release 0.6.2 (2013-X-X)
 - Set localhost as default flow target/source instead
   of 127.0.0.1 to obey OS defaults in regards to
   IPv4 vs IPv6.
+- Preliminary supprt for mixed (FreeBSD, Linux) flows,
+  Thanks Arnd.
+- Closes LP#1212680 reported and fixed by Midori Kato
 
 Release 0.6.1 (2013-7-5)
 - Closes LP#1196940, LP#1196972 
