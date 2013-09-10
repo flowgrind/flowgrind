@@ -108,7 +108,7 @@ char dumping = 0;
 static void process_rtt(struct _flow* flow);
 static void process_iat(struct _flow* flow);
 static void send_response(struct _flow* flow,
-		          int requested_response_block_size);
+			  int requested_response_block_size);
 
 void flow_error(struct _flow *flow, const char *fmt, ...)
 {
@@ -961,7 +961,7 @@ static int write_data(struct _flow *flow)
 
 		DEBUG_MSG(LOG_DEBUG, "flow %d sent %d request bytes of %u "
 			  "(before = %u)", flow->id, rc,
-	                  flow->current_write_block_size,
+			  flow->current_write_block_size,
 			  flow->current_block_bytes_written);
 
 		for (int i = 0; i < 2; i++)
@@ -996,7 +996,7 @@ static int write_data(struct _flow *flow)
 						  "block scheduled for %s, "
 						  "%.6lfs before now.",
 						   flow->id,
-					           ctime_us(&flow->next_write_block_timestamp),
+						   ctime_us(&flow->next_write_block_timestamp),
 						   time_diff(&flow->next_write_block_timestamp,
 							     &flow->last_block_written));
 					flow->congestion_counter++;

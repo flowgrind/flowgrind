@@ -87,7 +87,7 @@ static void __attribute__((noreturn)) usage(void)
 #else
 		"\t-d\t\tdon't fork into background\n"
 #endif
-        "\t-c #\t\tbound daemon to specific CPU\n"
+	"\t-c #\t\tbound daemon to specific CPU\n"
 #ifdef HAVE_LIBPCAP
 		"\t-w\t\ttarget directory for dumps\n"
 #endif
@@ -964,7 +964,7 @@ void set_affinity(int cpu)
 	rc = sched_setaffinity(getpid(), sizeof(cpuset), &cpuset);
 #elif __FreeBSD__
 	rc = cpuset_setaffinity(CPU_LEVEL_WHICH, CPU_WHICH_TID, -1,
-			        sizeof(cpuset), &cpuset);
+				sizeof(cpuset), &cpuset);
 #endif
 	if (rc)
 		logging_log(LOG_WARNING, "failed to bind %s (PID %d) to "
@@ -1096,7 +1096,7 @@ int main(int argc, char ** argv)
 	}
 
     if (cpu >= 0)
-        set_affinity(cpu);
+	set_affinity(cpu);
 	create_daemon_thread();
 
 	xmlrpc_env_init(&env);

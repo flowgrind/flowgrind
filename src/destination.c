@@ -239,7 +239,7 @@ int accept_data(struct _flow *flow)
 
 	real_send_buffer_size =
 		set_window_size_directed(flow->fd,
-				         flow->settings.requested_send_buffer_size,
+					 flow->settings.requested_send_buffer_size,
 					 SO_SNDBUF);
 	if (flow->requested_server_test_port &&
 	    flow->real_listen_send_buffer_size != real_send_buffer_size) {
@@ -252,7 +252,7 @@ int accept_data(struct _flow *flow)
 	}
 	real_receive_buffer_size =
 		set_window_size_directed(flow->fd,
-				         flow->settings.requested_read_buffer_size,
+					 flow->settings.requested_read_buffer_size,
 					 SO_RCVBUF);
 	if (flow->requested_server_test_port &&
 	    flow->real_listen_receive_buffer_size != real_receive_buffer_size) {
