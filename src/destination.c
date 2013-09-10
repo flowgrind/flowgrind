@@ -114,6 +114,9 @@ static int create_listen_socket(struct _flow *flow, char *bind_addr,
 	if (flow->settings.mtcp)
 		set_tcp_mtcp(fd);
 
+	if (flow->settings.cc_alg)
+		set_congestion_control(fd, flow->settings.cc_alg);
+
 	if (listen(fd, 0) < 0) {
 		logging_log(LOG_ALERT, "listen failed: %s",
 			    strerror(errno));
