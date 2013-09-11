@@ -87,7 +87,7 @@ static void __attribute__((noreturn)) usage(void)
 #else
 		"\t-d\t\tdon't fork into background\n"
 #endif
-	"\t-c #\t\tbound daemon to specific CPU\n"
+		"\t-c #\t\tbound daemon to specific CPU\n"
 #ifdef HAVE_LIBPCAP
 		"\t-w\t\ttarget directory for dumps\n"
 #endif
@@ -1095,8 +1095,9 @@ int main(int argc, char ** argv)
 		logging_log(LOG_NOTICE, "flowgrindd daemonized");
 	}
 
-    if (cpu >= 0)
-	set_affinity(cpu);
+	if (cpu >= 0)
+		set_affinity(cpu);
+
 	create_daemon_thread();
 
 	xmlrpc_env_init(&env);
