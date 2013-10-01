@@ -79,6 +79,9 @@ inline static double calculate(struct _flow *flow, enum _stochastic_distribution
 			DEBUG_MSG(LOG_DEBUG, "calculated lognormal distribution value %f for parameters %f,%f", val, param_one, param_two);
 		break;
 
+		case ONCE:
+			val = param_one;
+		break;
 		case CONSTANT:
 		/* constant is default */
 		default:
