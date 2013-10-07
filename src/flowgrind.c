@@ -72,6 +72,7 @@ struct _opt opt;
 static struct _flow flow[MAX_FLOWS];
 
 int active_flows = 0;
+int is_bulkopt = 0, is_trafgenopt = 0, is_timeopt = 0;
 
 enum _column_types
 {
@@ -673,7 +674,8 @@ static void usage(void)
 		"               truncates values if used with stochastic traffic generation\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=10,d=0)\n"
 		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
-		"  -Y x=#.#     Set initial delay before the host starts to send data\n\n",
+		"  -Y x=#.#     Set initial delay before the host starts to send data\n"
+		"  -Z x=#.#     Set bulk data transfer\n\n",
 		opt.log_filename_prefix,
 		progname,
 		MIN_BLOCK_SIZE
@@ -794,6 +796,17 @@ static void usage_trafgenopt(void)
 		"  they overwrite each other. -A, -R and -V exist for backward compatibility.\n"
 
 		);
+	exit(1);
+}
+
+static void usage_optcombination(void)
+{
+	fprintf(stderr, "Flowgrind cannot set flow duration, traffic generation and "
+			"bulk data transfer options at the same time.\n"
+			"- If you use bulk data transfer option (-Z), don't set flow duration (-T) "
+			"and traffic generation (-G, -A or -S) options\n"
+			"- If you use either flow duration or traffic generation option, "
+			"or both of them, don't set bulk data transfer option\n\n");
 	exit(1);
 }
 
@@ -1443,7 +1456,7 @@ static void parse_help_option(char *params) {
 
 }
 
-static void parse_trafgen_option(char *params, int current_flow_ids[]) {
+static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 	int rc;
 	char * section;
 	char * arg;
@@ -1585,7 +1598,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 							flow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
 							flow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
 							break;
-						}
+					}
 				/* sanity check for max block size */
 					for (int i = 0; i < 2; i++) {
 						if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
@@ -1596,67 +1609,55 @@ static void parse_trafgen_option(char *params, int current_flow_ids[]) {
 				}
 			}
 		} else {
-			int id;
-			for (id = 0; id < MAX_FLOWS; id++) {
-				if (current_flow_ids[id] == -1)
-					break;
-
-				for (int i = j; i < k; i++) {
-					switch (typechar) {
-						case 'P':
-						case 'p':
-							flow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
-							flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
-							flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
-							break;
-						case 'Q':
-						case 'q':
-							flow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
-							flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
-							flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
-							break;
-						case 'G':
-						case 'g':
-							flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.distribution = distr;
-							flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_one = param1;
-							flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_two = param2;
-							break;
-						}
-					}
-				/* sanity check for max block size */
-				for (int i = 0; i < 2; i++) {
-					if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
-						flow[id].settings[i].maximum_block_size = param1;
-					if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
-						flow[id].settings[i].maximum_block_size = param2;
+			for (int i = j; i < k; i++) {
+				switch (typechar) {
+					case 'P':
+					case 'p':
+						flow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
+						flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
+						flow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
+						break;
+					case 'Q':
+					case 'q':
+						flow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
+						flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
+						flow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
+						break;
+					case 'G':
+					case 'g':
+						flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.distribution = distr;
+						flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_one = param1;
+						flow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_two = param2;
+						break;
 				}
-
+			}
+			/* sanity check for max block size */
+			for (int i = 0; i < 2; i++) {
+				if (distr == CONSTANT && flow[id].settings[i].maximum_block_size < param1)
+					flow[id].settings[i].maximum_block_size = param1;
+				if (distr == UNIFORM && flow[id].settings[i].maximum_block_size < param2)
+					flow[id].settings[i].maximum_block_size = param2;
 			}
 		}
 	}
 }
 
 
-#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
+#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE, id) \
 			if (current_flow_ids[0] == -1) { \
-				int id; \
-				for (id = 0; id < MAX_FLOWS; id++) { \
-					flow[id].PROPERTY_NAME = \
+				int i; \
+				for (i = 0; i < MAX_FLOWS; i++) { \
+					flow[i].PROPERTY_NAME = \
 					(PROPERTY_VALUE); \
 				} \
 			} else { \
-				int id; \
-				for (id = 0; id < MAX_FLOWS; id++) { \
-					if (current_flow_ids[id] == -1) \
-						break; \
-					flow[current_flow_ids[id]].PROPERTY_NAME = \
-					(PROPERTY_VALUE); \
-				} \
+				flow[current_flow_ids[id]].PROPERTY_NAME = \
+				(PROPERTY_VALUE); \
 			}
 
 
 /* Parse flow specific options given on the cmdline */
-static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
+static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int id) {
 	char* token;
 	char* arg;
 	char type;
@@ -1670,7 +1671,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 	#define ASSIGN_ENDPOINT_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
 			if (current_flow_ids[0] == -1) { \
-				int id; \
 				for (id = 0; id < MAX_FLOWS; id++) { \
 					if (type != 'd') \
 						flow[id].endpoint_options[SOURCE].PROPERTY_NAME = \
@@ -1680,22 +1680,16 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 						(PROPERTY_VALUE); \
 				} \
 			} else { \
-				int id; \
-				for (id = 0; id < MAX_FLOWS; id++) { \
-					if (current_flow_ids[id] == -1) \
-						break; \
-					if (type != 'd') \
-						flow[current_flow_ids[id]].endpoint_options[SOURCE].PROPERTY_NAME = \
-						(PROPERTY_VALUE); \
-					if (type != 's') \
-						flow[current_flow_ids[id]].endpoint_options[DESTINATION].PROPERTY_NAME = \
-						(PROPERTY_VALUE); \
-				} \
+				if (type != 'd') \
+					flow[current_flow_ids[id]].endpoint_options[SOURCE].PROPERTY_NAME = \
+					(PROPERTY_VALUE); \
+				if (type != 's') \
+					flow[current_flow_ids[id]].endpoint_options[DESTINATION].PROPERTY_NAME = \
+					(PROPERTY_VALUE); \
 			}
 
 	#define ASSIGN_ENDPOINT_FLOW_OPTION_STR(PROPERTY_NAME, PROPERTY_VALUE) \
 			if (current_flow_ids[0] == -1) { \
-				int id; \
 				for (id = 0; id < MAX_FLOWS; id++) { \
 					if (type != 'd') \
 						strcpy(flow[id].endpoint_options[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
@@ -1703,15 +1697,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 						strcpy(flow[id].endpoint_options[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 				} \
 			} else { \
-				int id; \
-				for (id = 0; id < MAX_FLOWS; id++) { \
-					if (current_flow_ids[id] == -1) \
-						break; \
-					if (type != 'd') \
-						strcpy(flow[current_flow_ids[id]].endpoint_options[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
-					if (type != 's') \
-						strcpy(flow[current_flow_ids[id]].endpoint_options[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
-				} \
+				if (type != 'd') \
+					strcpy(flow[current_flow_ids[id]].endpoint_options[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
+				if (type != 's') \
+					strcpy(flow[current_flow_ids[id]].endpoint_options[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 			}
 	#define ASSIGN_COMMON_FLOW_SETTING(PROPERTY_NAME, PROPERTY_VALUE) \
 			if (current_flow_ids[0] == -1) { \
@@ -1725,17 +1714,12 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 						(PROPERTY_VALUE); \
 				} \
 			} else { \
-				int id; \
-				for (id = 0; id < MAX_FLOWS; id++) { \
-					if (current_flow_ids[id] == -1) \
-						break; \
-					if (type != 'd') \
-						flow[current_flow_ids[id]].settings[SOURCE].PROPERTY_NAME = \
-						(PROPERTY_VALUE); \
-					if (type != 's') \
-						flow[current_flow_ids[id]].settings[DESTINATION].PROPERTY_NAME = \
-						(PROPERTY_VALUE); \
-				} \
+				if (type != 'd') \
+					flow[current_flow_ids[id]].settings[SOURCE].PROPERTY_NAME = \
+					(PROPERTY_VALUE); \
+				if (type != 's') \
+					flow[current_flow_ids[id]].settings[DESTINATION].PROPERTY_NAME = \
+					(PROPERTY_VALUE); \
 			}
 	#define ASSIGN_COMMON_FLOW_SETTING_STR(PROPERTY_NAME, PROPERTY_VALUE) \
 			if (current_flow_ids[0] == -1) { \
@@ -1747,15 +1731,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 						strcpy(flow[id].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 				} \
 			} else { \
-				int id; \
-				for (id = 0; id < MAX_FLOWS; id++) { \
-					if (current_flow_ids[id] == -1) \
-						break; \
-					if (type != 'd') \
-						strcpy(flow[current_flow_ids[id]].settings[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
-					if (type != 's') \
-						strcpy(flow[current_flow_ids[id]].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
-				} \
+				if (type != 'd') \
+					strcpy(flow[current_flow_ids[id]].settings[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
+				if (type != 's') \
+					strcpy(flow[current_flow_ids[id]].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 			}
 	for (token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
 		type = token[0];
@@ -1771,8 +1750,11 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 
 		switch (ch) {
 			case 'A':
+				if (is_bulkopt)
+					usage_optcombination();
 				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
 				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
+				is_trafgenopt++;
 				break;
 			case 'B':
 				rc = sscanf(arg, "%u", &optunsigned);
@@ -1954,6 +1936,8 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				break;
 
 			case 'S':
+				if (is_bulkopt)
+					usage_optcombination();
 				rc = sscanf(arg, "%u", &optunsigned);
 				ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.distribution, CONSTANT);
 				ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.param_one, optunsigned);
@@ -1963,15 +1947,24 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 							flow[id].settings[i].maximum_block_size = (signed)optunsigned;
 					}
 				}
+				is_trafgenopt++;
 				break;
 
 			case 'T':
+				if (is_bulkopt) {
+					fprintf(stderr, "Cannot set flow duration, bulk "
+							"data transfer and traffic generation "
+							"options at the same time.\n"
+							"Disable either of them\n");
+					exit(1);
+				}
 				rc = sscanf(arg, "%lf", &optdouble);
 				if (rc != 1) {
 					fprintf(stderr, "malformed flow duration\n");
 					usage();
 				}
 				ASSIGN_COMMON_FLOW_SETTING(duration[WRITE], optdouble)
+				is_timeopt++;
 				break;
 
 			case 'W':
@@ -1993,6 +1986,38 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[]) {
 				}
 				ASSIGN_COMMON_FLOW_SETTING(delay[WRITE], optdouble)
 				break;
+			case 'Z':
+			{
+				if (is_trafgenopt || is_timeopt)
+					usage_optcombination();
+				rc = sscanf(arg, "%lf", &optdouble);
+				if (rc != 1 || optdouble < 0) {
+					fprintf(stderr, "Data to be sent must be a non-negativ "
+							"number (in bytes)\n");
+					usage();
+				}
+				if (current_flow_ids[0] == -1) {
+					for (int id = 0; id < MAX_FLOWS; id++) {
+						for (int i = 0; i < 2; i++) {
+							if ((signed)optdouble > flow[id].settings[i].maximum_block_size)
+								flow[id].settings[i].maximum_block_size = (signed)optdouble;
+							flow[id].settings[i].request_trafgen_options.distribution = ONCE;
+						}
+					}
+				} else {
+					for (int i = 0; i < 2; i++) {
+						if ((signed)optdouble > flow[current_flow_ids[id]].settings[i].maximum_block_size)
+							flow[current_flow_ids[id]].settings[i].maximum_block_size = (signed)optdouble;
+						flow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = ONCE;
+					}
+				}
+				ASSIGN_COMMON_FLOW_SETTING(duration[WRITE], 0);
+				ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.param_one, optdouble);
+				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.distribution, ONCE);
+				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
+				is_bulkopt++;
+				break;
+			}
 		}
 	}
 
@@ -2071,7 +2096,7 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	while ((ch = getopt(argc, argv, "c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:")) != -1)
+	while ((ch = getopt(argc, argv, "c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1)
 
 		switch (ch) {
 
@@ -2136,7 +2161,7 @@ static void parse_cmdline(int argc, char **argv) {
 				fprintf(stderr, "random seed must be a valid unsigned integer\n");
 				usage();
 			}
-			ASSIGN_FLOW_OPTION(random_seed, optint);
+			ASSIGN_FLOW_OPTION(random_seed, optint, id-1);
 			break;
 
 
@@ -2148,7 +2173,7 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.dont_log_logfile = 0;
 			break;
 		case 'E':
-			ASSIGN_FLOW_OPTION(byte_counting, 1);
+			ASSIGN_FLOW_OPTION(byte_counting, 1, id-1);
 			break;
 
 		case 'F':
@@ -2170,7 +2195,10 @@ static void parse_cmdline(int argc, char **argv) {
 			current_flow_ids[id] = -1;
 			break;
 		case 'G':
-			parse_trafgen_option(optarg, current_flow_ids);
+			if (is_bulkopt)
+				usage_optcombination();
+			parse_trafgen_option(optarg, current_flow_ids, id-1);
+			is_trafgenopt++;
 			break;
 		case 'J':
 			rc = sscanf(optarg, "%u", &optint);
@@ -2178,18 +2206,18 @@ static void parse_cmdline(int argc, char **argv) {
 				fprintf(stderr, "random seed must be a valid unsigned integer\n");
 					usage();
 			}
-			ASSIGN_FLOW_OPTION(random_seed, optint);
+			ASSIGN_FLOW_OPTION(random_seed, optint, id-1);
 			break;
 
 
 		case 'L':
-			ASSIGN_FLOW_OPTION(late_connect, 1)
+			ASSIGN_FLOW_OPTION(late_connect, 1, id-1);
 			break;
 		case 'N':
-			ASSIGN_FLOW_OPTION(shutdown, 1);
+			ASSIGN_FLOW_OPTION(shutdown, 1, id-1);
 			break;
 		case 'Q':
-			ASSIGN_FLOW_OPTION(summarize_only, 1)
+			ASSIGN_FLOW_OPTION(summarize_only, 1, id-1);
 			break;
 		case 'U':
 			rc = sscanf(optarg, "%d", &optint);
@@ -2212,7 +2240,8 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'T':
 		case 'W':
 		case 'Y':
-			parse_flow_option(ch, optarg, current_flow_ids);
+		case 'Z':
+			parse_flow_option(ch, optarg, current_flow_ids, id-1);
 			break;
 
 		default:
@@ -2270,19 +2299,23 @@ static void parse_cmdline(int argc, char **argv) {
 			error = 1;
 		}
 		if (flow[id].settings[SOURCE].delay[WRITE] > 0 &&
-				flow[id].settings[SOURCE].duration[WRITE] == 0) {
+				(flow[id].settings[SOURCE].duration[WRITE] == 0 &&
+				flow[id].settings[SOURCE].request_trafgen_options.distribution != ONCE)) {
 			fprintf(stderr, "Client flow %d has a delay but "
 					"no runtime.\n", id);
 			error = 1;
 		}
 		if (flow[id].settings[DESTINATION].delay[WRITE] > 0 &&
-				flow[id].settings[DESTINATION].duration[WRITE] == 0) {
+				(flow[id].settings[DESTINATION].duration[WRITE] == 0 &&
+				flow[id].settings[DESTINATION].request_trafgen_options.distribution != ONCE)) {
 			fprintf(stderr, "Server flow %d has a delay but "
 					"no runtime.\n", id);
 			error = 1;
 		}
 		if (!flow[id].settings[DESTINATION].duration[WRITE] &&
-				!flow[id].settings[SOURCE].duration[WRITE]) {
+				!flow[id].settings[SOURCE].duration[WRITE] &&
+				(flow[id].settings[SOURCE].request_trafgen_options.distribution != ONCE &&
+				flow[id].settings[DESTINATION].request_trafgen_options.distribution != ONCE)) {
 			fprintf(stderr, "Server and client flow have both "
 					"zero runtime for flow %d.\n", id);
 			error = 1;
@@ -2664,6 +2697,11 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	}
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
 
+#ifdef DEBUG
+	struct timeval now;
+	tsc_gettimeofday(&now);
+	DEBUG_MSG(LOG_DEBUG, "%ld.%ld (add_flow_source() in flowgrind.c)\n", now.tv_sec, now.tv_usec);
+#endif
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
 		flow[id].endpoint_options[SOURCE].daemon->server_url,
 		"add_flow_source", &resultP,
