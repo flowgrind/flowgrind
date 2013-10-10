@@ -1122,16 +1122,17 @@ static int read_data(struct _flow *flow)
 				    optint,
 				    flow->settings.maximum_block_size);
 #ifdef DEBUG
-		if (requested_response_block_size == -1)
+		if (requested_response_block_size == -1) {
 			DEBUG_MSG(LOG_NOTICE, "processing response block on "
 				  "flow %d size: %d", flow->id,
 				  flow->current_read_block_size);
-		else
+		} else {
 			DEBUG_MSG(LOG_NOTICE, "processing request block on "
 				  "flow %d size: %d, request: %d",
 				  flow->id,
 				  flow->current_read_block_size,
 				  requested_response_block_size);
+		}
 #endif
 		/* read rest of block, if we have more to read */
 		if (flow->current_block_bytes_read <
