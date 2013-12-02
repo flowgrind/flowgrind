@@ -67,11 +67,11 @@ int get_tcp_info(struct _flow *flow, struct tcp_info *info);
 void init_flow(struct _flow* flow, int is_source);
 void uninit_flow(struct _flow *flow);
 
-static int name2socket(struct _flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
-		socklen_t *lenp, char do_connect,
-		const int read_buffer_size_req, int *read_buffer_size,
-		const int send_buffer_size_req, int *send_buffer_size)
-{
+static int name2socket(struct _flow *flow, char *server_name, unsigned port,
+		       struct sockaddr **saptr, socklen_t *lenp,
+		       char do_connect, const int read_buffer_size_req,
+		       int *read_buffer_size, const int send_buffer_size_req,
+		       int *send_buffer_size) {
 	int fd, n;
 	struct addrinfo hints, *res, *ressave;
 	struct sockaddr_in *tempv4;
@@ -99,10 +99,11 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port, str
 			continue;
 
 		if (send_buffer_size)
-			*send_buffer_size = set_window_size_directed(fd, send_buffer_size_req, SO_SNDBUF);
+			*send_buffer_size = set_window_size_directed(fd,
+						send_buffer_size_req, SO_SNDBUF);
 		if (read_buffer_size)
-		*read_buffer_size = set_window_size_directed(fd, read_buffer_size_req, SO_RCVBUF);
-
+			*read_buffer_size = set_window_size_directed(fd,
+						read_buffer_size_req, SO_RCVBUF);
 		if (!do_connect)
 			break;
 
@@ -110,34 +111,35 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port, str
 		if (rc == 0) {
 			if (res->ai_family == PF_INET) {
 				tempv4 = (struct sockaddr_in *) res->ai_addr;
-				strncpy(server_name, inet_ntoa(tempv4->sin_addr), 256);
+				strncpy(server_name,
+					inet_ntoa(tempv4->sin_addr), 256);
 				server_name[255] = 0;
-			}
-			else if (res->ai_family == PF_INET6){
+			} else if (res->ai_family == PF_INET6) {
 				tempv6 = (struct sockaddr_in6 *) res->ai_addr;
-				inet_ntop(AF_INET6, &tempv6->sin6_addr, server_name, 256);
+				inet_ntop(AF_INET6, &tempv6->sin6_addr,
+					  server_name, 256);
 			}
 			break;
 		}
 
 		error(ERR_WARNING, "Failed to connect to \"%s:%d\": %s",
-				server_name, port, strerror(errno));
+		      server_name, port, strerror(errno));
 		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
 		flow_error(flow, "Could not establish connection to "
-				"\"%s:%d\": %s", server_name, port, strerror(errno));
+			   "\"%s:%d\": %s", server_name, port,
+			   strerror(errno));
 		freeaddrinfo(ressave);
 		return -1;
 	}
 
 	if (saptr && lenp) {
 		*saptr = malloc(res->ai_addrlen);
-		if (*saptr == NULL) {
+		if (*saptr == NULL)
 			error(ERR_FATAL, "malloc(): failed: %s",
-					strerror(errno));
-		}
+			      strerror(errno));
 		memcpy(*saptr, res->ai_addr, res->ai_addrlen);
 		*lenp = res->ai_addrlen;
 	}
@@ -147,16 +149,17 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port, str
 	return fd;
 }
 
-int add_flow_source(struct _request_add_flow_source *request)
-{
+int add_flow_source(struct _request_add_flow_source *request) {
 #ifdef TCP_CONGESTION
 	socklen_t opt_len = 0;
 #endif
 	struct _flow *flow;
 
 	if (num_flows >= MAX_FLOWS) {
-		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
-		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
+		logging_log(LOG_WARNING, "Can not accept another flow, already "
+			    "handling MAX_FLOW flows.");
+		request_error(&request->r, "Can not accept another flow, "
+			      "already handling MAX_FLOW flows.");
 		return -1;
 	}
 
@@ -170,27 +173,34 @@ int add_flow_source(struct _request_add_flow_source *request)
 	flow->read_block = calloc(1, flow->settings.maximum_block_size);
 
 	if (flow->write_block == NULL || flow->read_block == NULL) {
-		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
-		request_error(&request->r, "could not allocate memory for read/write blocks");
+		logging_log(LOG_ALERT, "could not allocate memory for "
+			    "read/write blocks");
+		request_error(&request->r, "could not allocate memory for "
+			      "read/write blocks");
 		uninit_flow(flow);
 		num_flows--;
 		return -1;
 	}
 	if (flow->settings.byte_counting) {
 		int byte_idx;
-		for (byte_idx = 0; byte_idx < flow->settings.maximum_block_size; byte_idx++)
-			*(flow->write_block + byte_idx) = (unsigned char)(byte_idx & 0xff);
-	}
+		for (byte_idx = 0;
+		     byte_idx < flow->settings.maximum_block_size; byte_idx++)
+			*(flow->write_block + byte_idx) = (unsigned
+					char)(byte_idx & 0xff); }
 
 	flow->state = GRIND_WAIT_CONNECT;
 	flow->fd = name2socket(flow, flow->source_settings.destination_host,
-			flow->source_settings.destination_port,
-			&flow->addr, &flow->addr_len, 0,
-			flow->settings.requested_read_buffer_size, &request->real_read_buffer_size,
-			flow->settings.requested_send_buffer_size, &request->real_send_buffer_size);
+			       flow->source_settings.destination_port,
+			       &flow->addr, &flow->addr_len, 0,
+			       flow->settings.requested_read_buffer_size,
+			       &request->real_read_buffer_size,
+			       flow->settings.requested_send_buffer_size,
+			       &request->real_send_buffer_size);
 	if (flow->fd == -1) {
-		logging_log(LOG_ALERT, "Could not create data socket: %s", flow->error);
-		request_error(&request->r, "Could not create data socket: %s", flow->error);
+		logging_log(LOG_ALERT, "Could not create data socket: %s",
+			    flow->error);
+		request_error(&request->r, "Could not create data socket: %s",
+			      flow->error);
 		uninit_flow(flow);
 		num_flows--;
 		return -1;
@@ -207,8 +217,9 @@ int add_flow_source(struct _request_add_flow_source *request)
 #ifdef TCP_CONGESTION
 	opt_len = sizeof(request->cc_alg);
 	if (getsockopt(flow->fd, IPPROTO_TCP, TCP_CONGESTION,
-				request->cc_alg, &opt_len) == -1) {
-		request_error(&request->r, "failed to determine actual congestion control algorithm: %s",
+		       request->cc_alg, &opt_len) == -1) {
+		request_error(&request->r, "failed to determine actual "
+			      "congestion control algorithm: %s",
 			strerror(errno));
 		uninit_flow(flow);
 		num_flows--;
@@ -227,6 +238,5 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 
 	request->flow_id = flow->id;
-
 	return 0;
 }
