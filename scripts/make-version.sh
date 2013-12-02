@@ -1,22 +1,19 @@
 #!/bin/sh
 
 SCRIPTDIR=$(dirname $(readlink -f $0))
+VLINE='/*#define GITVERSION ""*/'
+GIT=`which git`
+
 cd $SCRIPTDIR/..
 
-GIT=`which git`
 if [ "$GIT" = "" ]; then
-	echo "The 'git' command is not installed."
-	echo "/*#define GITVERSION \"\"*/" >./gitversion.h
-	exit 0
+    echo "The 'git' command is not installed."
+elif [ ! -d .git ]; then
+    echo "This is not a git release."
+else
+    VERSION=$($GIT describe --always --abbrev=6)
+    VLINE="#define GITVERSION \"$VERSION\""
 fi
 
-if [ ! -d .git ]; then
-	echo "This is not a git release."
-	echo "/*#define GITVERSION \"\"*/" >./gitversion.h
-	exit 0
-fi
-
-VERSION=$($GIT describe --always --abbrev=6)
-
-echo "#define GITVERSION \"$VERSION\"" >./gitversion.h
-
+echo "$VLINE" | cmp -s - gitversion.h || echo "$VLINE" > gitversion.h
+exit 0

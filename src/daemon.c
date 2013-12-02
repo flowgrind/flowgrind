@@ -861,25 +861,17 @@ struct _report* get_reports(int *has_more)
 
 void init_flow(struct _flow* flow, int is_source)
 {
+	memset(flow, 0, sizeof(struct _flow));
+
 	flow->id = next_flow_id++;
 	flow->endpoint = is_source ? SOURCE : DESTINATION;
 	flow->state = is_source ? GRIND_WAIT_CONNECT : GRIND_WAIT_ACCEPT;
 	flow->fd = -1;
 	flow->listenfd_data = -1;
 
-	flow->read_block = 0;
-	flow->write_block = 0;
-
-	flow->current_block_bytes_read = 0;
-	flow->current_block_bytes_written = 0;
-
 	flow->current_read_block_size = MIN_BLOCK_SIZE;
 	flow->current_write_block_size = MIN_BLOCK_SIZE;
 
-	flow->last_block_read.tv_sec = 0;
-	flow->last_block_read.tv_usec = 0;
-
-	flow->connect_called = 0;
 	flow->finished[READ] = flow->finished[WRITE] = 0;
 
 	flow->addr = 0;
@@ -902,9 +894,6 @@ void init_flow(struct _flow* flow, int is_source)
 		flow->statistics[i].iat_sum = 0.0F;
 	}
 
-	flow->congestion_counter = 0;
-
-	flow->error = 0;
 	DEBUG_MSG(LOG_NOTICE, "called init flow %d", flow->id);
 }
 
@@ -1126,16 +1115,17 @@ static int read_data(struct _flow *flow)
 				    optint,
 				    flow->settings.maximum_block_size);
 #ifdef DEBUG
-		if (requested_response_block_size == -1)
+		if (requested_response_block_size == -1) {
 			DEBUG_MSG(LOG_NOTICE, "processing response block on "
 				  "flow %d size: %d", flow->id,
 				  flow->current_read_block_size);
-		else
+		} else {
 			DEBUG_MSG(LOG_NOTICE, "processing request block on "
 				  "flow %d size: %d, request: %d",
 				  flow->id,
 				  flow->current_read_block_size,
 				  requested_response_block_size);
+		}
 #endif
 		/* read rest of block, if we have more to read */
 		if (flow->current_block_bytes_read <

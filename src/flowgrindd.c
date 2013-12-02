@@ -970,7 +970,7 @@ void set_affinity(int cpu)
 		logging_log(LOG_WARNING, "failed to bind %s (PID %d) to "
 			    "CPU %i\n", progname, getpid(), cpu);
 	else
-		DEBUG_MSG(LOG_WARNING, "bind %s (PID %d) to CPU %i\n"
+		DEBUG_MSG(LOG_WARNING, "bind %s (PID %d) to CPU %i\n",
 			  progname, getpid(), cpu);
 }
 
