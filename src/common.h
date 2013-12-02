@@ -1,9 +1,30 @@
+/*
+ * common.h - Routines used by the Flowgrind Daemon and Controller
+ *
+ * Copyright (C) Christian Samsel <christian.samsel@rwth-aachen.de>, 2010-2013
+ * Copyright (C) Tim Kosse <tim.kosse@gmx.de>, 2009
+ * Copyright (C) Daniel Schaffrath <daniel.schaffrath@mac.com>, 2007-2008
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
+#endif /* HAVE_CONFIG_H */
 
 #include <limits.h>
 #include <stdio.h>
@@ -26,7 +47,7 @@
 #define FLOWGRIND_VERSION PACKAGE_VERSION
 #else
 #define FLOWGRIND_VERSION "(n/a)"
-#endif
+#endif /* GITVERSION */
 
 /* Flowgrind's xmlrpc API version in integer representation */
 #define FLOWGRIND_API_VERSION 3
@@ -54,7 +75,7 @@ void error(int errcode, const char *fmt, ...);
 
 #ifndef TCP_CA_NAME_MAX
 #define TCP_CA_NAME_MAX 16
-#endif
+#endif /* TCP_CA_NAME_MAX */
 
 enum _extra_socket_option_level
 {
@@ -71,16 +92,17 @@ enum _extra_socket_option_level
  *
  * this_block_size (int32_t), request_block_size (int32_t), data (timeval), trail
  *
- * this_block_size:     the size of our request or response block (we generate
- *                      a request block here)
+ * this_block_size: the size of our request or response block (we generate
+ *		    a request block here)
  *
- * request_block_size:  the size of the response block we request
- *                      0 if we dont request a response block
- *                     -1 indicates this is a response block (needed for parsing data)
+ * request_block_size:	the size of the response block we request
+ *			0 if we dont request a response block
+ *			-1 indicates this is a response block (needed for parsing
+ *			data)
  *
- * data                 RTT data if this is a response block
+ * data:		RTT data if this is a response block
  *
- * trail:               trailing garbage to fill up the blocksize (not used)
+ * trail:		trailing garbage to fill up the blocksize (not used)
  */
 
 #define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
@@ -197,7 +219,7 @@ struct _report
 #else
 	long bytes_read;
 	long bytes_written;
-#endif
+#endif /* HAVE_UNSIGNED_LONG_LONG_INT */
 	unsigned int request_blocks_read;
 	unsigned int request_blocks_written;
 	unsigned int response_blocks_read;
@@ -218,4 +240,4 @@ struct _report
 	struct _report* next;
 };
 
-#endif
+#endif /* _COMMON_H_*/

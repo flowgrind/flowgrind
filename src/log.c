@@ -32,28 +32,26 @@ char timestr[20];
 char *logstr = NULL;
 int log_type = LOGTYPE_SYSLOG;
 
-void
-logging_init (void)
+void logging_init (void)
 {
 	logstr = malloc(LOGGING_MAXLEN);
 	if (logstr == NULL) {
 		fprintf(stderr, "Error: Unable to allocate memory for logging "
-				"string.\n");
+			"string.\n");
 		exit(1);
 	}
 
 	switch (log_type) {
 	case LOGTYPE_SYSLOG:
 		openlog("flowgrind_daemon", LOG_NDELAY | LOG_CONS |
-						LOG_PID, LOG_DAEMON);
-	break;
+			LOG_PID, LOG_DAEMON);
+		break;
 	case LOGTYPE_STDERR:
 		break;
 	}
 }
 
-void
-logging_exit (void)
+void logging_exit (void)
 {
 	switch (log_type) {
 	case LOGTYPE_SYSLOG:
@@ -66,8 +64,7 @@ logging_exit (void)
 	free(logstr);
 }
 
-void
-logging_log (int priority, const char *fmt, ...)
+void logging_log (int priority, const char *fmt, ...)
 {
 	int n;
 	va_list ap;
@@ -82,22 +79,20 @@ logging_log (int priority, const char *fmt, ...)
 		logging_log_string(priority, logstr);
 }
 
-void
-logging_log_string (int priority, const char *s)
+void logging_log_string (int priority, const char *s)
 {
 	switch (log_type) {
-		case LOGTYPE_SYSLOG:
-			syslog(priority, "%s", s);
-			break;
-		case LOGTYPE_STDERR:
-			fprintf(stderr, "%s %s\n", logging_time(), s);
-			fflush(stderr);
-			break;
+	case LOGTYPE_SYSLOG:
+		syslog(priority, "%s", s);
+		break;
+	case LOGTYPE_STDERR:
+		fprintf(stderr, "%s %s\n", logging_time(), s);
+		fflush(stderr);
+		break;
 	}
 }
 
-char *
-logging_time(void)
+char * logging_time(void)
 {
 	time_t tp;
 	struct tm *loc = NULL;

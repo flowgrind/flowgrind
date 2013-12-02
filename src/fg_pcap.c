@@ -61,7 +61,7 @@ void fg_pcap_init()
 #ifdef DEBUG
 	pcap_if_t *d;
 	char devdes[200];
-#endif
+#endif /* DEBUG */
 	if (pcap_findalldevs(&alldevs, errbuf) == -1) {
 		logging_log(LOG_WARNING,"Error in pcap_findalldevs: %s\n",
 			    errbuf);
@@ -83,11 +83,11 @@ void fg_pcap_init()
 		}
 		DEBUG_MSG(LOG_ERR, "pcap: found pcapable device (%s)", devdes);
 	}
-#endif
+#endif /* DEBUG*/
 	pthread_mutex_init(&pcap_mutex, NULL);
 #ifndef __DARWIN__
 	pthread_barrier_init(&pcap_barrier, NULL, 2);
-#endif
+#endif /* __DARWIN__ */
 	return;
 }
 
@@ -108,7 +108,6 @@ void fg_pcap_cleanup(void* arg)
 	flow->pcap_handle = NULL;
 	pthread_mutex_unlock(&pcap_mutex);
 	dumping = 0;
-
 }
 
 static void* fg_pcap_work(void* arg)
@@ -119,7 +118,7 @@ static void* fg_pcap_work(void* arg)
 
 #ifdef DEBUG
 	struct pcap_stat p_stats;
-#endif
+#endif /* DEBUG */
 	int rc;
 	struct _flow * flow;
 	flow = (struct _flow *) arg;
@@ -155,8 +154,7 @@ static void* fg_pcap_work(void* arg)
 		for (a = d->addresses; a; a = a->next) {
 			if (!a->addr)
 				continue;
-			if (sockaddr_compare(a->addr,
-					     (struct sockaddr *)&sa)) {
+			if (sockaddr_compare(a->addr, (struct sockaddr *)&sa)) {
 				DEBUG_MSG(LOG_NOTICE, "pcap: data connection "
 					  "inbound from %s (%s)", d->name,
 					  fg_nameinfo(a->addr,
@@ -255,7 +253,7 @@ static void* fg_pcap_work(void* arg)
 	DEBUG_MSG(LOG_NOTICE, "dumping to \"%s\"", dump_filename);
 
 	flow->pcap_dumper = (struct pcap_dumper_t *)pcap_dump_open(
-				(pcap_t *)flow->pcap_handle, dump_filename);
+			(pcap_t *)flow->pcap_handle, dump_filename);
 
 	if (!flow->pcap_dumper) {
 		logging_log(LOG_WARNING, "pcap: failed to open dump file "
@@ -267,7 +265,7 @@ static void* fg_pcap_work(void* arg)
 	/* barrier: dump is ready */
 #ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
-#endif
+#endif /* __DARWIN__ */
 	for (;;) {
 		rc = pcap_dispatch((pcap_t *)flow->pcap_handle, -1,
 				   &pcap_dump, (u_char *)flow->pcap_dumper);
@@ -281,7 +279,7 @@ static void* fg_pcap_work(void* arg)
 		}
 #ifdef DEBUG
 		pcap_stats((pcap_t *)flow->pcap_handle, &p_stats);
-#endif
+#endif /* DEBUG */
 		DEBUG_MSG(LOG_NOTICE, "pcap: finished dumping %u packets for "
 			  "flow %d", rc, flow->id);
 		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets received by filter for "
@@ -298,7 +296,7 @@ static void* fg_pcap_work(void* arg)
 remove:
 #ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
-#endif
+#endif /* __DARWIN__ */
 	return 0;
 
 }
@@ -322,14 +320,13 @@ void fg_pcap_go(struct _flow *flow)
 	/* barrier: dump thread is ready (or aborted) */
 #ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
-#endif
+#endif /* __DARWIN__ */
 	if (rc)
 		logging_log(LOG_WARNING, "Could not start pcap thread: %s",
 			    strerror(errno) );
 	return;
 }
 
-#endif
+#endif /* HAVE_LIBPCAP */
 
-
-#endif
+#endif /* _FG_PCAP_H_ */
