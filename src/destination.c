@@ -178,7 +178,7 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	/* Create listen socket for data connection */
 	if ((flow->listenfd_data =
 			create_listen_socket(flow,
-					    flow->settings.bind_address[0]
+					     flow->settings.bind_address[0]
 						? flow->settings.bind_address : 0,
 					     &server_data_port)) == -1) {
 		logging_log(LOG_ALERT, "could not create listen socket for "
