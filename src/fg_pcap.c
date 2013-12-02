@@ -55,8 +55,7 @@
 
 static char errbuf[PCAP_ERRBUF_SIZE];
 
-void fg_pcap_init()
-{
+void fg_pcap_init() {
 /* initalize *alldevs for later use */
 #ifdef DEBUG
 	pcap_if_t *d;
@@ -91,8 +90,7 @@ void fg_pcap_init()
 	return;
 }
 
-void fg_pcap_cleanup(void* arg)
-{
+void fg_pcap_cleanup(void* arg) {
 	struct _flow * flow;
 	flow = (struct _flow *) arg;
 	if (!dumping)
@@ -108,11 +106,9 @@ void fg_pcap_cleanup(void* arg)
 	flow->pcap_handle = NULL;
 	pthread_mutex_unlock(&pcap_mutex);
 	dumping = 0;
-
 }
 
-static void* fg_pcap_work(void* arg)
-{
+static void* fg_pcap_work(void* arg) {
 	/* note: all the wierd casts in this function are completely useless,
 	 * execpt they cirumvent strange compiler warnings because of libpcap
 	 * typedef woo's */
@@ -155,8 +151,7 @@ static void* fg_pcap_work(void* arg)
 		for (a = d->addresses; a; a = a->next) {
 			if (!a->addr)
 				continue;
-			if (sockaddr_compare(a->addr,
-					     (struct sockaddr *)&sa)) {
+			if (sockaddr_compare(a->addr, (struct sockaddr *)&sa)) {
 				DEBUG_MSG(LOG_NOTICE, "pcap: data connection "
 					  "inbound from %s (%s)", d->name,
 					  fg_nameinfo(a->addr,
@@ -255,7 +250,7 @@ static void* fg_pcap_work(void* arg)
 	DEBUG_MSG(LOG_NOTICE, "dumping to \"%s\"", dump_filename);
 
 	flow->pcap_dumper = (struct pcap_dumper_t *)pcap_dump_open(
-				(pcap_t *)flow->pcap_handle, dump_filename);
+			(pcap_t *)flow->pcap_handle, dump_filename);
 
 	if (!flow->pcap_dumper) {
 		logging_log(LOG_WARNING, "pcap: failed to open dump file "
@@ -303,8 +298,7 @@ remove:
 
 }
 
-void fg_pcap_go(struct _flow *flow)
-{
+void fg_pcap_go(struct _flow *flow) {
 	int rc;
 	if (!flow->settings.traffic_dump)
 		return;
