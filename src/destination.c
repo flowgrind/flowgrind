@@ -21,7 +21,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
+#endif /* HAVE_CONFIG_H */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,7 +60,7 @@ void remove_flow(unsigned int i);
 
 #if (defined __LINUX__ || defined __FreeBSD__)
 int get_tcp_info(struct _flow *flow, struct tcp_info *info);
-#endif
+#endif /* (defined __LINUX__ || defined __FreeBSD__) */
 
 void init_flow(struct _flow* flow, int is_source);
 void uninit_flow(struct _flow *flow);
@@ -238,7 +238,7 @@ int accept_data(struct _flow *flow)
 
 #ifdef HAVE_LIBPCAP
 	fg_pcap_go(flow);
-#endif
+#endif /* HAVE_LIBPCAP */
 
 	real_send_buffer_size =
 		set_window_size_directed(flow->fd,

@@ -21,13 +21,14 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+#endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
 #include <string.h>
+
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
-#endif
+#endif /* HAVE_GETOPT_LONG */
 
 #include "common.h"
 
@@ -139,7 +140,7 @@ int main(int argc, char *argv[]) {
 	while ((ch = getopt_long(argc, argv, "hv", lo, 0)) != -1) {
 #else
 	while ((ch = getopt(argc, argv, "hv")) != -1) {
-#endif
+#endif /* HAVE_GETOPT_LONG */
 		switch (ch) {
 			case 'h':
 				usage(argv[0]);

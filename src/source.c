@@ -21,10 +21,12 @@
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
+#endif /* HAVE_CONFIG_H */
+
 #ifdef DEBUG
 #include <assert.h>
-#endif
+#endif /* DEBUG */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -62,7 +64,7 @@ void remove_flow(unsigned int i);
 
 #if (defined __LINUX__ || defined __FreeBSD__)
 int get_tcp_info(struct _flow *flow, struct tcp_info *info);
-#endif
+#endif /* (defined __LINUX__ || defined __FreeBSD__) */
 
 void init_flow(struct _flow* flow, int is_source);
 void uninit_flow(struct _flow *flow);
@@ -152,7 +154,7 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port,
 int add_flow_source(struct _request_add_flow_source *request) {
 #ifdef TCP_CONGESTION
 	socklen_t opt_len = 0;
-#endif
+#endif /* TCP_CONGESTION */
 	struct _flow *flow;
 
 	if (num_flows >= MAX_FLOWS) {
@@ -225,11 +227,11 @@ int add_flow_source(struct _request_add_flow_source *request) {
 		num_flows--;
 		return -1;
 	}
-#endif
+#endif /* TCP_CONGESTION */
 
 #ifdef HAVE_LIBPCAP
 	fg_pcap_go(flow);
-#endif
+#endif /* HAVE_LIBPCAP */
 	if (!flow->source_settings.late_connect) {
 		DEBUG_MSG(4, "(early) connecting test socket");
 		connect(flow->fd, flow->addr, flow->addr_len);

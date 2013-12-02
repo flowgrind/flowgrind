@@ -21,8 +21,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
-
+#endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -50,16 +49,16 @@
 #endif
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
-#endif
+#endif /* HAVE_STRING_H */
 
 #ifdef DEBUG
 #include <assert.h>
-#endif
+#endif /* DEBUG */
 
 #ifdef HAVE_LIBPCAP
 #include <pcap.h>
 #include "fg_pcap.h"
-#endif
+#endif /* HAVE_LIBPCAP */
 
 #include "common.h"
 #include "debug.h"
@@ -67,16 +66,16 @@
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
-#endif
+#endif /* SOL_TCP */
 
 #ifndef SOL_IP
 #define SOL_IP IPPROTO_IP
-#endif
+#endif /* SOL_IP */
 
 #ifndef IP_MTU
 /* Someone forgot to put IP_MTU in <bits/in.h> */
 #define IP_MTU 14
-#endif
+#endif /* IP_MTU */
 
 int set_window_size_directed(int fd, int window, int direction) {
 	int rc, try, w;
@@ -206,7 +205,7 @@ int get_pmtu(int fd) {
 #else
 	UNUSED_ARGUMENT(fd);
 	return 0;
-#endif
+#endif /* SOL_IP */
 }
 
 /* returns interface mtu */
@@ -269,13 +268,13 @@ int set_congestion_control(int fd, const char *cc_alg) {
 	UNUSED_ARGUMENT(cc_alg);
 	DEBUG_MSG(LOG_ERR, "Cannot set cc_alg, no  TCP_CONGESTION sockopt");
 	return -1;
-#endif
+#endif /* TCP_CONGESTION */
 }
 
 int set_so_elcn(int fd, int val) {
 #ifndef TCP_ELCN
 #define TCP_ELCN 20
-#endif
+#endif /* TCP_ELCN */
 	DEBUG_MSG(LOG_WARNING, "Setting TCP_ELCN on fd %d", fd);
 
 	return setsockopt(fd, SOL_TCP, TCP_ELCN, &val, sizeof(val));
@@ -284,7 +283,7 @@ int set_so_elcn(int fd, int val) {
 int set_so_lcd(int fd) {
 #ifndef TCP_LCD
 #define TCP_LCD 21
-#endif
+#endif /* TCP_LCD */
 	int opt = 1;
 	DEBUG_MSG(LOG_WARNING, "Setting TCP_LCD on fd %d", fd);
 
@@ -304,7 +303,7 @@ int set_ip_mtu_discover(int fd) {
 	DEBUG_MSG(LOG_ERR, "Cannot set IP_MTU_DISCOVERY for OS other than "
 		  "Linux");
 	return -1;
-#endif
+#endif /* __LINUX__ */
 
 }
 
@@ -318,7 +317,7 @@ int set_tcp_cork(int fd) {
 	UNUSED_ARGUMENT(fd);
 	DEBUG_MSG(LOG_ERR, "Cannot set TCP_CORK for OS other than Linux");
 	return -1;
-#endif
+#endif /* __LINUX__ */
 }
 
 int toggle_tcp_cork(int fd) {
@@ -333,13 +332,13 @@ int toggle_tcp_cork(int fd) {
 	UNUSED_ARGUMENT(fd);
 	DEBUG_MSG(LOG_ERR, "Cannot toggle TCP_CORK for OS other than Linux");
 	return -1;
-#endif
+#endif /* __LINUX__ */
 }
 
 int set_tcp_mtcp(int fd) {
 #ifndef TCP_MTCP
 #define TCP_MTCP 15
-#endif
+#endif /* TCP_MTCP */
 	int opt = 1;
 
 	DEBUG_MSG(LOG_WARNING, "Setting TCP_MTCP on fd %d", fd);
@@ -377,7 +376,7 @@ char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b) {
 #ifdef DEBUG
 	assert(a != NULL);
 	assert(b != NULL);
-#endif
+#endif /* DEBUG */
 	if (a->sa_family != b->sa_family)
 		return 0;
 

@@ -21,10 +21,12 @@
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
+#endif /* HAVE_CONFIG_H */
+
 #ifdef DEBUG
 #include <assert.h>
-#endif
+#endif /* DEBUG */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -52,9 +54,11 @@
 
 #include "common.h"
 #include "debug.h"
+
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
-#endif
+#endif /* HAVE_LIBPCAP */
+
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "fg_math.h"
@@ -66,11 +70,11 @@
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
-#endif
+#endif /* SOL_TCP */
 
 #ifndef SOL_IP
 #define SOL_IP IPPROTO_IP
-#endif
+#endif /* SOL_IP */
 
 #ifdef __SOLARIS__
 #define RANDOM_MAX  4294967295UL    /* 2**32-1 */
@@ -78,7 +82,7 @@
 #define RANDOM_MAX  LONG_MAX        /* Darwin */
 #else
 #define RANDOM_MAX  RAND_MAX        /* Linux, FreeBSD */
-#endif
+#endif /* __SOLARIS__ */
 
 #define CONGESTION_LIMIT 10000
 
@@ -103,7 +107,7 @@ char started = 0;
 
 #ifdef HAVE_LIBPCAP
 char dumping = 0;
-#endif
+#endif /* HAVE_LIBPCAP */
 
 static void process_rtt(struct _flow* flow);
 static void process_iat(struct _flow* flow);
@@ -1351,7 +1355,7 @@ int apply_extra_socket_options(struct _flow *flow)
 		case level_ipproto_sctp:
 			level = IPPROTO_SCTP;
 			break;
-#endif
+#endif /* __DARWIN__ */
 		case level_ipproto_tcp:
 			level = IPPROTO_TCP;
 			break;

@@ -19,10 +19,12 @@
 
 #ifndef HAVE_CONFIG_H
 #include <config.h>
-#endif
+#endif /* HAVE_CONFIG_H */
+
 #ifdef DEBUG
 #include <assert.h>
-#endif
+#endif /* DEBUG */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
