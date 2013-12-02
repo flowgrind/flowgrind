@@ -1,6 +1,9 @@
 #!/bin/sh
 
-cd ../src/
+SCRIPTDIR=$(dirname $(readlink -f $0))
+cd $SCRIPTDIR/..
+
+cd ./src/
 mkdir -p new1 new2
 
 for i in *.[hc]; do unexpand $i > new1/$i; done
