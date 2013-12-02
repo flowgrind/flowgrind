@@ -32,9 +32,7 @@
 #include "common.h"
 #include "fg_time.h"
 
-const char *
-ctime_us_r(struct timeval *tv, char *buf)
-{
+const char * ctime_us_r(struct timeval *tv, char *buf) {
 	char u_buf[8];
 
 	normalize_tv(tv);
@@ -45,9 +43,7 @@ ctime_us_r(struct timeval *tv, char *buf)
 	return buf;
 }
 
-const char *
-ctime_us(struct timeval *tv)
-{
+const char * ctime_us(struct timeval *tv) {
 	static char buf[33];
 
 	ctime_us_r(tv, buf);
@@ -55,16 +51,12 @@ ctime_us(struct timeval *tv)
 	return buf;
 }
 
-double
-time_diff(const struct timeval *tv1, const struct timeval *tv2)
-{
+double time_diff(const struct timeval *tv1, const struct timeval *tv2) {
 	return (double) (tv2->tv_sec - tv1->tv_sec)
 		+ (double) (tv2->tv_usec - tv1->tv_usec) / 1e6;
 }
 
-double
-time_diff_now(const struct timeval *tv1)
-{
+double time_diff_now(const struct timeval *tv1) {
 	struct timeval now;
 
 	tsc_gettimeofday(&now);
@@ -72,23 +64,20 @@ time_diff_now(const struct timeval *tv1)
 		+ (double) (now.tv_usec - tv1->tv_usec) / 1e6;
 }
 
-void
-time_add(struct timeval *tv, double seconds)
-{
+void time_add(struct timeval *tv, double seconds) {
 	tv->tv_sec += (long)seconds;
 	tv->tv_usec += (long)((seconds - (long)seconds) * 1e6);
 	normalize_tv(tv);
 }
 
-int
-time_is_after(const struct timeval *tv1, const struct timeval *tv2)
-{
+int time_is_after(const struct timeval *tv1, const struct timeval *tv2) {
 	if (tv1->tv_sec > tv2->tv_sec)
 		return 1;
 	if (tv1->tv_sec < tv2->tv_sec)
 		return 0;
 	return tv1->tv_usec > tv2->tv_usec;
 }
+
 #define NTP_EPOCH_OFFSET        2208988800ULL
 
 /*
@@ -99,9 +88,7 @@ time_is_after(const struct timeval *tv1, const struct timeval *tv2)
  * NTP epoch, followed by 4 octets of unsigned integer number of
  * fractional seconds (both numbers are in network byte order).
  */
-void
-tv2ntp(const struct timeval *tv, char *ntp)
-{
+void tv2ntp(const struct timeval *tv, char *ntp) {
 	uint32_t msb, lsb;
 
 	msb = tv->tv_sec + NTP_EPOCH_OFFSET;
@@ -118,9 +105,7 @@ tv2ntp(const struct timeval *tv, char *ntp)
  * Convert 8-byte NTP format timestamp into `timeval' structure value.
  * The counterpart to tv2ntp().
  */
-void
-ntp2tv(struct timeval *tv, const char *ntp)
-{
+void ntp2tv(struct timeval *tv, const char *ntp) {
 	uint32_t msb, lsb;
 
 	memcpy(&msb, ntp, sizeof(msb));
@@ -133,11 +118,11 @@ ntp2tv(struct timeval *tv, const char *ntp)
 	tv->tv_usec = (uint32_t)((double)lsb * 1000000.0 / 4294967296.0);
 }
 
-/* Make sure 0 <= tv.tv_usec < 1000000.  Return 0 if it was normal,
- * positive number otherwise. */
-int
-normalize_tv(struct timeval *tv)
-{
+/*
+ * Make sure 0 <= tv.tv_usec < 1000000.  Return 0 if it was normal,
+ * positive number otherwise.
+ */
+int normalize_tv(struct timeval *tv) {
 	int result = 0;
 
 	while (tv->tv_usec >= 1000000) {
@@ -153,14 +138,12 @@ normalize_tv(struct timeval *tv)
 	return result;
 }
 
-int
-tsc_gettimeofday(struct timeval *tv)
-{
+int tsc_gettimeofday(struct timeval *tv) {
 	int rc;
 	rc = gettimeofday(tv, 0);
 	if (rc != 0) {
 		error(ERR_FATAL, "gettimeofday(): failed: %s",
-				strerror(errno));
+		      strerror(errno));
 	}
 	normalize_tv(tv);
 
