@@ -38,7 +38,8 @@
 /* Program name. Can get updated from argv[0] in parse_cmdline */
 static char progname[50] = "flowgrind-stop";
 
-void usage() {
+void usage()
+{
 	printf("Usage: %1$s <address list>\n"
 	       "       %1$s -h|-v\n\n"
 	       "This program stops all flows on the daemons running at the "
@@ -52,7 +53,8 @@ void usage() {
 	exit(1);
 }
 
-void stop_flows(char* address) {
+void stop_flows(char* address)
+{
 	xmlrpc_env env;
 	xmlrpc_client *client = 0;
 	xmlrpc_value * resultP = 0;
@@ -112,7 +114,8 @@ cleanup:
 
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	char ch, *tok;
 	int i;
 	xmlrpc_env rpc_env;

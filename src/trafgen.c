@@ -48,7 +48,8 @@
 
 inline static double calculate(struct _flow *flow,
 			       enum _stochastic_distributions type,
-			       double param_one, double param_two) {
+			       double param_one, double param_two)
+{
 	double val = 0;
 
 	switch (type) {
@@ -99,7 +100,8 @@ inline static double calculate(struct _flow *flow,
 
 }
 
-int next_request_block_size(struct _flow *flow) {
+int next_request_block_size(struct _flow *flow)
+{
 	int bs = 0;
 	int i = 0;
 
@@ -136,7 +138,8 @@ int next_request_block_size(struct _flow *flow) {
 	return bs;
 }
 
-int next_response_block_size(struct _flow *flow) {
+int next_response_block_size(struct _flow *flow)
+{
 	int bs = round(calculate(
 		       flow,
 		       flow->settings.response_trafgen_options.distribution,
@@ -163,8 +166,8 @@ int next_response_block_size(struct _flow *flow) {
 
 }
 
-double next_interpacket_gap(struct _flow *flow) {
-
+double next_interpacket_gap(struct _flow *flow)
+{
 	double gap = 0.0;
 	if (flow->settings.write_rate)
 		gap = (double)1.0 / flow->settings.write_rate;

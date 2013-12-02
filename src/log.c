@@ -32,7 +32,8 @@ char timestr[20];
 char *logstr = NULL;
 int log_type = LOGTYPE_SYSLOG;
 
-void logging_init (void) {
+void logging_init (void)
+{
 	logstr = malloc(LOGGING_MAXLEN);
 	if (logstr == NULL) {
 		fprintf(stderr, "Error: Unable to allocate memory for logging "
@@ -50,7 +51,8 @@ void logging_init (void) {
 	}
 }
 
-void logging_exit (void) {
+void logging_exit (void)
+{
 	switch (log_type) {
 	case LOGTYPE_SYSLOG:
 		closelog();
@@ -62,7 +64,8 @@ void logging_exit (void) {
 	free(logstr);
 }
 
-void logging_log (int priority, const char *fmt, ...) {
+void logging_log (int priority, const char *fmt, ...)
+{
 	int n;
 	va_list ap;
 
@@ -76,7 +79,8 @@ void logging_log (int priority, const char *fmt, ...) {
 		logging_log_string(priority, logstr);
 }
 
-void logging_log_string (int priority, const char *s) {
+void logging_log_string (int priority, const char *s)
+{
 	switch (log_type) {
 	case LOGTYPE_SYSLOG:
 		syslog(priority, "%s", s);
@@ -88,7 +92,8 @@ void logging_log_string (int priority, const char *s) {
 	}
 }
 
-char * logging_time(void) {
+char * logging_time(void)
+{
 	time_t tp;
 	struct tm *loc = NULL;
 

@@ -73,7 +73,8 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port,
 		       struct sockaddr **saptr, socklen_t *lenp,
 		       char do_connect, const int read_buffer_size_req,
 		       int *read_buffer_size, const int send_buffer_size_req,
-		       int *send_buffer_size) {
+		       int *send_buffer_size)
+{
 	int fd, n;
 	struct addrinfo hints, *res, *ressave;
 	struct sockaddr_in *tempv4;
@@ -151,7 +152,8 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port,
 	return fd;
 }
 
-int add_flow_source(struct _request_add_flow_source *request) {
+int add_flow_source(struct _request_add_flow_source *request)
+{
 #ifdef TCP_CONGESTION
 	socklen_t opt_len = 0;
 #endif /* TCP_CONGESTION */
