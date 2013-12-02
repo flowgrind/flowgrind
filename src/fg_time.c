@@ -78,7 +78,7 @@ int time_is_after(const struct timeval *tv1, const struct timeval *tv2) {
 	return tv1->tv_usec > tv2->tv_usec;
 }
 
-#define NTP_EPOCH_OFFSET        2208988800ULL
+#define NTP_EPOCH_OFFSET	2208988800ULL
 
 /*
  * Convert `timeval' structure value into NTP format (RFC 1305) timestamp.
