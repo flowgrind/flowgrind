@@ -25,7 +25,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+#endif /* HAVE_CONFIG_H */
 
 #include "common.h"
 #include "fg_time.h"
@@ -39,7 +39,7 @@
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.ipv4.tcp_available_congestion_control"
 #elif __FreeBSD__
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.inet.tcp.cc.available"
-#endif
+#endif /* __LINUX__ */
 
 /* global controller options */
 struct _opt {
@@ -136,4 +136,4 @@ inline static double scale_thruput(double thruput) {
 	return thruput / 1e6 *(1<<3);
 }
 
-#endif
+#endif /* _FLOWGRIND_H_ */

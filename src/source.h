@@ -19,9 +19,9 @@
  *
  */
 
-#ifndef __SOURCE_H__
-#define __SOURCE_H__
+#ifndef _SOURCE_H_
+#define _SOURCE_H_
 
 int add_flow_source(struct _request_add_flow_source *request);
 
-#endif
+#endif /* _SOURCE_H_ */

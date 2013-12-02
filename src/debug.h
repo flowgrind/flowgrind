@@ -19,12 +19,12 @@
  *
  */
 
-#ifndef _DEBUG_H
-#define _DEBUG_H
+#ifndef _DEBUG_H_
+#define _DEBUG_H_
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+#endif /* HAVE_CONFIG_H */
 
 void decrease_debuglevel();
 void increase_debuglevel();
@@ -47,8 +47,7 @@ const char *debug_timestamp(void);
 					(unsigned int)pthread_self()%USHRT_MAX, ##args); \
 		}
 #else
-
 #define DEBUG_MSG(message_level, msg, args...) do {} while(0)
+#endif /* DEBUG */
 
-#endif
-#endif
+#endif /* _DEBUG_H_ */

@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _FG_TIME_H
-#define _FG_TIME_H
+#ifndef _FG_TIME_H_
+#define _FG_TIME_H_
 
 #include <sys/time.h>
 
@@ -37,4 +37,4 @@ int normalize_tv(struct timeval *);
 int time_is_after(const struct timeval *, const struct timeval *);
 
 int tsc_gettimeofday(struct timeval *tv);
-#endif
+#endif /* _FG_TIME_H_ */

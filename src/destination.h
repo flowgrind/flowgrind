@@ -19,10 +19,10 @@
  *
  */
 
-#ifndef __DESTINATION_H__
-#define __DESTINATION_H__
+#ifndef _DESTINATION_H_
+#define _DESTINATION_H_
 
 void add_flow_destination(struct _request_add_flow_destination *request);
 int accept_data(struct _flow *flow);
 
-#endif //__DESTINATION_H__
+#endif /* _DESTINATION_H_ */
