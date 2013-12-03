@@ -22,18 +22,19 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+#endif /* HAVE_CONFIG_H */
 
-#include <arpa/inet.h>
 #ifdef DEBUG
 #include <assert.h>
-#endif
+#endif /* DEBUG */
+
 #include <errno.h>
 #include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <netdb.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
@@ -50,6 +51,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
+
 #include "common.h"
 #include "fg_socket.h"
 #include "debug.h"
@@ -86,7 +88,7 @@ enum _column_types
 	column_type_kernel,
 #ifdef DEBUG
 	column_type_status,
-#endif
+#endif /* DEBUG */
 	column_type_other
 };
 
@@ -149,7 +151,7 @@ const struct _header_info header_info[] = {
 	{ " fack", " [B]", column_type_kernel },
 	{ " reor", " [B]", column_type_kernel },
 	{ " bkof", " [B]", column_type_kernel },
-#endif
+#endif /* __LINUX__ */
 	{ " rtt", " [ms]", column_type_kernel },
 	{ " rttvar", " [ms]", column_type_kernel },
 	{ " rto", " [ms]", column_type_kernel },
@@ -159,7 +161,7 @@ const struct _header_info header_info[] = {
 
 #ifdef DEBUG
 	{ " status", " ", column_type_status }
-#endif
+#endif /* DEBUG */
 };
 
 
@@ -388,7 +390,7 @@ enum tcp_ca_state
 	TCP_CA_Recovery = 3,
 	TCP_CA_Loss = 4
 };
-#endif
+#endif /* __LINUX__ */
 
 /* Output a single report (with header if width has changed */
 char *createOutput(char hash, int id, int type, double begin, double end,
@@ -560,7 +562,8 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	i++;
 #else
 	UNUSED_ARGUMENT(status);
-#endif
+#endif /* DEBUG */
+
 	/* newline */
 	strcat(headerString1, "\n");
 	strcat(headerString2, "\n");
@@ -597,19 +600,19 @@ static void usage(void)
 		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-kernel,-status\n"
 #else
 		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-kernel\n"
-#endif
+#endif /* DEBUG */
 		"               Comma separated list of column groups to display in output.\n"
 		"               Prefix with either + to show column group or - to hide\n"
 		"               column group (default: show all but blocks)\n"
 #ifdef DEBUG
 		"  -d           Increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
-#endif
+#endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
 		"  -e PRE       Prepend prefix PRE to log and dump filename (default: \"%1$s\")\n"
 #else
 		"  -e PRE       Prepend prefix PRE to log filename (default: \"%1$s\")\n"
-#endif
+#endif /* HAVE_LIBPCAP */
 		"  -i #.#       Reporting interval in seconds (default: 0.05s)\n"
 		"  -l NAME      Use log filename NAME (default: timestamp)\n"
 		"  -m           Report throughput in 2**20 bytes/second\n"
@@ -642,7 +645,7 @@ static void usage(void)
 		"  -G x=[q|p|g],[C|E|P|N|U],#1,[#2]\n"
 #else
 		"  -G x=[q|p|g],[C|U],#1,[#2]\n"
-#endif
+#endif /* HAVE_LIBGSL */
 		"               Activate stochastic traffic generation and set parameters\n"
 		"               according to the used distribution\n"
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
@@ -655,7 +658,7 @@ static void usage(void)
 		"               established in the preparation phase before the test starts\n"
 #ifdef HAVE_LIBPCAP
 		"  -M x         dump traffic using libpcap\n"
-#endif
+#endif /* HAVE_LIBPCAP */
 		"  -N           shutdown() each socket direction after test flow\n"
 		"  -O x=OPT     Set specific socket options on test socket.\n"
 		"               It is possible to repeatedly pass the same endpoint in order to\n"
@@ -708,7 +711,7 @@ static void usage_sockopt(void)
 		pclose(fp);
 		fprintf(stderr, "\n");
 	}
-#endif
+#endif /* TCP_CONGESTION */
 	fprintf(stderr,
 		"  -O x=TCP_CORK\n"
 		"               set TCP_CORK on test socket\n"
@@ -746,7 +749,7 @@ static void usage_trafgenopt(void)
 		"  -G x=[q|p|g],[C|U|E|N|L|P|W],#1,(#2)\n"
 #else
 		"  -G x=[q|p|g],[C|U],#1,(#2)\n"
-#endif
+#endif /* HAVE_LIBGSL */
 		"\n"
 		"               Activate stochastic traffic generation and set parameters\n"
 		"               for the choosen distribution.\n"
@@ -768,7 +771,7 @@ static void usage_trafgenopt(void)
 #else
 		"               advanced distributions are only available if compiled with\n"
 		"               libgsl\n"
-#endif
+#endif /* HAVE_LIBGSL */
 		"\n"
 		"  -U #         specify a cap for the calculated values for request\n"
 		"               and response size (not needed for constant values or\n"
@@ -1056,7 +1059,7 @@ void print_tcp_report_line(char hash, int id,
 				break;
 		}
 	}
-#endif
+#endif /* DEBUG */
 	strncat(comment_buffer, ")", sizeof(comment_buffer));
 	if (strlen(comment_buffer) == 2)
 		comment_buffer[0] = '\0';
@@ -1319,7 +1322,7 @@ exit_outer_loop:
 				DEBUG_MSG(LOG_DEBUG, "remaining active flows: %d", active_flows);
 #ifdef DEBUG
 				assert(active_flows >= 0);
-#endif
+#endif /* DEBUG */
 			}
 		}
 		return;
@@ -2063,7 +2066,7 @@ static void parse_visible_param(char *to_parse) {
 		visible_columns[column_type_status] = 1;
 	if (strstr(to_parse, "-status"))
 		visible_columns[column_type_status] = 0;
-#endif
+#endif /* DEBUG */
 }
 
 static void parse_cmdline(int argc, char **argv) {
@@ -2426,7 +2429,7 @@ static void parse_cmdline(int argc, char **argv) {
 		DEBUG_MSG(LOG_ERR, "Skipping errors discovered by sanity checks.");
 #else
 		exit(EXIT_FAILURE);
-#endif
+#endif /* DEBUG */
 	}
 	DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
 }
@@ -2609,7 +2612,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:i,s:i,s:i,s:i,s:i}"
 #ifdef HAVE_LIBPCAP
 		"{s:s}"
-#endif
+#endif /* HAVE_LIBPCAP */
 		"{s:i,s:A}"
 		")",
 
@@ -2662,7 +2665,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"ipmtudiscover", flow[id].settings[DESTINATION].ipmtudiscover,
 #ifdef HAVE_LIBPCAP
 		"filename_prefix", opt.log_filename_prefix,
-#endif
+#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", flow[id].settings[DESTINATION].num_extra_socket_options,
 		"extra_socket_options", extra_options);
 
@@ -2701,7 +2704,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	struct timeval now;
 	tsc_gettimeofday(&now);
 	DEBUG_MSG(LOG_DEBUG, "%ld.%ld (add_flow_source() in flowgrind.c)\n", now.tv_sec, now.tv_usec);
-#endif
+#endif /* DEBUG */
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
 		flow[id].endpoint_options[SOURCE].daemon->server_url,
 		"add_flow_source", &resultP,
@@ -2720,7 +2723,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:i,s:i,s:i,s:i,s:i}"
 #ifdef HAVE_LIBPCAP
 		"{s:s}"
-#endif
+#endif /* HAVE_LIBPCAP */
 		"{s:i,s:A}"
 		"{s:s,s:i,s:i}"
 		")",
@@ -2775,7 +2778,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"ipmtudiscover", flow[id].settings[SOURCE].ipmtudiscover,
 #ifdef HAVE_LIBPCAP
 		"filename_prefix", opt.log_filename_prefix,
-#endif
+#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", flow[id].settings[SOURCE].num_extra_socket_options,
 		"extra_socket_options", extra_options,
 
@@ -2978,7 +2981,7 @@ has_more_reports:
 #else
 				report.bytes_read = (uint32_t)bytes_read_low;
 				report.bytes_written = (uint32_t)bytes_written_low;
-#endif
+#endif /* HAVE_UNSIGNED_LONG_LONG_INT */
 
 				/* Kernel metrics (tcp_info). Other OS than Linux may not send
 				 * valid values here, for the moment we don't care and handle
@@ -3031,7 +3034,7 @@ void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
 	clientParms.transportparmsP    = &curlParms;
 	clientParms.transportparm_size = XMLRPC_CXPSIZE(dont_advertise);
 	clientParms_cpsize = XMLRPC_CPSIZE(transportparm_size);
-#endif
+#endif /* HAVE_STRUCT_XMLRPC_CURL_XPORTPARMS_DONT_ADVERTISE */
 
 	/* Force usage of curl transport, we require it in configure script anyway
 	 * and at least FreeBSD 9.1 will use libwww otherwise */

@@ -22,15 +22,17 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+#endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
 #include <stdio.h>
+
 #ifdef WIN
 #  include <windows.h>
 #else
 #  include <unistd.h>
-#endif
+#endif /* WIN */
+
 #include <pthread.h>
 #include <errno.h>
 #include <signal.h>
@@ -39,10 +41,11 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <netdb.h>
+
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
-#endif
-#include <netdb.h>
+#endif /* HAVE_GETOPT_LONG */
 
 /* CPU affinity */
 #ifdef __LINUX__
@@ -50,7 +53,7 @@
 #elif __FreeBSD__
 #include <sys/param.h>
 #include <sys/cpuset.h>
-#endif
+#endif /* __LINUX__ */
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
@@ -63,9 +66,10 @@
 #include "fg_time.h"
 #include "debug.h"
 #include "fg_math.h"
+
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
-#endif
+#endif /* HAVE_LIBPCAP */
 
 unsigned port = DEFAULT_LISTEN_PORT;
 char *rpc_bind_addr = NULL;
@@ -79,18 +83,18 @@ static void __attribute__((noreturn)) usage(void)
 		"Usage: %1$s [-p #] [-b addr] [-d] [-c #] [-w dir/] [-v]\n"
 #else
 		"Usage: %1$s [-p #] [-b addr] [-d] [-c #] [-v]\n"
-#endif
+#endif /* HAVE_LIBPCAP */
 		"\t-p #\t\tXML-RPC server port\n"
 		"\t-b addr\t\tXML-RPC server bind address\n"
 #ifdef DEBUG
 		"\t-d\t\tincrease debug verbosity, add multiple times (no daemon, log to stderr)\n"
 #else
 		"\t-d\t\tdon't fork into background\n"
-#endif
+#endif /* DEBUG */
 		"\t-c #\t\tbound daemon to specific CPU\n"
 #ifdef HAVE_LIBPCAP
 		"\t-w\t\ttarget directory for dumps\n"
-#endif
+#endif /* HAVE_LIBPCAP */
 		"\t-v\t\tPrint version information and exit\n",
 		progname);
 	exit(1);
@@ -200,7 +204,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"{s:i,s:i,s:i,s:i,s:i,*}"
 #ifdef HAVE_LIBPCAP
 		"{s:s,*}"
-#endif
+#endif /* HAVE_LIBPCAP */
 		"{s:i,s:A,*}"
 		"{s:s,s:i,s:i,*}"
 		")",
@@ -254,7 +258,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"ipmtudiscover", &settings.ipmtudiscover,
 #ifdef HAVE_LIBPCAP
 		"filename_prefix", &dump_filename_prefix_client,
-#endif
+#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options,
 
@@ -398,7 +402,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"{s:i,s:i,s:i,s:i,s:i,*}"
 #ifdef HAVE_LIBPCAP
 		"{s:s,*}"
-#endif
+#endif /* HAVE_LIBPCAP */
 		"{s:i,s:A,*}"
 		")",
 
@@ -451,7 +455,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"ipmtudiscover", &settings.ipmtudiscover,
 #ifdef HAVE_LIBPCAP
 		"filename_prefix", &dump_filename_prefix_client,
-#endif
+#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options);
 
@@ -945,7 +949,7 @@ void set_affinity(int cpu)
 	typedef cpu_set_t fg_cpuset;
 #elif __FreeBSD__
 	typedef cpuset_t fg_cpuset;
-#endif
+#endif /* __LINUX__ */
 	int rc;
 	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);   /* number of cores */
 	fg_cpuset cpuset;			    /* define cpu_set bit mask */
@@ -965,7 +969,7 @@ void set_affinity(int cpu)
 #elif __FreeBSD__
 	rc = cpuset_setaffinity(CPU_LEVEL_WHICH, CPU_WHICH_TID, -1,
 				sizeof(cpuset), &cpuset);
-#endif
+#endif /* __LINUX__ */
 	if (rc)
 		logging_log(LOG_WARNING, "failed to bind %s (PID %d) to "
 			    "CPU %i\n", progname, getpid(), cpu);
@@ -988,12 +992,11 @@ static void parse_option(int argc, char ** argv)
 	while ((ch = getopt_long(argc, argv, "dDhp:vVw:W:b:c:", lo, 0)) != -1) {
 #else
 	while ((ch = getopt(argc, argv, "dDhp:vVw:W:b:c:")) != -1) {
-#endif
+#endif /* HAVE_GETOPT_LONG */
 		switch (ch) {
 		case 'h':
 			usage();
 			break;
-
 		case 'd':
 		case 'D':
 			log_type = LOGTYPE_STDERR;
@@ -1034,14 +1037,12 @@ static void parse_option(int argc, char ** argv)
 #ifdef HAVE_LIBPCAP
 			dump_filename_prefix_server = optarg;
 			break;
-#endif
-
+#endif /* HAVE_LIBPCAP */
 		default:
 			usage();
 		}
 	}
 	argc = argcorig;
-
 	argc -= optind;
 
 	if (argc != 0)
@@ -1085,7 +1086,7 @@ int main(int argc, char ** argv)
 	logging_init();
 #ifdef HAVE_LIBPCAP
 	fg_pcap_init();
-#endif
+#endif /* HAVE_LIBPCAP */
 	if (log_type == LOGTYPE_SYSLOG) {
 		/* Need to call daemon() before creating the thread because
 		 * it internally calls fork() which does not copy threads. */

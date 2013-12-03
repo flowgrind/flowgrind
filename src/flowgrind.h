@@ -1,9 +1,31 @@
+/*
+ * flowgrind.h - Flowgrind Controller
+ *
+ * Copyright (C) Arnd Hannemann <arnd@arndnet.de>, 2010-2013
+ * Copyright (C) Christian Samsel <christian.samsel@rwth-aachen.de>, 2010-2013
+ * Copyright (C) Tim Kosse <tim.kosse@gmx.de>, 2009
+ * Copyright (C) Daniel Schaffrath <daniel.schaffrath@mac.com>, 2007-2008
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #ifndef _FLOWGRIND_H_
 #define _FLOWGRIND_H_
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+#endif /* HAVE_CONFIG_H */
 
 #include "common.h"
 #include "fg_time.h"
@@ -18,7 +40,7 @@
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.ipv4.tcp_available_congestion_control"
 #elif __FreeBSD__
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.inet.tcp.cc.available"
-#endif
+#endif /* __LINUX__ */
 
 /* global controller options */
 struct _opt {
@@ -116,4 +138,4 @@ inline static double scale_thruput(double thruput)
 	return thruput / 1e6 *(1<<3);
 }
 
-#endif
+#endif /* _FLOWGRIND_H_ */

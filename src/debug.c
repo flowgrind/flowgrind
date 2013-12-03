@@ -32,7 +32,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+#endif /* HAVE_CONFIG_H */
 
 inline void decrease_debuglevel()
 {
@@ -80,4 +80,4 @@ const char *debug_timestamp()
 void decrease_debuglevel() { }
 void increase_debuglevel() { }
 
-#endif
+#endif /* DEBUG */

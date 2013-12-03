@@ -1,9 +1,30 @@
-#ifndef _FG_SOCKET_H
-#define _FG_SOCKET_H
+/*
+ * fg_socket.h - Routines used to manipulate socket parameters for Flowgrind
+ *
+ * Copyright (C) Christian Samsel <christian.samsel@rwth-aachen.de>, 2010-2013
+ * Copyright (C) Tim Kosse <tim.kosse@gmx.de>, 2009
+ * Copyright (C) Daniel Schaffrath <daniel.schaffrath@mac.com>, 2007-2008
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef _FG_SOCKET_H_
+#define _FG_SOCKET_H_
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+#endif /* HAVE_CONFIG_H */
 
 #include <netinet/tcp.h>
 #include <sys/socket.h>
@@ -34,4 +55,4 @@ char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b);
 
 int get_port(int fd);
 
-#endif
+#endif /* _FG_SOCKET_H_ */

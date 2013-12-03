@@ -1,8 +1,12 @@
 #!/bin/sh
+
 VERSION=$1
+SCRIPTDIR=$(dirname $(readlink -f $0))
+
+cd $SCRIPTDIR/..
 
 if [ "$VERSION" = "" ]; then
-	echo "Usage: $0 VERSION\n    Where VERSION is the version number of an git tag."
+	echo -e "Usage: $0 VERSION\n    Where VERSION is the version number of an git tag."
 	exit 1
 fi
 
@@ -44,7 +48,7 @@ find . -type d -name ".git" | xargs rm -r
 
 ./reformat-code.sh
 
-rm -r autom4te.cache ChangeLog dist.sh RELEASEWORKFLOW .gitignore reformat-code.sh
+rm -r autom4te.cache ChangeLog RELEASEWORKFLOW .gitignore
 
 cd ..
 
@@ -59,3 +63,4 @@ gpg --armor --sign --detach-sig flowgrind-$VERSION.tar.bz2
 rm -r flowgrind-$VERSION
 
 echo "Success: Built tarball flowgrind-$VERSION.tar.bz2"
+exit 0
