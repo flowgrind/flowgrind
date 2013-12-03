@@ -32,6 +32,6 @@ pthread_mutex_t pcap_mutex;
 /* pthread barrier does not exists in Darwin */
 #ifndef __DARWIN__
 pthread_barrier_t pcap_barrier;
-#endif
+#endif /* __DARWIN__ */
 
 pcap_if_t * alldevs;

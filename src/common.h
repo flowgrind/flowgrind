@@ -47,7 +47,7 @@
 #define FLOWGRIND_VERSION PACKAGE_VERSION
 #else
 #define FLOWGRIND_VERSION "(n/a)"
-#endif
+#endif /* GITVERSION */
 
 /* Flowgrind's xmlrpc API version in integer representation */
 #define FLOWGRIND_API_VERSION 3
@@ -75,7 +75,7 @@ void error(int errcode, const char *fmt, ...);
 
 #ifndef TCP_CA_NAME_MAX
 #define TCP_CA_NAME_MAX 16
-#endif
+#endif /* TCP_CA_NAME_MAX */
 
 enum _extra_socket_option_level
 {
@@ -218,7 +218,7 @@ struct _report
 #else
 	long bytes_read;
 	long bytes_written;
-#endif
+#endif /* HAVE_UNSIGNED_LONG_LONG_INT */
 	unsigned int request_blocks_read;
 	unsigned int request_blocks_written;
 	unsigned int response_blocks_read;
@@ -239,4 +239,4 @@ struct _report
 	struct _report* next;
 };
 
-#endif
+#endif /* _COMMON_H_*/

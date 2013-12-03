@@ -123,7 +123,7 @@ struct _flow
 #else
 		long bytes_read;
 		long bytes_written;
-#endif
+#endif /* HAVE_UNSIGNED_LONG_LONG_INT */
 		unsigned int request_blocks_read;
 		unsigned int request_blocks_written;
 		unsigned int response_blocks_read;
@@ -135,7 +135,7 @@ struct _flow
 #if (defined __LINUX__ || defined __FreeBSD__)
 		int has_tcp_info;
 		struct _fg_tcp_info tcp_info;
-#endif
+#endif /* (defined __LINUX__ || defined __FreeBSD__) */
 
 	} statistics[2];
 
@@ -143,11 +143,11 @@ struct _flow
 	pthread_t pcap_thread;
 	struct pcap_t *pcap_handle;
 	struct pcap_dumper_t *pcap_dumper;
-#endif
+#endif /* HAVE_LIBPCAP */
 
 #ifdef HAVE_LIBGSL
 	gsl_rng * r;
-#endif
+#endif /* HAVE_LIBGSL */
 
 	char* error;
 };
@@ -238,10 +238,10 @@ struct _request_get_status
 #ifdef HAVE_LIBPCAP
 char * dump_filename_prefix_client;
 char * dump_filename_prefix_server;
-#endif
+#endif /* HAVE_LIBPCAP */
 
 void flow_error(struct _flow *flow, const char *fmt, ...);
 void request_error(struct _request *request, const char *fmt, ...);
 int set_flow_tcp_options(struct _flow *flow);
 
-#endif //__DAEMON_H__
+#endif /* _DAEMON_H_ */

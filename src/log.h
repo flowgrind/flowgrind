@@ -37,4 +37,4 @@ void logging_log (int priority, const char *fmt, ...);
 void logging_log_string (int priority, const char *s);
 char *logging_time(void);
 
-#endif
+#endif /* _LOG_H_ */

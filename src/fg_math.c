@@ -20,7 +20,8 @@
 
 #ifndef HAVE_CONFIG_H
 #include <config.h>
-#endif
+#endif /* HAVE_CONFIG_H */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -47,7 +48,7 @@
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_errno.h>
-#endif
+#endif /* HAVE_LIBGSL */
 
 #ifndef HAVE_LIBGSL
 /* RANDOM_MAX only needed for POSIX math functions */
@@ -57,16 +58,16 @@
 #define RANDOM_MAX LONG_MAX        /* Darwin */
 #else
 #define RANDOM_MAX RAND_MAX        /* Linux, FreeBSD */
-#endif
+#endif /* __SOLARIS__ */
 
-#endif
+#endif /* HAVE_LIBGSL */
 
 extern void init_math_functions (struct _flow *flow, unsigned long seed)
 {
 	int rc;
 #ifndef HAVE_LIBGSL
 	UNUSED_ARGUMENT(flow);
-#endif
+#endif /* HAVE_LIBGSL */
 	/* set rounding */
 	fesetround(FE_TONEAREST);
 
@@ -76,7 +77,7 @@ extern void init_math_functions (struct _flow *flow, unsigned long seed)
 	gsl_rng_env_setup();
 	T = gsl_rng_default;
 	flow->r = gsl_rng_alloc (T);
-#endif
+#endif /* HAVE_LIBGSL */
 
 	if (!seed) {
 	/* if no seed supplied use urandom */
@@ -100,7 +101,7 @@ extern void init_math_functions (struct _flow *flow, unsigned long seed)
 	srand((unsigned int)seed);
 	DEBUG_MSG(LOG_WARNING, "initalized posix random functions with seed "
 		  "%u", (unsigned int)seed);
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 extern void free_math_functions (struct _flow *flow)
@@ -109,21 +110,21 @@ extern void free_math_functions (struct _flow *flow)
 	gsl_rng_free(flow->r);
 #else
 	UNUSED_ARGUMENT(flow);
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 static inline double rn_uniform(struct _flow *flow)
 {
 #ifndef HAVE_LIBGSL
 	UNUSED_ARGUMENT(flow);
-#endif
+#endif  /* HAVE_LIBGSL */
 
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_rng_get(r);
 #else
 	return rand();
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 static inline double rn_uniform_zero_to_one(struct _flow *flow)
@@ -133,7 +134,7 @@ static inline double rn_uniform_zero_to_one(struct _flow *flow)
 	return gsl_rng_uniform_pos(r);
 #else
 	return rn_uniform(flow)/(RANDOM_MAX+1.0);
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 #ifndef HAVE_LIBGSL
@@ -141,7 +142,7 @@ static inline double rn_uniform_minusone_to_one(struct _flow *flow)
 {
 	return (rn_uniform(flow)/(RANDOM_MAX/2.0) - 1.0);
 }
-#endif
+#endif /* HAVE_LIBGSL */
 
 extern double dist_exponential(struct _flow *flow, const double mu)
 {
@@ -150,7 +151,7 @@ extern double dist_exponential(struct _flow *flow, const double mu)
 	return gsl_ran_exponential(r, mu);
 #else
 	return -log(rn_uniform(flow))+mu;
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 /* source for naive implementation english wikipedia articles */
@@ -164,7 +165,7 @@ extern double dist_uniform(struct _flow *flow, const double minval,
 #else
 	const double x = rn_uniform_zero_to_one(flow);
 	return ((maxval-minval) * x) + minval;
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 extern double dist_normal(struct _flow *flow, const double mu,
@@ -177,7 +178,7 @@ extern double dist_normal(struct _flow *flow, const double mu,
 	const double x = rn_uniform_minusone_to_one(flow);
 	return (1.0 / sqrt(2.0*M_PI*sigma_square)) *
 		exp((-pow ((x-mu),2)) / (2 * sigma_square));
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 extern double dist_lognormal(struct _flow *flow, const double zeta,
@@ -192,7 +193,7 @@ extern double dist_lognormal(struct _flow *flow, const double zeta,
 	UNUSED_ARGUMENT(zeta);
 	UNUSED_ARGUMENT(sigma);
 	return 0;
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 
@@ -203,7 +204,7 @@ extern int dist_bernoulli(struct _flow *flow, const double p)
 	return gsl_ran_bernoulli (r, p);
 #else
 	return rn_uniform_zero_to_one(flow) <= p;
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 extern double dist_pareto (struct _flow *flow, const double k,
@@ -218,7 +219,7 @@ extern double dist_pareto (struct _flow *flow, const double k,
 		return 0;
 	else
 		return  (k/x_min) * pow (x_min/x,k+1);
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 extern double dist_weibull (struct _flow *flow, const double alpha,
@@ -230,7 +231,7 @@ extern double dist_weibull (struct _flow *flow, const double alpha,
 #else
 	const double x = rn_uniform_zero_to_one(flow);
 	return  alpha * beta * pow (x,beta-1.0) * exp(-alpha * pow(x,beta));
-#endif
+#endif /* HAVE_LIBGSL */
 }
 
 extern double dist_chisq (struct _flow *flow, const double nu)
@@ -243,6 +244,6 @@ extern double dist_chisq (struct _flow *flow, const double nu)
 	UNUSED_ARGUMENT(flow);
 	UNUSED_ARGUMENT(nu);
 	return 0;
-#endif
+#endif /* HAVE_LIBGSL */
 }
 

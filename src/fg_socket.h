@@ -24,7 +24,7 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
+#endif /* HAVE_CONFIG_H */
 
 #include <netinet/tcp.h>
 #include <sys/socket.h>
@@ -55,4 +55,4 @@ char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b);
 
 int get_port(int fd);
 
-#endif
+#endif /* _FG_SOCKET_H_ */
