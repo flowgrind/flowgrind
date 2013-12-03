@@ -8,6 +8,5 @@
 +allow send volume to be specified (instead of duration)
 +Add optional columns for sender/receiver buffer
 +replace pthread barrier for mac os x
-+add gpl header to every source file
 +add c style comments to functions for doxygen help
 +allow for heterogeneous OS-Environments (measure Linux against FreebSD)
