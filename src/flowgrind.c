@@ -670,7 +670,7 @@ static void usage(void)
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
 		"               b = bits/s (default), B = bytes/s, o = blocks/s\n"
 		"               (same as -G s=g,C,#)\n"
-		"  -S x=#       Set block size, in bytes (same as -G s=q,C,#)\n"
+		"  -S x=#       Set block (message) size, in bytes (same as -G s=q,C,#)\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=10,d=0)\n"
 		"  -U #         Set application buffer size, in bytes (default: 8192)\n"
 		"               truncates values if used with stochastic traffic generation\n"
