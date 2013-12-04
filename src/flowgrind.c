@@ -670,7 +670,7 @@ static void usage(void)
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
 		"               b = bits per second (default), B = bytes/second, o = blocks/s\n"
-		"               same a -G s=g,C,#'\n"
+		"               same as -G s=g,C,#'\n"
 		"  -S x=#       Set block size, same as -G s=q,C,#\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=10,d=0)\n"
 		"  -U #         Set application buffer size (default: 8192)\n"
