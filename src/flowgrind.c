@@ -613,10 +613,9 @@ static void usage(void)
 #else
 		"  -e PRE       Prepend prefix PRE to log filename (default: \"%1$s\")\n"
 #endif /* HAVE_LIBPCAP */
-		"  -i #.#       Reporting interval in seconds (default: 0.05s)\n"
+		"  -i #.#       Reporting interval, in seconds (default: 0.05s)\n"
 		"  -l NAME      Use log filename NAME (default: timestamp)\n"
-		"  -m           Report throughput in 2**20 bytes/second\n"
-		"               (default: 10**6 bit/sec)\n"
+		"  -m           Report throughput in 2**20 bytes/s (default: 10**6 bit/s)\n"
 		"  -n #         Number of test flows (default: 1)\n"
 		"  -o           Overwrite existing log files (default: don't)\n"
 		"  -p           Don't print symbolic values (like INT_MAX) instead of numbers\n"
@@ -632,7 +631,7 @@ static void usage(void)
 		"  and 4096 at the destination.\n\n"
 		"  -A x         Use minimal response size needed for RTT calculation\n"
 		"               (same as -G s=p,C,%3$d)\n"
-		"  -B x=#       Set requested sending buffer in bytes\n"
+		"  -B x=#       Set requested sending buffer, in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
 		"  -E           Enumerate bytes in payload instead of sending zeros\n"
@@ -669,15 +668,15 @@ static void usage(void)
 		"  -R x=#.#[z|k|M|G][b|B|o]\n"
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
-		"               b = bits per second (default), B = bytes/second, o = blocks/s\n"
+		"               b = bits/s (default), B = bytes/s, o = blocks/s\n"
 		"               (same as -G s=g,C,#)\n"
-		"  -S x=#       Set block size (same as -G s=q,C,#)\n"
+		"  -S x=#       Set block size, in bytes (same as -G s=q,C,#)\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=10,d=0)\n"
-		"  -U #         Set application buffer size (default: 8192)\n"
+		"  -U #         Set application buffer size, in bytes (default: 8192)\n"
 		"               truncates values if used with stochastic traffic generation\n"
-		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
-		"  -Y x=#.#     Set initial delay before the host starts to send data\n"
-		"  -Z x=#.#     Set amount of data to be send in bytes\n\n",
+		"  -W x=#       Set requested receiver buffer (advertised window), in bytes\n"
+		"  -Y x=#.#     Set initial delay before the host starts to send, in seconds\n"
+		"  -Z x=#.#     Set amount of data to be send, in bytes\n\n",
 		opt.log_filename_prefix,
 		progname,
 		MIN_BLOCK_SIZE
