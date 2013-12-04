@@ -595,7 +595,7 @@ static void usage(void)
 		"  -h [s|g]     Show additional help for socket options, traffic generation\n"
 		"  -v           Print version information and exit\n\n"
 
-		"General options:\n\n"
+		"General options:\n"
 #ifdef DEBUG
 		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-kernel,-status\n"
 #else
@@ -613,18 +613,16 @@ static void usage(void)
 #else
 		"  -e PRE       Prepend prefix PRE to log filename (default: \"%1$s\")\n"
 #endif /* HAVE_LIBPCAP */
-		"  -i #.#       Reporting interval in seconds (default: 0.05s)\n"
+		"  -i #.#       Reporting interval, in seconds (default: 0.05s)\n"
 		"  -l NAME      Use log filename NAME (default: timestamp)\n"
-		"  -m           Report throughput in 2**20 bytes/second\n"
-		"               (default: 10**6 bit/sec)\n"
+		"  -m           Report throughput in 2**20 bytes/s (default: 10**6 bit/s)\n"
 		"  -n #         Number of test flows (default: 1)\n"
 		"  -o           Overwrite existing log files (default: don't)\n"
 		"  -p           Don't print symbolic values (like INT_MAX) instead of numbers\n"
 		"  -q           Be quiet, do not log to screen (default: off)\n"
 		"  -w           Write output to logfile (default: off)\n\n"
 
-		"Flow options:\n\n"
-
+		"Flow options:\n"
 		"  Some of these options take the flow endpoint as argument. Is is denoted by 'x'\n"
 		"  in the option syntax. 'x' needs to be replaced with either 's' for the source\n"
 		"  endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To\n"
@@ -632,8 +630,8 @@ static void usage(void)
 		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
 		"  -A x         Use minimal response size needed for RTT calculation\n"
-		"               same as -G s=p,C,%3$d\n"
-		"  -B x=#       Set requested sending buffer in bytes\n"
+		"               (same as -G s=p,C,%3$d)\n"
+		"  -B x=#       Set requested sending buffer, in bytes\n"
 		"  -C x         Stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP    DSCP value for TOS byte\n"
 		"  -E           Enumerate bytes in payload instead of sending zeros\n"
@@ -667,18 +665,18 @@ static void usage(void)
 		"               block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q           Summarize only, no intermediated interval reports are\n"
 		"               computed (quiet)\n"
-		"  -S x=#       Set block size, same as -G s=q,C,#\n"
 		"  -R x=#.#[z|k|M|G][b|B|o]\n"
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
-		"               b = bits per second (default), B = bytes/second, o = blocks/s\n"
-		"               same a -G s=g,C,#'\n"
-		"  -U #         Set application buffer size (default: 8192)\n"
-		"               truncates values if used with stochastic traffic generation\n"
+		"               b = bits/s (default), B = bytes/s, o = blocks/s\n"
+		"               (same as -G s=g,C,#)\n"
+		"  -S x=#       Set block (message) size, in bytes (same as -G s=q,C,#)\n"
 		"  -T x=#.#     Set flow duration, in seconds (default: s=10,d=0)\n"
-		"  -W x=#       Set requested receiver buffer (advertised window) in bytes\n"
-		"  -Y x=#.#     Set initial delay before the host starts to send data\n"
-		"  -Z x=#.#     Set bulk data transfer\n\n",
+		"  -U #         Set application buffer size, in bytes (default: 8192)\n"
+		"               truncates values if used with stochastic traffic generation\n"
+		"  -W x=#       Set requested receiver buffer (advertised window), in bytes\n"
+		"  -Y x=#.#     Set initial delay before the host starts to send, in seconds\n"
+		"  -Z x=#.#     Set amount of data to be send, in bytes (instead of -t)\n\n",
 		opt.log_filename_prefix,
 		progname,
 		MIN_BLOCK_SIZE
@@ -2099,7 +2097,7 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	while ((ch = getopt(argc, argv, "c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1)
+	while ((ch = getopt(argc, argv, "c:de:h:i:l:mn:opqvwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1)
 
 		switch (ch) {
 
@@ -2157,17 +2155,6 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'q':
 			opt.dont_log_stdout = 1;
 			break;
-
-		case 'r':
-			rc = sscanf(optarg, "%u", &optint);
-			if (rc != 1) {
-				fprintf(stderr, "random seed must be a valid unsigned integer\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(random_seed, optint, id-1);
-			break;
-
-
 		case 'v':
 			fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
