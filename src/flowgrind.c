@@ -676,7 +676,7 @@ static void usage(void)
 		"               truncates values if used with stochastic traffic generation\n"
 		"  -W x=#       Set requested receiver buffer (advertised window), in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send, in seconds\n"
-		"  -Z x=#.#     Set amount of data to be send, in bytes\n\n",
+		"  -Z x=#.#     Set amount of data to be send, in bytes (instead of -t)\n\n",
 		opt.log_filename_prefix,
 		progname,
 		MIN_BLOCK_SIZE
