@@ -595,7 +595,7 @@ static void usage(void)
 		"  -h [s|g]     Show additional help for socket options, traffic generation\n"
 		"  -v           Print version information and exit\n\n"
 
-		"General options:\n\n"
+		"General options:\n"
 #ifdef DEBUG
 		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-kernel,-status\n"
 #else
@@ -623,8 +623,7 @@ static void usage(void)
 		"  -q           Be quiet, do not log to screen (default: off)\n"
 		"  -w           Write output to logfile (default: off)\n\n"
 
-		"Flow options:\n\n"
-
+		"Flow options:\n"
 		"  Some of these options take the flow endpoint as argument. Is is denoted by 'x'\n"
 		"  in the option syntax. 'x' needs to be replaced with either 's' for the source\n"
 		"  endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To\n"
