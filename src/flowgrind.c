@@ -2097,7 +2097,7 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	while ((ch = getopt(argc, argv, "c:de:h:i:l:mn:opqr:vwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1)
+	while ((ch = getopt(argc, argv, "c:de:h:i:l:mn:opqvwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1)
 
 		switch (ch) {
 
@@ -2155,17 +2155,6 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'q':
 			opt.dont_log_stdout = 1;
 			break;
-
-		case 'r':
-			rc = sscanf(optarg, "%u", &optint);
-			if (rc != 1) {
-				fprintf(stderr, "random seed must be a valid unsigned integer\n");
-				usage();
-			}
-			ASSIGN_FLOW_OPTION(random_seed, optint, id-1);
-			break;
-
-
 		case 'v':
 			fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
 			exit(0);
