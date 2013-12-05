@@ -108,7 +108,6 @@ void fg_pcap_cleanup(void* arg)
 	flow->pcap_handle = NULL;
 	pthread_mutex_unlock(&pcap_mutex);
 	dumping = 0;
-
 }
 
 static void* fg_pcap_work(void* arg)
@@ -155,8 +154,7 @@ static void* fg_pcap_work(void* arg)
 		for (a = d->addresses; a; a = a->next) {
 			if (!a->addr)
 				continue;
-			if (sockaddr_compare(a->addr,
-					     (struct sockaddr *)&sa)) {
+			if (sockaddr_compare(a->addr, (struct sockaddr *)&sa)) {
 				DEBUG_MSG(LOG_NOTICE, "pcap: data connection "
 					  "inbound from %s (%s)", d->name,
 					  fg_nameinfo(a->addr,

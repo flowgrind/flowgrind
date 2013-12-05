@@ -32,9 +32,8 @@
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
 
-
-#define CONGESTION_LIMIT        10000
-#define DEFAULT_SELECT_TIMEOUT  10000
+#define CONGESTION_LIMIT	10000
+#define DEFAULT_SELECT_TIMEOUT	10000
 
 #ifdef __LINUX__
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.ipv4.tcp_available_congestion_control"
