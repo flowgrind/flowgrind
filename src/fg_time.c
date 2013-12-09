@@ -1,8 +1,7 @@
 /*
  * fg_time.c - Timing related routines used by Flowgrind
  *
- * Copyright (C) Christian Samsel <christian.samsel@rwth-aachen.de>, 2010-2013
- * Copyright (C) Tim Kosse <tim.kosse@gmx.de>, 2009
+ * Copyright (C) Alexander Zimmermann <alexander.zimmermann@netapp.com>, 2013
  * Copyright (C) Daniel Schaffrath <daniel.schaffrath@mac.com>, 2007-2008
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,130 +31,126 @@
 #include "common.h"
 #include "fg_time.h"
 
-const char * ctime_us_r(struct timeval *tv, char *buf)
+/*
+ * Converts timespec struct into a null-terminated string of the form
+ * '2013-12-09 12:00:48.34369902' and stores the string in a user-supplied
+ * buffer which should have room for at least 30 bytes
+ */
+const char *ctimespec_r(const struct timespec *tp, char *buf, unsigned int len)
 {
-	char u_buf[8];
+        int ret;
+        struct tm tm;
 
-	normalize_tv(tv);
-	ctime_r(&tv->tv_sec, buf);
-	snprintf(u_buf, sizeof(u_buf), ".%06ld", (long)tv->tv_usec);
-	strcat(buf, u_buf);
+	/*
+	 * Converts the calendar time to broken-down time representation,
+	 * expressed relative to the user's specified timezone
+	 */
+        tzset();
+        localtime_r(&tp->tv_sec, &tm);
 
-	return buf;
+	/* Converts broken-down time representation into a string */
+        ret = strftime(buf, len, "%F %T", &tm);
+
+        /* Append nanoseconds to string */
+        snprintf(&buf[strlen(buf)], len - ret - 1, ".%09ld", tp->tv_nsec);
+
+        return buf;
 }
 
-const char * ctime_us(struct timeval *tv)
+/*
+ * Converts timespec struct into a null-terminated string of the form
+ * '2013-12-09 12:00:48.34369902' and return the string
+ */
+const char *ctimespec(const struct timespec *tp)
 {
-	static char buf[33];
+        static char buf[30];
 
-	ctime_us_r(tv, buf);
+        ctimespec_r(tp, buf, sizeof(buf));
 
-	return buf;
+        return buf;
 }
 
-double time_diff(const struct timeval *tv1, const struct timeval *tv2)
+/*
+ * Return time difference in nanoseconds between the two given times.
+ * Negative if time tp1 is greater then tp2
+ */
+double time_diff(const struct timespec *tp1, const struct timespec *tp2)
 {
-	return (double) (tv2->tv_sec - tv1->tv_sec)
-		+ (double) (tv2->tv_usec - tv1->tv_usec) / 1e6;
+	return (double) (tp2->tv_sec - tp1->tv_sec)
+		+ (double) (tp2->tv_nsec - tp1->tv_nsec) / 1e9;
 }
 
-double time_diff_now(const struct timeval *tv1)
+/*
+ * Return time difference in nanoseconds between the current time and
+ * the given time
+ */
+double time_diff_now(const struct timespec *tp)
 {
-	struct timeval now;
+	struct timespec now;
 
-	tsc_gettimeofday(&now);
-	return (double) (now.tv_sec - tv1->tv_sec)
-		+ (double) (now.tv_usec - tv1->tv_usec) / 1e6;
+	gettime(&now);
+	return (double) (now.tv_sec - tp->tv_sec)
+		+ (double) (now.tv_nsec - tp->tv_nsec) / 1e9;
 }
 
-void time_add(struct timeval *tv, double seconds)
+/*
+ * Add given the seconds to the given time
+ */
+void time_add(struct timespec *tp, double seconds)
 {
-	tv->tv_sec += (long)seconds;
-	tv->tv_usec += (long)((seconds - (long)seconds) * 1e6);
-	normalize_tv(tv);
+	tp->tv_sec += (time_t)seconds;
+	tp->tv_nsec += (long)((seconds - (time_t)seconds) * 1e9);
+	normalize_tp(tp);
 }
 
-int time_is_after(const struct timeval *tv1, const struct timeval *tv2)
+/*
+ * Returns 1 (true) if time represented by tp1 is greater then tp2
+ */
+int time_is_after(const struct timespec *tp1, const struct timespec *tp2)
 {
-	if (tv1->tv_sec > tv2->tv_sec)
+	if (tp1->tv_sec > tp2->tv_sec)
 		return 1;
-	if (tv1->tv_sec < tv2->tv_sec)
+	if (tp1->tv_sec < tp2->tv_sec)
 		return 0;
-	return tv1->tv_usec > tv2->tv_usec;
-}
-
-#define NTP_EPOCH_OFFSET	2208988800ULL
-
-/*
- * Convert `timeval' structure value into NTP format (RFC 1305) timestamp.
- * The ntp pointer must resolve to already allocated memory (8 bytes) that
- * will contain the result of the conversion.
- * NTP format is 4 octets of unsigned integer number of whole seconds since
- * NTP epoch, followed by 4 octets of unsigned integer number of
- * fractional seconds (both numbers are in network byte order).
- */
-void tv2ntp(const struct timeval *tv, char *ntp)
-{
-	uint32_t msb, lsb;
-
-	msb = tv->tv_sec + NTP_EPOCH_OFFSET;
-	lsb = (uint32_t)((double)tv->tv_usec * 4294967296.0 / 1000000.0);
-
-	msb = htonl(msb);
-	lsb = htonl(lsb);
-
-	memcpy(ntp, &msb, sizeof(msb));
-	memcpy(ntp + sizeof(msb), &lsb, sizeof(lsb));
+	return tp1->tv_nsec > tp2->tv_nsec;
 }
 
 /*
- * Convert 8-byte NTP format timestamp into `timeval' structure value.
- * The counterpart to tv2ntp().
+ * Make sure 0 <= tv.tv_nsec < 1.000.000.000 (1 second). Return 0 if it was
+ * already normalized, positive number otherwise
  */
-void ntp2tv(struct timeval *tv, const char *ntp)
-{
-	uint32_t msb, lsb;
-
-	memcpy(&msb, ntp, sizeof(msb));
-	memcpy(&lsb, ntp + sizeof(msb), sizeof(lsb));
-
-	msb = ntohl(msb);
-	lsb = ntohl(lsb);
-
-	tv->tv_sec = msb - NTP_EPOCH_OFFSET;
-	tv->tv_usec = (uint32_t)((double)lsb * 1000000.0 / 4294967296.0);
-}
-
-/*
- * Make sure 0 <= tv.tv_usec < 1000000.  Return 0 if it was normal,
- * positive number otherwise.
- */
-int normalize_tv(struct timeval *tv)
+int normalize_tp(struct timespec *tp)
 {
 	int result = 0;
 
-	while (tv->tv_usec >= 1000000) {
-		tv->tv_usec -= 1000000;
-		tv->tv_sec++;
+	while (tp->tv_nsec >= 1e9) {
+		tp->tv_nsec -= 1e9;
+		tp->tv_sec++;
 		result++;
 	}
-	while (tv->tv_usec < 0) {
-		tv->tv_usec += 1000000;
-		tv->tv_sec--;
+	while (tp->tv_nsec < 0) {
+		tp->tv_nsec += 1e9;
+		tp->tv_sec--;
 		result++;
 	}
 	return result;
 }
 
-int tsc_gettimeofday(struct timeval *tv)
+/*
+ * Get time from 'REALTIME' clock. A system-wide clock  that measures real
+ * time. This clock is affected by discontinuous jumps in the system time
+ * (e.g., if admin manually changes the clock), and by the incremental
+ * adjustments performed by NTP. The clock's time represents seconds and
+ * nanoseconds since the Epoch
+ */
+int gettime(struct timespec *tp)
 {
-	int rc;
-	rc = gettimeofday(tv, 0);
-	if (rc != 0) {
-		error(ERR_FATAL, "gettimeofday(): failed: %s",
-		      strerror(errno));
-	}
-	normalize_tv(tv);
+	int rc = 0;
 
+	rc = clock_gettime(CLOCK_REALTIME, tp);
+
+	if (rc != 0)
+		error(ERR_FATAL, "clock_gettime() failed: %s", strerror(errno));
+	normalize_tp(tp);
 	return 0;
 }

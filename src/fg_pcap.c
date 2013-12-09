@@ -133,7 +133,7 @@ static void* fg_pcap_work(void* arg)
 	char hostname[100];
 
 	struct bpf_program pcap_program;
-	struct timeval now;
+	struct timespec now;
 	char buf[60];
 
 	DEBUG_MSG(LOG_DEBUG, "fg_pcap_thread() called for flow %d", flow->id);
@@ -231,7 +231,7 @@ static void* fg_pcap_work(void* arg)
 		strcat(dump_filename, dump_filename_prefix_client);
 
 	/* timestamp */
-	tsc_gettimeofday(&now);
+	gettime(&now);
 	strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S",
 		 localtime(&now.tv_sec));
 	strcat(dump_filename, buf);

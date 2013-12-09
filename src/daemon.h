@@ -80,16 +80,16 @@ struct _flow
 	struct _flow_settings settings;
 	struct _flow_source_settings source_settings;
 
-	struct timeval start_timestamp[2];
-	struct timeval stop_timestamp[2];
-	struct timeval last_block_read;
-	struct timeval last_block_written;
+	struct timespec start_timestamp[2];
+	struct timespec stop_timestamp[2];
+	struct timespec last_block_read;
+	struct timespec last_block_written;
 
-	struct timeval first_report_time;
-	struct timeval last_report_time;
-	struct timeval next_report_time;
+	struct timespec first_report_time;
+	struct timespec last_report_time;
+	struct timespec next_report_time;
 
-	struct timeval next_write_block_timestamp;
+	struct timespec next_write_block_timestamp;
 
 	char *read_block;
 	char *write_block;

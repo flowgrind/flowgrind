@@ -1,8 +1,7 @@
 /*
  * fg_time.h - Timing related routines used by Flowgrind
  *
- * Copyright (C) Christian Samsel <christian.samsel@rwth-aachen.de>, 2010-2013
- * Copyright (C) Tim Kosse <tim.kosse@gmx.de>, 2009
+ * Copyright (C) Alexander Zimmermann <alexander.zimmermann@netapp.com>, 2013
  * Copyright (C) Daniel Schaffrath <daniel.schaffrath@mac.com>, 2007-2008
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,18 +22,17 @@
 #define _FG_TIME_H_
 
 #include <sys/time.h>
+#include <time.h>
 
-double time_diff(const struct timeval *, const struct timeval *);
-double time_diff_now(const struct timeval *tv1);
-void time_add(struct timeval *tv, double seconds);
+const char *ctimespec_r(const struct timespec *tp, char *buf, unsigned int len);
+const char *ctimespec(const struct timespec *tp);
 
-void tv2ntp(const struct timeval *tv, char *);
-void ntp2tv(struct timeval *tv, const char *);
-const char *ctime_us_r(struct timeval *tv, char *buf);
-const char *ctime_us(struct timeval *tv);
-const char *debug_timestamp(void);
-int normalize_tv(struct timeval *);
-int time_is_after(const struct timeval *, const struct timeval *);
+double time_diff(const struct timespec *tp1, const struct timespec *tp2);
+double time_diff_now(const struct timespec *tp);
 
-int tsc_gettimeofday(struct timeval *tv);
+void time_add(struct timespec *tp, double seconds);
+int time_is_after(const struct timespec *tp1, const struct timespec *tp2);
+
+int normalize_tp(struct timespec *tp);
+int gettime(struct timespec *tp);
 #endif /* _FG_TIME_H_ */

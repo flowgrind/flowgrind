@@ -92,8 +92,8 @@ struct _flow_endpoint {
 	/* SO_RCVBUF */
 	int receive_buffer_size_real;
 
-	struct timeval flow_start_timestamp;
-	struct timeval flow_stop_timestamp;
+	struct timespec flow_start_timestamp;
+	struct timespec flow_stop_timestamp;
 
 	char *rate_str;
 	/* Pointer to the daemon managing this endpoint */
@@ -119,7 +119,7 @@ struct _flow {
 	 * 1 for destination */
 	int endpoint_id[2];
 
-	struct timeval start_timestamp[2];
+	struct timespec start_timestamp[2];
 	struct _flow_endpoint endpoint_options[2];
 	struct _flow_settings settings[2];
 

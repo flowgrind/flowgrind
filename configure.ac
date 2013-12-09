@@ -57,9 +57,9 @@ AC_TYPE_UNSIGNED_LONG_LONG_INT
 AC_CHECK_FUNCS([ \
 	bzero \
 	getopt_long \
-	gettimeofday \
+	clock_gettime \
 	memset \
-	select \
+	pselect \
 	socket \
 	strchr \
 	strerror \
