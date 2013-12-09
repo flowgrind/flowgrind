@@ -76,7 +76,7 @@ const char *ctimespec(const struct timespec *tp)
 double time_diff(const struct timespec *tp1, const struct timespec *tp2)
 {
 	return (double) (tp2->tv_sec - tp1->tv_sec)
-		+ (double) (tp2->tv_nsec - tp1->tv_nsec) / 1e9;
+		+ (double) (tp2->tv_nsec - tp1->tv_nsec) / NSEC_PER_SEC;
 }
 
 /*
@@ -89,7 +89,7 @@ double time_diff_now(const struct timespec *tp)
 
 	gettime(&now);
 	return (double) (now.tv_sec - tp->tv_sec)
-		+ (double) (now.tv_nsec - tp->tv_nsec) / 1e9;
+		+ (double) (now.tv_nsec - tp->tv_nsec) / NSEC_PER_SEC;
 }
 
 /*
@@ -98,7 +98,7 @@ double time_diff_now(const struct timespec *tp)
 void time_add(struct timespec *tp, double seconds)
 {
 	tp->tv_sec += (time_t)seconds;
-	tp->tv_nsec += (long)((seconds - (time_t)seconds) * 1e9);
+	tp->tv_nsec += (long)((seconds - (time_t)seconds) * NSEC_PER_SEC);
 	normalize_tp(tp);
 }
 
@@ -115,20 +115,20 @@ int time_is_after(const struct timespec *tp1, const struct timespec *tp2)
 }
 
 /*
- * Make sure 0 <= tv.tv_nsec < 1.000.000.000 (1 second). Return 0 if it was
- * already normalized, positive number otherwise
+ * Make sure 0 <= tv.tv_nsec < NSEC_PER_SEC. Return 0 if it was already
+ * normalized, positive number otherwise
  */
 int normalize_tp(struct timespec *tp)
 {
 	int result = 0;
 
-	while (tp->tv_nsec >= 1e9) {
-		tp->tv_nsec -= 1e9;
+	while (tp->tv_nsec >= NSEC_PER_SEC) {
+		tp->tv_nsec -= NSEC_PER_SEC;
 		tp->tv_sec++;
 		result++;
 	}
 	while (tp->tv_nsec < 0) {
-		tp->tv_nsec += 1e9;
+		tp->tv_nsec += NSEC_PER_SEC;
 		tp->tv_sec--;
 		result++;
 	}

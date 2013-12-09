@@ -24,6 +24,8 @@
 #include <sys/time.h>
 #include <time.h>
 
+#define NSEC_PER_SEC	1000000000L
+
 const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size);
 const char *ctimespec(const struct timespec *tp);
 
