@@ -35,9 +35,9 @@
  * '2013-12-09 12:00:48.34369902' and stores the string in a user-supplied
  * buffer which should have room for at least 30 bytes
  */
-const char *ctimespec_r(const struct timespec *tp, char *buf, unsigned int len)
+const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size)
 {
-        int ret;
+        size_t len = 0;
         struct tm tm;
 
 	/*
@@ -48,10 +48,10 @@ const char *ctimespec_r(const struct timespec *tp, char *buf, unsigned int len)
         localtime_r(&tp->tv_sec, &tm);
 
 	/* Converts broken-down time representation into a string */
-        ret = strftime(buf, len, "%F %T", &tm);
+        len = strftime(buf, size, "%F %T", &tm);
 
         /* Append nanoseconds to string */
-        snprintf(&buf[strlen(buf)], len - ret - 1, ".%09ld", tp->tv_nsec);
+        snprintf(buf+len, size-len, ".%09ld", tp->tv_nsec);
 
         return buf;
 }

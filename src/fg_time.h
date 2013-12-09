@@ -24,7 +24,7 @@
 #include <sys/time.h>
 #include <time.h>
 
-const char *ctimespec_r(const struct timespec *tp, char *buf, unsigned int len);
+const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size);
 const char *ctimespec(const struct timespec *tp);
 
 double time_diff(const struct timespec *tp1, const struct timespec *tp2);
