@@ -32,9 +32,10 @@ const char *ctimespec(const struct timespec *tp);
 double time_diff(const struct timespec *tp1, const struct timespec *tp2);
 double time_diff_now(const struct timespec *tp);
 
-void time_add(struct timespec *tp, double seconds);
 int time_is_after(const struct timespec *tp1, const struct timespec *tp2);
 
 int normalize_tp(struct timespec *tp);
+void time_add(struct timespec *tp, double seconds);
+
 int gettime(struct timespec *tp);
 #endif /* _FG_TIME_H_ */

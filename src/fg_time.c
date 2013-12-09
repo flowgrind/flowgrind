@@ -93,16 +93,6 @@ double time_diff_now(const struct timespec *tp)
 }
 
 /*
- * Add given the seconds to the given time
- */
-void time_add(struct timespec *tp, double seconds)
-{
-	tp->tv_sec += (time_t)seconds;
-	tp->tv_nsec += (long)((seconds - (time_t)seconds) * NSEC_PER_SEC);
-	normalize_tp(tp);
-}
-
-/*
  * Returns 1 (true) if time represented by tp1 is greater then tp2
  */
 int time_is_after(const struct timespec *tp1, const struct timespec *tp2)
@@ -133,6 +123,16 @@ int normalize_tp(struct timespec *tp)
 		result++;
 	}
 	return result;
+}
+
+/*
+ * Add given the seconds to the given time
+ */
+void time_add(struct timespec *tp, double seconds)
+{
+	tp->tv_sec += (time_t)seconds;
+	tp->tv_nsec += (long)((seconds - (time_t)seconds) * NSEC_PER_SEC);
+	normalize_tp(tp);
 }
 
 /*
