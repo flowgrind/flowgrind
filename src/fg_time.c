@@ -144,12 +144,7 @@ int normalize_tp(struct timespec *tp)
  */
 int gettime(struct timespec *tp)
 {
-	int rc = 0;
-
-	rc = clock_gettime(CLOCK_REALTIME, tp);
-
-	if (rc != 0)
+	if (clock_gettime(CLOCK_REALTIME, tp) != 0)
 		error(ERR_FATAL, "clock_gettime() failed: %s", strerror(errno));
-	normalize_tp(tp);
 	return 0;
 }
