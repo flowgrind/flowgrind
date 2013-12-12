@@ -1254,7 +1254,7 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 	((struct _block *)flow->write_block)->data =
 		((struct _block *)flow->read_block)->data;
 	/* workaround for 64bit sender and 32bit receiver: we check if the
-	 * timeeval is 64bit and then echo the missing 32bit back, too */
+	 * timespec is 64bit and then echo the missing 32bit back, too */
 	if ((((struct _block *)flow->write_block)->data.tv_sec) ||
 	    ((struct _block *)flow->write_block)->data.tv_nsec)
 		((struct _block *)flow->write_block)->data2 =
