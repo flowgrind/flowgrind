@@ -828,18 +828,10 @@ static void usage_optcombination(void)
 	exit(EXIT_FAILURE);
 }
 
-static void usage_flowopt(void)
+static void usage_hint(void)
 {
-	fprintf(stderr,
-		"Some options are used like this:\n"
-		"  -B x=#\n\n"
-		"x has to be replaced with 's' for source, 'd' for destination or 'b' for both.\n"
-		"For all options which take x, an additional parameter can be specified if\n"
-		"separated by comma.\n"
-		"For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
-		"and 4096 at the destination.\n\n"
-		);
-	exit(1);
+	fprintf(stderr, "Try '%s -h' for more information\n", progname);
+	exit(EXIT_FAILURE);
 }
 
 static void init_options_defaults(void)
@@ -1453,24 +1445,26 @@ char *guess_topology (int mtu)
 	return "unknown";
 }
 
-static void parse_help_option(char *params) {
-	char opt;
-	sscanf(params, "%c", &opt);
-	switch (opt) {
-		case 's':
-		case 'S':
-			usage_sockopt();
-		case 'g':
-		case 'G':
-			usage_trafgenopt();
-		break;
-		case 'f':
-		case 'F':
-			usage_flowopt();
-		default:
-			usage();
-	}
+/*
+ * Parse optional argument for option -h
+ */
+static void parse_help_option(char *params)
+{
+	char argument;
 
+	sscanf(params, "%c", &argument);
+	switch (argument) {
+	case 's':
+		usage_sockopt();
+		break;
+	case 'g':
+		usage_trafgenopt();
+		break;
+	default:
+		fprintf(stderr, "%s: unknown optional argument '%c' for "
+			"option '-h'\n", progname, argument);
+		usage_hint();
+	}
 }
 
 static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
@@ -1493,25 +1487,26 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 			arg = section + 1;
 
 		switch (endpointchar) {
-			case 's':
+		case 's':
 			j = 0;
 			k = 1;
 			break;
 
-			case 'd':
+		case 'd':
 			j = 1;
 			k = 2;
 			break;
 
-			case 'b':
+		case 'b':
 			j = 0;
 			k = 2;
 			break;
 
-			default:
-			fprintf(stderr, "Syntax error in traffic generation option: %c is not a endpoint.\n", endpointchar);
-			usage_flowopt();
-			usage_trafgenopt();
+		default:
+			fprintf(stderr, "%s: syntax error in traffic generation "
+				"option: %c is not a valid endpoint\n",
+				progname, endpointchar);
+			usage_hint();
 		}
 
 		rc = sscanf(arg, "%c,%c,%lf,%lf,%lf", &typechar, &distchar, &param1, &param2, &unused);
@@ -1761,8 +1756,9 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			arg = token + 1;
 
 		if (type != 's' && type != 'd' && type != 'b') {
-			fprintf(stderr, "Syntax error in flow option: %c is not a valid endpoint.\n", type);
-			usage_flowopt();
+			fprintf(stderr, "%s: syntax error in flow option: %c is "
+				"not a valid endpoint\n", progname, type);
+			usage_hint();
 		}
 
 		switch (ch) {
@@ -2094,8 +2090,11 @@ static void parse_cmdline(int argc, char **argv) {
 	unsigned max_flow_rate = 0;
 	char unit = 0, type = 0, distribution = 0;
 	int optint = 0;
-	unsigned optunsigned = 0;
 	double optdouble = 0.0;
+
+	/* variables from getopt() */
+	extern char *optarg;	/* the option argument */
+	extern int optopt;	/* the option character */
 
 	current_flow_ids[0] = -1;
 
@@ -2113,14 +2112,24 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	while ((ch = getopt(argc, argv, "c:de:h:i:l:mn:opqvwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1)
-
+	/* parse command line*/
+	while ((ch = getopt(argc, argv,":h:vc:de:i:l:mn:opqw"
+			    "A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1) {
 		switch (ch) {
 
+		/* Miscellaneous */
+		case 'h':
+			parse_help_option(optarg);
+			exit(EXIT_SUCCESS);
+		case 'v':
+			fprintf(stderr, "%s version: %s\n", progname,
+				FLOWGRIND_VERSION);
+			exit(EXIT_SUCCESS);
+
+		/*general options */
 		case 'c':
 			parse_visible_param(optarg);
 			break;
-
 		case 'd':
 			increase_debuglevel();
 			break;
@@ -2128,67 +2137,55 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'e':
 			opt.log_filename_prefix = optarg;
 			break;
-
-		case 'h':
-			parse_help_option(optarg);
-			break;
-
 		case 'i':
 			rc = sscanf(optarg, "%lf", &opt.reporting_interval);
 			if (rc != 1 || opt.reporting_interval <= 0) {
-				fprintf(stderr, "reporting interval must be "
-					"a positive number (in seconds)\n");
-				usage();
+				fprintf(stderr, "%s: reporting interval must "
+					"be a positive number (in seconds)\n",
+					progname);
+				usage_hint();
 			}
 			break;
-
 		case 'l':
 			opt.log_filename = optarg;
 			break;
-
 		case 'm':
 			opt.mbyte = 1;
 			break;
-
 		case 'n':
-			rc = sscanf(optarg, "%u", &optunsigned);
-			if (rc != 1 || optunsigned > MAX_FLOWS) {
-				fprintf(stderr, "number of test flows must "
-						"be within [1..%d]\n", MAX_FLOWS);
-				usage();
+			rc = sscanf(optarg, "%hd", &opt.num_flows);
+			if (rc != 1 || opt.num_flows > MAX_FLOWS) {
+				fprintf(stderr, "%s: number of test flows "
+					"must be within [1..%d]\n",
+					progname, MAX_FLOWS);
+				usage_hint();
 			}
-			opt.num_flows = (short)optunsigned;
 			break;
-
 		case 'o':
 			opt.clobber = 1;
 			break;
-
 		case 'p':
 			opt.symbolic = 0;
 			break;
-
 		case 'q':
 			opt.dont_log_stdout = 1;
 			break;
-		case 'v':
-			fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
-			exit(0);
-
 		case 'w':
 			opt.dont_log_logfile = 0;
 			break;
+
+		/* flow options */
 		case 'E':
 			ASSIGN_FLOW_OPTION(byte_counting, 1, id-1);
 			break;
-
 		case 'F':
 			tok = strtok(optarg, ",");
 			while (tok) {
 				rc = sscanf(tok, "%d", &optint);
 				if (rc != 1) {
-					fprintf(stderr, "malformed flow specifier\n");
-					usage();
+					fprintf(stderr, "%s: malformed flow "
+						"specifier\n", progname);
+					usage_hint();
 				}
 				if (optint == -1) {
 					id = 0;
@@ -2209,13 +2206,12 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'J':
 			rc = sscanf(optarg, "%u", &optint);
 			if (rc != 1) {
-				fprintf(stderr, "random seed must be a valid unsigned integer\n");
-					usage();
+				fprintf(stderr, "%s: random seed must be a "
+					"valid unsigned integer\n", progname);
+					usage_hint();
 			}
 			ASSIGN_FLOW_OPTION(random_seed, optint, id-1);
 			break;
-
-
 		case 'L':
 			ASSIGN_FLOW_OPTION(late_connect, 1, id-1);
 			break;
@@ -2228,8 +2224,9 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'U':
 			rc = sscanf(optarg, "%d", &optint);
 			if (rc != 1) {
-				fprintf(stderr, "block size must be a positive integer");
-				usage();
+				fprintf(stderr, "%s: block size must be a "
+					"positive integer\n", progname);
+				usage_hint();
 			}
 			ASSIGN_COMMON_FLOW_SETTING(maximum_block_size, optint);
 			break;
@@ -2250,16 +2247,24 @@ static void parse_cmdline(int argc, char **argv) {
 			parse_flow_option(ch, optarg, current_flow_ids, id-1);
 			break;
 
-		default:
-			usage();
-		}
-	argc -= optind;
-	argv += optind;
+		/* missing option-argument */
+		case ':':
+			/* Sepcial case. Option -h can called w/o an argument */
+			if (optopt == 'h')
+				usage();
 
-	if (*argv) {
-		fprintf(stderr, "illegal argument: %s\n", *argv);
-		usage();
+			fprintf(stderr, "%s: option '-%c' requires an "
+				"argument\n", progname, optopt);
+			usage_hint();
+
+		/* unknown option */
+		case '?':
+			fprintf(stderr, "%s: unknown option '-%c'\n",
+				progname, optopt);
+			usage_hint();
+		}
 	}
+
 #undef ASSIGN_FLOW_OPTION
 
 #if 0
@@ -2431,7 +2436,7 @@ static void parse_cmdline(int argc, char **argv) {
 #ifdef DEBUG
 		DEBUG_MSG(LOG_ERR, "Skipping errors discovered by sanity checks.");
 #else
-		exit(EXIT_FAILURE);
+		usage_hint();
 #endif /* DEBUG */
 	}
 	DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
@@ -2442,7 +2447,7 @@ static void die_if_fault_occurred(xmlrpc_env *env)
     if (env->fault_occurred) {
 	fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
 		env->fault_string, env->fault_code);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 }
 
