@@ -77,9 +77,9 @@ void fg_pcap_init()
 				continue;
 			snprintf(addr, sizeof(addr), "a=%s",
 				 fg_nameinfo(a->addr, sizeof(struct sockaddr)));
-			strncat(devdes, addr, sizeof(devdes)-1);
+			strncat(devdes, addr, sizeof(devdes) - strlen(devdes) - 1);
 			if (a->next)
-				strncat(devdes, ", ", sizeof(devdes));
+				strncat(devdes, ", ", sizeof(devdes) - strlen(devdes) - 1);
 		}
 		DEBUG_MSG(LOG_ERR, "pcap: found pcapable device (%s)", devdes);
 	}

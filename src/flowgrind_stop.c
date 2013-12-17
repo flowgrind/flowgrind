@@ -143,14 +143,14 @@ int main(int argc, char *argv[])
 #endif /* HAVE_GETOPT_LONG */
 		switch (ch) {
 			case 'h':
-				usage(argv[0]);
+				usage();
 				break;
 			case 'v':
 				fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
 				exit(0);
 				break;
 			default:
-				usage(argv[0]);
+				usage();
 				break;
 		}
 	}

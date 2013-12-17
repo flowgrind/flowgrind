@@ -1067,7 +1067,7 @@ void print_tcp_report_line(char hash, int id,
 		}
 	}
 #endif /* DEBUG */
-	strncat(comment_buffer, ")", sizeof(comment_buffer));
+	strncat(comment_buffer, ")", sizeof(comment_buffer) - strlen(comment_buffer) - 1);
 	if (strlen(comment_buffer) == 2)
 		comment_buffer[0] = '\0';
 
@@ -1127,7 +1127,7 @@ void report_final(void)
 
 #define CAT(fmt, args...) do {\
 	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
-	strncat(header_buffer, header_nibble, sizeof(header_nibble)-1); } while (0)
+	strncat(header_buffer, header_nibble, sizeof(header_buffer) - strlen(header_buffer) - 1); } while (0)
 #define CATC(fmt, args...) CAT(", "fmt, ##args)
 
 		log_output("\n");
