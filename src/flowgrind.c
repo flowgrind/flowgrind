@@ -709,6 +709,11 @@ static void usage_sockopt(void)
 		"  -O x=TCP_CONGESTION=ALG\n"
 		"               set congestion control algorithm ALG on test socket");
 
+	/* 
+	 * FIXME do not call /sbin/sysctl. Use /proc/sys instead. It seems that
+	 * we have to use a systemcall on FreeBSD since they deprecate procfs...
+	 */
+
 	/* Read and print available congestion control algorithms */
 	sprintf(buf1, "/sbin/sysctl -n %s", SYSCTL_VAR_AVAILABLE_CONGESTION);
 	fp = popen(buf1, "r");
