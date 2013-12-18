@@ -140,14 +140,14 @@ void request_error(struct _request *request, const char *fmt, ...)
 	strcpy(request->error, str);
 }
 
-static inline int flow_in_delay(struct timeval *now, struct _flow *flow,
+static inline int flow_in_delay(struct timespec *now, struct _flow *flow,
 				int direction)
 {
 	return time_is_after(&flow->start_timestamp[direction], now);
 }
 
 
-static inline int flow_sending(struct timeval *now, struct _flow *flow,
+static inline int flow_sending(struct timespec *now, struct _flow *flow,
 			       int direction)
 {
 	return !flow_in_delay(now, flow, direction) &&
@@ -160,7 +160,7 @@ static inline int flow_sending(struct timeval *now, struct _flow *flow,
 		direction == READ && flow->current_read_block_size > flow->current_block_bytes_read));
 }
 
-static inline int flow_block_scheduled(struct timeval *now, struct _flow *flow)
+static inline int flow_block_scheduled(struct timespec *now, struct _flow *flow)
 {
 	return time_is_after(now, &flow->next_write_block_timestamp);
 }
@@ -198,7 +198,7 @@ void remove_flow(unsigned int i)
 		started = 0;
 }
 
-static void prepare_wfds(struct timeval *now, struct _flow *flow, fd_set *wfds)
+static void prepare_wfds(struct timespec *now, struct _flow *flow, fd_set *wfds)
 {
 	int rc = 0;
 
@@ -235,7 +235,7 @@ static void prepare_wfds(struct timeval *now, struct _flow *flow, fd_set *wfds)
 	return;
 }
 
-static int prepare_rfds(struct timeval *now, struct _flow *flow, fd_set *rfds)
+static int prepare_rfds(struct timespec *now, struct _flow *flow, fd_set *rfds)
 {
 	int rc = 0;
 
@@ -290,8 +290,8 @@ static int prepare_fds() {
 	FD_SET(daemon_pipe[0], &rfds);
 	maxfd = daemon_pipe[0];
 
-	struct timeval now;
-	tsc_gettimeofday(&now);
+	struct timespec now;
+	gettime(&now);
 
 	while (i < num_flows) {
 		struct _flow *flow = &flows[i++];
@@ -342,15 +342,15 @@ static int prepare_fds() {
 
 static void start_flows(struct _request_start_flows *request)
 {
-	struct timeval start;
-	tsc_gettimeofday(&start);
+	struct timespec start;
+	gettime(&start);
 
 #if 0
 	if (start.tv_sec < request->start_timestamp) {
 		/* If the clock is synchronized between nodes, all nodes will
 		 * start at the same time regardless of any RPC delays */
 		start.tv_sec = request->start_timestamp;
-		start.tv_usec = 0;
+		start.tv_nsec = 0;
 	}
 #else
 	UNUSED_ARGUMENT(request);
@@ -376,7 +376,7 @@ static void start_flows(struct _request_start_flows *request)
 		flow->next_write_block_timestamp =
 			flow->start_timestamp[WRITE];
 
-		tsc_gettimeofday(&flow->last_report_time);
+		gettime(&flow->last_report_time);
 		flow->first_report_time = flow->last_report_time;
 		flow->next_report_time = flow->last_report_time;
 
@@ -514,7 +514,7 @@ static void report_flow(struct _flow* flow, int type)
 	else
 		report->begin = flow->first_report_time;
 
-	tsc_gettimeofday(&report->end);
+	gettime(&report->end);
 	flow->last_report_time = report->end;
 
 	/* abort if we were scheduled way to early for a interval report */
@@ -660,12 +660,12 @@ int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
 
 static void timer_check()
 {
-	struct timeval now;
+	struct timespec now;
 
 	if (!started)
 		return;
 
-	tsc_gettimeofday(&now);
+	gettime(&now);
 	for (unsigned int i = 0; i < num_flows; i++) {
 		struct _flow *flow = &flows[i];
 
@@ -704,7 +704,7 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 
 		struct _flow *flow = &flows[i];
 
-		DEBUG_MSG(LOG_DEBUG, "processing select() for flow %d",
+		DEBUG_MSG(LOG_DEBUG, "processing pselect() for flow %d",
 			  flow->id);
 
 		if (flow->listenfd_data != -1 &&
@@ -773,24 +773,24 @@ remove:
 
 void* daemon_main(void* ptr __attribute__((unused)))
 {
-	struct timeval timeout;
+	struct timespec timeout;
 	for (;;) {
 		int need_timeout = prepare_fds();
 
 		timeout.tv_sec = 0;
-		timeout.tv_usec = 10000;
-		DEBUG_MSG(LOG_DEBUG, "calling select() need_timeout: %i",
+		timeout.tv_nsec = 10000;
+		DEBUG_MSG(LOG_DEBUG, "calling pselect() need_timeout: %i",
 			  need_timeout);
-		int rc = select(maxfd + 1, &rfds, &wfds, &efds, need_timeout
-				? &timeout : 0);
+		int rc = pselect(maxfd + 1, &rfds, &wfds, &efds,
+				 need_timeout ? &timeout : 0, NULL);
 		if (rc < 0) {
 			if (errno == EINTR)
 				continue;
-			error(ERR_FATAL, "select() failed: %s",
+			error(ERR_FATAL, "pselect() failed: %s",
 			      strerror(errno));
 			exit(1);
 		}
-		DEBUG_MSG(LOG_DEBUG, "select() finished");
+		DEBUG_MSG(LOG_DEBUG, "pselect() finished");
 
 		if (FD_ISSET(daemon_pipe[0], &rfds))
 			process_requests();
@@ -918,9 +918,8 @@ static int write_data(struct _flow *flow)
 				htonl(response_block_size);
 			/* write rtt data (will be echoed back by the receiver
 			 * in the response packet) */
-			tsc_gettimeofday((struct timeval *)
-					 (flow->write_block +
-					  2 * (sizeof (int32_t))));
+			gettime((struct timespec *)
+				(flow->write_block + 2 * (sizeof (int32_t))));
 
 			DEBUG_MSG(LOG_DEBUG, "wrote new request data to out "
 				  "buffer bs = %d, rqs = %d, on flow %d",
@@ -972,7 +971,7 @@ static int write_data(struct _flow *flow)
 			       flow->current_write_block_size);
 #endif
 			/* we just finished writing a block */
-			tsc_gettimeofday(&flow->last_block_written);
+			gettime(&flow->last_block_written);
 			for (int i = 0; i < 2; i++)
 				flow->statistics[i].request_blocks_written++;
 			if (flow->settings.response_trafgen_options.distribution == ONCE)
@@ -994,7 +993,7 @@ static int write_data(struct _flow *flow)
 						  "block scheduled for %s, "
 						  "%.6lfs before now.",
 						   flow->id,
-						   ctime_us(&flow->next_write_block_timestamp),
+						   ctimespec(&flow->next_write_block_timestamp),
 						   time_diff(&flow->next_write_block_timestamp,
 							     &flow->last_block_written));
 					flow->congestion_counter++;
@@ -1176,11 +1175,11 @@ static int read_data(struct _flow *flow)
 static void process_rtt(struct _flow* flow)
 {
 	double current_rtt = .0;
-	struct timeval now;
-	struct timeval *data = (struct timeval *)
-		(flow->read_block + 2*(sizeof (int32_t)) );
+	struct timespec now;
+	struct timespec *data = (struct timespec *)
+		(flow->read_block + 2*(sizeof (int32_t)));
 
-	tsc_gettimeofday(&now);
+	gettime(&now);
 	current_rtt = time_diff(data, &now);
 
 	if (current_rtt < 0) {
@@ -1208,12 +1207,12 @@ static void process_rtt(struct _flow* flow)
 static void process_iat(struct _flow* flow)
 {
 	double current_iat = .0;
-	struct timeval now;
+	struct timespec now;
 
-	tsc_gettimeofday(&now);
+	gettime(&now);
 
 	if (flow->last_block_read.tv_sec ||
-	    flow->last_block_read.tv_usec)
+	    flow->last_block_read.tv_nsec)
 		current_iat = time_diff(&flow->last_block_read, &now);
 	else
 		current_iat = NAN;
@@ -1255,9 +1254,9 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 	((struct _block *)flow->write_block)->data =
 		((struct _block *)flow->read_block)->data;
 	/* workaround for 64bit sender and 32bit receiver: we check if the
-	 * timeeval is 64bit and then echo the missing 32bit back, too */
+	 * timespec is 64bit and then echo the missing 32bit back, too */
 	if ((((struct _block *)flow->write_block)->data.tv_sec) ||
-	    ((struct _block *)flow->write_block)->data.tv_usec)
+	    ((struct _block *)flow->write_block)->data.tv_nsec)
 		((struct _block *)flow->write_block)->data2 =
 			((struct _block *)flow->read_block)->data2;
 
@@ -1314,7 +1313,7 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 #endif
 				/* just finish sending response block */
 				flow->current_block_bytes_written = 0;
-				tsc_gettimeofday(&flow->last_block_written);
+				gettime(&flow->last_block_written);
 				for (int i = 0; i < 2; i++)
 					flow->statistics[i].response_blocks_written++;
 				break;

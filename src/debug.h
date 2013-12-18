@@ -1,7 +1,7 @@
 /*
  * debug.h - Debugging routines for Flowgrind
  *
- * Copyright (C) Christian Samsel <christian.samsel@rwth-aachen.de>, 2010-2013
+ * Copyright (C) Alexander Zimmermann <alexander.zimmermann@netapp.com>, 2013
  * Copyright (C) Tim Kosse <tim.kosse@gmx.de>, 2009
  * Copyright (C) Daniel Schaffrath <daniel.schaffrath@mac.com>, 2007-2008
  *
@@ -26,28 +26,27 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-void decrease_debuglevel();
-void increase_debuglevel();
+void decrease_debuglevel(void);
+void increase_debuglevel(void);
 
 #ifdef DEBUG
 
-#include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
 
-unsigned debug_level;
+unsigned int debug_level;
 
 const char *debug_timestamp(void);
 
-#define DEBUG_MSG(message_level, msg, args...) \
-		if (debug_level>=message_level) { \
-			fprintf(stderr, "%s %s:%d  [%d/%d] " msg "\n", \
-					debug_timestamp(), __FUNCTION__, \
-					__LINE__, getpid(), \
-					(unsigned int)pthread_self()%USHRT_MAX, ##args); \
-		}
-#else
-#define DEBUG_MSG(message_level, msg, args...) do {} while(0)
+#define DEBUG_MSG(LVL, MSG, ...) \
+	if (debug_level>=LVL) \
+		fprintf(stderr, "%s %s:%d  [%d/%d] " MSG "\n", \
+			debug_timestamp(), __FUNCTION__, __LINE__, getpid(), \
+			(unsigned int)pthread_self()%USHRT_MAX, ##__VA_ARGS__);
+#else /* DEBUG */
+
+#define DEBUG_MSG(LVL, MSG, ...) do {} while(0)
+
 #endif /* DEBUG */
 
 #endif /* _DEBUG_H_ */

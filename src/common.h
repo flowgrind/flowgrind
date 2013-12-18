@@ -109,8 +109,8 @@ struct _block
 {
 	int32_t this_block_size;
 	int32_t request_block_size;
-	struct timeval data;
-	struct timeval data2; /* used to access 64bit timeval on 32bit arch */
+	struct timespec data;
+	struct timespec data2; /* used to access 64bit timeval on 32bit arch */
 };
 
 enum _stochastic_distributions
@@ -210,8 +210,8 @@ struct _report
 	int id;
 	/* Is this an INTERVAL or TOTAL (final) report? */
 	int type;
-	struct timeval begin;
-	struct timeval end;
+	struct timespec begin;
+	struct timespec end;
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
 	unsigned long long bytes_read;
 	unsigned long long bytes_written;

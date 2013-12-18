@@ -1,88 +1,89 @@
-Release 0.6.2 (2013-X-X)
-- Output tcp_info kernel variables under FreeBSD,
-  thanks Alexander.
-- Set localhost as default flow target/source instead
-  of 127.0.0.1 to obey OS defaults in regards to
-  IPv4 vs IPv6.
-- Preliminary supprt for mixed (FreeBSD, Linux) flows,
-  Thanks Arnd.
+Release 0.7.0 (2013-X-X)
+- Output tcp_info kernel variables under FreeBSD
+  Thanks Alexander
+- Set localhost as default flow target/source instead of 127.0.0.1 to obey OS
+  defaults in regards to IPv4 vs IPv6.
+- Preliminary supprt for mixed (FreeBSD, Linux) flows
+  Thanks Arnd
 - Closes LP#1212680 reported and fixed by Midori Kato
+- Revised docu (help, manpage etc)
+- Enable to set amount of data to be send instead of duartion
+  Thanks Midori Kato
+- Closes LP#1237447 reported by Alexander
+  Thanks Arnd
+- Change flowgrind's timer management to achieve a nanosecond precision
+  Thanks Alexander
 
 Release 0.6.1 (2013-7-5)
-- Closes LP#1196940, LP#1196972 
+- Closes LP#1196940, LP#1196972
   Thanks Lars and Arnd.
 
 Release 0.6.0 (2013-4-24)
-- full IPv6 support (control and test connection)
+- Full IPv6 support (control and test connection)
   Thanks Arnd.
 
 Release 0.5.9 (2012-11-1)
 - Support for pluggable congestion control modules in FreeBSD 9
-- minor compile and bugs fixes (thanks flameeyes)
+- Minor compile and bugs fixes (thanks flameeyes)
 
 Release 0.5.8 (2012-3-3)
-- ipv6 works for test connections
-  (not for control)
+- IPv6 works for test connections (not for control)
 - FreeBSD Support
-- autoconf fixes to improve portability
-- small bug and coding style fixes
+- Autoconf fixes to improve portability
+- Small bug and coding style fixes
 
 Release 0.5.7 (2011-4-27)
-- fix crash with newer xml-rpc version
-- output random seed in final report
-- indicate that random seed is actually a flow and not a global option
-- fix random seed handling with parallel flows
-- fix parameter parsing for uniform distribution
+- Fix crash with newer xml-rpc version
+- Output random seed in final report
+- Indicate that random seed is actually a flow and not a global option
+- Fix random seed handling with parallel flows
+- Fix parameter parsing for uniform distribution
 
 Release 0.5.6 (2011-1-8)
-- fix weird behavior if no connection could be established
-- ensure dump starts before test connection to catch the initial syn
+- Fix weird behavior if no connection could be established
+- Ensure dump starts before test connection to catch the initial syn
 
 Release 0.5.5.2 (2010-12-10)
-- dont slow down sender by only calling get_imtu for final report
+- Don't slow down sender by only calling get_imtu for final report
 
 Release 0.5.5.1 (2010-12-8)
-- more updates to manpage and -h
-  fix rare bug which leads to receiver limitation in conjunction with
-  multiple differently scheduled flows
-- fix pmtu/imtu/smss sometimes diplay -1
+- More updates to manpage and -h
+- Fix rare bug which leads to receiver limitation in conjunction with multiple
+  differently scheduled flows
+- Fix pmtu/imtu/smss sometimes diplay -1
 
 Release 0.5.5 (2010-12-5)
-- revised docu (help, manpage etc)
-- add transac column, disable blockcount by default
-- reworked timing for throughput calculation
-- reworked final report line
-- minor output improvements
-- dropped useless complete interval report line
+- Revised docu (help, manpage etc)
+- Add transac column, disable blockcount by default
+- Reworked timing for throughput calculation
+- Reworked final report line
+- Minor output improvements
+- Dropped useless complete interval report line
 
 Release 0.5 (2010-11-15)
-- removed obsolete fasttime and TSCI2 support
-- remove useless status column (only activated with
-  --enable-debug)
-- nullify linux kernel state columns in final report, as they
-  are not accumulated. (last interval has same information
-  anyways)
-- libpcap support for automatic traffic dumping (for analysis with
-  tcptrace etc)
+- Removed obsolete fasttime and TSCI2 support
+- Remove useless status column (only activated with --enable-debug)
+- Nullify linux kernel state columns in final report, as they
+  are not accumulated. (last interval has same information anyways)
+- libpcap support for automatic traffic dumping (for analysis with tcptrace
+  etc)
 - libgsl support for advanced stochastic distributions
-- added sockopts TCP_NODELAY and non-standard MTCP
-- always print final report
-- bugfixes (oh-rly?)
+- Added sockopts TCP_NODELAY and non-standard MTCP
+- Always print final report
+- Bugfixes (oh-rly?)
 
 Release 0.4.1 (2010-8-10)
-- bugfixes
-- block count column
+- Bugfixes
+- Block count column
 
 Release 0.4 (2010-8-01)
-
-- traffic generation
-- symbolic numbers
-- reworked timer system
-- reworked rtt calculation
-- various bugfixes
+- Traffic generation
+- Symbolic numbers
+- Reworked timer system
+- Reworked rtt calculation
+- Various bugfixes
 
 Release 0.2.1 (2009-08-07)
-
 - Fix -Q flow option
 - Use bits/s as default for rate option, correct documentation on defaults
 - Cleanup manpages and integrated usage
@@ -90,10 +91,8 @@ Release 0.2.1 (2009-08-07)
 - Make libpcap optional dependency, not enabled by default
 
 Release 0.2 (2009-07-17)
-
 - Using new RPC architecture
 - New options syntax
 
 Release 0.1 (2006-11-11)
-
 - Initial Release

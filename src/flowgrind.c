@@ -875,9 +875,9 @@ static void init_flows_defaults(void)
 
 		flow[id].endpoint_id[0] = flow[id].endpoint_id[1] = -1;
 		flow[id].start_timestamp[0].tv_sec = 0;
-		flow[id].start_timestamp[0].tv_usec = 0;
+		flow[id].start_timestamp[0].tv_nsec = 0;
 		flow[id].start_timestamp[1].tv_sec = 0;
-		flow[id].start_timestamp[1].tv_usec = 0;
+		flow[id].start_timestamp[1].tv_nsec = 0;
 
 		flow[id].finished[0] = 0;
 		flow[id].finished[1] = 0;
@@ -903,7 +903,7 @@ static void init_flows_defaults(void)
 
 static void init_logfile(void)
 {
-	struct timeval now = {0, 0};
+	struct timespec now = {0, 0};
 	static char buf[60] = "";
 	int len = 0;
 
@@ -920,7 +920,7 @@ static void init_logfile(void)
 			strcat(log_filename, opt.log_filename);
 		}
 	} else {
-		tsc_gettimeofday(&now);
+		gettime(&now);
 		len = strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
 		log_filename = malloc(strlen(opt.log_filename_prefix) + len + 1 + strlen(".log") );
 		strcpy(log_filename, opt.log_filename_prefix);
@@ -2688,9 +2688,10 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
 
 #ifdef DEBUG
-	struct timeval now;
-	tsc_gettimeofday(&now);
-	DEBUG_MSG(LOG_DEBUG, "%ld.%ld (add_flow_source() in flowgrind.c)\n", now.tv_sec, now.tv_usec);
+	struct timespec now;
+	gettime(&now);
+	DEBUG_MSG(LOG_DEBUG, "%ld.%ld (add_flow_source() in flowgrind.c)\n",
+		  now.tv_sec, now.tv_nsec);
 #endif /* DEBUG */
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
 		flow[id].endpoint_options[SOURCE].daemon->server_url,
@@ -2797,13 +2798,13 @@ static void grind_flows(xmlrpc_client *rpc_client)
 
 	unsigned j;
 
-	struct timeval lastreport_end;
-	struct timeval lastreport_begin;
-	struct timeval now;
+	struct timespec lastreport_end;
+	struct timespec lastreport_begin;
+	struct timespec now;
 
-	tsc_gettimeofday(&lastreport_end);
-	tsc_gettimeofday(&lastreport_begin);
-	tsc_gettimeofday(&now);
+	gettime(&lastreport_end);
+	gettime(&lastreport_begin);
+	gettime(&now);
 
 	for (j = 0; j < num_unique_servers; j++) {
 
@@ -2826,9 +2827,9 @@ static void grind_flows(xmlrpc_client *rpc_client)
 			usleep(opt.reporting_interval - time_diff(&lastreport_begin,&lastreport_end) );
 			continue;
 		}
-		tsc_gettimeofday(&lastreport_begin);
+		gettime(&lastreport_begin);
 		fetch_reports(rpc_client);
-		tsc_gettimeofday(&lastreport_end);
+		gettime(&lastreport_end);
 
 		if (active_flows < 1)
 			/* All flows have ended */
@@ -2881,7 +2882,7 @@ has_more_reports:
 			xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
 			if (rv) {
 				struct _report report;
-				int begin_sec, begin_usec, end_sec, end_usec;
+				int begin_sec, begin_nsec, end_sec, end_nsec;
 
 				int tcpi_snd_cwnd;
 				int tcpi_snd_ssthresh;
@@ -2917,9 +2918,9 @@ has_more_reports:
 					"id", &report.id,
 					"type", &report.type,
 					"begin_tv_sec", &begin_sec,
-					"begin_tv_usec", &begin_usec,
+					"begin_tv_nsec", &begin_nsec,
 					"end_tv_sec", &end_sec,
-					"end_tv_usec", &end_usec,
+					"end_tv_nsec", &end_nsec,
 
 					"bytes_read_high", &bytes_read_high,
 					"bytes_read_low", &bytes_read_low,
@@ -2990,9 +2991,9 @@ has_more_reports:
 				report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
 
 				report.begin.tv_sec = begin_sec;
-				report.begin.tv_usec = begin_usec;
+				report.begin.tv_nsec = begin_nsec;
 				report.end.tv_sec = end_sec;
-				report.end.tv_usec = end_usec;
+				report.end.tv_nsec = end_nsec;
 
 				report_flow(&unique_servers[j], &report);
 			}
