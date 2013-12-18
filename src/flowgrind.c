@@ -669,7 +669,7 @@ static void usage(void)
 		"               block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q           Summarize only, no intermediated interval reports are\n"
 		"               computed (quiet)\n"
-		"  -R x=#.#[z|k|M|G][b|B|o]\n"
+		"  -R x=#.#(z|k|M|G)(b|B|o)\n"
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
 		"               b = bits/s (default), B = bytes/s, o = blocks/s\n"
