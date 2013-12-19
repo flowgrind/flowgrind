@@ -79,12 +79,6 @@ enum protocol {
 	PROTO_UDP
 };
 
-/** Flow endpoint */
-enum endpoint {
-	SOURCE = 0,
-	DESTINATION
-};
-
 /**  Infos about a flowgrind daemon */
 struct _daemon {
 /* Note: a daemon can potentially managing multiple flows */

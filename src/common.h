@@ -77,6 +77,12 @@ void error(int errcode, const char *fmt, ...);
 #define TCP_CA_NAME_MAX 16
 #endif /* TCP_CA_NAME_MAX */
 
+/** Flow endpoint */
+enum flow_endpoint {
+	SOURCE = 0,
+	DESTINATION,
+};
+
 enum _extra_socket_option_level
 {
 	level_sol_socket,

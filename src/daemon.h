@@ -39,12 +39,6 @@ extern char dumping;
 
 extern pthread_mutex_t mutex;
 
-enum flow_endpoint
-{
-	SOURCE = 0,
-	DESTINATION,
-};
-
 enum flow_state
 {
 	/* SOURCE */
