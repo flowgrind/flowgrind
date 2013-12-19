@@ -111,9 +111,6 @@ struct _flow_endpoint {
 	/** Receiver buffer (SO_RCVBUF) */
 	int receive_buffer_size_real;
 
-	struct timespec flow_start_timestamp;
-	struct timespec flow_stop_timestamp;
-
 	/* (option -R) */
 	/* FIXME this struct is no longer used for flow options.
 	 * Instead of _flow_endpoint.rate_str use _flow_settings.write_rate */
@@ -122,7 +119,6 @@ struct _flow_endpoint {
 	/** Pointer to the daemon managing this endpoint */
 	struct _daemon* daemon;
 	char test_address[1000];
-	char bind_address[1000];
 };
 
 /** All flow specific settings */
