@@ -20,6 +20,16 @@
  *
  */
 
+/**
+ * @file flowgrind.h
+ * @brief Flowgrind Controller
+ * @author Arnd Hannemann <arnd@arndnet.de>
+ * @author Christian Samsel <christian.samsel@rwth-aachen.de>
+ * @author Tim Kosse <tim.kosse@gmx.de>
+ * @author Daniel Schaffrath <daniel.schaffrath@mac.com>
+ * @date 16/12/2013
+ */
+
 #ifndef _FLOWGRIND_H_
 #define _FLOWGRIND_H_
 
@@ -35,76 +45,87 @@
 #define CONGESTION_LIMIT	10000
 #define DEFAULT_SELECT_TIMEOUT	10000
 
+/** Sysctl for quering available congestion control algorithms */
 #ifdef __LINUX__
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.ipv4.tcp_available_congestion_control"
 #elif __FreeBSD__
 #define SYSCTL_VAR_AVAILABLE_CONGESTION "net.inet.tcp.cc.available"
 #endif /* __LINUX__ */
 
-/* global controller options */
+/** General controller options */
 struct _opt {
+	/** Number of test flows */
 	unsigned short num_flows;
+	/** Length of reporting interval */
 	double reporting_interval;
+	/** Write output to screen */
 	char dont_log_stdout;
+	/** Write output to logfile */
 	char dont_log_logfile;
+	/** Name of logfile */
 	char *log_filename;
+	/** Prefix for log- and dumpfile */
 	char *log_filename_prefix;
+	/** Overwrite existing log files */
 	char clobber;
+	/** Report in MByte/s instead of MBit/s */
 	char mbyte;
+	/** Don't use symbolic values instead of number */
 	char symbolic;
 	unsigned short base_port;
 };
 extern struct _opt opt;
 
+/** Transport protocols */
 enum protocol {
 	PROTO_TCP = 1,
 	PROTO_UDP
 };
 
+/** Flow endpoint */
 enum endpoint {
 	SOURCE = 0,
 	DESTINATION
 };
 
-/* Infos about a flowgrind daemon (potentially managing multiple flows) */
+/**  Infos about a flowgrind daemon */
 struct _daemon {
-	/* XMLRPC URL for this daemon */
+/* Note: a daemon can potentially managing multiple flows */
+	/** XMLRPC URL for this daemon */
 	char server_url[1000];
-	/* For convenience: name and port of the XMLRPC server */
+	/** Name of the XMLRPC server */
 	char server_name[257];
+	/** Port of the XMLRPC server */
 	unsigned short server_port;
-
-	/* Flowgrind API version supported by this daemon */
+	/** Flowgrind API version supported by this daemon */
 	int api_version;
-
-	/* Information about the OS of the daemon */
+	/** OS on which this daemon runs */
 	char os_name[257];
+	/** Release number of the OS */
 	char os_release[257];
 };
 
-/* Flow options specific to source or destination */
+/** Flow options specific to source or destination */
 struct _flow_endpoint {
 	/* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
 
-	/* SO_SNDBUF */
+	/** SO_SNDBUF */
 	int send_buffer_size_real;
-
-	/* SO_RCVBUF */
+	/** SO_RCVBUF */
 	int receive_buffer_size_real;
 
 	struct timespec flow_start_timestamp;
 	struct timespec flow_stop_timestamp;
 
 	char *rate_str;
-	/* Pointer to the daemon managing this endpoint */
+	/** Pointer to the daemon managing this endpoint */
 	struct _daemon* daemon;
 	char test_address[1000];
 	char bind_address[1000];
 };
 
-/* All flow specific settings */
+/** All flow specific settings */
 struct _flow {
-
 	enum protocol proto;
 
 	char late_connect;
@@ -114,9 +135,8 @@ struct _flow {
 
 	unsigned int random_seed;
 
-	/* For the following arrays,
-	 * 0 stands for source
-	 * 1 for destination */
+	/* For the following arrays: 0 stands for source; 1 for destination */
+
 	int endpoint_id[2];
 
 	struct timespec start_timestamp[2];
