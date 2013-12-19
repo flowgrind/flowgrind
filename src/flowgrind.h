@@ -37,10 +37,11 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#include "common.h"
-#include "fg_time.h"
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
+
+#include "common.h"
+#include "fg_time.h"
 
 /** Sysctl for quering available congestion control algorithms */
 #ifdef __LINUX__
@@ -51,23 +52,23 @@
 
 /** General controller options */
 struct _opt {
-	/** Number of test flows */
+	/** Number of test flows (option -n) */
 	unsigned short num_flows;
-	/** Length of reporting interval */
+	/** Length of reporting interval, in seconds (option -i) */
 	double reporting_interval;
-	/** Write output to screen */
+	/** Write output to screen (option -q) */
 	char dont_log_stdout;
-	/** Write output to logfile */
+	/** Write output to logfile (option -w) */
 	char dont_log_logfile;
-	/** Name of logfile */
+	/** Name of logfile (option -l) */
 	char *log_filename;
-	/** Prefix for log- and dumpfile */
+	/** Prefix for log- and dumpfile (option -e) */
 	char *log_filename_prefix;
-	/** Overwrite existing log files */
+	/** Overwrite existing log files (option -o) */
 	char clobber;
-	/** Report in MByte/s instead of MBit/s */
+	/** Report in MByte/s instead of MBit/s (option -m) */
 	char mbyte;
-	/** Don't use symbolic values instead of number */
+	/** Don't use symbolic values instead of number (option -p) */
 	char symbolic;
 };
 extern struct _opt opt;
@@ -105,15 +106,19 @@ struct _daemon {
 struct _flow_endpoint {
 	/* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
 
-	/** SO_SNDBUF */
+	/** Sending buffer (SO_SNDBUF) */
 	int send_buffer_size_real;
-	/** SO_RCVBUF */
+	/** Receiver buffer (SO_RCVBUF) */
 	int receive_buffer_size_real;
 
 	struct timespec flow_start_timestamp;
 	struct timespec flow_stop_timestamp;
 
+	/* (option -R) */
+	/* FIXME this struct is no longer used for flow options.
+	 * Instead of _flow_endpoint.rate_str use _flow_settings.write_rate */
 	char *rate_str;
+
 	/** Pointer to the daemon managing this endpoint */
 	struct _daemon* daemon;
 	char test_address[1000];
@@ -122,13 +127,17 @@ struct _flow_endpoint {
 
 /** All flow specific settings */
 struct _flow {
+	/** Used transport protocol */
 	enum protocol proto;
-
+	/** Call connect() immediately before sending data (option -L) */
 	char late_connect;
+	/** shutdown() each socket direction after test flow (option (-N) */
 	char shutdown;
+	/** Summarize only, no intermediated interval reports (option -Q) */
 	char summarize_only;
+	/** Enumerate bytes in payload instead of sending zeros (option -E) */
 	char byte_counting;
-
+	/** Random seed for stochastic traffic generation (option -J) */
 	unsigned int random_seed;
 
 	/* For the following arrays: 0 stands for source; 1 for destination */
