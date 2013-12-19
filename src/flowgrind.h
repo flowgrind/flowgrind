@@ -69,7 +69,6 @@ struct _opt {
 	char mbyte;
 	/** Don't use symbolic values instead of number */
 	char symbolic;
-	unsigned short base_port;
 };
 extern struct _opt opt;
 
