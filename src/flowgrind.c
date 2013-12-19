@@ -709,7 +709,7 @@ static void usage_sockopt(void)
 		"  -O x=TCP_CONGESTION=ALG\n"
 		"               set congestion control algorithm ALG on test socket");
 
-	/* 
+	/*
 	 * FIXME do not call /sbin/sysctl. Use /proc/sys instead. It seems that
 	 * we have to use a systemcall on FreeBSD since they deprecate procfs...
 	 */
@@ -985,6 +985,41 @@ static struct _daemon * get_daemon_by_url(const char* server_url, const char* se
 	unique_servers[i].server_port = server_port;
 	return &unique_servers[num_unique_servers++];
 }
+
+char *guess_topology (int mtu)
+{
+	/* Mapping of common MTU sizes to network technologies */
+	struct _mtu_hint {
+		int mtu;
+		char *topology;
+	};
+
+	static const struct _mtu_hint mtu_hints[] = {
+		{65535,	"Hyperchannel" },		/* RFC1374 */
+		{17914, "16 MB/s Token Ring" },
+		{16436, "Linux Loopback device" },
+		{16384, "FreeBSD Loopback device" },
+		{16352, "Darwin Loopback device"},
+		{9000, "Gigabit Ethernet (Jumboframes)"},
+		{8166, "802.4 Token Bus" },		/* RFC1042 */
+		{4464, "4 MB/s Token Ring" },
+		{4352, "FDDI" },			/* RFC1390 */
+		{1500, "Ethernet/PPP" },		/* RFC894, RFC1548 */
+		{1492, "PPPoE" },			/* RFC2516 */
+		{1472, "IP-in-IP" },			/* RFC1853 */
+		{1280, "IPv6 Tunnel" },			/* RFC4213 */
+		{1006, "SLIP" },			/* RFC1055 */
+		{576,  "X.25 & ISDN" },			/* RFC1356 */
+		{296,  "PPP (low delay)" },
+	};
+
+	for (size_t i = 0; i < sizeof(mtu_hints) / sizeof(mtu_hints[0]); i++)
+		if (mtu == mtu_hints[i].mtu)
+			return mtu_hints[i].topology;
+
+	return "unknown";
+}
+
 
 static void log_output(const char *msg)
 {
@@ -1409,45 +1444,6 @@ void close_flows(void)
 	int id;
 	for (id = 0; id < opt.num_flows; id++)
 		close_flow(id);
-}
-
-/* Mapping of common MTU sizes to network technologies */
-struct _mtu_hint {
-	int mtu;
-	char *topology;
-} mtu_hints[] = {
-	{ 65535,        "Hyperchannel" },               /* RFC1374 */
-	{ 17914,        "16 MB/s Token Ring" },
-	{ 16436,        "Linux Loopback device" },
-	{ 16384,        "FreeBSD Loopback device" },
-	{ 16352,        "Darwin Loopback device"},
-	{ 9000,         "Gigabit Ethernet (Jumboframes)"},
-	{ 8166,         "802.4 Token Bus" },            /* RFC1042 */
-	{ 4464,         "4 MB/s Token Ring" },
-	{ 4352,         "FDDI" },                       /* RFC1390 */
-	{ 1500,         "Ethernet/PPP" },               /* RFC894, RFC1548 */
-	{ 1492,         "PPPoE" },                      /* RFC2516 */
-	{ 1472,		"IP-in-IP" },			/* RFC1853 */
-	{ 1280,		"IPv6 Tunnel" },		/* RFC4213 */
-	{ 1006,         "SLIP" },                       /* RFC1055 */
-	{ 576,          "X.25 & ISDN" },                /* RFC1356 */
-	{ 296,          "PPP (low delay)" },
-};
-#define MTU_HINTS_NUM 16
-
-char *guess_topology (int mtu)
-{
-	int i;
-
-	if (mtu) {
-		for (i = 0; i < MTU_HINTS_NUM; i++) {
-			if (mtu == mtu_hints[i].mtu) {
-				return mtu_hints[i].topology;
-			}
-		}
-	}
-
-	return "unknown";
 }
 
 /*

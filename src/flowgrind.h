@@ -142,8 +142,6 @@ struct _flow {
 	struct _report *final_report[2];
 };
 
-char *guess_topology (int mtu);
-
 inline static double scale_thruput(double thruput)
 {
 	if (opt.mbyte)
