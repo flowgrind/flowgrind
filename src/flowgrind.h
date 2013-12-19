@@ -116,7 +116,7 @@ struct _flow_endpoint {
 };
 
 /** All flow specific settings */
-struct _flow {
+struct _cflow {
 	/** Used transport protocol */
 	enum protocol proto;
 	/** Call connect() immediately before sending data (option -L) */
