@@ -992,28 +992,28 @@ char *guess_topology (int mtu)
 	};
 
 	static const struct _mtu_hint mtu_hints[] = {
-		{65535,	"Hyperchannel" },		/* RFC1374 */
-		{17914, "16 MB/s Token Ring" },
-		{16436, "Linux Loopback device" },
-		{16384, "FreeBSD Loopback device" },
+		{65535,	"Hyperchannel"},		/* RFC1374 */
+		{17914, "16 MB/s Token Ring"},
+		{16436, "Linux Loopback device"},
+		{16384, "FreeBSD Loopback device"},
 		{16352, "Darwin Loopback device"},
 		{9000, "Gigabit Ethernet (Jumboframes)"},
-		{8166, "802.4 Token Bus" },		/* RFC1042 */
-		{4464, "4 MB/s Token Ring" },
-		{4352, "FDDI" },			/* RFC1390 */
-		{1500, "Ethernet/PPP" },		/* RFC894, RFC1548 */
-		{1492, "PPPoE" },			/* RFC2516 */
-		{1472, "IP-in-IP" },			/* RFC1853 */
-		{1280, "IPv6 Tunnel" },			/* RFC4213 */
-		{1006, "SLIP" },			/* RFC1055 */
-		{576,  "X.25 & ISDN" },			/* RFC1356 */
-		{296,  "PPP (low delay)" },
+		{8166, "802.4 Token Bus"},		/* RFC1042 */
+		{4464, "4 MB/s Token Ring"},
+		{4352, "FDDI"},				/* RFC1390 */
+		{1500, "Ethernet/PPP"},			/* RFC894, RFC1548 */
+		{1492, "PPPoE"},			/* RFC2516 */
+		{1472, "IP-in-IP"},			/* RFC1853 */
+		{1280, "IPv6 Tunnel"},			/* RFC4213 */
+		{1006, "SLIP"},				/* RFC1055 */
+		{576,  "X.25 & ISDN"},			/* RFC1356 */
+		{296,  "PPP (low delay)"},
 	};
 
-	for (size_t i = 0; i < sizeof(mtu_hints) / sizeof(mtu_hints[0]); i++)
+	for (size_t i = 0;
+	     i < sizeof(mtu_hints) / sizeof(struct _mtu_hint); i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
-
 	return "unknown";
 }
 
