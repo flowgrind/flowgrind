@@ -90,10 +90,8 @@ struct _daemon {
 	char os_release[257];
 };
 
-/** Flow options specific to source or destination */
+/** Infos about the flow endpoint */
 struct _flow_endpoint {
-	/* SO_SNDBUF and SO_RCVBUF affect the size of the TCP window */
-
 	/** Sending buffer (SO_SNDBUF) */
 	int send_buffer_size_real;
 	/** Receiver buffer (SO_RCVBUF) */
@@ -106,10 +104,11 @@ struct _flow_endpoint {
 
 	/** Pointer to the daemon managing this endpoint */
 	struct _daemon* daemon;
+	/* XXX add a brief description doxygen */
 	char test_address[1000];
 };
 
-/** All flow specific settings */
+/** Infos about the flow including flow options */
 struct _cflow {
 	/** Used transport protocol */
 	enum protocol proto;
@@ -126,16 +125,21 @@ struct _cflow {
 
 	/* For the following arrays: 0 stands for source; 1 for destination */
 
+	/* XXX add a brief description doxygen */
 	int endpoint_id[2];
-
+	/* XXX add a brief description doxygen */
 	struct timespec start_timestamp[2];
+	/** Infos about flow endpoint */
 	struct _flow_endpoint endpoint_options[2];
+	/** Flow specific options */
 	struct _flow_settings settings[2];
-
+	/** Marks if flow is finished (daemon has send final report)  */
 	char finished[2];
+	/** Final report from the daemon */
 	struct _report *final_report[2];
 };
 
+/* XXX add a brief description doxygen */
 inline static double scale_thruput(double thruput)
 {
 	if (opt.mbyte)

@@ -55,6 +55,7 @@
 #include "debug.h"
 #include "flowgrind.h"
 
+/* XXX add a brief description doxygen */
 enum column_types
 {
 	column_type_begin,
@@ -71,8 +72,9 @@ enum column_types
 	column_type_other
 };
 
-/* FIXME: If the daemon (e.g. on FreeBSD) does not report the ca state it will
- * always displayed as "open" */
+/* FIXME If the daemon (e.g. on FreeBSD) does not report the
+ * CA state it will always displayed as "open" */
+
 /** Values for Linux tcpi_state, if not compiled on Linux */
 #ifndef __LINUX__
 enum tcp_ca_state
@@ -85,6 +87,7 @@ enum tcp_ca_state
 };
 #endif /* __LINUX__ */
 
+/* XXX add a brief description doxygen */
 struct _header_info
 {
 	const char* first;
@@ -92,12 +95,14 @@ struct _header_info
 	enum column_types column_type;
 };
 
+/* XXX add a brief description doxygen */
 struct _column_state
 {
 	unsigned int count_oversized;
 	unsigned int last_width;
 };
 
+/** Header for intermediated interval reports */
 const struct _header_info header_info[] = {
 	{ "# ID", "#   ", column_type_other },
 	{ " begin", " [s]", column_type_begin },
@@ -148,21 +153,24 @@ const struct _header_info header_info[] = {
 	{ " ca state", " ", column_type_kernel },
 	{ " smss", "[B]", column_type_kernel },
 	{ " pmtu", "[B]", column_type_kernel },
-
 #ifdef DEBUG
 	{ " status", " ", column_type_status }
 #endif /* DEBUG */
 };
 
+/* XXX add a brief description doxygen */
 struct _column_state
 	column_states[sizeof(header_info) / sizeof(struct _header_info)] = {
 		{0,0}
 };
 
+/* XXX add a brief description doxygen */
 FILE *log_stream = NULL;
+/* XXX add a brief description doxygen */
 char *log_filename = NULL;
+/* XXX add a brief description doxygen */
 char sigint_caught = 0;
-
+/* XXX add a brief description doxygen */
 xmlrpc_env rpc_env;
 /** Name of the executable */
 static char progname[50] = "flowgrind";
@@ -172,7 +180,7 @@ static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 unsigned int num_unique_servers = 0;
 /** General controller options */
 struct _opt opt;
-/** All flow specific settings */
+/** Infos about the flow including flow options */
 static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 int active_flows = 0;
