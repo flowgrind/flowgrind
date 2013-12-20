@@ -33,22 +33,16 @@
 #endif /* DEBUG */
 
 #include <errno.h>
-#include <float.h>
 #include <limits.h>
 #include <math.h>
-#include <netdb.h>
-#include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
-#include <sys/socket.h>
-#include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/utsname.h>
 #include <time.h>
@@ -60,9 +54,6 @@
 #include "fg_socket.h"
 #include "debug.h"
 #include "flowgrind.h"
-
-#include <xmlrpc-c/base.h>
-#include <xmlrpc-c/client.h>
 
 FILE *log_stream = NULL;
 char *log_filename = NULL;
