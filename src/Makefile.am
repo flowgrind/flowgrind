@@ -1,4 +1,4 @@
-AM_CFLAGS = -Wall -Wextra -Werror=implicit -std=gnu99 -fgnu89-inline 
+AM_CFLAGS = -Wall -Wextra -Werror=implicit -std=gnu99 -fgnu89-inline
 
 bin_PROGRAMS = flowgrind flowgrind-stop
 sbin_PROGRAMS = flowgrindd
@@ -17,4 +17,4 @@ flowgrindd_CFLAGS = $(AM_CFLAGS) $(PCAP_CFLAGS) $(XMLRPC_C_SERVER_CFLAGS) $(GSL_
 
 flowgrind_stop_SOURCES = flowgrind_stop.c
 flowgrind_stop_LDADD = $(LIBS) $(CURL_LDADD) $(XMLRPC_C_CLIENT_LDADD)
-flowgrind_stop_CFLAGS = $(AM_CFLAGS) $(CURL_FLAGS) $(XMLRPC_C_CLIENT_CFLAGS) 
+flowgrind_stop_CFLAGS = $(AM_CFLAGS) $(CURL_FLAGS) $(XMLRPC_C_CLIENT_CFLAGS)
