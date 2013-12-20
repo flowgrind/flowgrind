@@ -1,5 +1,5 @@
 /**
- * @file fg_log.h
+ * @file log.h
  * @brief Logging routines used by Flowgrind
  */
 
