@@ -104,20 +104,20 @@ struct _column_state
 
 /** Header for intermediated interval reports */
 const struct _header_info header_info[] = {
-	{ "# ID", "#   ", column_type_other },
-	{ " begin", " [s]", column_type_begin },
-	{ " end", " [s]", column_type_end },
-	{ " through", " [Mbit/s]", column_type_thrpt },
-	{ " through", " [MB/s]", column_type_thrpt },
-	{ " transac", " [#/s]", column_type_transac },
-	{ " requ", " [#]", column_type_blocks },
-	{ " resp", " [#]", column_type_blocks },
-	{ " min RTT", " [ms]", column_type_rtt },
-	{ " avg RTT", " [ms]", column_type_rtt },
-	{ " max RTT", " [ms]", column_type_rtt },
-	{ " min IAT", " [ms]", column_type_iat },
-	{ " avg IAT", " [ms]", column_type_iat },
-	{ " max IAT", " [ms]", column_type_iat },
+	{"# ID", "#   ", column_type_other},
+	{" begin", " [s]", column_type_begin},
+	{" end", " [s]", column_type_end},
+	{" through", " [Mbit/s]", column_type_thrpt},
+	{" through", " [MB/s]", column_type_thrpt},
+	{" transac", " [#/s]", column_type_transac},
+	{" requ", " [#]", column_type_blocks},
+	{" resp", " [#]", column_type_blocks},
+	{" min RTT", " [ms]", column_type_rtt},
+	{" avg RTT", " [ms]", column_type_rtt},
+	{" max RTT", " [ms]", column_type_rtt},
+	{" min IAT", " [ms]", column_type_iat},
+	{" avg IAT", " [ms]", column_type_iat},
+	{" max IAT", " [ms]", column_type_iat},
 /* While Linux uses an segment based TCP-Stack, and values like cwnd are
  * measured in number of segments, FreeBSDs and probably most other BSDs stack
  * is based on Bytes. */
@@ -125,36 +125,36 @@ const struct _header_info header_info[] = {
  * compiled on. However, including the header on every report when doing
  * FreeBSD <-> Linux measurements does not seem a good idea either. */
 #ifdef __LINUX__
-	{ " cwnd", " [#]", column_type_kernel },
-	{ " ssth", " [#]", column_type_kernel },
-	{ " uack", " [#]", column_type_kernel },
-	{ " sack", " [#]", column_type_kernel },
-	{ " lost", " [#]", column_type_kernel },
-	{ " retr", " [#]", column_type_kernel },
-	{ " tret", " [#]", column_type_kernel },
-	{ " fack", " [#]", column_type_kernel },
-	{ " reor", " [#]", column_type_kernel },
-	{ " bkof", " [#]", column_type_kernel },
+	{" cwnd", " [#]", column_type_kernel},
+	{" ssth", " [#]", column_type_kernel},
+	{" uack", " [#]", column_type_kernel},
+	{" sack", " [#]", column_type_kernel},
+	{" lost", " [#]", column_type_kernel},
+	{" retr", " [#]", column_type_kernel},
+	{" tret", " [#]", column_type_kernel},
+	{" fack", " [#]", column_type_kernel},
+	{" reor", " [#]", column_type_kernel},
+	{" bkof", " [#]", column_type_kernel},
 #else
-	{ " cwnd", " [B]", column_type_kernel },
-	{ " ssth", " [B]", column_type_kernel },
-	{ " uack", " [B]", column_type_kernel },
-	{ " sack", " [B]", column_type_kernel },
-	{ " lost", " [B]", column_type_kernel },
-	{ " retr", " [B]", column_type_kernel },
-	{ " tret", " [B]", column_type_kernel },
-	{ " fack", " [B]", column_type_kernel },
-	{ " reor", " [B]", column_type_kernel },
-	{ " bkof", " [B]", column_type_kernel },
+	{" cwnd", " [B]", column_type_kernel},
+	{" ssth", " [B]", column_type_kernel},
+	{" uack", " [B]", column_type_kernel},
+	{" sack", " [B]", column_type_kernel},
+	{" lost", " [B]", column_type_kernel},
+	{" retr", " [B]", column_type_kernel},
+	{" tret", " [B]", column_type_kernel},
+	{" fack", " [B]", column_type_kernel},
+	{" reor", " [B]", column_type_kernel},
+	{" bkof", " [B]", column_type_kernel},
 #endif /* __LINUX__ */
-	{ " rtt", " [ms]", column_type_kernel },
-	{ " rttvar", " [ms]", column_type_kernel },
-	{ " rto", " [ms]", column_type_kernel },
-	{ " ca state", " ", column_type_kernel },
-	{ " smss", "[B]", column_type_kernel },
-	{ " pmtu", "[B]", column_type_kernel },
+	{" rtt", " [ms]", column_type_kernel},
+	{" rttvar", " [ms]", column_type_kernel},
+	{" rto", " [ms]", column_type_kernel},
+	{" ca state", " ", column_type_kernel},
+	{" smss", "[B]", column_type_kernel},
+	{" pmtu", "[B]", column_type_kernel},
 #ifdef DEBUG
-	{ " status", " ", column_type_status }
+	{" status", " ", column_type_status}
 #endif /* DEBUG */
 };
 
