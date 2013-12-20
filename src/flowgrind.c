@@ -71,7 +71,7 @@ static struct _cflow cflow[MAX_FLOWS];
 int active_flows = 0;
 int is_bulkopt = 0, is_trafgenopt = 0, is_timeopt = 0;
 
-enum _column_types
+enum column_types
 {
 	column_type_begin,
 	column_type_end,
@@ -87,12 +87,11 @@ enum _column_types
 	column_type_other
 };
 
-
 struct _header_info
 {
 	const char* first;
 	const char* second;
-	enum _column_types column_type;
+	enum column_types column_type;
 };
 
 struct _column_state
