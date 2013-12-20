@@ -1984,7 +1984,15 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 				ASSIGN_COMMON_FLOW_SETTING(duration[WRITE], optdouble)
 				is_timeopt++;
 				break;
-
+			case 'U':
+				rc = sscanf(arg, "%d", &optunsigned);
+				if (rc != 1) {
+					fprintf(stderr, "%s: block size must be a "
+						"positive integer\n", progname);
+					usage_hint();
+				}
+				ASSIGN_COMMON_FLOW_SETTING(maximum_block_size, optunsigned);
+				break;
 			case 'W':
 				rc = sscanf(arg, "%u", &optunsigned);
 				if (rc != 1) {
@@ -2226,15 +2234,6 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'Q':
 			ASSIGN_FLOW_OPTION(summarize_only, 1, id-1);
 			break;
-		case 'U':
-			rc = sscanf(optarg, "%d", &optint);
-			if (rc != 1) {
-				fprintf(stderr, "%s: block size must be a "
-					"positive integer\n", progname);
-				usage_hint();
-			}
-			ASSIGN_COMMON_FLOW_SETTING(maximum_block_size, optint);
-			break;
 		case 'A':
 		case 'B':
 		case 'C':
@@ -2246,6 +2245,7 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'R':
 		case 'S':
 		case 'T':
+		case 'U':
 		case 'W':
 		case 'Y':
 		case 'Z':
