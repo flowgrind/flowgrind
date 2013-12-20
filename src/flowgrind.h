@@ -133,7 +133,7 @@ struct _cflow {
 	struct _flow_endpoint endpoint_options[2];
 	/** Flow specific options */
 	struct _flow_settings settings[2];
-	/** Marks if flow is finished (daemon has send final report)  */
+	/** Flag if final report for the flow is received  */
 	char finished[2];
 	/** Final report from the daemon */
 	struct _report *final_report[2];
