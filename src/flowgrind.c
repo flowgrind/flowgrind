@@ -55,22 +55,6 @@
 #include "debug.h"
 #include "flowgrind.h"
 
-FILE *log_stream = NULL;
-char *log_filename = NULL;
-char sigint_caught = 0;
-
-/* Unique (by URL) flowgrind daemons (one server may handle several flows) */
-static struct _daemon unique_servers[MAX_FLOWS * 2];
-unsigned int num_unique_servers = 0;
-
-static char progname[50] = "flowgrind";
-
-struct _opt opt;
-static struct _cflow cflow[MAX_FLOWS];
-
-int active_flows = 0;
-int is_bulkopt = 0, is_trafgenopt = 0, is_timeopt = 0;
-
 enum column_types
 {
 	column_type_begin,
@@ -86,6 +70,20 @@ enum column_types
 #endif /* DEBUG */
 	column_type_other
 };
+
+/* FIXME: If the daemon (e.g. on FreeBSD) does not report the ca state it will
+ * always displayed as "open" */
+/** Values for Linux tcpi_state, if not compiled on Linux */
+#ifndef __LINUX__
+enum tcp_ca_state
+{
+	TCP_CA_Open = 0,
+	TCP_CA_Disorder = 1,
+	TCP_CA_CWR = 2,
+	TCP_CA_Recovery = 3,
+	TCP_CA_Loss = 4
+};
+#endif /* __LINUX__ */
 
 struct _header_info
 {
@@ -115,14 +113,12 @@ const struct _header_info header_info[] = {
 	{ " min IAT", " [ms]", column_type_iat },
 	{ " avg IAT", " [ms]", column_type_iat },
 	{ " max IAT", " [ms]", column_type_iat },
-
-/* While Linux uses an segment based TCP-Stack, and values
- * like cwnd are measured in number of segments, FreeBSDs
- * and probably most other BSDs stack is based on Bytes. */
-/* FIXME: The header format should not be based on the OS the
- * controller is compiled on. However, including the header
- * on every report when doing FreeBSD <-> Linux measurements
- * does not seem a good idea either. */
+/* While Linux uses an segment based TCP-Stack, and values like cwnd are
+ * measured in number of segments, FreeBSDs and probably most other BSDs stack
+ * is based on Bytes. */
+/* FIXME: The header format should not be based on the OS the controller is
+ * compiled on. However, including the header on every report when doing
+ * FreeBSD <-> Linux measurements does not seem a good idea either. */
 #ifdef __LINUX__
 	{ " cwnd", " [#]", column_type_kernel },
 	{ " ssth", " [#]", column_type_kernel },
@@ -158,13 +154,34 @@ const struct _header_info header_info[] = {
 #endif /* DEBUG */
 };
 
+struct _column_state
+	column_states[sizeof(header_info) / sizeof(struct _header_info)] = {
+		{0,0}
+};
 
-struct _column_state column_states[sizeof(header_info) / sizeof(struct _header_info)] = {{0,0}};
-
-/* Array for the dynamical output, show all except status by default */
-int visible_columns[10] = {1, 1, 1, 1, 0, 1, 1, 1, 1, 1};
+FILE *log_stream = NULL;
+char *log_filename = NULL;
+char sigint_caught = 0;
 
 xmlrpc_env rpc_env;
+/** Name of the executable */
+static char progname[50] = "flowgrind";
+/** Unique (by URL) flowgrind daemons */
+static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
+/** Number of flowgrind dameons */
+unsigned int num_unique_servers = 0;
+/** General controller options */
+struct _opt opt;
+/** All flow specific settings */
+static struct _cflow cflow[MAX_FLOWS];
+/** Number of currently active flows */
+int active_flows = 0;
+/* FIXME Mutual exclusion options should not be handled by global options*/
+int is_bulkopt = 0, is_trafgenopt = 0, is_timeopt = 0;
+/** Array for the dynamical output, show all except status by default */
+int visible_columns[10] = {1, 1, 1, 1, 0, 1, 1, 1, 1, 1};
+
+/* Forward declarations */
 static void die_if_fault_occurred(xmlrpc_env *env);
 void check_version(xmlrpc_client *rpc_client);
 void check_idle(xmlrpc_client *rpc_client);
@@ -371,20 +388,6 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 
 	return 0;
 }
-
-/* Values for Linux tcpi_state, if not compiled on Linux
- * FIXME: If the daemon (e.g. on FreeBSD) does not report
- * the ca state it will always displayed as "open" */
-#ifndef __LINUX__
-enum tcp_ca_state
-{
-	TCP_CA_Open = 0,
-	TCP_CA_Disorder = 1,
-	TCP_CA_CWR = 2,
-	TCP_CA_Recovery = 3,
-	TCP_CA_Loss = 4
-};
-#endif /* __LINUX__ */
 
 /* Output a single report (with header if width has changed */
 char *createOutput(char hash, int id, int type, double begin, double end,
