@@ -720,7 +720,7 @@ static void usage_sockopt(void)
 	 */
 
 	/* Read and print available congestion control algorithms */
-	sprintf(buf1, "/sbin/sysctl -n %s", SYSCTL_VAR_AVAILABLE_CONGESTION);
+	sprintf(buf1, "/sbin/sysctl -n %s", SYSCTL_CC_AVAILABLE);
 	fp = popen(buf1, "r");
 
 	if (fp != NULL) {

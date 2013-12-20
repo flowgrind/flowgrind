@@ -39,9 +39,9 @@
 
 /** Sysctl for quering available congestion control algorithms */
 #ifdef __LINUX__
-#define SYSCTL_VAR_AVAILABLE_CONGESTION "net.ipv4.tcp_available_congestion_control"
+#define SYSCTL_CC_AVAILABLE  "net.ipv4.tcp_available_congestion_control"
 #elif __FreeBSD__
-#define SYSCTL_VAR_AVAILABLE_CONGESTION "net.inet.tcp.cc.available"
+#define SYSCTL_CC_AVAILABLE "net.inet.tcp.cc.available"
 #endif /* __LINUX__ */
 
 /** General controller options */
