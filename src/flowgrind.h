@@ -108,6 +108,10 @@ struct _cflow {
 	/** Used transport protocol */
 	enum protocol proto;
 
+	/* FIXME All this flow option member are duplicates from the
+	 * _flow_settings struct (see common.h) Flowgrind contoller
+	 * should use this ones*/
+
 	/** Call connect() immediately before sending data (option -L) */
 	char late_connect;
 	/** shutdown() each socket direction after test flow (option (-N) */

@@ -2188,6 +2188,10 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.dont_log_logfile = 0;
 			break;
 
+		/* FIXME Move all this flow option parsing stuff to function
+		 * parse_flow_option. As a result the ASSIGN_FLOW_OPTION
+		 * macro is not needed anymore */
+
 		/* flow options */
 		case 'E':
 			ASSIGN_FLOW_OPTION(byte_counting, 1, id-1);
@@ -2343,6 +2347,9 @@ static void parse_cmdline(int argc, char **argv) {
 		cflow[id].settings[SOURCE].delay[READ] = cflow[id].settings[DESTINATION].delay[WRITE];
 		cflow[id].settings[DESTINATION].delay[READ] = cflow[id].settings[SOURCE].delay[WRITE];
 
+		/* TODO Move this stuff out of the sanity checks into a
+		 * new function 'parse_rate_option' */
+
 		for (unsigned i = 0; i < 2; i++) {
 
 			if (cflow[id].settings[i].write_rate_str) {
@@ -2434,7 +2441,6 @@ static void parse_cmdline(int argc, char **argv) {
 				cflow[id].endpoint[i].daemon = get_daemon_by_url(
 					"http://localhost:5999/RPC2", "localhost", DEFAULT_LISTEN_PORT);
 			}
-
 		}
 	}
 
