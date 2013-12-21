@@ -130,7 +130,7 @@ struct _cflow {
 	/* XXX add a brief description doxygen */
 	struct timespec start_timestamp[2];
 	/** Infos about flow endpoint */
-	struct _flow_endpoint endpoint_options[2];
+	struct _flow_endpoint endpoint[2];
 	/** Flow specific options */
 	struct _flow_settings settings[2];
 	/** Flag if final report for the flow is received  */

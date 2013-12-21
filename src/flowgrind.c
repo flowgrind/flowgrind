@@ -870,10 +870,10 @@ static void init_flows_defaults(void)
 			cflow[id].settings[i].request_trafgen_options.param_one = 8192;
 			cflow[id].settings[i].response_trafgen_options.param_one = 0;
 			cflow[id].settings[i].route_record = 0;
-			strcpy(cflow[id].endpoint_options[i].test_address, "localhost");
+			strcpy(cflow[id].endpoint[i].test_address, "localhost");
 
 			/* Default daemon is localhost, set in parse_cmdline */
-			cflow[id].endpoint_options[i].daemon = 0;
+			cflow[id].endpoint[i].daemon = 0;
 
 			cflow[id].settings[i].pushy = 0;
 			cflow[id].settings[i].cork = 0;
@@ -1182,23 +1182,23 @@ void report_final(void)
 
 			CAT("#% 4d %s:", id, endpoint ? "D" : "S");
 
-			CAT(" %s", cflow[id].endpoint_options[endpoint].test_address);
-			if (strcmp(cflow[id].endpoint_options[endpoint].daemon->server_name,
-				   cflow[id].endpoint_options[endpoint].test_address) != 0)
-				CAT("/%s", cflow[id].endpoint_options[endpoint].daemon->server_name);
-			if (cflow[id].endpoint_options[endpoint].daemon->server_port != DEFAULT_LISTEN_PORT)
-				CAT(":%d", cflow[id].endpoint_options[endpoint].daemon->server_port);
-			CAT(" (%s %s)", cflow[id].endpoint_options[endpoint].daemon->os_name,
-					cflow[id].endpoint_options[endpoint].daemon->os_release);
+			CAT(" %s", cflow[id].endpoint[endpoint].test_address);
+			if (strcmp(cflow[id].endpoint[endpoint].daemon->server_name,
+				   cflow[id].endpoint[endpoint].test_address) != 0)
+				CAT("/%s", cflow[id].endpoint[endpoint].daemon->server_name);
+			if (cflow[id].endpoint[endpoint].daemon->server_port != DEFAULT_LISTEN_PORT)
+				CAT(":%d", cflow[id].endpoint[endpoint].daemon->server_port);
+			CAT(" (%s %s)", cflow[id].endpoint[endpoint].daemon->os_name,
+					cflow[id].endpoint[endpoint].daemon->os_release);
 
 			CATC("random seed: %u", cflow[id].random_seed);
 
 			if (cflow[id].final_report[endpoint]) {
 
 				CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
-					cflow[id].endpoint_options[endpoint].send_buffer_size_real,
+					cflow[id].endpoint[endpoint].send_buffer_size_real,
 					cflow[id].settings[endpoint].requested_send_buffer_size,
-					cflow[id].endpoint_options[endpoint].receive_buffer_size_real,
+					cflow[id].endpoint[endpoint].receive_buffer_size_real,
 					cflow[id].settings[endpoint].requested_read_buffer_size);
 
 
@@ -1299,8 +1299,8 @@ void report_final(void)
 			} else {
 				CATC("ERR: no final report received");
 			}
-			if (cflow[id].endpoint_options[endpoint].rate_str)
-				CATC("rate = %s", cflow[id].endpoint_options[endpoint].rate_str);
+			if (cflow[id].endpoint[endpoint].rate_str)
+				CATC("rate = %s", cflow[id].endpoint[endpoint].rate_str);
 			if (cflow[id].settings[endpoint].elcn)
 				CATC("ELCN %s", cflow[id].settings[endpoint].elcn == 1 ? "enabled" : "disabled");
 			if (cflow[id].settings[endpoint].cork)
@@ -1345,7 +1345,7 @@ void report_flow(const struct _daemon* daemon, struct _report* report)
 
 		for (endpoint = 0; endpoint < 2; endpoint++) {
 			if (f->endpoint_id[endpoint] == report->id &&
-			    !strcmp(server_url, f->endpoint_options[endpoint].daemon->server_url))
+			    !strcmp(server_url, f->endpoint[endpoint].daemon->server_url))
 				goto exit_outer_loop;
 		}
 	}
@@ -1427,7 +1427,7 @@ void close_flow(int id)
 		xmlrpc_env_init(&env);
 
 		xmlrpc_client_call2f(&env, client,
-			cflow[id].endpoint_options[endpoint].daemon->server_url,
+			cflow[id].endpoint[endpoint].daemon->server_url,
 			"stop_flow", &resultP, "({s:i})", "flow_id", cflow[id].endpoint_id[endpoint]);
 		if (resultP)
 			xmlrpc_DECREF(resultP);
@@ -1691,18 +1691,18 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			if (current_flow_ids[0] == -1) { \
 				for (id = 0; id < MAX_FLOWS; id++) { \
 					if (type != 'd') \
-						cflow[id].endpoint_options[SOURCE].PROPERTY_NAME = \
+						cflow[id].endpoint[SOURCE].PROPERTY_NAME = \
 						(PROPERTY_VALUE); \
 					if (type != 's') \
-						cflow[id].endpoint_options[DESTINATION].PROPERTY_NAME = \
+						cflow[id].endpoint[DESTINATION].PROPERTY_NAME = \
 						(PROPERTY_VALUE); \
 				} \
 			} else { \
 				if (type != 'd') \
-					cflow[current_flow_ids[id]].endpoint_options[SOURCE].PROPERTY_NAME = \
+					cflow[current_flow_ids[id]].endpoint[SOURCE].PROPERTY_NAME = \
 					(PROPERTY_VALUE); \
 				if (type != 's') \
-					cflow[current_flow_ids[id]].endpoint_options[DESTINATION].PROPERTY_NAME = \
+					cflow[current_flow_ids[id]].endpoint[DESTINATION].PROPERTY_NAME = \
 					(PROPERTY_VALUE); \
 			}
 
@@ -1710,15 +1710,15 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			if (current_flow_ids[0] == -1) { \
 				for (id = 0; id < MAX_FLOWS; id++) { \
 					if (type != 'd') \
-						strcpy(cflow[id].endpoint_options[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
+						strcpy(cflow[id].endpoint[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
 					if (type != 's') \
-						strcpy(cflow[id].endpoint_options[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
+						strcpy(cflow[id].endpoint[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 				} \
 			} else { \
 				if (type != 'd') \
-					strcpy(cflow[current_flow_ids[id]].endpoint_options[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
+					strcpy(cflow[current_flow_ids[id]].endpoint[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
 				if (type != 's') \
-					strcpy(cflow[current_flow_ids[id]].endpoint_options[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
+					strcpy(cflow[current_flow_ids[id]].endpoint[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 			}
 	#define ASSIGN_COMMON_FLOW_SETTING(PROPERTY_NAME, PROPERTY_VALUE) \
 			if (current_flow_ids[0] == -1) { \
@@ -2345,10 +2345,10 @@ static void parse_cmdline(int argc, char **argv) {
 
 		for (unsigned i = 0; i < 2; i++) {
 
-			if (cflow[id].endpoint_options[i].rate_str) {
+			if (cflow[id].endpoint[i].rate_str) {
 				unit = type = distribution = 0;
 				/* last %c for catching wrong input... this is not nice. */
-				rc = sscanf(cflow[id].endpoint_options[i].rate_str, "%lf%c%c%c",
+				rc = sscanf(cflow[id].endpoint[i].rate_str, "%lf%c%c%c",
 						&optdouble, &unit, &type, &unit);
 				if (rc < 1 || rc > 4) {
 					fprintf(stderr, "malformed rate for flow %u.\n", id);
@@ -2356,7 +2356,7 @@ static void parse_cmdline(int argc, char **argv) {
 				}
 
 				if (optdouble == 0.0) {
-					cflow[id].endpoint_options[i].rate_str = NULL;
+					cflow[id].endpoint[i].rate_str = NULL;
 					continue;
 				}
 
@@ -2424,14 +2424,14 @@ static void parse_cmdline(int argc, char **argv) {
 				cflow[id].settings[i].write_rate = optdouble;
 
 			}
-			if (cflow[id].settings[i].flow_control && !cflow[id].endpoint_options[i].rate_str) {
+			if (cflow[id].settings[i].flow_control && !cflow[id].endpoint[i].rate_str) {
 				fprintf(stderr, "flow %d has flow control enabled but "
 						"no rate.", id);
 				error = 1;
 			}
 			/* Default to localhost, if no endpoints were set for a flow */
-			if (!cflow[id].endpoint_options[i].daemon) {
-				cflow[id].endpoint_options[i].daemon = get_daemon_by_url(
+			if (!cflow[id].endpoint[i].daemon) {
+				cflow[id].endpoint[i].daemon = get_daemon_by_url(
 					"http://localhost:5999/RPC2", "localhost", DEFAULT_LISTEN_PORT);
 			}
 
@@ -2609,7 +2609,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(option);
 	}
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint_options[DESTINATION].daemon->server_url,
+		cflow[id].endpoint[DESTINATION].daemon->server_url,
 		"add_flow_destination", &resultP,
 		"("
 		"{s:s}"
@@ -2631,7 +2631,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		")",
 
 		/* general flow settings */
-		"bind_address", cflow[id].endpoint_options[DESTINATION].test_address,
+		"bind_address", cflow[id].endpoint[DESTINATION].test_address,
 
 		"write_delay", cflow[id].settings[DESTINATION].delay[WRITE],
 		"write_duration", cflow[id].settings[DESTINATION].duration[WRITE],
@@ -2688,8 +2688,8 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,s:i,*}",
 		"flow_id", &cflow[id].endpoint_id[DESTINATION],
 		"listen_data_port", &listen_data_port,
-		"real_listen_send_buffer_size", &cflow[id].endpoint_options[DESTINATION].send_buffer_size_real,
-		"real_listen_read_buffer_size", &cflow[id].endpoint_options[DESTINATION].receive_buffer_size_real);
+		"real_listen_send_buffer_size", &cflow[id].endpoint[DESTINATION].send_buffer_size_real,
+		"real_listen_read_buffer_size", &cflow[id].endpoint[DESTINATION].receive_buffer_size_real);
 	die_if_fault_occurred(&rpc_env);
 
 	if (resultP)
@@ -2721,7 +2721,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		  now.tv_sec, now.tv_nsec);
 #endif /* DEBUG */
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint_options[SOURCE].daemon->server_url,
+		cflow[id].endpoint[SOURCE].daemon->server_url,
 		"add_flow_source", &resultP,
 		"("
 		"{s:s}"
@@ -2744,7 +2744,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		")",
 
 		/* general flow settings */
-		"bind_address", cflow[id].endpoint_options[SOURCE].test_address,
+		"bind_address", cflow[id].endpoint[SOURCE].test_address,
 
 		"write_delay", cflow[id].settings[SOURCE].delay[WRITE],
 		"write_duration", cflow[id].settings[SOURCE].duration[WRITE],
@@ -2798,7 +2798,7 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"extra_socket_options", extra_options,
 
 		/* source settings */
-		"destination_address", cflow[id].endpoint_options[DESTINATION].test_address,
+		"destination_address", cflow[id].endpoint[DESTINATION].test_address,
 		"destination_port", listen_data_port,
 		"late_connect", (int)cflow[id].late_connect);
 	die_if_fault_occurred(&rpc_env);
@@ -2807,8 +2807,8 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,*}",
 		"flow_id", &cflow[id].endpoint_id[SOURCE],
-		"real_send_buffer_size", &cflow[id].endpoint_options[SOURCE].send_buffer_size_real,
-		"real_read_buffer_size", &cflow[id].endpoint_options[SOURCE].receive_buffer_size_real);
+		"real_send_buffer_size", &cflow[id].endpoint[SOURCE].send_buffer_size_real,
+		"real_read_buffer_size", &cflow[id].endpoint[SOURCE].receive_buffer_size_real);
 	die_if_fault_occurred(&rpc_env);
 
 	if (resultP)
