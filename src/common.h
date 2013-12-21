@@ -163,7 +163,11 @@ struct _flow_settings
 	int pushy;
 	int shutdown;
 
+	/** Send at specified rate per second (option -R) */
+	char *write_rate_str;
+	/** The actual rate we should send */
 	int write_rate;
+
 	unsigned int random_seed;
 
 	int flow_control;

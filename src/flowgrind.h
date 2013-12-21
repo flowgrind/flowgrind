@@ -97,11 +97,6 @@ struct _flow_endpoint {
 	/** Receiver buffer (SO_RCVBUF) */
 	int receive_buffer_size_real;
 
-	/* (option -R) */
-	/* FIXME this struct is no longer used for flow options.
-	 * Instead of _flow_endpoint.rate_str use _flow_settings.write_rate */
-	char *rate_str;
-
 	/** Pointer to the daemon managing this endpoint */
 	struct _daemon* daemon;
 	/* XXX add a brief description doxygen */
@@ -112,6 +107,7 @@ struct _flow_endpoint {
 struct _cflow {
 	/** Used transport protocol */
 	enum protocol proto;
+
 	/** Call connect() immediately before sending data (option -L) */
 	char late_connect;
 	/** shutdown() each socket direction after test flow (option (-N) */

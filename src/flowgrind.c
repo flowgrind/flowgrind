@@ -1299,8 +1299,8 @@ void report_final(void)
 			} else {
 				CATC("ERR: no final report received");
 			}
-			if (cflow[id].endpoint[endpoint].rate_str)
-				CATC("rate = %s", cflow[id].endpoint[endpoint].rate_str);
+			if (cflow[id].settings[endpoint].write_rate_str)
+				CATC("rate = %s", cflow[id].settings[endpoint].write_rate_str);
 			if (cflow[id].settings[endpoint].elcn)
 				CATC("ELCN %s", cflow[id].settings[endpoint].elcn == 1 ? "enabled" : "disabled");
 			if (cflow[id].settings[endpoint].cork)
@@ -1951,7 +1951,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 					fprintf(stderr, "-R requires a value for each given endpoint\n");
 					usage();
 				}
-				ASSIGN_ENDPOINT_FLOW_OPTION(rate_str, arg)
+				ASSIGN_COMMON_FLOW_SETTING(write_rate_str, arg)
 				break;
 
 			case 'S':
@@ -2345,10 +2345,10 @@ static void parse_cmdline(int argc, char **argv) {
 
 		for (unsigned i = 0; i < 2; i++) {
 
-			if (cflow[id].endpoint[i].rate_str) {
+			if (cflow[id].settings[i].write_rate_str) {
 				unit = type = distribution = 0;
 				/* last %c for catching wrong input... this is not nice. */
-				rc = sscanf(cflow[id].endpoint[i].rate_str, "%lf%c%c%c",
+				rc = sscanf(cflow[id].settings[i].write_rate_str, "%lf%c%c%c",
 						&optdouble, &unit, &type, &unit);
 				if (rc < 1 || rc > 4) {
 					fprintf(stderr, "malformed rate for flow %u.\n", id);
@@ -2356,7 +2356,7 @@ static void parse_cmdline(int argc, char **argv) {
 				}
 
 				if (optdouble == 0.0) {
-					cflow[id].endpoint[i].rate_str = NULL;
+					cflow[id].settings[i].write_rate_str = NULL;
 					continue;
 				}
 
@@ -2424,7 +2424,7 @@ static void parse_cmdline(int argc, char **argv) {
 				cflow[id].settings[i].write_rate = optdouble;
 
 			}
-			if (cflow[id].settings[i].flow_control && !cflow[id].endpoint[i].rate_str) {
+			if (cflow[id].settings[i].flow_control && !cflow[id].settings[i].write_rate_str) {
 				fprintf(stderr, "flow %d has flow control enabled but "
 						"no rate.", id);
 				error = 1;
