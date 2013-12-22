@@ -596,7 +596,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	return outputString;
 }
 
-/*
+/**
  * Print flowgrind usage and exit
  */
 static void usage(void)
@@ -700,7 +700,7 @@ static void usage(void)
 	exit(EXIT_SUCCESS);
 }
 
-/*
+/**
  * Print help on socket options and exit
  */
 static void usage_sockopt(void)
@@ -772,7 +772,7 @@ static void usage_sockopt(void)
 	exit(EXIT_SUCCESS);
 }
 
-/*
+/**
  * Print help on traffic generation and exit
  */
 static void usage_trafgenopt(void)
@@ -846,6 +846,9 @@ static void usage_optcombination(void)
 	exit(EXIT_FAILURE);
 }
 
+/**
+ * Print hint upon an error while parsing the command line
+ */
 static void usage_hint(void)
 {
 	fprintf(stderr, "Try '%s -h' for more information\n", progname);
