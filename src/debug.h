@@ -1,6 +1,6 @@
 /**
  * @file debug.h
- * @brief Debugging routines for Flowgrind
+ * @brief Debugging routines for Flowgrind controller and daemon
  */
 
 /*
@@ -30,7 +30,10 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+/** Decrease debug level */
 void decrease_debuglevel(void);
+
+/** Decrease debug level */
 void increase_debuglevel(void);
 
 #ifdef DEBUG
@@ -38,15 +41,31 @@ void increase_debuglevel(void);
 #include <unistd.h>
 #include <pthread.h>
 
+/** Global debug level for flowgrind controller and daemon */
 unsigned int debug_level;
 
+/**
+ * Helper function for DEBUG_MSG macro
+ *
+ * @return A string with the current time in seconds and nanoseconds since the
+ * Epoch together with the delta in time since the last and first function call
+ */
 const char *debug_timestamp(void);
 
+/**
+ * Print debug message to standard error
+ *
+ * In case the debug level is higher than the given debug level, print debug
+ * message together with current time, the delta in time since the last and
+ * first debug call, the function in which the debug call occurs, and the
+ * process and thread PID
+ */
 #define DEBUG_MSG(LVL, MSG, ...) \
 	if (debug_level>=LVL) \
 		fprintf(stderr, "%s %s:%d  [%d/%d] " MSG "\n", \
 			debug_timestamp(), __FUNCTION__, __LINE__, getpid(), \
 			(unsigned int)pthread_self()%USHRT_MAX, ##__VA_ARGS__);
+
 #else /* DEBUG */
 
 #define DEBUG_MSG(LVL, MSG, ...) do {} while(0)

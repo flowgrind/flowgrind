@@ -1,6 +1,6 @@
 /**
  * @file debug.c
- * @brief Debugging routines for Flowgrind
+ * @brief Debugging routines for Flowgrind controller and daemon
  */
 
 /*
@@ -49,11 +49,6 @@ inline void increase_debuglevel()
 	printf("DEBUG_LEVEL=%d\n", debug_level);
 }
 
-/*
- * Helper function for DEBUG_MSG macro. Returns as string the current time in
- * seconds and nanoseconds since the Epoch together with the delta in time to
- * the last fct. call and the delta in time since the first fct. call
- */
 const char *debug_timestamp()
 {
 	struct timespec now = {.tv_sec = 0, .tv_nsec = 0};
