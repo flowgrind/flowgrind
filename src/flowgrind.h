@@ -108,9 +108,9 @@ struct _cflow {
 	/** Used transport protocol */
 	enum protocol proto;
 
-	/* FIXME All this flow option member are duplicates from the
-	 * _flow_settings struct (see common.h) Flowgrind contoller
-	 * should use this ones*/
+	/* TODO All this flow option members are duplicates from the
+	 * _flow_settings struct (see common.h). Flowgrind contoller
+	 * should use this one */
 
 	/** Call connect() immediately before sending data (option -L) */
 	char late_connect;

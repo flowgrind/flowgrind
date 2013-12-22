@@ -72,7 +72,7 @@ enum column_types
 	column_type_other
 };
 
-/* FIXME If the daemon (e.g. on FreeBSD) does not report the
+/* FIXME If the daemon (for example a FreeBSD) does not report the
  * CA state it will always displayed as "open" */
 
 /** Values for Linux tcpi_state, if not compiled on Linux */
@@ -102,6 +102,14 @@ struct _column_state
 	unsigned int last_width;
 };
 
+/* While Linux uses an segment based TCP-Stack, and values like cwnd are
+ * measured in number of segments, FreeBSDs and probably most other BSDs stack
+ * is based on Bytes. */
+
+/* FIXME The header format should not be based on the OS the controller is
+ * compiled on. However, including the header on every report when doing
+ * FreeBSD <-> Linux measurements does not seem a good idea either */
+
 /** Header for intermediated interval reports */
 const struct _header_info header_info[] = {
 	{"# ID", "#   ", column_type_other},
@@ -118,12 +126,6 @@ const struct _header_info header_info[] = {
 	{" min IAT", " [ms]", column_type_iat},
 	{" avg IAT", " [ms]", column_type_iat},
 	{" max IAT", " [ms]", column_type_iat},
-/* While Linux uses an segment based TCP-Stack, and values like cwnd are
- * measured in number of segments, FreeBSDs and probably most other BSDs stack
- * is based on Bytes. */
-/* FIXME: The header format should not be based on the OS the controller is
- * compiled on. However, including the header on every report when doing
- * FreeBSD <-> Linux measurements does not seem a good idea either. */
 #ifdef __LINUX__
 	{" cwnd", " [#]", column_type_kernel},
 	{" ssth", " [#]", column_type_kernel},
@@ -184,8 +186,15 @@ struct _opt opt;
 static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 int active_flows = 0;
-/* FIXME Mutual exclusion options should not be handled by global options*/
-int is_bulkopt = 0, is_trafgenopt = 0, is_timeopt = 0;
+/* FIXME Mutual exclusion flow cannot be handled by global variable since
+ * it is a flow option. It must be realized on flow level */
+int is_bulkopt = 0;
+/* FIXME Mutual exclusion flow cannot be handled by global variable since
+ * it is a flow option. It must be realized on flow level */
+int is_trafgenopt = 0;
+/* FIXME Mutual exclusion flow cannot be handled by global variable since
+ * it is a flow option. It must be realized on flow level */
+int is_timeopt = 0;
 /** Array for the dynamical output, show all except status by default */
 int visible_columns[10] = {1, 1, 1, 1, 0, 1, 1, 1, 1, 1};
 
@@ -714,10 +723,9 @@ static void usage_sockopt(void)
 		"  -O x=TCP_CONGESTION=ALG\n"
 		"               set congestion control algorithm ALG on test socket");
 
-	/*
-	 * FIXME do not call /sbin/sysctl. Use /proc/sys instead. It seems that
-	 * we have to use a systemcall on FreeBSD since they deprecate procfs...
-	 */
+	/* TODO Do not call /sbin/sysctl. Use /proc/sys instead. It seems that
+	 * we have to use a system call on FreeBSD since they deprecate
+	 * procfs */
 
 	/* Read and print available congestion control algorithms */
 	sprintf(buf1, "/sbin/sysctl -n %s", SYSCTL_CC_AVAILABLE);
@@ -1339,7 +1347,7 @@ void report_flow(const struct _daemon* daemon, struct _report* report)
 	struct _cflow *f;
 
 	/* Get matching flow for report */
-	/* FIXME: Maybe just use compare daemon pointers? */
+	/* TODO Maybe just use compare daemon pointers? */
 	for (id = 0; id < opt.num_flows; id++) {
 		f = &cflow[id];
 
@@ -2188,7 +2196,7 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.dont_log_logfile = 0;
 			break;
 
-		/* FIXME Move all this flow option parsing stuff to function
+		/* TODO Move all this flow option parsing stuff to function
 		 * parse_flow_option. As a result the ASSIGN_FLOW_OPTION
 		 * macro is not needed anymore */
 
@@ -2196,6 +2204,8 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'E':
 			ASSIGN_FLOW_OPTION(byte_counting, 1, id-1);
 			break;
+		/* FIXME If more than one number is given, the option is not
+		 * correct handled, e.g. -F 1,2,3 */
 		case 'F':
 			tok = strtok(optarg, ",");
 			while (tok) {
@@ -2347,8 +2357,8 @@ static void parse_cmdline(int argc, char **argv) {
 		cflow[id].settings[SOURCE].delay[READ] = cflow[id].settings[DESTINATION].delay[WRITE];
 		cflow[id].settings[DESTINATION].delay[READ] = cflow[id].settings[SOURCE].delay[WRITE];
 
-		/* TODO Move this stuff out of the sanity checks into a
-		 * new function 'parse_rate_option' */
+		/* TODO Move the following stuff out of the sanity checks into
+		 * a new function 'parse_rate_option' */
 
 		for (unsigned i = 0; i < 2; i++) {
 
