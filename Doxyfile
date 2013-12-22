@@ -751,7 +751,10 @@ IMAGE_PATH             =
 # to standard output.  If FILTER_PATTERNS is specified, this tag will be 
 # ignored.
 
-INPUT_FILTER           = 
+INPUT_FILTER           = "sed -e 's|// FIXME|/// @bug|g'\
+                              -e 's|/\* FIXME|/\*\* @bug|g'\
+                              -e 's|// TODO|/// @todo|g'\
+                              -e 's|/\* TODO|/\*\* @todo|g'"
 
 # The FILTER_PATTERNS tag can be used to specify filters on a per file pattern 
 # basis.  Doxygen will compare the file name with each pattern and apply the 
@@ -1510,7 +1513,10 @@ INCLUDE_FILE_PATTERNS  =
 # undefined via #undef or recursively expanded use the := operator 
 # instead of the = operator.
 
-PREDEFINED             = __LINUX__ __FreeBSD__
+PREDEFINED             = __LINUX__ __FreeBSD__ __DARWIN__ TCP_CONGESTION
+                         HAVE_LIBPCAP HAVE_LIBGSL HAVE_GETOPT_LONG DEBUG
+                         GITVERSION HAVE_UNSIGNED_LONG_LONG_INT
+                         HAVE_CONFIG_H SOL_IP
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 
