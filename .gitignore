@@ -5,24 +5,24 @@
 .nfs*
 
 # /
+/doc
 /tmp
+/autom4te.cache
+/aclocal.m4
 /configure
+/configure.scan
 /config.log
 /config.status
 /config.h
 /config.h.in
 /gitversion.h
-/configure.scan
 /Makefile
 /Makefile.in
 /stamp-h1
 /flowlog-*
 /*.pcap
-/config.h
 /cscope.out
 /*.kdev4
-/autom4te.cache
-/aclocal.m4
 
 # /build-aux/
 /build-aux/compile

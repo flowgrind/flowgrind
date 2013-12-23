@@ -582,17 +582,20 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	return outputString;
 }
 
+/*
+ * Print flowgrind usage and exit
+ */
 static void usage(void)
 {
 	fprintf(stderr,
-		"Usage  %2$s [-h|-v]\n"
-		"       %2$s [general options] [flow options]\n\n"
+		"Usage %2$s [-h [s|g] | -v]\n"
+		"      %2$s [general options] [flow options]\n\n"
 
-		"flowgrind allows you to generate traffic among hosts in your network.\n\n"
+		"%2$s allows you to generate traffic among hosts in your network.\n\n"
 
 		"Miscellaneous:\n"
 		"  -h           Show this help and exit\n"
-		"  -h [s|g]     Show additional help for socket options, traffic generation\n"
+		"  -h (s|g)     Show additional help for socket options or traffic generation\n"
 		"  -v           Print version information and exit\n\n"
 
 		"General options:\n"
@@ -609,7 +612,8 @@ static void usage(void)
 		"               be even more verbose.\n"
 #endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
-		"  -e PRE       Prepend prefix PRE to log and dump filename (default: \"%1$s\")\n"
+		"  -e PRE       Prepend prefix PRE to log and dump filename\n"
+		"               (default: \"%1$s\")\n"
 #else
 		"  -e PRE       Prepend prefix PRE to log filename (default: \"%1$s\")\n"
 #endif /* HAVE_LIBPCAP */
@@ -623,11 +627,11 @@ static void usage(void)
 		"  -w           Write output to logfile (default: off)\n\n"
 
 		"Flow options:\n"
-		"  Some of these options take the flow endpoint as argument. Is is denoted by 'x'\n"
-		"  in the option syntax. 'x' needs to be replaced with either 's' for the source\n"
+		"  Some of these options take the flow endpoint as argument, denoted by 'x' in\n"
+		"  the option syntax. 'x' needs to be replaced with either 's' for the source\n"
 		"  endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To\n"
-		"  specify different values for each endpoints, separate them by comma.\n"
-		"  For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
+		"  specify different values for each endpoints, separate them by comma. For\n"
+		"  instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
 		"  -A x         Use minimal response size needed for RTT calculation\n"
 		"               (same as -G s=p,C,%3$d)\n"
@@ -640,32 +644,32 @@ static void usage(void)
 		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"               to the second flow\n"
 #ifdef HAVE_LIBGSL
-		"  -G x=[q|p|g],[C|E|P|N|U],#1,[#2]\n"
+		"  -G x=(q|p|g),(C|U|E|N|L|P|W),#1,[#2]\n"
 #else
-		"  -G x=[q|p|g],[C|U],#1,[#2]\n"
+		"  -G x=(q|p|g),(C|U),#1,[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"               Activate stochastic traffic generation and set parameters\n"
-		"               according to the used distribution\n"
+		"               according to the used distribution. See 'flowgrind -h g' for\n"
+		"               additional information\n"
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
 		"               Test from/to HOST. Optional argument is the address and port\n"
 		"               for the CONTROL connection to the same host.\n"
 		"               An endpoint that isn't specified is assumed to be localhost\n"
 		"  -J #         Use random seed # (default: read /dev/urandom)\n"
-		"  -L           Call connect() on test socket immediately before starting to send\n"
-		"               data (late connect). If not specified the test connection is\n"
-		"               established in the preparation phase before the test starts\n"
+		"  -L           Call connect() on test socket immediately before starting to\n"
+		"               send data (late connect). If not specified the test connection\n"
+		"               is established in the preparation phase before the test starts\n"
 #ifdef HAVE_LIBPCAP
 		"  -M x         dump traffic using libpcap\n"
 #endif /* HAVE_LIBPCAP */
 		"  -N           shutdown() each socket direction after test flow\n"
-		"  -O x=OPT     Set specific socket options on test socket.\n"
-		"               It is possible to repeatedly pass the same endpoint in order to\n"
-		"               specify multiple socket options, e.g. s=SO_DEBUG,s=TCP_CORK\n"
+		"  -O x=OPT     Set socket option OPT on test socket. See 'flowgrind -h s' for\n"
+		"               additional information\n"
 		"  -P x         Do not iterate through select() to continue sending in case\n"
 		"               block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q           Summarize only, no intermediated interval reports are\n"
 		"               computed (quiet)\n"
-		"  -R x=#.#[z|k|M|G][b|B|o]\n"
+		"  -R x=#.#(z|k|M|G)(b|B|o)\n"
 		"               send at specified rate per second, where:\n"
 		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
 		"               b = bits/s (default), B = bytes/s, o = blocks/s\n"
@@ -676,128 +680,146 @@ static void usage(void)
 		"               truncates values if used with stochastic traffic generation\n"
 		"  -W x=#       Set requested receiver buffer (advertised window), in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send, in seconds\n"
-		"  -Z x=#.#     Set amount of data to be send, in bytes (instead of -t)\n\n",
-		opt.log_filename_prefix,
-		progname,
-		MIN_BLOCK_SIZE
-	);
-	exit(1);
+		"  -Z x=#.#     Set amount of data to be send, in bytes (instead of -t)\n",
+		opt.log_filename_prefix, progname, MIN_BLOCK_SIZE
+		);
+	exit(EXIT_SUCCESS);
 }
 
+/*
+ * Print help on socket options and exit
+ */
 static void usage_sockopt(void)
 {
+	fprintf(stderr,
+		"%s allows to set the following standard and non-standard socket options. \n\n"
+
+		"All socket options take the flow endpoint as argument, denoted by 'x' in the\n"
+		"option syntax. 'x' needs to be replaced with either 's' for the source endpoint,\n"
+		"'d' for the destination endpoint or 'b' for both endpoints. To specify different\n"
+		"values for each endpoints, separate them by comma. Moreover, it is possible to\n"
+		"repeatedly pass the same endpoint in order to specify multiple socket options\n\n"
+
+		"Standard socket options:\n", progname);
 #ifdef TCP_CONGESTION
 	FILE *fp;
 	char buf1[1024];
 
 	fprintf(stderr,
-		"The following list contains possible values that can be set on the test socket:\n"
 		"  -O x=TCP_CONGESTION=ALG\n"
-		"               set congestion control algorithm ALG.\n");
+		"               set congestion control algorithm ALG on test socket");
+
+	/* 
+	 * FIXME do not call /sbin/sysctl. Use /proc/sys instead. It seems that
+	 * we have to use a systemcall on FreeBSD since they deprecate procfs...
+	 */
 
 	/* Read and print available congestion control algorithms */
 	sprintf(buf1, "/sbin/sysctl -n %s", SYSCTL_VAR_AVAILABLE_CONGESTION);
 	fp = popen(buf1, "r");
 
 	if (fp != NULL) {
-		fprintf(stderr, "\n               The following list contains possible values for ALG:\n"
-				"               ");
+		fprintf(stderr,
+			".\n "
+			"              Available algorithms are: ");
 		char buf2[1024];
 		while (fgets(buf2, 1024, fp) != NULL)
-			printf("%s", buf2);
+			fprintf(stderr, "%s", buf2);
 
 		pclose(fp);
-		fprintf(stderr, "\n");
 	}
 #endif /* TCP_CONGESTION */
 	fprintf(stderr,
 		"  -O x=TCP_CORK\n"
 		"               set TCP_CORK on test socket\n"
 		"  -O x=TCP_NODELAY\n"
-		"               disable nagle algorithmn\n"
+		"               disable nagle algorithm on test socket\n"
 		"  -O x=SO_DEBUG\n"
 		"               set SO_DEBUG on test socket\n"
 		"  -O x=IP_MTU_DISCOVER\n"
-		"               set IP_MTU_DISCOVER on test socket if not\n"
-		"               already enabled by system default\n"
+		"               set IP_MTU_DISCOVER on test socket if not already enabled by\n"
+		"               system default\n"
 		"  -O x=ROUTE_RECORD\n"
 		"               set ROUTE_RECORD on test socket\n\n"
 
-		"the following non-standard socket options are supported:\n"
+		"Non-standard socket options:\n"
 		"  -O x=TCP_MTCP\n"
 		"               set TCP_MTCP (15) on test socket\n"
 		"  -O x=TCP_ELCN\n"
 		"               set TCP_ELCN (20) on test socket\n"
 		"  -O x=TCP_LCD set TCP_LCD (21) on test socket\n\n"
 
-		"x can be replaced with 's' for source or 'd' for destination\n\n"
-
-		"Example:\n"
-		"  flowgrind -H s=host1,d=host2 -O s=TCP_CONGESTION=reno,d=SO_DEBUG\n"
+		"Examples:\n"
+		"  -O s=TCP_CONGESTION=reno,d=SO_DEBUG\n"
+		"               sets Reno TCP as congestion control algorithm at the source and\n"
+		"               SO_DEBUG as socket option at the destinatio\n"
+		"  -O s=SO_DEBUG,s=TCP_CORK\n"
+		"               set SO_DEBUG and TCP_CORK as socket option at the source\n"
 		);
-	exit(1);
+	exit(EXIT_SUCCESS);
 }
 
+/*
+ * Print help on traffic generation and exit
+ */
 static void usage_trafgenopt(void)
 {
 	fprintf(stderr,
-		"Stochastic Traffic Generation Options:"
-		"\n"
-#ifdef HAVE_LIBGSL
-		"  -G x=[q|p|g],[C|U|E|N|L|P|W],#1,(#2)\n"
-#else
-		"  -G x=[q|p|g],[C|U],#1,(#2)\n"
-#endif /* HAVE_LIBGSL */
-		"\n"
-		"               Activate stochastic traffic generation and set parameters\n"
-		"               for the choosen distribution.\n"
-		"\n"
-		"               use distribution for the following flow parameter:\n"
-		"               q = request size (in bytes)\n"
-		"               p = response size (in bytes)\n"
-		"               g = request interpacket gap (in s)\n"
-		"               \n"
-		"               possible distributions:\n"
-		"               C = constant (#1: value, #2: not used)\n"
-		"               U = uniform (#1: min, #2: max)\n"
-#ifdef HAVE_LIBGSL
-		"               E = exponential (#1: lamba - lifetime, #2: not used)\n"
-		"               N = normal (#1: mu - mean value, #2: sigma_square - variance)\n"
-		"               L = lognormal (#1: zeta - mean, #2: sigma - std dev)\n"
-		"               P = pareto (#1: k - shape, #2 x_min - scale)\n"
-		"               W = weibull (#1: lambda - scale, #2: k - shape)\n"
-#else
-		"               advanced distributions are only available if compiled with\n"
-		"               libgsl\n"
-#endif /* HAVE_LIBGSL */
-		"\n"
-		"  -U #         specify a cap for the calculated values for request\n"
-		"               and response size (not needed for constant values or\n"
-		"               uniform distribution), values over this cap are recalculated.\n"
-		"\n"
-		"example:\n"
-		"  -G s=q,C,40 -G s=p,N,2000,50 -G s=g,U,0.005,0.01 -U 32000\n"
-		"\n"
-		"which means:\n"
-		"               q,C,40         use contant request size of 40 bytes\n"
-		"               p,N,2000,50    use normal distributed response size with\n"
-		"                              mean 2000 bytes and variance 50\n"
-		"               g,U,0.005,0.01 use uniform distributed interpacket gap with\n"
-		"                              minimum 0.005s and and maximum 0.01s\n"
-		"               -U 32000       cap block sizes at 32 kbytes (needed for\n"
-		"                              normal distribution)\n"
-		"\n"
-		"Reminder: \n"
-		"\n"
-		"- The man page contains more explained examples.\n"
-		"\n"
-		"- Using Bidirectional Traffic Generation can lead to unexpected results.\n"
-		"\n"
-		"- Usage of -G in conjunction with -A, -R, -V is not recommended, as\n"
-		"  they overwrite each other. -A, -R and -V exist for backward compatibility.\n"
+		"%s supports stochastic traffic generation, which allows to conduct\n"
+		"besides normal bulk also advanced rate-limited and request-response data\n"
+		"transfers.\n\n"
 
-		);
-	exit(1);
+		"The stochastic traffic generation option '-G' takes the flow endpoint as\n"
+		"argument, denoted by 'x' in the option syntax. 'x' needs to be replaced with\n"
+		"either 's' for the source endpoint, 'd' for the destination endpoint or 'b' for\n"
+		"both endpoints. However, please note that bidirectional traffic generation can\n"
+		"lead to unexpected results. To specify different values for each endpoints,\n"
+		"separate them by comma.\n\n"
+
+		"Stochastic traffic generation:\n"
+#ifdef HAVE_LIBGSL
+		"  -G x=(q|p|g),(C|U|E|N|L|P|W),#1,[#2]\n"
+#else
+		"  -G x=(q|p|g),(C|U),#1,[#2]\n"
+#endif /* HAVE_LIBGSL */
+		"               Flow parameter:\n"
+		"                 q = request size (in bytes)\n"
+		"                 p = response size (in bytes)\n"
+		"                 g = request interpacket gap (in seconds)\n\n"
+
+		"               Distributions:\n"
+		"                 C = constant (#1: value, #2: not used)\n"
+		"                 U = uniform (#1: min, #2: max)\n"
+#ifdef HAVE_LIBGSL
+		"                 E = exponential (#1: lamba - lifetime, #2: not used)\n"
+		"                 N = normal (#1: mu - mean value, #2: sigma_square - variance)\n"
+		"                 L = lognormal (#1: zeta - mean, #2: sigma - std dev)\n"
+		"                 P = pareto (#1: k - shape, #2 x_min - scale)\n"
+		"                 W = weibull (#1: lambda - scale, #2: k - shape)\n"
+#else
+		"               advanced distributions are only available if compiled with libgsl\n"
+#endif /* HAVE_LIBGSL */
+		"  -U #         specify a cap for the calculated values for request and response\n"
+		"               size (not needed for constant values or uniform distribution),\n"
+		"               values over this cap are recalculated\n\n"
+
+		"Examples:\n"
+		"  -G s=q,C,40\n"
+		"               use contant request size of 40 bytes\n"
+		"  -G s=p,N,2000,50\n"
+		"               use normal distributed response size with mean 2000 bytes and\n"
+		"               variance 50\n"
+		"  -G s=g,U,0.005,0.01\n"
+		"               use uniform distributed interpacket gap with minimum 0.005s and\n"
+		"               maximum 0.01s\n\n"
+
+		"Notes: \n"
+		"  - The man page contains more explained examples\n"
+		"  - Using bidirectional traffic generation can lead to unexpected results\n"
+		"  - Usage of -G in conjunction with -A, -R, -V is not recommended, as they\n"
+		"    overwrite each other. -A, -R and -V exist as shortcut only\n",
+		progname);
+	exit(EXIT_SUCCESS);
 }
 
 static void usage_optcombination(void)
@@ -808,21 +830,13 @@ static void usage_optcombination(void)
 			"and traffic generation (-G, -A or -S) options\n"
 			"- If you use either flow duration or traffic generation option, "
 			"or both of them, don't set bulk data transfer option\n\n");
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
-static void usage_flowopt(void)
+static void usage_hint(void)
 {
-	fprintf(stderr,
-		"Some options are used like this:\n"
-		"  -B x=#\n\n"
-		"x has to be replaced with 's' for source, 'd' for destination or 'b' for both.\n"
-		"For all options which take x, an additional parameter can be specified if\n"
-		"separated by comma.\n"
-		"For instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
-		"and 4096 at the destination.\n\n"
-		);
-	exit(1);
+	fprintf(stderr, "Try '%s -h' for more information\n", progname);
+	exit(EXIT_FAILURE);
 }
 
 static void init_options_defaults(void)
@@ -1058,7 +1072,7 @@ void print_tcp_report_line(char hash, int id,
 		}
 	}
 #endif /* DEBUG */
-	strncat(comment_buffer, ")", sizeof(comment_buffer));
+	strncat(comment_buffer, ")", sizeof(comment_buffer) - strlen(comment_buffer) - 1);
 	if (strlen(comment_buffer) == 2)
 		comment_buffer[0] = '\0';
 
@@ -1118,7 +1132,7 @@ void report_final(void)
 
 #define CAT(fmt, args...) do {\
 	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
-	strncat(header_buffer, header_nibble, sizeof(header_nibble)-1); } while (0)
+	strncat(header_buffer, header_nibble, sizeof(header_buffer) - strlen(header_buffer) - 1); } while (0)
 #define CATC(fmt, args...) CAT(", "fmt, ##args)
 
 		log_output("\n");
@@ -1421,7 +1435,6 @@ struct _mtu_hint {
 };
 #define MTU_HINTS_NUM 16
 
-
 char *guess_topology (int mtu)
 {
 	int i;
@@ -1437,24 +1450,26 @@ char *guess_topology (int mtu)
 	return "unknown";
 }
 
-static void parse_help_option(char *params) {
-	char opt;
-	sscanf(params, "%c", &opt);
-	switch (opt) {
-		case 's':
-		case 'S':
-			usage_sockopt();
-		case 'g':
-		case 'G':
-			usage_trafgenopt();
-		break;
-		case 'f':
-		case 'F':
-			usage_flowopt();
-		default:
-			usage();
-	}
+/*
+ * Parse optional argument for option -h
+ */
+static void parse_help_option(char *params)
+{
+	char argument;
 
+	sscanf(params, "%c", &argument);
+	switch (argument) {
+	case 's':
+		usage_sockopt();
+		break;
+	case 'g':
+		usage_trafgenopt();
+		break;
+	default:
+		fprintf(stderr, "%s: unknown optional argument '%c' for "
+			"option '-h'\n", progname, argument);
+		usage_hint();
+	}
 }
 
 static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
@@ -1477,25 +1492,26 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 			arg = section + 1;
 
 		switch (endpointchar) {
-			case 's':
+		case 's':
 			j = 0;
 			k = 1;
 			break;
 
-			case 'd':
+		case 'd':
 			j = 1;
 			k = 2;
 			break;
 
-			case 'b':
+		case 'b':
 			j = 0;
 			k = 2;
 			break;
 
-			default:
-			fprintf(stderr, "Syntax error in traffic generation option: %c is not a endpoint.\n", endpointchar);
-			usage_flowopt();
-			usage_trafgenopt();
+		default:
+			fprintf(stderr, "%s: syntax error in traffic generation "
+				"option: %c is not a valid endpoint\n",
+				progname, endpointchar);
+			usage_hint();
 		}
 
 		rc = sscanf(arg, "%c,%c,%lf,%lf,%lf", &typechar, &distchar, &param1, &param2, &unused);
@@ -1745,8 +1761,9 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			arg = token + 1;
 
 		if (type != 's' && type != 'd' && type != 'b') {
-			fprintf(stderr, "Syntax error in flow option: %c is not a valid endpoint.\n", type);
-			usage_flowopt();
+			fprintf(stderr, "%s: syntax error in flow option: %c is "
+				"not a valid endpoint\n", progname, type);
+			usage_hint();
 		}
 
 		switch (ch) {
@@ -2078,8 +2095,11 @@ static void parse_cmdline(int argc, char **argv) {
 	unsigned max_flow_rate = 0;
 	char unit = 0, type = 0, distribution = 0;
 	int optint = 0;
-	unsigned optunsigned = 0;
 	double optdouble = 0.0;
+
+	/* variables from getopt() */
+	extern char *optarg;	/* the option argument */
+	extern int optopt;	/* the option character */
 
 	current_flow_ids[0] = -1;
 
@@ -2097,14 +2117,24 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	while ((ch = getopt(argc, argv, "c:de:h:i:l:mn:opqvwA:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1)
-
+	/* parse command line*/
+	while ((ch = getopt(argc, argv,":h:vc:de:i:l:mn:opqw"
+			    "A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1) {
 		switch (ch) {
 
+		/* Miscellaneous */
+		case 'h':
+			parse_help_option(optarg);
+			exit(EXIT_SUCCESS);
+		case 'v':
+			fprintf(stderr, "%s version: %s\n", progname,
+				FLOWGRIND_VERSION);
+			exit(EXIT_SUCCESS);
+
+		/*general options */
 		case 'c':
 			parse_visible_param(optarg);
 			break;
-
 		case 'd':
 			increase_debuglevel();
 			break;
@@ -2112,67 +2142,55 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'e':
 			opt.log_filename_prefix = optarg;
 			break;
-
-		case 'h':
-			parse_help_option(optarg);
-			break;
-
 		case 'i':
 			rc = sscanf(optarg, "%lf", &opt.reporting_interval);
 			if (rc != 1 || opt.reporting_interval <= 0) {
-				fprintf(stderr, "reporting interval must be "
-					"a positive number (in seconds)\n");
-				usage();
+				fprintf(stderr, "%s: reporting interval must "
+					"be a positive number (in seconds)\n",
+					progname);
+				usage_hint();
 			}
 			break;
-
 		case 'l':
 			opt.log_filename = optarg;
 			break;
-
 		case 'm':
 			opt.mbyte = 1;
 			break;
-
 		case 'n':
-			rc = sscanf(optarg, "%u", &optunsigned);
-			if (rc != 1 || optunsigned > MAX_FLOWS) {
-				fprintf(stderr, "number of test flows must "
-						"be within [1..%d]\n", MAX_FLOWS);
-				usage();
+			rc = sscanf(optarg, "%hd", &opt.num_flows);
+			if (rc != 1 || opt.num_flows > MAX_FLOWS) {
+				fprintf(stderr, "%s: number of test flows "
+					"must be within [1..%d]\n",
+					progname, MAX_FLOWS);
+				usage_hint();
 			}
-			opt.num_flows = (short)optunsigned;
 			break;
-
 		case 'o':
 			opt.clobber = 1;
 			break;
-
 		case 'p':
 			opt.symbolic = 0;
 			break;
-
 		case 'q':
 			opt.dont_log_stdout = 1;
 			break;
-		case 'v':
-			fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
-			exit(0);
-
 		case 'w':
 			opt.dont_log_logfile = 0;
 			break;
+
+		/* flow options */
 		case 'E':
 			ASSIGN_FLOW_OPTION(byte_counting, 1, id-1);
 			break;
-
 		case 'F':
 			tok = strtok(optarg, ",");
 			while (tok) {
 				rc = sscanf(tok, "%d", &optint);
 				if (rc != 1) {
-					fprintf(stderr, "malformed flow specifier\n");
-					usage();
+					fprintf(stderr, "%s: malformed flow "
+						"specifier\n", progname);
+					usage_hint();
 				}
 				if (optint == -1) {
 					id = 0;
@@ -2193,13 +2211,12 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'J':
 			rc = sscanf(optarg, "%u", &optint);
 			if (rc != 1) {
-				fprintf(stderr, "random seed must be a valid unsigned integer\n");
-					usage();
+				fprintf(stderr, "%s: random seed must be a "
+					"valid unsigned integer\n", progname);
+					usage_hint();
 			}
 			ASSIGN_FLOW_OPTION(random_seed, optint, id-1);
 			break;
-
-
 		case 'L':
 			ASSIGN_FLOW_OPTION(late_connect, 1, id-1);
 			break;
@@ -2212,8 +2229,9 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'U':
 			rc = sscanf(optarg, "%d", &optint);
 			if (rc != 1) {
-				fprintf(stderr, "block size must be a positive integer");
-				usage();
+				fprintf(stderr, "%s: block size must be a "
+					"positive integer\n", progname);
+				usage_hint();
 			}
 			ASSIGN_COMMON_FLOW_SETTING(maximum_block_size, optint);
 			break;
@@ -2234,16 +2252,24 @@ static void parse_cmdline(int argc, char **argv) {
 			parse_flow_option(ch, optarg, current_flow_ids, id-1);
 			break;
 
-		default:
-			usage();
-		}
-	argc -= optind;
-	argv += optind;
+		/* missing option-argument */
+		case ':':
+			/* Sepcial case. Option -h can called w/o an argument */
+			if (optopt == 'h')
+				usage();
 
-	if (*argv) {
-		fprintf(stderr, "illegal argument: %s\n", *argv);
-		usage();
+			fprintf(stderr, "%s: option '-%c' requires an "
+				"argument\n", progname, optopt);
+			usage_hint();
+
+		/* unknown option */
+		case '?':
+			fprintf(stderr, "%s: unknown option '-%c'\n",
+				progname, optopt);
+			usage_hint();
+		}
 	}
+
 #undef ASSIGN_FLOW_OPTION
 
 #if 0
@@ -2415,7 +2441,7 @@ static void parse_cmdline(int argc, char **argv) {
 #ifdef DEBUG
 		DEBUG_MSG(LOG_ERR, "Skipping errors discovered by sanity checks.");
 #else
-		exit(EXIT_FAILURE);
+		usage_hint();
 #endif /* DEBUG */
 	}
 	DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
@@ -2426,7 +2452,7 @@ static void die_if_fault_occurred(xmlrpc_env *env)
     if (env->fault_occurred) {
 	fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
 		env->fault_string, env->fault_code);
-	exit(1);
+	exit(EXIT_FAILURE);
     }
 }
 
