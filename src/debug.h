@@ -47,7 +47,7 @@ unsigned int debug_level;
 /**
  * Helper function for DEBUG_MSG macro
  *
- * @return A string with the current time in seconds and nanoseconds since the
+ * @return string with the current time in seconds and nanoseconds since the
  * Epoch together with the delta in time since the last and first function call
  */
 const char *debug_timestamp(void);
