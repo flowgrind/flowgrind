@@ -20,6 +20,13 @@
  *
  */
 
+#ifndef _FG_MATH_H_
+#define _FG_MATH_H_
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
 #include "daemon.h"
 
 /* initalization for random number generator */
@@ -40,3 +47,5 @@ extern double dist_uniform (struct _flow *flow,
 			    const double minval, const double maxval);
 extern double dist_exponential (struct _flow *flow, const double mu);
 extern double dist_chisq (struct _flow *flow, const double nu);
+
+#endif /* _FG_MATH_H_ */

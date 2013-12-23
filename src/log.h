@@ -25,7 +25,12 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
-#define LOGGING_MAXLEN  255	/* maximum string length */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
+/** Maximum length of logging string */
+#define LOGGING_MAXLEN	255
 
 extern int log_type;
 

@@ -22,9 +22,17 @@
  *
  */
 
-#include "daemon.h"
+#ifndef _FG_PCAP_H_
+#define _FG_PCAP_H_
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
 #include <pcap.h>
 #include <pthread.h>
+
+#include "daemon.h"
 
 void fg_pcap_init();
 void fg_pcap_go(struct _flow *);
@@ -38,3 +46,5 @@ pthread_barrier_t pcap_barrier;
 #endif /* __DARWIN__ */
 
 pcap_if_t * alldevs;
+
+#endif /* _FG_PCAP_H_ */

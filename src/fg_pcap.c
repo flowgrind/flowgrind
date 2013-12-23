@@ -22,9 +22,6 @@
  *
  */
 
-#ifndef _FG_PCAP_H_
-#define _FG_PCAP_H_
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -331,5 +328,3 @@ void fg_pcap_go(struct _flow *flow)
 }
 
 #endif /* HAVE_LIBPCAP */
-
-#endif /* _FG_PCAP_H_ */

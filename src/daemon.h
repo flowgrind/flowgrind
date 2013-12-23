@@ -25,11 +25,15 @@
 #ifndef _DAEMON_H_
 #define _DAEMON_H_
 
-#include "common.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
 
 #ifdef HAVE_LIBGSL
 #include <gsl/gsl_rng.h>
 #endif /* HAVE_LIBGSL */
+
+#include "common.h"
 
 void *daemon_main(void* ptr);
 
