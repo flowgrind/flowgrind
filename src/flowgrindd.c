@@ -29,13 +29,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
-#ifdef WIN
-#  include <windows.h>
-#else
-#  include <unistd.h>
-#endif /* WIN */
-
+#include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
 #include <signal.h>
