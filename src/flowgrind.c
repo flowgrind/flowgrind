@@ -960,16 +960,12 @@ static void init_logfile(void)
 
 	DEBUG_MSG(LOG_NOTICE, "logging to \"%s\"", log_filename);
 
-	if (!opt.clobber && access(log_filename, R_OK) == 0) {
-		fprintf(stderr, "fatal: log file exists\n");
-		exit(2);
-	}
+	if (!opt.clobber && access(log_filename, R_OK) == 0)
+		error(ERR_FATAL, "log file exists");
 
 	log_stream = fopen(log_filename, "w");
-	if (log_stream == NULL) {
-		perror(log_filename);
-		exit(2);
-	}
+	if (log_stream == NULL)
+		error(ERR_FATAL, "could not open logfile %s", log_filename);
 }
 
 
@@ -978,10 +974,8 @@ static void shutdown_logfile()
 	if (opt.dont_log_logfile)
 		return;
 
-	if (fclose(log_stream) == -1) {
-		perror("close");
-		exit(2);
-	}
+	if (fclose(log_stream) == -1)
+		error(ERR_FATAL, "could not close logfile %s", log_filename);
 }
 
 /* Finds the daemon (or creating a new one) for a given server_url,
@@ -1401,11 +1395,13 @@ static void sigint_handler(int sig)
 	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
 
 	if (sigint_caught == 0) {
-		fprintf(stderr, "# received SIGINT, trying to gracefully close flows. Press CTRL+C again to force termination.\n");
+		fprintf(stderr, "# received SIGINT, trying to gracefully "
+			"close flows. Press CTRL+C again to force "
+			"termination.\n");
 		sigint_caught = 1;
+	} else {
+		exit(EXIT_FAILURE);
 	}
-	else
-		exit(1);
 }
 
 void close_flow(int id)
@@ -2469,11 +2465,9 @@ static void parse_cmdline(int argc, char **argv) {
 
 static void die_if_fault_occurred(xmlrpc_env *env)
 {
-    if (env->fault_occurred) {
-	fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-		env->fault_string, env->fault_code);
-	exit(EXIT_FAILURE);
-    }
+    if (env->fault_occurred)
+	error(ERR_FATAL, "XML-RPC Fault: %s (%d)\n", env->fault_string,
+	      env->fault_code);
 }
 
 /* Checks that all nodes use our flowgrind version */
@@ -2533,32 +2527,33 @@ void check_version(xmlrpc_client *rpc_client)
 /* Checks that all nodes are currently idle */
 void check_idle(xmlrpc_client *rpc_client)
 {
-	unsigned j;
 	xmlrpc_value * resultP = 0;
 
-	for (j = 0; j < num_unique_servers; j++) {
+	for (unsigned int j = 0; j < num_unique_servers; j++) {
 
 		if (sigint_caught)
 			return;
 
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
-					"get_status", &resultP, "()");
+		xmlrpc_client_call2f(&rpc_env, rpc_client,
+				     unique_servers[j].server_url,
+				     "get_status", &resultP, "()");
 		die_if_fault_occurred(&rpc_env);
 
 		if (resultP) {
 			int started;
 			int num_flows;
 
-			xmlrpc_decompose_value(&rpc_env, resultP, "{s:i,s:i,*}",
-				"started", &started,
-				"num_flows", &num_flows);
+			xmlrpc_decompose_value(&rpc_env, resultP,
+					       "{s:i,s:i,*}", "started",
+					       &started, "num_flows",
+					       &num_flows);
 			die_if_fault_occurred(&rpc_env);
 
-			if (started || num_flows) {
-				fprintf(stderr, "Error: Node %s is busy. %d flows, started=%d\n",
-						unique_servers[j].server_url, num_flows, started);
-				exit(1);
-			}
+			if (started || num_flows)
+				error(ERR_FATAL, "node %s is busy. %d flows, "
+				      "started=%d\n",
+				      unique_servers[j].server_url,
+				      num_flows, started);
 
 			xmlrpc_DECREF(resultP);
 		}
