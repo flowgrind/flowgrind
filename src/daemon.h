@@ -130,8 +130,24 @@ struct _flow
 		unsigned int response_blocks_read;
 		unsigned int response_blocks_written;
 
-		double iat_min, iat_max, iat_sum;
-		double rtt_min, rtt_max, rtt_sum;
+		/** Minimum interarrival time */
+		double iat_min;
+		/** Maximum interarrival time */
+		double iat_max;
+		/** Accumulated interarrival time */
+		double iat_sum;
+		/** Minimum one-way delay */
+		double delay_min;
+		/** Maximum one-way delay */
+		double delay_max;
+		/** Accumulated one-way delay */
+		double delay_sum;
+		/** Minimum round-trip time */
+		double rtt_min;
+		/** Maximum round-trip time */
+		double rtt_max;
+		/** Accumulated round-trip time */
+		double rtt_sum;
 
 #if (defined __LINUX__ || defined __FreeBSD__)
 		int has_tcp_info;

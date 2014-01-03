@@ -57,11 +57,6 @@
 
 #include "common.h"
 #include "debug.h"
-
-#ifdef HAVE_LIBPCAP
-#include "fg_pcap.h"
-#endif /* HAVE_LIBPCAP */
-
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "fg_math.h"
@@ -70,6 +65,10 @@
 #include "source.h"
 #include "destination.h"
 #include "trafgen.h"
+
+#ifdef HAVE_LIBPCAP
+#include "fg_pcap.h"
+#endif /* HAVE_LIBPCAP */
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -112,8 +111,12 @@ char started = 0;
 char dumping = 0;
 #endif /* HAVE_LIBPCAP */
 
+/* Forward declarations */
+static int write_data(struct _flow *flow);
+static int read_data(struct _flow *flow);
 static void process_rtt(struct _flow* flow);
 static void process_iat(struct _flow* flow);
+static void process_delay(struct _flow* flow);
 static void send_response(struct _flow* flow,
 			  int requested_response_block_size);
 
@@ -544,6 +547,9 @@ static void report_flow(struct _flow* flow, int type)
 	report->iat_min = flow->statistics[type].iat_min;
 	report->iat_max = flow->statistics[type].iat_max;
 	report->iat_sum = flow->statistics[type].iat_sum;
+	report->delay_min = flow->statistics[type].delay_min;
+	report->delay_max = flow->statistics[type].delay_max;
+	report->delay_sum = flow->statistics[type].delay_sum;
 
 	/* Currently this will only contain useful information on Linux
 	 * and FreeBSD */
@@ -614,6 +620,9 @@ static void report_flow(struct _flow* flow, int type)
 		flow->statistics[INTERVAL].iat_min = FLT_MAX;
 		flow->statistics[INTERVAL].iat_max = FLT_MIN;
 		flow->statistics[INTERVAL].iat_sum = 0.0F;
+		flow->statistics[INTERVAL].delay_min = FLT_MAX;
+		flow->statistics[INTERVAL].delay_max = FLT_MIN;
+		flow->statistics[INTERVAL].delay_sum = 0.0F;
 	}
 
 	add_report(report);
@@ -696,9 +705,6 @@ static void timer_check()
 	}
 	DEBUG_MSG(LOG_DEBUG, "finished timer_check()");
 }
-
-static int write_data(struct _flow *flow);
-static int read_data(struct _flow *flow);
 
 static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 {
@@ -891,10 +897,12 @@ void init_flow(struct _flow* flow, int is_source)
 		flow->statistics[i].rtt_min = FLT_MAX;
 		flow->statistics[i].rtt_max = FLT_MIN;
 		flow->statistics[i].rtt_sum = 0.0F;
-
 		flow->statistics[i].iat_min = FLT_MAX;
 		flow->statistics[i].iat_max = FLT_MIN;
 		flow->statistics[i].iat_sum = 0.0F;
+		flow->statistics[i].delay_min = FLT_MAX;
+		flow->statistics[i].delay_max = FLT_MIN;
+		flow->statistics[i].delay_sum = 0.0F;
 	}
 
 	DEBUG_MSG(LOG_NOTICE, "called init flow %d", flow->id);
@@ -1158,6 +1166,7 @@ static int read_data(struct _flow *flow)
 				for (int i = 0; i < 2; i++)
 					flow->statistics[i].request_blocks_read++;
 				process_iat(flow);
+				process_delay(flow);
 
 				/* send response if requested */
 				if (requested_response_block_size >=
@@ -1188,8 +1197,7 @@ static void process_rtt(struct _flow* flow)
 	if (current_rtt < 0) {
 		logging_log(LOG_CRIT, "received malformed rtt block of flow %d "
 			    "(rtt = %.3lfms), ignoring",
-			    flow->id,
-			    current_rtt * 1e3);
+			    flow->id, current_rtt * 1e3);
 		current_rtt = NAN;
 	}
 
@@ -1223,8 +1231,7 @@ static void process_iat(struct _flow* flow)
 	if (current_iat < 0) {
 		logging_log(LOG_CRIT, "calculated malformed iat of flow %d "
 			    "(iat = %.3lfms) (clock skew?), ignoring",
-			    flow->id,
-			    current_iat * 1e3);
+			    flow->id, current_iat * 1e3);
 		current_iat = NAN;
 	}
 
@@ -1237,8 +1244,39 @@ static void process_iat(struct _flow* flow)
 			flow->statistics[i].iat_sum += current_iat;
 		}
 	}
-	DEBUG_MSG(LOG_NOTICE, "processed IAT flow %d (%.3lfms)",
+	DEBUG_MSG(LOG_NOTICE, "processed IAT of flow %d (%.3lfms)",
 		  flow->id, current_iat * 1e3);
+}
+
+static void process_delay(struct _flow* flow)
+{
+	double current_delay = .0;
+	struct timespec now;
+	struct timespec *data = (struct timespec *)
+		(flow->read_block + 2*(sizeof (int32_t)));
+
+	gettime(&now);
+	current_delay = time_diff(data, &now);
+
+	if (current_delay < 0) {
+		logging_log(LOG_CRIT, "received malformed delay block of flow "
+			    "%d (rtt = %.3lfms), ignoring",
+			    flow->id, current_delay * 1e3);
+		current_delay = NAN;
+	}
+
+	if (!isnan(current_delay)) {
+		for (int i = 0; i < 2; i++) {
+			ASSIGN_MIN(flow->statistics[i].delay_min,
+				   current_delay);
+			ASSIGN_MAX(flow->statistics[i].delay_max,
+				   current_delay);
+			flow->statistics[i].delay_sum += current_delay;
+		}
+	}
+
+	DEBUG_MSG(LOG_NOTICE, "processed delay of flow %d (%.3lfms)",
+		  flow->id, current_delay * 1e3);
 }
 
 static void send_response(struct _flow* flow, int requested_response_block_size)

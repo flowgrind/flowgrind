@@ -65,6 +65,7 @@ enum column_types
 	column_type_blocks,
 	column_type_rtt,
 	column_type_iat,
+	column_type_delay,
 	column_type_kernel,
 #ifdef DEBUG
 	column_type_status,
@@ -126,6 +127,9 @@ const struct _header_info header_info[] = {
 	{" min IAT", " [ms]", column_type_iat},
 	{" avg IAT", " [ms]", column_type_iat},
 	{" max IAT", " [ms]", column_type_iat},
+	{" min DLY", " [ms]", column_type_delay},
+	{" avg DLY", " [ms]", column_type_delay},
+	{" max DLY", " [ms]", column_type_delay},
 #ifdef __LINUX__
 	{" cwnd", " [#]", column_type_kernel},
 	{" ssth", " [#]", column_type_kernel},
@@ -196,7 +200,7 @@ int is_trafgenopt = 0;
  * it is a flow option. It must be realized on flow level */
 int is_timeopt = 0;
 /** Array for the dynamical output, show all except status by default */
-int visible_columns[10] = {1, 1, 1, 1, 0, 1, 1, 1, 1, 1};
+int visible_columns[11] = {1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1};
 
 /* Forward declarations */
 static void die_if_fault_occurred(xmlrpc_env *env);
@@ -412,9 +416,13 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		   unsigned int request_blocks, unsigned int response_blocks,
 		   double rttmin, double rttavg, double rttmax,
 		   double iatmin, double iatavg, double iatmax,
-		   unsigned int cwnd, unsigned int ssth, unsigned int uack, unsigned int sack, unsigned int lost, unsigned int reor,
-		   unsigned int retr, unsigned int tret, unsigned int fack, double linrtt, double linrttvar,
-		   double linrto, unsigned int backoff, int ca_state, int snd_mss,  int pmtu, char* status, int unit_byte)
+		   double delaymin, double delayavg, double delaymax,
+		   unsigned int cwnd, unsigned int ssth, unsigned int uack,
+		   unsigned int sack, unsigned int lost, unsigned int reor,
+		   unsigned int retr, unsigned int tret, unsigned int fack,
+		   double linrtt, double linrttvar, double linrto,
+		   unsigned int backoff, int ca_state, int snd_mss,  int pmtu,
+		   char* status, int unit_byte)
 {
 	int columnWidthChanged = 0;
 
@@ -443,107 +451,156 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	i++;
 
 	/* param begin */
-	createOutputColumn(headerString1, headerString2, dataString, i, begin, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, begin,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param end */
-	createOutputColumn(headerString1, headerString2, dataString, i, end, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, end,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param throughput */
 	if (unit_byte == 1)
-		createOutputColumn(headerString1, headerString2, dataString, i + 1, throughput, &column_states[i], 6, &columnWidthChanged);
+		createOutputColumn(headerString1, headerString2, dataString,
+				   i + 1, throughput, &column_states[i], 6,
+				   &columnWidthChanged);
 	else
-		createOutputColumn(headerString1, headerString2, dataString, i, throughput, &column_states[i], 6, &columnWidthChanged);
+		createOutputColumn(headerString1, headerString2, dataString, i,
+				   throughput, &column_states[i], 6,
+				   &columnWidthChanged);
 	i += 2;
 
 	/* param trans/s */
-	createOutputColumn(headerString1, headerString2, dataString, i, transac, &column_states[i], 2, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   transac, &column_states[i], 2, &columnWidthChanged);
 	i++;
 
 	/* param request blocks */
-	createOutputColumn(headerString1, headerString2, dataString, i, request_blocks, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   request_blocks, &column_states[i], 0,
+			   &columnWidthChanged);
 	i++;
 
 	/* param response blocks */
-	createOutputColumn(headerString1, headerString2, dataString, i, response_blocks, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   response_blocks, &column_states[i], 0,
+			   &columnWidthChanged);
 	i++;
 
 	/* param str_rttmin */
-	createOutputColumn(headerString1, headerString2, dataString, i, rttmin, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, rttmin,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_rttavg */
-	createOutputColumn(headerString1, headerString2, dataString, i, rttavg, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, rttavg,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_rttmax */
-	createOutputColumn(headerString1, headerString2, dataString, i, rttmax, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, rttmax,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_iatmin */
-	createOutputColumn(headerString1, headerString2, dataString, i, iatmin, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, iatmin,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_iatavg */
-	createOutputColumn(headerString1, headerString2, dataString, i, iatavg, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, iatavg,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_iatmax */
-	createOutputColumn(headerString1, headerString2, dataString, i, iatmax, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, iatmax,
+			   &column_states[i], 3, &columnWidthChanged);
+	i++;
+
+	/* param str_delaymin */
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   delaymin, &column_states[i], 3,
+			   &columnWidthChanged);
+	i++;
+
+	/* param str_delayavg */
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   delayavg, &column_states[i], 3,
+			   &columnWidthChanged);
+	i++;
+
+	/* param str_delaymax */
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   delaymax, &column_states[i], 3,
+			   &columnWidthChanged);
 	i++;
 
 	/* linux kernel output */
 	/* param str_cwnd */
-	createOutputColumn(headerString1, headerString2, dataString, i, cwnd, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, cwnd,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_ssth */
-	createOutputColumn(headerString1, headerString2, dataString, i, ssth, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, ssth,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_uack */
-	createOutputColumn(headerString1, headerString2, dataString, i, uack, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, uack,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_sack */
-	createOutputColumn(headerString1, headerString2, dataString, i, sack, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, sack,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_lost */
-	createOutputColumn(headerString1, headerString2, dataString, i, lost, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, lost,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_retr */
-	createOutputColumn(headerString1, headerString2, dataString, i, retr, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, retr,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_tret */
-	createOutputColumn(headerString1, headerString2, dataString, i, tret, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, tret,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_fack */
-	createOutputColumn(headerString1, headerString2, dataString, i, fack, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, fack,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_reor */
-	createOutputColumn(headerString1, headerString2, dataString, i, reor, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, reor,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_linrtt */
-	createOutputColumn(headerString1, headerString2, dataString, i, backoff, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   backoff, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_linrtt */
-	createOutputColumn(headerString1, headerString2, dataString, i, linrtt, &column_states[i], 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrtt,
+			   &column_states[i], 1, &columnWidthChanged);
 	i++;
 
 	/* param str_linrttvar */
-	createOutputColumn(headerString1, headerString2, dataString, i, linrttvar, &column_states[i], 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   linrttvar, &column_states[i], 1,
+			   &columnWidthChanged);
 	i++;
 
 	/* param str_linrto */
-	createOutputColumn(headerString1, headerString2, dataString, i, linrto, &column_states[i], 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrto,
+			   &column_states[i], 1, &columnWidthChanged);
 	i++;
 
 	/* param ca_state */
@@ -560,19 +617,23 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else
 		strcpy(tmp, "unknown");
 
-	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
+	createOutputColumn_str(headerString1, headerString2, dataString, i,
+			       tmp, &column_states[i], &columnWidthChanged);
 	i++;
 
 	/* param str_linrtt */
-	createOutputColumn(headerString1, headerString2, dataString, i, snd_mss, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   snd_mss, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	createOutputColumn(headerString1, headerString2, dataString, i, pmtu, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, pmtu,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* status */
 #ifdef DEBUG
-	createOutputColumn_str(headerString1, headerString2, dataString, i, status, &column_states[i], &columnWidthChanged);
+	createOutputColumn_str(headerString1, headerString2, dataString, i,
+			       status, &column_states[i], &columnWidthChanged);
 	i++;
 #else
 	UNUSED_ARGUMENT(status);
@@ -614,9 +675,9 @@ static void usage(void)
 
 		"General options:\n"
 #ifdef DEBUG
-		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-kernel,-status\n"
+		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-delay,-kernel,-status\n"
 #else
-		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-kernel\n"
+		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-delay,-kernel\n"
 #endif /* DEBUG */
 		"               Comma separated list of column groups to display in output.\n"
 		"               Prefix with either + to show column group or - to hide\n"
@@ -1053,6 +1114,9 @@ void print_tcp_report_line(char hash, int id,
 	double min_iat = r->iat_min;
 	double max_iat = r->iat_max;
 	double avg_iat;
+	double min_delay = r->delay_min;
+	double max_delay = r->delay_max;
+	double avg_delay;
 
 	char comment_buffer[100] = " (";
 	char report_buffer[4000] = "";
@@ -1073,6 +1137,11 @@ void print_tcp_report_line(char hash, int id,
 		avg_iat = r->iat_sum / (double)(r->request_blocks_read);
 	else
 		min_iat = max_iat = avg_iat = INFINITY;
+
+	if (r->request_blocks_read && r->delay_sum)
+		avg_delay = r->delay_sum / (double)(r->request_blocks_read);
+	else
+		min_delay = max_delay = avg_delay = INFINITY;
 
 #ifdef DEBUG
 	if (cflow[id].finished[type])
@@ -1142,6 +1211,7 @@ void print_tcp_report_line(char hash, int id,
 		(unsigned int)r->request_blocks_written,(unsigned int)r->response_blocks_written,
 		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
 		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
+		min_delay * 1e3, avg_delay * 1e3, max_delay * 1e3,
 		(unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, (unsigned int)r->tcp_info.tcpi_unacked,
 		(unsigned int)r->tcp_info.tcpi_sacked, (unsigned int)r->tcp_info.tcpi_lost, (unsigned int)r->tcp_info.tcpi_reordering,
 		(unsigned int)r->tcp_info.tcpi_retrans, (unsigned int)r->tcp_info.tcpi_retransmits, (unsigned int)r->tcp_info.tcpi_fackets,
@@ -1285,19 +1355,32 @@ void report_final(void)
 				if (cflow[id].final_report[endpoint]->response_blocks_read) {
 					double min_rtt = cflow[id].final_report[endpoint]->rtt_min;
 					double max_rtt = cflow[id].final_report[endpoint]->rtt_max;
-					double avg_rtt;
-					avg_rtt = cflow[id].final_report[endpoint]->rtt_sum / (double)(cflow[id].final_report[endpoint]->response_blocks_read);
-					CATC("RTT = %.3f/%.3f/%.3f (min/avg/max)", min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
+					double avg_rtt = cflow[id].final_report[endpoint]->rtt_sum /
+						(double)(cflow[id].final_report[endpoint]->response_blocks_read);
+					CATC("RTT = %.3f/%.3f/%.3f (min/avg/max)",
+					     min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
 				}
 
 				/* iat */
 				if (cflow[id].final_report[endpoint]->request_blocks_read) {
 					double min_iat = cflow[id].final_report[endpoint]->iat_min;
 					double max_iat = cflow[id].final_report[endpoint]->iat_max;
-					double avg_iat;
-					avg_iat = cflow[id].final_report[endpoint]->iat_sum / (double)(cflow[id].final_report[endpoint]->request_blocks_read);
-					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)", min_iat*1e3, avg_iat*1e3, max_iat*1e3);
+					double avg_iat = cflow[id].final_report[endpoint]->iat_sum /
+						(double)(cflow[id].final_report[endpoint]->request_blocks_read);
+					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)",
+					     min_iat*1e3, avg_iat*1e3, max_iat*1e3);
 				}
+
+				/* delay */
+				if (cflow[id].final_report[endpoint]->request_blocks_read) {
+					double min_delay = cflow[id].final_report[endpoint]->delay_min;
+					double max_delay = cflow[id].final_report[endpoint]->delay_max;
+					double avg_delay = cflow[id].final_report[endpoint]->delay_sum /
+						(double)(cflow[id].final_report[endpoint]->request_blocks_read);
+					CATC("DLY = %.3f/%.3f/%.3f (min/avg/max)",
+					     min_delay*1e3, avg_delay*1e3, max_delay*1e3);
+				}
+
 
 				free(cflow[id].final_report[endpoint]);
 
@@ -2084,6 +2167,10 @@ static void parse_visible_param(char *to_parse) {
 		visible_columns[column_type_iat] = 1;
 	if (strstr(to_parse, "-iat"))
 		visible_columns[column_type_iat] = 0;
+	if (strstr(to_parse, "+delay"))
+		visible_columns[column_type_delay] = 1;
+	if (strstr(to_parse, "-delay"))
+		visible_columns[column_type_delay] = 0;
 	if (strstr(to_parse, "+blocks"))
 		visible_columns[column_type_blocks] = 1;
 	if (strstr(to_parse, "-blocks"))
@@ -2948,7 +3035,7 @@ has_more_reports:
 					"{s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
 					"{s:i,s:i,s:i,s:i,*}" /* bytes */
 					"{s:i,s:i,s:i,s:i,*}" /* blocks */
-					"{s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT */
+					"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT, Delay */
 					"{s:i,s:i,*}" /* MTU */
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
@@ -2979,6 +3066,9 @@ has_more_reports:
 					"iat_min", &report.iat_min,
 					"iat_max", &report.iat_max,
 					"iat_sum", &report.iat_sum,
+					"delay_min", &report.delay_min,
+					"delay_max", &report.delay_max,
+					"delay_sum", &report.delay_sum,
 
 					"pmtu", &report.pmtu,
 					"imtu", &report.imtu,
