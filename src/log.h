@@ -1,28 +1,36 @@
+/**
+ * @file log.h
+ * @brief Logging routines used by Flowgrind
+ */
+
 /*
- * fg_log.h - Logging routines used by Flowgrind
+ * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
+ * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
+ * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
  *
- * Copyright (C) Christian Samsel <christian.samsel@rwth-aachen.de>, 2010-2013
- * Copyright (C) Tim Kosse <tim.kosse@gmx.de>, 2009
- * Copyright (C) Daniel Schaffrath <daniel.schaffrath@mac.com>, 2007-2008
+ * This file is part of Flowgrind. Flowgrind is free software; you can
+ * redistribute it and/or modify it under the terms of the GNU General
+ * Public License version 2 as published by the Free Software Foundation.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
+ * Flowgrind distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program; if not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 #ifndef _LOG_H_
 #define _LOG_H_
 
-#define LOGGING_MAXLEN  255	/* maximum string length */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
+/** Maximum length of logging string */
+#define LOGGING_MAXLEN	255
 
 extern int log_type;
 

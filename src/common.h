@@ -1,21 +1,24 @@
+/**
+ * @file common.h
+ * @brief Routines used by the Flowgrind Daemon and Controller
+ */
+
 /*
- * common.h - Routines used by the Flowgrind Daemon and Controller
+ * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
+ * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
+ * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
  *
- * Copyright (C) Christian Samsel <christian.samsel@rwth-aachen.de>, 2010-2013
- * Copyright (C) Tim Kosse <tim.kosse@gmx.de>, 2009
- * Copyright (C) Daniel Schaffrath <daniel.schaffrath@mac.com>, 2007-2008
+ * This file is part of Flowgrind. Flowgrind is free software; you can
+ * redistribute it and/or modify it under the terms of the GNU General
+ * Public License version 2 as published by the Free Software Foundation.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
+ * Flowgrind distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program; if not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -23,7 +26,7 @@
 #define _COMMON_H_
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif /* HAVE_CONFIG_H */
 
 #include <limits.h>
@@ -76,6 +79,12 @@ void error(int errcode, const char *fmt, ...);
 #ifndef TCP_CA_NAME_MAX
 #define TCP_CA_NAME_MAX 16
 #endif /* TCP_CA_NAME_MAX */
+
+/** Flow endpoint */
+enum flow_endpoint {
+	SOURCE = 0,
+	DESTINATION,
+};
 
 enum _extra_socket_option_level
 {
@@ -154,7 +163,11 @@ struct _flow_settings
 	int pushy;
 	int shutdown;
 
+	/** Send at specified rate per second (option -R) */
+	char *write_rate_str;
+	/** The actual rate we should send */
 	int write_rate;
+
 	unsigned int random_seed;
 
 	int flow_control;

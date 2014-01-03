@@ -1,21 +1,24 @@
+/**
+ * @file fg_socket.c
+ * @brief Routines used to manipulate socket parameters for Flowgrind
+ */
+
 /*
- * fg_socket.c - Routines used to manipulate socket parameters for Flowgrind
+ * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
+ * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
+ * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
  *
- * Copyright (C) Christian Samsel <christian.samsel@rwth-aachen.de>, 2010-2013
- * Copyright (C) Tim Kosse <tim.kosse@gmx.de>, 2009
- * Copyright (C) Daniel Schaffrath <daniel.schaffrath@mac.com>, 2007-2008
+ * This file is part of Flowgrind. Flowgrind is free software; you can
+ * redistribute it and/or modify it under the terms of the GNU General
+ * Public License version 2 as published by the Free Software Foundation.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
+ * Flowgrind distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program; if not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -26,7 +29,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <errno.h>
@@ -34,11 +36,9 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netdb.h>
-
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
-
 #include <unistd.h>
 #include <syslog.h>
 #include <arpa/inet.h>
@@ -46,9 +46,6 @@
 
 #ifdef HAVE_STRING_H
 #include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-#include <strings.h>
 #endif /* HAVE_STRING_H */
 
 #ifdef DEBUG
