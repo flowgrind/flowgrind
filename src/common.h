@@ -40,9 +40,9 @@
 #include <netinet/in_systm.h>
 #include <netinet/tcp.h>
 
-#define UNUSED_ARGUMENT(x) (void)x
-
 #include "gitversion.h"
+
+#define UNUSED_ARGUMENT(x) (void)x
 
 #ifdef GITVERSION
 #define FLOWGRIND_VERSION GITVERSION
@@ -57,13 +57,8 @@
 
 #define DEFAULT_LISTEN_PORT 5999
 
-#define ERR_FATAL 0
-#define ERR_WARNING 1
-
 #define ASSIGN_MIN(s, c) if ((s)>(c)) (s) = (c)
 #define ASSIGN_MAX(s, c) if ((s)<(c)) (s) = (c)
-
-void error(int errcode, const char *fmt, ...);
 
 #define WRITE 0
 #define READ 1
@@ -79,6 +74,13 @@ void error(int errcode, const char *fmt, ...);
 #ifndef TCP_CA_NAME_MAX
 #define TCP_CA_NAME_MAX 16
 #endif /* TCP_CA_NAME_MAX */
+
+/** Error types */
+enum error_type {
+	ERR_FATAL,
+	ERR_WARNING,
+	ERR_USAGE
+};
 
 /** Flow endpoint */
 enum flow_endpoint {
@@ -237,8 +239,24 @@ struct _report
 	unsigned int response_blocks_read;
 	unsigned int response_blocks_written;
 
-	double rtt_min, rtt_max, rtt_sum;
-	double iat_min, iat_max, iat_sum;
+	/** Minimum interarrival time */
+	double iat_min;
+	/** Maximum interarrival time */
+	double iat_max;
+	/** Accumulated interarrival time */
+	double iat_sum;
+	/** Minimum one-way delay */
+	double delay_min;
+	/** Maximum one-way delay */
+	double delay_max;
+	/** Accumulated one-way delay */
+	double delay_sum;
+	/** Minimum round-trip time */
+	double rtt_min;
+	/** Maximum round-trip time */
+	double rtt_max;
+	/** Accumulated round-trip time */
+	double rtt_sum;
 
 	/* on the Daemon this is filled from the os specific
 	 * tcp_info struct */
@@ -251,5 +269,7 @@ struct _report
 
 	struct _report* next;
 };
+
+void error(enum error_type errcode, const char *fmt, ...);
 
 #endif /* _COMMON_H_*/
