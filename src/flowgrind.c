@@ -255,12 +255,14 @@ int is_trafgenopt = 0;
 int is_timeopt = 0;
 
 /* Forward declarations */
+static void usage(void) __attribute__((noreturn));
+static void usage_sockopt(void) __attribute__((noreturn));
+static void usage_trafgenopt(void) __attribute__((noreturn));
+static void usage_optcombination(void) __attribute__((noreturn));
+static void usage_hint(void) __attribute__((noreturn));
 static void die_if_fault_occurred(xmlrpc_env *env);
-void check_version(xmlrpc_client *rpc_client);
-void check_idle(xmlrpc_client *rpc_client);
-void prepare_flows(xmlrpc_client *rpc_client);
 void prepare_flow(int id, xmlrpc_client *rpc_client);
-static void grind_flows(xmlrpc_client *rpc_client);
+static void fetch_reports(xmlrpc_client *);
 
 /**
  * Print flowgrind usage and exit
@@ -1875,8 +1877,6 @@ void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(resultP);
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
 }
-
-static void fetch_reports(xmlrpc_client *);
 
 /* start flows */
 static void grind_flows(xmlrpc_client *rpc_client)
