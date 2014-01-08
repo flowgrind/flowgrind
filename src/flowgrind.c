@@ -183,13 +183,14 @@ static char progname[50] = "flowgrind";
 /** Unique (by URL) flowgrind daemons */
 static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
-unsigned int num_unique_servers = 0;
+static unsigned int num_unique_servers = 0;
 /** General controller options */
 struct _opt opt;
 /** Infos about all flows including flow options */
 static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
-int active_flows = 0;
+static int active_flows = 0;
+
 /* FIXME Mutual exclusion flow cannot be handled by global variable since
  * it is a flow option. It must be realized on flow level */
 int is_bulkopt = 0;
