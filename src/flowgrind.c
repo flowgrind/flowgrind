@@ -211,7 +211,8 @@ void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void grind_flows(xmlrpc_client *rpc_client);
 
 /* New output determines the number of digits before the comma */
-int det_output_column_size(double value) {
+int det_output_column_size(double value)
+{
 	int i = 1;
 	double dez = 10.0;
 
@@ -225,7 +226,8 @@ int det_output_column_size(double value) {
 }
 
 /* produces the string command for printf for the right number of digits and decimal part */
-char *outStringPart(int digits, int decimalPart) {
+char *outStringPart(int digits, int decimalPart)
+{
 	static char outstr[30] = {0};
 
 	sprintf(outstr, "%%%d.%df", digits, decimalPart);
@@ -253,24 +255,22 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	/* get max columnsize */
 	if (opt.symbolic) {
 		switch ((unsigned int)value) {
-			case INT_MAX:
-				lengthData = strlen("INT_MAX");
-				break;
-
-			case USHRT_MAX:
-				lengthData = strlen("USHRT_MAX");
-				break;
-
-			case UINT_MAX:
-				lengthData = strlen("UINT_MAX");
-				break;
-
-			default:
-				lengthData = det_output_column_size(value) + numDigitsDecimalPart + 1;
-			}
+		case INT_MAX:
+			lengthData = strlen("INT_MAX");
+			break;
+		case USHRT_MAX:
+			lengthData = strlen("USHRT_MAX");
+			break;
+		case UINT_MAX:
+			lengthData = strlen("UINT_MAX");
+			break;
+		default:
+			lengthData = det_output_column_size(value) +
+				numDigitsDecimalPart + 1;
 		}
-	else {
-		lengthData = det_output_column_size(value) + numDigitsDecimalPart + 1;
+	} else {
+		lengthData = det_output_column_size(value) +
+			numDigitsDecimalPart + 1;
 	}
 	/* leading space */
 	lengthData++;
@@ -310,31 +310,32 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	 * output text for symbolic numbers */
 	if (opt.symbolic) {
 		switch ((int)value) {
-			case INT_MAX:
-				for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
-					strcat(strDataRow, " ");
-				strcat(strDataRow, " INT_MAX");
-				break;
-
-			case USHRT_MAX:
-				for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
-					strcat(strDataRow, " ");
-				strcat(strDataRow, " USHRT_MAX");
-				break;
-
-			case UINT_MAX:
-				for (a = lengthData; a < MAX(columnSize,column_state->last_width); a++)
-					strcat(strDataRow, " ");
-				strcat(strDataRow, " UINT_MAX");
-				break;
-
-
-			default: /*  number */
-				sprintf(tempBuffer, number_formatstring, value);
-				strcat(strDataRow, tempBuffer);
+		case INT_MAX:
+			for (a = lengthData;
+			     a < MAX(columnSize, column->state.last_width);
+			     a++)
+				strcat(strDataRow, " ");
+			strcat(strDataRow, " INT_MAX");
+			break;
+		case USHRT_MAX:
+			for (a = lengthData;
+			     a < MAX(columnSize, column->state.last_width);
+			     a++)
+				strcat(strDataRow, " ");
+			strcat(strDataRow, " USHRT_MAX");
+			break;
+		case UINT_MAX:
+			for (a = lengthData;
+			     a < MAX(columnSize, column->state.last_width);
+			     a++)
+				strcat(strDataRow, " ");
+			strcat(strDataRow, " UINT_MAX");
+			break;
+		default: /* number */
+			sprintf(tempBuffer, number_formatstring, value);
+			strcat(strDataRow, tempBuffer);
 		}
-	}
-	else {
+	} else {
 		sprintf(tempBuffer, number_formatstring, value);
 		strcat(strDataRow, tempBuffer);
 	}
@@ -648,8 +649,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		strcpy(outputString, headerString1);
 		strcat(outputString, headerString2);
 		strcat(outputString, dataString);
-	}
-	else {
+	} else {
 		strcpy(outputString, dataString);
 	}
 	counter++;
