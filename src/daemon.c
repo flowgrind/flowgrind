@@ -112,11 +112,16 @@ char dumping = 0;
 #endif /* HAVE_LIBPCAP */
 
 /* Forward declarations */
+static int write_data(struct _flow *flow);
+static int read_data(struct _flow *flow);
 static void process_rtt(struct _flow* flow);
 static void process_iat(struct _flow* flow);
 static void process_delay(struct _flow* flow);
+static void report_flow(struct _flow* flow, int type);
 static void send_response(struct _flow* flow,
 			  int requested_response_block_size);
+int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info);
+
 
 void flow_error(struct _flow *flow, const char *fmt, ...)
 {
@@ -278,9 +283,6 @@ static int prepare_rfds(struct timespec *now, struct _flow *flow, fd_set *rfds)
 
 	return 0;
 }
-
-int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info);
-static void report_flow(struct _flow* flow, int type);
 
 static int prepare_fds() {
 
@@ -703,9 +705,6 @@ static void timer_check()
 	}
 	DEBUG_MSG(LOG_DEBUG, "finished timer_check()");
 }
-
-static int write_data(struct _flow *flow);
-static int read_data(struct _flow *flow);
 
 static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 {
