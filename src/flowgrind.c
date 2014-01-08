@@ -520,6 +520,22 @@ static void usage_hint(void)
 	exit(EXIT_FAILURE);
 }
 
+static void sigint_handler(int sig)
+{
+	UNUSED_ARGUMENT(sig);
+
+	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
+
+	if (sigint_caught == 0) {
+		fprintf(stderr, "# received SIGINT, trying to gracefully "
+			"close flows. Press CTRL+C again to force "
+			"termination.\n");
+		sigint_caught = 1;
+	} else {
+		exit(EXIT_FAILURE);
+	}
+}
+
 static void init_options_defaults(void)
 {
 	opt.num_flows = 1;
@@ -1416,22 +1432,6 @@ exit_outer_loop:
 	}
 
 	print_report(id, endpoint, report);
-}
-
-static void sigint_handler(int sig)
-{
-	UNUSED_ARGUMENT(sig);
-
-	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
-
-	if (sigint_caught == 0) {
-		fprintf(stderr, "# received SIGINT, trying to gracefully "
-			"close flows. Press CTRL+C again to force "
-			"termination.\n");
-		sigint_caught = 1;
-	} else {
-		exit(EXIT_FAILURE);
-	}
 }
 
 void close_flow(int id)
