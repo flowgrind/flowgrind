@@ -649,6 +649,15 @@ static void init_logfile(void)
 		error(ERR_FATAL, "could not open logfile %s", log_filename);
 }
 
+static void shutdown_logfile()
+{
+	if (opt.dont_log_logfile)
+		return;
+
+	if (fclose(log_stream) == -1)
+		error(ERR_FATAL, "could not close logfile %s", log_filename);
+}
+
 static void log_output(const char *msg)
 {
 	if (!opt.dont_log_stdout) {
@@ -1021,16 +1030,6 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	counter++;
 
 	return outputString;
-}
-
-
-static void shutdown_logfile()
-{
-	if (opt.dont_log_logfile)
-		return;
-
-	if (fclose(log_stream) == -1)
-		error(ERR_FATAL, "could not close logfile %s", log_filename);
 }
 
 
