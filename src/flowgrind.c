@@ -76,8 +76,8 @@ enum column_types
 /* FIXME If the daemon (for example a FreeBSD) does not report the
  * CA state it will always displayed as "open" */
 
-/** Values for Linux tcpi_state, if not compiled on Linux */
 #ifndef __LINUX__
+/** Values for Linux tcpi_state, if not compiled on Linux */
 enum tcp_ca_state
 {
 	TCP_CA_Open = 0,

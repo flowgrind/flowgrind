@@ -37,8 +37,8 @@
 #include "common.h"
 #include "fg_time.h"
 
-/** Sysctl for quering available congestion control algorithms */
 #ifdef __LINUX__
+/** Sysctl for quering available congestion control algorithms */
 #define SYSCTL_CC_AVAILABLE  "net.ipv4.tcp_available_congestion_control"
 #elif __FreeBSD__
 #define SYSCTL_CC_AVAILABLE "net.inet.tcp.cc.available"
