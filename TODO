@@ -4,7 +4,6 @@
 +investigate why libpcap does not work in multiple threads
 +simplify arbitrary socket options
 +do something with UDP/SCTP
-+xml style output
 +let option -Z work together with option -G
 +add optional columns for sender/receiver buffer
 +implement pthread barrier for mac os x
@@ -17,3 +16,5 @@
 +adapt man pages to the newest changes in help
 +do not call /sbin/sysctl out of flowgrind
 +apply Linux kernel coding style
++only display column if controller has something to print (RTT, transac columns
+ if traffic on reverse path, kernel columns based on the involved OSes,...)
