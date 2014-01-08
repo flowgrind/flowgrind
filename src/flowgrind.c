@@ -412,9 +412,12 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		   unsigned int request_blocks, unsigned int response_blocks,
 		   double rttmin, double rttavg, double rttmax,
 		   double iatmin, double iatavg, double iatmax,
-		   unsigned int cwnd, unsigned int ssth, unsigned int uack, unsigned int sack, unsigned int lost, unsigned int reor,
-		   unsigned int retr, unsigned int tret, unsigned int fack, double linrtt, double linrttvar,
-		   double linrto, unsigned int backoff, int ca_state, int snd_mss,  int pmtu, char* status, int unit_byte)
+		   unsigned int cwnd, unsigned int ssth, unsigned int uack,
+		   unsigned int sack, unsigned int lost, unsigned int reor,
+		   unsigned int retr, unsigned int tret, unsigned int fack,
+		   double linrtt, double linrttvar, double linrto,
+		   unsigned int backoff, int ca_state, int snd_mss,  int pmtu,
+		   char* status, int unit_byte)
 {
 	int columnWidthChanged = 0;
 
@@ -443,107 +446,138 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	i++;
 
 	/* param begin */
-	createOutputColumn(headerString1, headerString2, dataString, i, begin, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, begin,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param end */
-	createOutputColumn(headerString1, headerString2, dataString, i, end, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, end,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param throughput */
 	if (unit_byte == 1)
-		createOutputColumn(headerString1, headerString2, dataString, i + 1, throughput, &column_states[i], 6, &columnWidthChanged);
+		createOutputColumn(headerString1, headerString2, dataString,
+				   i + 1, throughput, &column_states[i], 6,
+				   &columnWidthChanged);
 	else
-		createOutputColumn(headerString1, headerString2, dataString, i, throughput, &column_states[i], 6, &columnWidthChanged);
+		createOutputColumn(headerString1, headerString2, dataString, i,
+				   throughput, &column_states[i], 6,
+				   &columnWidthChanged);
 	i += 2;
 
 	/* param trans/s */
-	createOutputColumn(headerString1, headerString2, dataString, i, transac, &column_states[i], 2, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   transac, &column_states[i], 2, &columnWidthChanged);
 	i++;
 
 	/* param request blocks */
-	createOutputColumn(headerString1, headerString2, dataString, i, request_blocks, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   request_blocks, &column_states[i], 0,
+			   &columnWidthChanged);
 	i++;
 
 	/* param response blocks */
-	createOutputColumn(headerString1, headerString2, dataString, i, response_blocks, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   response_blocks, &column_states[i], 0,
+			   &columnWidthChanged);
 	i++;
 
 	/* param str_rttmin */
-	createOutputColumn(headerString1, headerString2, dataString, i, rttmin, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, rttmin,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_rttavg */
-	createOutputColumn(headerString1, headerString2, dataString, i, rttavg, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, rttavg,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_rttmax */
-	createOutputColumn(headerString1, headerString2, dataString, i, rttmax, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, rttmax,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_iatmin */
-	createOutputColumn(headerString1, headerString2, dataString, i, iatmin, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, iatmin,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_iatavg */
-	createOutputColumn(headerString1, headerString2, dataString, i, iatavg, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, iatavg,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* param str_iatmax */
-	createOutputColumn(headerString1, headerString2, dataString, i, iatmax, &column_states[i], 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, iatmax,
+			   &column_states[i], 3, &columnWidthChanged);
 	i++;
 
 	/* linux kernel output */
 	/* param str_cwnd */
-	createOutputColumn(headerString1, headerString2, dataString, i, cwnd, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, cwnd,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_ssth */
-	createOutputColumn(headerString1, headerString2, dataString, i, ssth, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, ssth,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_uack */
-	createOutputColumn(headerString1, headerString2, dataString, i, uack, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, uack,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_sack */
-	createOutputColumn(headerString1, headerString2, dataString, i, sack, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, sack,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_lost */
-	createOutputColumn(headerString1, headerString2, dataString, i, lost, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, lost,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_retr */
-	createOutputColumn(headerString1, headerString2, dataString, i, retr, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, retr,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_tret */
-	createOutputColumn(headerString1, headerString2, dataString, i, tret, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, tret,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_fack */
-	createOutputColumn(headerString1, headerString2, dataString, i, fack, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, fack,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_reor */
-	createOutputColumn(headerString1, headerString2, dataString, i, reor, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, reor,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_linrtt */
-	createOutputColumn(headerString1, headerString2, dataString, i, backoff, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   backoff, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* param str_linrtt */
-	createOutputColumn(headerString1, headerString2, dataString, i, linrtt, &column_states[i], 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrtt,
+			   &column_states[i], 1, &columnWidthChanged);
 	i++;
 
 	/* param str_linrttvar */
-	createOutputColumn(headerString1, headerString2, dataString, i, linrttvar, &column_states[i], 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   linrttvar, &column_states[i], 1,
+			   &columnWidthChanged);
 	i++;
 
 	/* param str_linrto */
-	createOutputColumn(headerString1, headerString2, dataString, i, linrto, &column_states[i], 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, linrto,
+			   &column_states[i], 1, &columnWidthChanged);
 	i++;
 
 	/* param ca_state */
@@ -560,19 +594,23 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else
 		strcpy(tmp, "unknown");
 
-	createOutputColumn_str(headerString1, headerString2, dataString, i, tmp, &column_states[i], &columnWidthChanged);
+	createOutputColumn_str(headerString1, headerString2, dataString, i,
+			       tmp, &column_states[i], &columnWidthChanged);
 	i++;
 
 	/* param str_linrtt */
-	createOutputColumn(headerString1, headerString2, dataString, i, snd_mss, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i,
+			   snd_mss, &column_states[i], 0, &columnWidthChanged);
 	i++;
 
-	createOutputColumn(headerString1, headerString2, dataString, i, pmtu, &column_states[i], 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString, i, pmtu,
+			   &column_states[i], 0, &columnWidthChanged);
 	i++;
 
 	/* status */
 #ifdef DEBUG
-	createOutputColumn_str(headerString1, headerString2, dataString, i, status, &column_states[i], &columnWidthChanged);
+	createOutputColumn_str(headerString1, headerString2, dataString, i,
+			       status, &column_states[i], &columnWidthChanged);
 	i++;
 #else
 	UNUSED_ARGUMENT(status);
@@ -1285,18 +1323,20 @@ void report_final(void)
 				if (cflow[id].final_report[endpoint]->response_blocks_read) {
 					double min_rtt = cflow[id].final_report[endpoint]->rtt_min;
 					double max_rtt = cflow[id].final_report[endpoint]->rtt_max;
-					double avg_rtt;
-					avg_rtt = cflow[id].final_report[endpoint]->rtt_sum / (double)(cflow[id].final_report[endpoint]->response_blocks_read);
-					CATC("RTT = %.3f/%.3f/%.3f (min/avg/max)", min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
+					double avg_rtt = cflow[id].final_report[endpoint]->rtt_sum /
+						(double)(cflow[id].final_report[endpoint]->response_blocks_read);
+					CATC("RTT = %.3f/%.3f/%.3f (min/avg/max)",
+					     min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
 				}
 
 				/* iat */
 				if (cflow[id].final_report[endpoint]->request_blocks_read) {
 					double min_iat = cflow[id].final_report[endpoint]->iat_min;
 					double max_iat = cflow[id].final_report[endpoint]->iat_max;
-					double avg_iat;
-					avg_iat = cflow[id].final_report[endpoint]->iat_sum / (double)(cflow[id].final_report[endpoint]->request_blocks_read);
-					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)", min_iat*1e3, avg_iat*1e3, max_iat*1e3);
+					double avg_iat = cflow[id].final_report[endpoint]->iat_sum /
+						(double)(cflow[id].final_report[endpoint]->request_blocks_read);
+					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)",
+					     min_iat*1e3, avg_iat*1e3, max_iat*1e3);
 				}
 
 				free(cflow[id].final_report[endpoint]);
