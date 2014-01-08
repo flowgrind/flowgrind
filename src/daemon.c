@@ -57,11 +57,6 @@
 
 #include "common.h"
 #include "debug.h"
-
-#ifdef HAVE_LIBPCAP
-#include "fg_pcap.h"
-#endif /* HAVE_LIBPCAP */
-
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "fg_math.h"
@@ -70,6 +65,10 @@
 #include "source.h"
 #include "destination.h"
 #include "trafgen.h"
+
+#ifdef HAVE_LIBPCAP
+#include "fg_pcap.h"
+#endif /* HAVE_LIBPCAP */
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
