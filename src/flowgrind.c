@@ -658,6 +658,34 @@ static void shutdown_logfile()
 		error(ERR_FATAL, "could not close logfile %s", log_filename);
 }
 
+/* creates an xmlrpc_client for connect to server, uses global env rpc_env */
+void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
+	struct xmlrpc_clientparms clientParms;
+	size_t clientParms_cpsize = XMLRPC_CPSIZE(transport);
+
+	/* Since version 1.21 xmlrpclib will automatically generate a
+	 * rather long user_agent, we will do a lot of RPC calls so let's
+	 * spare some bytes and omit this header */
+#ifdef HAVE_STRUCT_XMLRPC_CURL_XPORTPARMS_DONT_ADVERTISE
+	struct xmlrpc_curl_xportparms curlParms;
+	memset(&curlParms, 0, sizeof(curlParms));
+
+	curlParms.dont_advertise = 1;
+
+	clientParms.transportparmsP    = &curlParms;
+	clientParms.transportparm_size = XMLRPC_CXPSIZE(dont_advertise);
+	clientParms_cpsize = XMLRPC_CPSIZE(transportparm_size);
+#endif /* HAVE_STRUCT_XMLRPC_CURL_XPORTPARMS_DONT_ADVERTISE */
+
+	/* Force usage of curl transport, we require it in configure script anyway
+	 * and at least FreeBSD 9.1 will use libwww otherwise */
+	clientParms.transport = "curl";
+
+	DEBUG_MSG(LOG_WARNING, "prepare xmlrpc client");
+	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION,
+			     &clientParms, clientParms_cpsize, rpc_client);
+}
+
 static void log_output(const char *msg)
 {
 	if (!opt.dont_log_stdout) {
@@ -2071,34 +2099,6 @@ has_more_reports:
 		if (has_more)
 			goto has_more_reports;
 	}
-}
-
-/* creates an xmlrpc_client for connect to server, uses global env rpc_env */
-void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
-	struct xmlrpc_clientparms clientParms;
-	size_t clientParms_cpsize = XMLRPC_CPSIZE(transport);
-
-	/* Since version 1.21 xmlrpclib will automatically generate a
-	 * rather long user_agent, we will do a lot of RPC calls so let's
-	 * spare some bytes and omit this header */
-#ifdef HAVE_STRUCT_XMLRPC_CURL_XPORTPARMS_DONT_ADVERTISE
-	struct xmlrpc_curl_xportparms curlParms;
-	memset(&curlParms, 0, sizeof(curlParms));
-
-	curlParms.dont_advertise = 1;
-
-	clientParms.transportparmsP    = &curlParms;
-	clientParms.transportparm_size = XMLRPC_CXPSIZE(dont_advertise);
-	clientParms_cpsize = XMLRPC_CPSIZE(transportparm_size);
-#endif /* HAVE_STRUCT_XMLRPC_CURL_XPORTPARMS_DONT_ADVERTISE */
-
-	/* Force usage of curl transport, we require it in configure script anyway
-	 * and at least FreeBSD 9.1 will use libwww otherwise */
-	clientParms.transport = "curl";
-
-	DEBUG_MSG(LOG_WARNING, "prepare xmlrpc client");
-	xmlrpc_client_create(&rpc_env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION,
-			     &clientParms, clientParms_cpsize, rpc_client);
 }
 
 /*
