@@ -607,10 +607,8 @@ static void init_flows_defaults(void)
 		if(rc == -1) {
 			error(ERR_FATAL, "read /dev/urandom failed: %s", strerror(errno));
 		}
-
 	}
 }
-
 
 static void init_logfile(void)
 {
@@ -1060,7 +1058,6 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	return outputString;
 }
 
-
 void print_tcp_report_line(char hash, int id,
 		int type, /* 0 source 1 destination */
 		double time1, double time2, struct _report *r)
@@ -1406,7 +1403,6 @@ void report_final(void)
 
 }
 
-
 /* This function allots an report received from one daemon (identified
  * by server_url)  to the proper flow */
 void report_flow(const struct _daemon* daemon, struct _report* report)
@@ -1611,8 +1607,6 @@ void check_idle(xmlrpc_client *rpc_client)
 		}
 	}
 }
-
-/* controller (flowgrind) functions */
 
 /* enumerate over prepare_flow */
 void prepare_flows(xmlrpc_client *rpc_client)
