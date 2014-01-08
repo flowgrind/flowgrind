@@ -649,6 +649,18 @@ static void init_logfile(void)
 		error(ERR_FATAL, "could not open logfile %s", log_filename);
 }
 
+static void log_output(const char *msg)
+{
+	if (!opt.dont_log_stdout) {
+		printf("%s", msg);
+		fflush(stdout);
+	}
+	if (!opt.dont_log_logfile) {
+		fprintf(log_stream, "%s", msg);
+		fflush(log_stream);
+	}
+}
+
 /* Finds the daemon (or creating a new one) for a given server_url,
  * uses global static unique_servers variable for storage */
 static struct _daemon * get_daemon_by_url(const char* server_url, const char* server_name, unsigned short server_port) {
@@ -1021,18 +1033,6 @@ static void shutdown_logfile()
 		error(ERR_FATAL, "could not close logfile %s", log_filename);
 }
 
-
-static void log_output(const char *msg)
-{
-	if (!opt.dont_log_stdout) {
-		printf("%s", msg);
-		fflush(stdout);
-	}
-	if (!opt.dont_log_logfile) {
-		fprintf(log_stream, "%s", msg);
-		fflush(log_stream);
-	}
-}
 
 void print_tcp_report_line(char hash, int id,
 		int type, /* 0 source 1 destination */
