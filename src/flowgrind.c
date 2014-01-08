@@ -55,24 +55,6 @@
 #include "debug.h"
 #include "flowgrind.h"
 
-/* XXX add a brief description doxygen */
-enum column_types
-{
-	column_type_begin,
-	column_type_end,
-	column_type_thrpt,
-	column_type_transac,
-	column_type_blocks,
-	column_type_rtt,
-	column_type_iat,
-	column_type_delay,
-	column_type_kernel,
-#ifdef DEBUG
-	column_type_status,
-#endif /* DEBUG */
-	column_type_other
-};
-
 /* FIXME If the daemon (for example a FreeBSD) does not report the
  * CA state it will always displayed as "open" */
 
@@ -88,86 +70,157 @@ enum tcp_ca_state
 };
 #endif /* __LINUX__ */
 
-/* XXX add a brief description doxygen */
-struct _header_info
+/** Output columns for the intermediated interval reports */
+enum column_types
 {
-	const char* first;
-	const char* second;
-	enum column_types column_type;
-};
-
-/* XXX add a brief description doxygen */
-struct _column_state
-{
-	unsigned int count_oversized;
-	unsigned int last_width;
-};
-
-/* While Linux uses an segment based TCP-Stack, and values like cwnd are
- * measured in number of segments, FreeBSDs and probably most other BSDs stack
- * is based on Bytes. */
-
-/* FIXME The header format should not be based on the OS the controller is
- * compiled on. However, including the header on every report when doing
- * FreeBSD <-> Linux measurements does not seem a good idea either */
-
-/** Header for intermediated interval reports */
-const struct _header_info header_info[] = {
-	{"# ID", "#   ", column_type_other},
-	{" begin", " [s]", column_type_begin},
-	{" end", " [s]", column_type_end},
-	{" through", " [Mbit/s]", column_type_thrpt},
-	{" through", " [MB/s]", column_type_thrpt},
-	{" transac", " [#/s]", column_type_transac},
-	{" requ", " [#]", column_type_blocks},
-	{" resp", " [#]", column_type_blocks},
-	{" min RTT", " [ms]", column_type_rtt},
-	{" avg RTT", " [ms]", column_type_rtt},
-	{" max RTT", " [ms]", column_type_rtt},
-	{" min IAT", " [ms]", column_type_iat},
-	{" avg IAT", " [ms]", column_type_iat},
-	{" max IAT", " [ms]", column_type_iat},
-	{" min DLY", " [ms]", column_type_delay},
-	{" avg DLY", " [ms]", column_type_delay},
-	{" max DLY", " [ms]", column_type_delay},
-#ifdef __LINUX__
-	{" cwnd", " [#]", column_type_kernel},
-	{" ssth", " [#]", column_type_kernel},
-	{" uack", " [#]", column_type_kernel},
-	{" sack", " [#]", column_type_kernel},
-	{" lost", " [#]", column_type_kernel},
-	{" retr", " [#]", column_type_kernel},
-	{" tret", " [#]", column_type_kernel},
-	{" fack", " [#]", column_type_kernel},
-	{" reor", " [#]", column_type_kernel},
-	{" bkof", " [#]", column_type_kernel},
-#else
-	{" cwnd", " [B]", column_type_kernel},
-	{" ssth", " [B]", column_type_kernel},
-	{" uack", " [B]", column_type_kernel},
-	{" sack", " [B]", column_type_kernel},
-	{" lost", " [B]", column_type_kernel},
-	{" retr", " [B]", column_type_kernel},
-	{" tret", " [B]", column_type_kernel},
-	{" fack", " [B]", column_type_kernel},
-	{" reor", " [B]", column_type_kernel},
-	{" bkof", " [B]", column_type_kernel},
-#endif /* __LINUX__ */
-	{" rtt", " [ms]", column_type_kernel},
-	{" rttvar", " [ms]", column_type_kernel},
-	{" rto", " [ms]", column_type_kernel},
-	{" ca state", " ", column_type_kernel},
-	{" smss", "[B]", column_type_kernel},
-	{" pmtu", "[B]", column_type_kernel},
+	/** Flow ID */
+	COL_FLOW_ID = 0,
+	/** Report interval @{ */
+	COL_BEGIN,
+	COL_END,					    /** @} */
+	/** Throughput per seconds */
+	COL_THROUGH,
+	/** Transactions per second */
+	COL_TRANSAC,
+	/** Blocks per second @{ */
+	COL_BLOCK_REQU,
+	COL_BLOCK_RESP,					    /** @} */
+	/** Application level round-trip time @{ */
+	COL_RTT_MIN,
+	COL_RTT_AVG,
+	COL_RTT_MAX,					    /** @} */
+	/** Application level inter-arrival time @{ */
+	COL_IAT_MIN,
+	COL_IAT_AVG,
+	COL_IAT_MAX,					    /** @} */
+	/** Application level one-way delay @{ */
+	COL_DLY_MIN,
+	COL_DLY_AVG,
+	COL_DLY_MAX,					    /** @} */
+	/** Metric from the Linux / BSD TCP stack @{ */
+	COL_TCP_CWND,
+	COL_TCP_SSTH,
+	COL_TCP_UACK,
+	COL_TCP_SACK,
+	COL_TCP_LOST,
+	COL_TCP_RETR,
+	COL_TCP_TRET,
+	COL_TCP_FACK,
+	COL_TCP_REOR,
+	COL_TCP_BKOF,
+	COL_TCP_RTT,
+	COL_TCP_RTTVAR,
+	COL_TCP_RTO,
+	COL_TCP_CA_STATE,
+	COL_SMSS,
+	COL_PMTU,					    /** @} */
 #ifdef DEBUG
-	{" status", " ", column_type_status}
+	/** Read / write status */
+	COL_STATUS
 #endif /* DEBUG */
 };
 
-/* XXX add a brief description doxygen */
+/** Header of the intermediated interval report column */
+struct _column_header
+{
+	/** First header row: name of the column */
+	const char* name;
+	/** Second header row: unit of the column */
+	const char* unit;
+};
+
+/** State of the intermediated interval report column */
 struct _column_state
-	column_states[sizeof(header_info) / sizeof(struct _header_info)] = {
-		{0,0}
+{
+	/** Dynamically turn an column on/off */
+	bool visible;
+	/** How often the current column width was too high */
+	unsigned int oversized;
+	/** Last width of the column */
+	unsigned int last_width;
+};
+
+/** Intermediated interval report column */
+struct _column
+{
+	/** Unique column identifier */
+	enum column_types type;
+	/** Column header (name and unit) */
+	struct _column_header header;
+	/** State of the column */
+	struct _column_state state;
+};
+
+/** Infos about the intermediated interval report columns */
+static struct _column column_info[] = {
+	{.type = COL_FLOW_ID, .header.name = "# ID",
+	 .header.unit = "#   ", .state.visible = true},
+	{.type = COL_BEGIN, .header.name = " begin",
+	 .header.unit = " [s]", .state.visible = true},
+	{.type = COL_END, .header.name = " end",
+	 .header.unit = " [s]", .state.visible = true},
+	{.type = COL_THROUGH, .header.name = " through",
+	 .header.unit = " [Mbit/s]", .state.visible = true},
+	{.type = COL_TRANSAC, .header.name = " transac",
+	 .header.unit = " [#/s]", .state.visible = true},
+	{.type = COL_BLOCK_REQU, .header.name = " requ",
+	 .header.unit = " [#]", .state.visible = false},
+	{.type = COL_BLOCK_RESP, .header.name = " resp",
+	 .header.unit = " [#]", .state.visible = false},
+	{.type = COL_RTT_MIN, .header.name = " min RTT",
+	 .header.unit = " [ms]", .state.visible = true},
+	{.type = COL_RTT_AVG, .header.name = " avg RTT",
+	 .header.unit = " [ms]", .state.visible = true},
+	{.type = COL_RTT_MAX, .header.name = " max RTT",
+	 .header.unit = " [ms]", .state.visible = true},
+	{.type = COL_IAT_MIN, .header.name = " min IAT",
+	 .header.unit = " [ms]", .state.visible = true},
+	{.type = COL_IAT_AVG, .header.name = " avg IAT",
+	 .header.unit = " [ms]", .state.visible = true},
+	{.type = COL_IAT_MAX, .header.name = " max IAT",
+	 .header.unit = " [ms]", .state.visible = true},
+	{.type = COL_DLY_MIN, .header.name = " min DLY",
+	 .header.unit = " [ms]", .state.visible = false},
+	{.type = COL_DLY_AVG, .header.name = " avg DLY",
+	 .header.unit = " [ms]", .state.visible = false},
+	{.type = COL_DLY_MAX, .header.name = " max DLY",
+	 .header.unit = " [ms]", .state.visible = false},
+	{.type = COL_TCP_CWND, .header.name = " cwnd",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_SSTH, .header.name = " ssth",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_UACK, .header.name = " uack",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_SACK, .header.name = " sack",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_LOST, .header.name = " lost",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_RETR, .header.name = " retr",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_TRET, .header.name = " tret",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_FACK, .header.name = " fack",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_REOR, .header.name = " reor",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_BKOF, .header.name = " bkof",
+	 .header.unit = " [#]", .state.visible = true},
+	{.type = COL_TCP_RTT, .header.name = " rtt",
+	 .header.unit = " [ms]", .state.visible = true},
+	{.type = COL_TCP_RTTVAR, .header.name = " rttvar",
+	 .header.unit = " [ms]", .state.visible = true},
+	{.type = COL_TCP_RTO, .header.name = " rto",
+	 .header.unit = " [ms]", .state.visible = true},
+	{.type = COL_TCP_CA_STATE, .header.name = " ca state",
+	 .header.unit = " ", .state.visible = true},
+	{.type = COL_SMSS, .header.name = " smss",
+	 .header.unit = "[B]", .state.visible = true},
+	{.type = COL_PMTU, .header.name = " pmtu",
+	 .header.unit = "[B]", .state.visible = true},
+#ifdef DEBUG
+	{.type = COL_STATUS, .header.name = " status",
+	 .header.unit = " ", .state.visible = true}
+#endif /* DEBUG */
 };
 
 /* XXX add a brief description doxygen */
@@ -200,8 +253,6 @@ int is_trafgenopt = 0;
 /* FIXME Mutual exclusion flow cannot be handled by global variable since
  * it is a flow option. It must be realized on flow level */
 int is_timeopt = 0;
-/** Array for the dynamical output, show all except status by default */
-int visible_columns[11] = {1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1};
 
 /* Forward declarations */
 static void die_if_fault_occurred(xmlrpc_env *env);
@@ -237,8 +288,8 @@ char *outStringPart(int digits, int decimalPart)
 }
 
 int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
-		       int column, double value, struct _column_state *column_state,
-		       int numDigitsDecimalPart, int *columnWidthChanged)
+		       int column_id, double value, int numDigitsDecimalPart,
+		       int *columnWidthChanged)
 {
 	unsigned int maxTooLongColumns = opt.num_flows * 5;
 	int lengthData = 0;
@@ -246,11 +297,10 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	unsigned int columnSize = 0;
 	char tempBuffer[50];
 	unsigned int a;
-	const struct _header_info *header = &header_info[column];
-
+	struct _column *column = &column_info[column_id];
 	char* number_formatstring;
 
-	if (!visible_columns[header->column_type])
+	if (!column->state.visible)
 		return 0;
 
 	/* get max columnsize */
@@ -280,31 +330,33 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	if (numDigitsDecimalPart)
 		lengthData++;
 
-	lengthHead = MAX(strlen(header->first), strlen(header->second));
+	lengthHead = MAX(strlen(column->header.name),
+			 strlen(column->header.unit));
 	columnSize = MAX(lengthData, lengthHead);
 
 	/* check if columnsize has changed */
-	if (column_state->last_width < columnSize) {
+	if (column->state.last_width < columnSize) {
 		/* column too small */
 		*columnWidthChanged = 1;
-		column_state->last_width = columnSize;
-		column_state->count_oversized = 0;
-	}
-	else if (column_state->last_width > 1 + columnSize) {
+		column->state.last_width = columnSize;
+		column->state.oversized = 0;
+	} else if (column->state.last_width > 1 + columnSize) {
 		/* column too big */
-		if (column_state->count_oversized >= maxTooLongColumns) {
+		if (column->state.oversized >= maxTooLongColumns) {
 			/* column too big for quite a while */
 			*columnWidthChanged = 1;
-			column_state->last_width = columnSize;
-			column_state->count_oversized = 0;
+			column->state.last_width = columnSize;
+			column->state.oversized = 0;
+		} else {
+			(column->state.oversized)++;
 		}
-		else
-			(column_state->count_oversized)++;
+	} else {
+		/* This size was needed, keep it */
+		column->state.oversized = 0;
 	}
-	else /* This size was needed,keep it */
-		column_state->count_oversized = 0;
+	number_formatstring = outStringPart(column->state.last_width,
+			                    numDigitsDecimalPart);
 
-	number_formatstring = outStringPart(column_state->last_width, numDigitsDecimalPart);
 	/* create columns */
 
 	/* output text for symbolic numbers */
@@ -340,20 +392,22 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 		strcat(strDataRow, tempBuffer);
 	}
 	/* 1st header row */
-	for (a = column_state->last_width; a > strlen(header->first); a--)
+	for (a = column->state.last_width;
+	     a > strlen(column->header.name); a--)
 		strcat(strHead1Row, " ");
-	strcat(strHead1Row, header->first);
+	strcat(strHead1Row, column->header.name);
 
-	/* 2nd header Row */
-	for (a = column_state->last_width; a > strlen(header->second); a--)
+	/* 2nd header row */
+	for (a = column->state.last_width;
+	     a > strlen(column->header.unit); a--)
 		strcat(strHead2Row, " ");
-	strcat(strHead2Row, header->second);
+	strcat(strHead2Row, column->header.unit);
 
 	return 0;
 }
 
-int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRow,
-			   int column, char* value, struct _column_state *column_state,
+int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
+			   char *strDataRow, int column_id, char* value,
 			   int *columnWidthChanged)
 {
 
@@ -362,36 +416,37 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
 	unsigned int a;
-	const struct _header_info *header = &header_info[column];
+	struct _column *column = &column_info[column_id];
 
-	if (!visible_columns[header->column_type])
+	if (!column->state.visible)
 		return 0;
 
 	/* get max columnsize */
 	lengthData = strlen(value);
-	lengthHead = MAX(strlen(header->first), strlen(header->second));
+	lengthHead = MAX(strlen(column->header.name),
+			 strlen(column->header.unit));
 	columnSize = MAX(lengthData, lengthHead) + 1;
 
 	/* check if columnsize has changed */
-	if (column_state->last_width < columnSize) {
+	if (column->state.last_width < columnSize) {
 		/* column too small */
 		*columnWidthChanged = 1;
-		column_state->last_width = columnSize;
-		column_state->count_oversized = 0;
-	}
-	else if (column_state->last_width > 1 + columnSize) {
+		column->state.last_width = columnSize;
+		column->state.oversized = 0;
+	} else if (column->state.last_width > 1 + columnSize) {
 		/* column too big */
-		if (column_state->count_oversized >= maxTooLongColumns) {
+		if (column->state.oversized >= maxTooLongColumns) {
 			/* column too big for quite a while */
 			*columnWidthChanged = 1;
-			column_state->last_width = columnSize;
-			column_state->count_oversized = 0;
+			column->state.last_width = columnSize;
+			column->state.oversized = 0;
+		} else {
+			(column->state.oversized)++;
 		}
-		else
-			(column_state->count_oversized)++;
+	} else {
+		/* This size was needed, keep it */
+		column->state.oversized = 0;
 	}
-	else /* This size was needed,keep it */
-		column_state->count_oversized = 0;
 
 	/* create columns */
 	for (a = lengthData+1; a < columnSize; a++)
@@ -399,14 +454,16 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row, char *strDataRo
 	strcat(strDataRow, value);
 
 	/* 1st header row */
-	for (a = column_state->last_width; a > strlen(header->first)+1; a--)
+	for (a = column->state.last_width; a > strlen(column->header.name) + 1;
+	     a--)
 		strcat(strHead1Row, " ");
-	strcat(strHead1Row, header->first);
+	strcat(strHead1Row, column->header.name);
 
 	/* 2nd header Row */
-	for (a = column_state->last_width; a > strlen(header->second)+1; a--)
+	for (a = column->state.last_width; a > strlen(column->header.unit) + 1;
+	     a--)
 		strcat(strHead2Row, " ");
-	strcat(strHead2Row, header->second);
+	strcat(strHead2Row, column->header.unit);
 
 	return 0;
 }
@@ -423,11 +480,9 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 		   unsigned int retr, unsigned int tret, unsigned int fack,
 		   double linrtt, double linrttvar, double linrto,
 		   unsigned int backoff, int ca_state, int snd_mss,  int pmtu,
-		   char* status, int unit_byte)
+		   char* status)
 {
 	int columnWidthChanged = 0;
-
-	int i = 0;
 	static int counter = 0;
 
 	/* Create Row + Header */
@@ -447,164 +502,9 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else
 		sprintf(dataString, "S%3d", id);
 
-	strcpy(headerString1, header_info[0].first);
-	strcpy(headerString2, header_info[0].second);
-	i++;
+	strcpy(headerString1, column_info[COL_FLOW_ID].header.name);
+	strcpy(headerString2, column_info[COL_FLOW_ID].header.unit);
 
-	/* param begin */
-	createOutputColumn(headerString1, headerString2, dataString, i, begin,
-			   &column_states[i], 3, &columnWidthChanged);
-	i++;
-
-	/* param end */
-	createOutputColumn(headerString1, headerString2, dataString, i, end,
-			   &column_states[i], 3, &columnWidthChanged);
-	i++;
-
-	/* param throughput */
-	if (unit_byte == 1)
-		createOutputColumn(headerString1, headerString2, dataString,
-				   i + 1, throughput, &column_states[i], 6,
-				   &columnWidthChanged);
-	else
-		createOutputColumn(headerString1, headerString2, dataString, i,
-				   throughput, &column_states[i], 6,
-				   &columnWidthChanged);
-	i += 2;
-
-	/* param trans/s */
-	createOutputColumn(headerString1, headerString2, dataString, i,
-			   transac, &column_states[i], 2, &columnWidthChanged);
-	i++;
-
-	/* param request blocks */
-	createOutputColumn(headerString1, headerString2, dataString, i,
-			   request_blocks, &column_states[i], 0,
-			   &columnWidthChanged);
-	i++;
-
-	/* param response blocks */
-	createOutputColumn(headerString1, headerString2, dataString, i,
-			   response_blocks, &column_states[i], 0,
-			   &columnWidthChanged);
-	i++;
-
-	/* param str_rttmin */
-	createOutputColumn(headerString1, headerString2, dataString, i, rttmin,
-			   &column_states[i], 3, &columnWidthChanged);
-	i++;
-
-	/* param str_rttavg */
-	createOutputColumn(headerString1, headerString2, dataString, i, rttavg,
-			   &column_states[i], 3, &columnWidthChanged);
-	i++;
-
-	/* param str_rttmax */
-	createOutputColumn(headerString1, headerString2, dataString, i, rttmax,
-			   &column_states[i], 3, &columnWidthChanged);
-	i++;
-
-	/* param str_iatmin */
-	createOutputColumn(headerString1, headerString2, dataString, i, iatmin,
-			   &column_states[i], 3, &columnWidthChanged);
-	i++;
-
-	/* param str_iatavg */
-	createOutputColumn(headerString1, headerString2, dataString, i, iatavg,
-			   &column_states[i], 3, &columnWidthChanged);
-	i++;
-
-	/* param str_iatmax */
-	createOutputColumn(headerString1, headerString2, dataString, i, iatmax,
-			   &column_states[i], 3, &columnWidthChanged);
-	i++;
-
-	/* param str_delaymin */
-	createOutputColumn(headerString1, headerString2, dataString, i,
-			   delaymin, &column_states[i], 3,
-			   &columnWidthChanged);
-	i++;
-
-	/* param str_delayavg */
-	createOutputColumn(headerString1, headerString2, dataString, i,
-			   delayavg, &column_states[i], 3,
-			   &columnWidthChanged);
-	i++;
-
-	/* param str_delaymax */
-	createOutputColumn(headerString1, headerString2, dataString, i,
-			   delaymax, &column_states[i], 3,
-			   &columnWidthChanged);
-	i++;
-
-	/* linux kernel output */
-	/* param str_cwnd */
-	createOutputColumn(headerString1, headerString2, dataString, i, cwnd,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_ssth */
-	createOutputColumn(headerString1, headerString2, dataString, i, ssth,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_uack */
-	createOutputColumn(headerString1, headerString2, dataString, i, uack,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_sack */
-	createOutputColumn(headerString1, headerString2, dataString, i, sack,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_lost */
-	createOutputColumn(headerString1, headerString2, dataString, i, lost,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_retr */
-	createOutputColumn(headerString1, headerString2, dataString, i, retr,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_tret */
-	createOutputColumn(headerString1, headerString2, dataString, i, tret,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_fack */
-	createOutputColumn(headerString1, headerString2, dataString, i, fack,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_reor */
-	createOutputColumn(headerString1, headerString2, dataString, i, reor,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_linrtt */
-	createOutputColumn(headerString1, headerString2, dataString, i,
-			   backoff, &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* param str_linrtt */
-	createOutputColumn(headerString1, headerString2, dataString, i, linrtt,
-			   &column_states[i], 1, &columnWidthChanged);
-	i++;
-
-	/* param str_linrttvar */
-	createOutputColumn(headerString1, headerString2, dataString, i,
-			   linrttvar, &column_states[i], 1,
-			   &columnWidthChanged);
-	i++;
-
-	/* param str_linrto */
-	createOutputColumn(headerString1, headerString2, dataString, i, linrto,
-			   &column_states[i], 1, &columnWidthChanged);
-	i++;
-
-	/* param ca_state */
 	if (ca_state == TCP_CA_Open)
 		strcpy(tmp, "open");
 	else if (ca_state == TCP_CA_Disorder)
@@ -618,24 +518,73 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	else
 		strcpy(tmp, "unknown");
 
-	createOutputColumn_str(headerString1, headerString2, dataString, i,
-			       tmp, &column_states[i], &columnWidthChanged);
-	i++;
-
-	/* param str_linrtt */
-	createOutputColumn(headerString1, headerString2, dataString, i,
-			   snd_mss, &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	createOutputColumn(headerString1, headerString2, dataString, i, pmtu,
-			   &column_states[i], 0, &columnWidthChanged);
-	i++;
-
-	/* status */
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_BEGIN, begin, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_END, end, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_THROUGH, throughput, 6, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TRANSAC, transac, 2, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_BLOCK_REQU, request_blocks, 0,
+			   &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_BLOCK_RESP, response_blocks, 0,
+			   &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_RTT_MIN, rttmin, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_RTT_AVG, rttavg, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_RTT_MAX, rttmax, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_IAT_MIN, iatmin, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_IAT_AVG, iatavg, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_IAT_MAX, iatmax, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_DLY_MIN, delaymin, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_DLY_AVG, delayavg, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_DLY_MAX, delaymax, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_CWND, cwnd, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_SSTH, ssth, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_UACK, uack, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_SACK, sack, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_LOST, lost, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_RETR, retr, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_TRET, tret, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_FACK, fack, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_REOR, reor, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_BKOF, backoff, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_RTT, linrtt, 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_RTTVAR, linrttvar, 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_RTO, linrto, 1, &columnWidthChanged);
+	createOutputColumn_str(headerString1, headerString2, dataString,
+			       COL_TCP_CA_STATE, tmp, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_SMSS, snd_mss, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_PMTU, pmtu, 0, &columnWidthChanged);
 #ifdef DEBUG
-	createOutputColumn_str(headerString1, headerString2, dataString, i,
-			       status, &column_states[i], &columnWidthChanged);
-	i++;
+	createOutputColumn_str(headerString1, headerString2, dataString,
+			       COL_STATUS, status, &columnWidthChanged);
 #else
 	UNUSED_ARGUMENT(status);
 #endif /* DEBUG */
@@ -675,13 +624,12 @@ static void usage(void)
 
 		"General options:\n"
 #ifdef DEBUG
-		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-delay,-kernel,-status\n"
+		"  -c interval,through,transac,blocks,rtt,iat,delay,kernel,status\n"
 #else
-		"  -c -begin,-end,-through,-transac,+blocks,-rtt,-iat,-delay,-kernel\n"
+		"  -c interval,through,transac,blocks,rtt,iat,delay,kernel\n"
 #endif /* DEBUG */
-		"               Comma separated list of column groups to display in output.\n"
-		"               Prefix with either + to show column group or - to hide\n"
-		"               column group (default: show all but blocks)\n"
+		"               List of column groups to display in output.\n"
+		"               (default: show all but blocks)\n"
 #ifdef DEBUG
 		"  -d           Increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
@@ -1122,7 +1070,6 @@ void print_tcp_report_line(char hash, int id,
 	char report_buffer[4000] = "";
 	double thruput;
 	double transac;
-	unsigned int i;
 
 #define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
 		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
@@ -1196,16 +1143,6 @@ void print_tcp_report_line(char hash, int id,
 
 	char rep_string[4000];
 
-	/* don't show tcp kernel output if there is no linux or freebsd OS */
-	visible_columns[column_type_kernel] = 0;
-	for (i = 0; i < num_unique_servers; i++) {
-		if ((!strcmp(unique_servers[i].os_name, "Linux")) ||
-		    (!strcmp(unique_servers[i].os_name, "FreeBSD"))) {
-			visible_columns[column_type_kernel] = 1;
-			break;
-		}
-	}
-
 	strcpy(rep_string,
 	       createOutput(hash, id, type, time1, time2, thruput,transac,
 			    (unsigned int)r->request_blocks_written,
@@ -1228,7 +1165,7 @@ void print_tcp_report_line(char hash, int id,
 			    (unsigned int)r->tcp_info.tcpi_backoff,
 			    r->tcp_info.tcpi_ca_state,
 			    (unsigned int)r->tcp_info.tcpi_snd_mss,
-			    r->pmtu, comment_buffer, opt.mbyte));
+			    r->pmtu, comment_buffer));
 	strncpy(report_buffer, rep_string, sizeof(report_buffer));
 	report_buffer[sizeof(report_buffer) - 1] = 0;
 	log_output(report_buffer);
@@ -2151,50 +2088,70 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 	#undef ASSIGN_ENDPOINT_FLOW_OPTION
 }
 
-static void parse_visible_param(char *to_parse) {
-	/* {begin, end, throughput, RTT, IAT, Kernel} */
-	if (strstr(to_parse, "+begin"))
-		visible_columns[column_type_begin] = 1;
-	if (strstr(to_parse, "-begin"))
-		visible_columns[column_type_begin] = 0;
-	if (strstr(to_parse, "+end"))
-		visible_columns[column_type_end] = 1;
-	if (strstr(to_parse, "-end"))
-		visible_columns[column_type_end] = 0;
-	if (strstr(to_parse, "+thrpt"))
-		visible_columns[column_type_thrpt] = 1;
-	if (strstr(to_parse, "-thrpt"))
-		visible_columns[column_type_thrpt] = 0;
-	if (strstr(to_parse, "+transac"))
-		visible_columns[column_type_transac] = 1;
-	if (strstr(to_parse, "-transac"))
-		visible_columns[column_type_transac] = 0;
-	if (strstr(to_parse, "+rtt"))
-		visible_columns[column_type_rtt] = 1;
-	if (strstr(to_parse, "-rtt"))
-		visible_columns[column_type_rtt] = 0;
-	if (strstr(to_parse, "+iat"))
-		visible_columns[column_type_iat] = 1;
-	if (strstr(to_parse, "-iat"))
-		visible_columns[column_type_iat] = 0;
-	if (strstr(to_parse, "+delay"))
-		visible_columns[column_type_delay] = 1;
-	if (strstr(to_parse, "-delay"))
-		visible_columns[column_type_delay] = 0;
-	if (strstr(to_parse, "+blocks"))
-		visible_columns[column_type_blocks] = 1;
-	if (strstr(to_parse, "-blocks"))
-		visible_columns[column_type_blocks] = 0;
-	if (strstr(to_parse, "+kernel"))
-		visible_columns[column_type_kernel] = 1;
-	if (strstr(to_parse, "-kernel"))
-		visible_columns[column_type_kernel] = 0;
+/**
+ * Parse option -c - visible output columns
+ */
+static void parse_visible_option(char *optarg)
+{
+	/* Reset all default visibility settings */
+	for (size_t i = 0;
+	     i < sizeof(column_info) / sizeof(struct _column); i++)
+		column_info[i].state.visible = false;
+
+	/* Show always flow ID */
+	column_info[COL_FLOW_ID].state.visible = true;
+
+	for (char *token = strtok(optarg, ","); token;
+	     token = strtok(NULL, ",")) {
+		if (!strcmp(token, "interval")) {
+			column_info[COL_BEGIN].state.visible = true;
+			column_info[COL_END].state.visible = true;
+		} else if (!strcmp(token, "through")) {
+			column_info[COL_THROUGH].state.visible = true;
+		} else if (!strcmp(token, "transac")) {
+			column_info[COL_TRANSAC].state.visible = true;
+		} else if (!strcmp(token, "blocks")) {
+			column_info[COL_BLOCK_REQU].state.visible = true;
+			column_info[COL_BLOCK_RESP].state.visible = true;
+		} else if (!strcmp(token, "rtt")) {
+			column_info[COL_RTT_MIN].state.visible = true;
+			column_info[COL_RTT_AVG].state.visible = true;
+			column_info[COL_RTT_MAX].state.visible = true;
+		} else if (!strcmp(token, "iat")) {
+			column_info[COL_IAT_MIN].state.visible = true;
+			column_info[COL_IAT_AVG].state.visible = true;
+			column_info[COL_IAT_MAX].state.visible = true;
+		} else if (!strcmp(token, "delay")) {
+			column_info[COL_DLY_MIN].state.visible = true;
+			column_info[COL_DLY_AVG].state.visible = true;
+			column_info[COL_DLY_MAX].state.visible = true;
+		} else if (!strcmp(token, "kernel")) {
+			column_info[COL_TCP_CWND].state.visible = true;
+			column_info[COL_TCP_SSTH].state.visible = true;
+			column_info[COL_TCP_UACK].state.visible = true;
+			column_info[COL_TCP_SACK].state.visible = true;
+			column_info[COL_TCP_LOST].state.visible = true;
+			column_info[COL_TCP_RETR].state.visible = true;
+			column_info[COL_TCP_TRET].state.visible = true;
+			column_info[COL_TCP_FACK].state.visible = true;
+			column_info[COL_TCP_REOR].state.visible = true;
+			column_info[COL_TCP_BKOF].state.visible = true;
+			column_info[COL_TCP_RTT].state.visible = true;
+			column_info[COL_TCP_RTTVAR].state.visible = true;
+			column_info[COL_TCP_RTO].state.visible = true;
+			column_info[COL_TCP_CA_STATE].state.visible = true;
+			column_info[COL_SMSS].state.visible = true;
+			column_info[COL_PMTU].state.visible = true;
 #ifdef DEBUG
-	if (strstr(to_parse, "+status"))
-		visible_columns[column_type_status] = 1;
-	if (strstr(to_parse, "-status"))
-		visible_columns[column_type_status] = 0;
+		} else if (!strcmp(token, "status")) {
+			column_info[COL_STATUS].state.visible = true;
 #endif /* DEBUG */
+		} else {
+			fprintf(stderr, "%s: malformed option '-c' \n",
+				progname);
+			usage_hint();
+		}
+	}
 }
 
 static void parse_cmdline(int argc, char **argv) {
@@ -2246,7 +2203,7 @@ static void parse_cmdline(int argc, char **argv) {
 
 		/*general options */
 		case 'c':
-			parse_visible_param(optarg);
+			parse_visible_option(optarg);
 			break;
 		case 'd':
 			increase_debuglevel();
@@ -2268,6 +2225,7 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.log_filename = optarg;
 			break;
 		case 'm':
+			column_info[COL_THROUGH].header.unit = " [MB/s]";
 			opt.mbyte = 1;
 			break;
 		case 'n':
