@@ -186,7 +186,7 @@ static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 unsigned int num_unique_servers = 0;
 /** General controller options */
 struct _opt opt;
-/** Infos about the flow including flow options */
+/** Infos about all flows including flow options */
 static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 int active_flows = 0;
@@ -304,10 +304,9 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 		column_state->count_oversized = 0;
 
 	number_formatstring = outStringPart(column_state->last_width, numDigitsDecimalPart);
+	/* create columns */
 
-	/* create columns
-	 *
-	 * output text for symbolic numbers */
+	/* output text for symbolic numbers */
 	if (opt.symbolic) {
 		switch ((int)value) {
 		case INT_MAX:
