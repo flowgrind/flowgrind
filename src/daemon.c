@@ -1187,8 +1187,7 @@ static void process_rtt(struct _flow* flow)
 	if (current_rtt < 0) {
 		logging_log(LOG_CRIT, "received malformed rtt block of flow %d "
 			    "(rtt = %.3lfms), ignoring",
-			    flow->id,
-			    current_rtt * 1e3);
+			    flow->id, current_rtt * 1e3);
 		current_rtt = NAN;
 	}
 
@@ -1222,8 +1221,7 @@ static void process_iat(struct _flow* flow)
 	if (current_iat < 0) {
 		logging_log(LOG_CRIT, "calculated malformed iat of flow %d "
 			    "(iat = %.3lfms) (clock skew?), ignoring",
-			    flow->id,
-			    current_iat * 1e3);
+			    flow->id, current_iat * 1e3);
 		current_iat = NAN;
 	}
 
@@ -1236,7 +1234,7 @@ static void process_iat(struct _flow* flow)
 			flow->statistics[i].iat_sum += current_iat;
 		}
 	}
-	DEBUG_MSG(LOG_NOTICE, "processed IAT flow %d (%.3lfms)",
+	DEBUG_MSG(LOG_NOTICE, "processed IAT of flow %d (%.3lfms)",
 		  flow->id, current_iat * 1e3);
 }
 
