@@ -262,350 +262,6 @@ void prepare_flows(xmlrpc_client *rpc_client);
 void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void grind_flows(xmlrpc_client *rpc_client);
 
-/* New output determines the number of digits before the comma */
-int det_output_column_size(double value)
-{
-	int i = 1;
-	double dez = 10.0;
-
-	if (value < 0)
-		i++;
-	while ((abs(value) / (dez - 1.0)) > 1.0) {
-		i++;
-		dez *= 10;
-	}
-	return i;
-}
-
-/* produces the string command for printf for the right number of digits and decimal part */
-char *outStringPart(int digits, int decimalPart)
-{
-	static char outstr[30] = {0};
-
-	sprintf(outstr, "%%%d.%df", digits, decimalPart);
-
-	return outstr;
-}
-
-int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
-		       int column_id, double value, int numDigitsDecimalPart,
-		       int *columnWidthChanged)
-{
-	unsigned int maxTooLongColumns = opt.num_flows * 5;
-	int lengthData = 0;
-	int lengthHead = 0;
-	unsigned int columnSize = 0;
-	char tempBuffer[50];
-	unsigned int a;
-	struct _column *column = &column_info[column_id];
-	char* number_formatstring;
-
-	if (!column->state.visible)
-		return 0;
-
-	/* get max columnsize */
-	if (opt.symbolic) {
-		switch ((unsigned int)value) {
-		case INT_MAX:
-			lengthData = strlen("INT_MAX");
-			break;
-		case USHRT_MAX:
-			lengthData = strlen("USHRT_MAX");
-			break;
-		case UINT_MAX:
-			lengthData = strlen("UINT_MAX");
-			break;
-		default:
-			lengthData = det_output_column_size(value) +
-				numDigitsDecimalPart + 1;
-		}
-	} else {
-		lengthData = det_output_column_size(value) +
-			numDigitsDecimalPart + 1;
-	}
-	/* leading space */
-	lengthData++;
-
-	/* decimal point if necessary */
-	if (numDigitsDecimalPart)
-		lengthData++;
-
-	lengthHead = MAX(strlen(column->header.name),
-			 strlen(column->header.unit));
-	columnSize = MAX(lengthData, lengthHead);
-
-	/* check if columnsize has changed */
-	if (column->state.last_width < columnSize) {
-		/* column too small */
-		*columnWidthChanged = 1;
-		column->state.last_width = columnSize;
-		column->state.oversized = 0;
-	} else if (column->state.last_width > 1 + columnSize) {
-		/* column too big */
-		if (column->state.oversized >= maxTooLongColumns) {
-			/* column too big for quite a while */
-			*columnWidthChanged = 1;
-			column->state.last_width = columnSize;
-			column->state.oversized = 0;
-		} else {
-			(column->state.oversized)++;
-		}
-	} else {
-		/* This size was needed, keep it */
-		column->state.oversized = 0;
-	}
-	number_formatstring = outStringPart(column->state.last_width,
-			                    numDigitsDecimalPart);
-
-	/* create columns */
-
-	/* output text for symbolic numbers */
-	if (opt.symbolic) {
-		switch ((int)value) {
-		case INT_MAX:
-			for (a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " INT_MAX");
-			break;
-		case USHRT_MAX:
-			for (a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " USHRT_MAX");
-			break;
-		case UINT_MAX:
-			for (a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " UINT_MAX");
-			break;
-		default: /* number */
-			sprintf(tempBuffer, number_formatstring, value);
-			strcat(strDataRow, tempBuffer);
-		}
-	} else {
-		sprintf(tempBuffer, number_formatstring, value);
-		strcat(strDataRow, tempBuffer);
-	}
-	/* 1st header row */
-	for (a = column->state.last_width;
-	     a > strlen(column->header.name); a--)
-		strcat(strHead1Row, " ");
-	strcat(strHead1Row, column->header.name);
-
-	/* 2nd header row */
-	for (a = column->state.last_width;
-	     a > strlen(column->header.unit); a--)
-		strcat(strHead2Row, " ");
-	strcat(strHead2Row, column->header.unit);
-
-	return 0;
-}
-
-int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
-			   char *strDataRow, int column_id, char* value,
-			   int *columnWidthChanged)
-{
-
-	unsigned int maxTooLongColumns = opt.num_flows * 5;
-	int lengthData = 0;
-	int lengthHead = 0;
-	unsigned int columnSize = 0;
-	unsigned int a;
-	struct _column *column = &column_info[column_id];
-
-	if (!column->state.visible)
-		return 0;
-
-	/* get max columnsize */
-	lengthData = strlen(value);
-	lengthHead = MAX(strlen(column->header.name),
-			 strlen(column->header.unit));
-	columnSize = MAX(lengthData, lengthHead) + 1;
-
-	/* check if columnsize has changed */
-	if (column->state.last_width < columnSize) {
-		/* column too small */
-		*columnWidthChanged = 1;
-		column->state.last_width = columnSize;
-		column->state.oversized = 0;
-	} else if (column->state.last_width > 1 + columnSize) {
-		/* column too big */
-		if (column->state.oversized >= maxTooLongColumns) {
-			/* column too big for quite a while */
-			*columnWidthChanged = 1;
-			column->state.last_width = columnSize;
-			column->state.oversized = 0;
-		} else {
-			(column->state.oversized)++;
-		}
-	} else {
-		/* This size was needed, keep it */
-		column->state.oversized = 0;
-	}
-
-	/* create columns */
-	for (a = lengthData+1; a < columnSize; a++)
-		strcat(strDataRow, " ");
-	strcat(strDataRow, value);
-
-	/* 1st header row */
-	for (a = column->state.last_width; a > strlen(column->header.name) + 1;
-	     a--)
-		strcat(strHead1Row, " ");
-	strcat(strHead1Row, column->header.name);
-
-	/* 2nd header Row */
-	for (a = column->state.last_width; a > strlen(column->header.unit) + 1;
-	     a--)
-		strcat(strHead2Row, " ");
-	strcat(strHead2Row, column->header.unit);
-
-	return 0;
-}
-
-/* Output a single report (with header if width has changed */
-char *createOutput(char hash, int id, int type, double begin, double end,
-		   double throughput, double transac,
-		   unsigned int request_blocks, unsigned int response_blocks,
-		   double rttmin, double rttavg, double rttmax,
-		   double iatmin, double iatavg, double iatmax,
-		   double delaymin, double delayavg, double delaymax,
-		   unsigned int cwnd, unsigned int ssth, unsigned int uack,
-		   unsigned int sack, unsigned int lost, unsigned int reor,
-		   unsigned int retr, unsigned int tret, unsigned int fack,
-		   double linrtt, double linrttvar, double linrto,
-		   unsigned int backoff, int ca_state, int snd_mss,  int pmtu,
-		   char* status)
-{
-	int columnWidthChanged = 0;
-	static int counter = 0;
-
-	/* Create Row + Header */
-	char dataString[250];
-	char headerString1[250];
-	char headerString2[250];
-	static char outputString[1000];
-	char tmp[100];
-
-	/* output string
-	param # + flow_id */
-	if (hash)
-		sprintf(dataString, "#");
-
-	if (type)
-		sprintf(dataString, "D%3d", id);
-	else
-		sprintf(dataString, "S%3d", id);
-
-	strcpy(headerString1, column_info[COL_FLOW_ID].header.name);
-	strcpy(headerString2, column_info[COL_FLOW_ID].header.unit);
-
-	if (ca_state == TCP_CA_Open)
-		strcpy(tmp, "open");
-	else if (ca_state == TCP_CA_Disorder)
-		strcpy(tmp, "disorder");
-	else if (ca_state == TCP_CA_CWR)
-		strcpy(tmp, "cwr");
-	else if (ca_state == TCP_CA_Recovery)
-		strcpy(tmp, "recover");
-	else if (ca_state == TCP_CA_Loss)
-		strcpy(tmp, "loss");
-	else
-		strcpy(tmp, "unknown");
-
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_BEGIN, begin, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_END, end, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_THROUGH, throughput, 6, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TRANSAC, transac, 2, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_BLOCK_REQU, request_blocks, 0,
-			   &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_BLOCK_RESP, response_blocks, 0,
-			   &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_RTT_MIN, rttmin, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_RTT_AVG, rttavg, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_RTT_MAX, rttmax, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_IAT_MIN, iatmin, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_IAT_AVG, iatavg, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_IAT_MAX, iatmax, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_DLY_MIN, delaymin, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_DLY_AVG, delayavg, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_DLY_MAX, delaymax, 3, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_CWND, cwnd, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_SSTH, ssth, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_UACK, uack, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_SACK, sack, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_LOST, lost, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_RETR, retr, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_TRET, tret, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_FACK, fack, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_REOR, reor, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_BKOF, backoff, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_RTT, linrtt, 1, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_RTTVAR, linrttvar, 1, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_TCP_RTO, linrto, 1, &columnWidthChanged);
-	createOutputColumn_str(headerString1, headerString2, dataString,
-			       COL_TCP_CA_STATE, tmp, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_SMSS, snd_mss, 0, &columnWidthChanged);
-	createOutputColumn(headerString1, headerString2, dataString,
-			   COL_PMTU, pmtu, 0, &columnWidthChanged);
-#ifdef DEBUG
-	createOutputColumn_str(headerString1, headerString2, dataString,
-			       COL_STATUS, status, &columnWidthChanged);
-#else
-	UNUSED_ARGUMENT(status);
-#endif /* DEBUG */
-
-	/* newline */
-	strcat(headerString1, "\n");
-	strcat(headerString2, "\n");
-	strcat(dataString, "\n");
-	/* output string end */
-	if (columnWidthChanged > 0 || (counter % 25) == 0) {
-		strcpy(outputString, headerString1);
-		strcat(outputString, headerString2);
-		strcat(outputString, dataString);
-	} else {
-		strcpy(outputString, dataString);
-	}
-	counter++;
-
-	return outputString;
-}
-
 /**
  * Print flowgrind usage and exit
  */
@@ -977,16 +633,6 @@ static void init_logfile(void)
 		error(ERR_FATAL, "could not open logfile %s", log_filename);
 }
 
-
-static void shutdown_logfile()
-{
-	if (opt.dont_log_logfile)
-		return;
-
-	if (fclose(log_stream) == -1)
-		error(ERR_FATAL, "could not close logfile %s", log_filename);
-}
-
 /* Finds the daemon (or creating a new one) for a given server_url,
  * uses global static unique_servers variable for storage */
 static struct _daemon * get_daemon_by_url(const char* server_url, const char* server_name, unsigned short server_port) {
@@ -1003,6 +649,360 @@ static struct _daemon * get_daemon_by_url(const char* server_url, const char* se
 	strcpy(unique_servers[i].server_name, server_name);
 	unique_servers[i].server_port = server_port;
 	return &unique_servers[num_unique_servers++];
+}
+
+/* New output determines the number of digits before the comma */
+int det_output_column_size(double value)
+{
+	int i = 1;
+	double dez = 10.0;
+
+	if (value < 0)
+		i++;
+	while ((abs(value) / (dez - 1.0)) > 1.0) {
+		i++;
+		dez *= 10;
+	}
+	return i;
+}
+
+/* produces the string command for printf for the right number of digits and decimal part */
+char *outStringPart(int digits, int decimalPart)
+{
+	static char outstr[30] = {0};
+
+	sprintf(outstr, "%%%d.%df", digits, decimalPart);
+
+	return outstr;
+}
+
+int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
+		       int column_id, double value, int numDigitsDecimalPart,
+		       int *columnWidthChanged)
+{
+	unsigned int maxTooLongColumns = opt.num_flows * 5;
+	int lengthData = 0;
+	int lengthHead = 0;
+	unsigned int columnSize = 0;
+	char tempBuffer[50];
+	unsigned int a;
+	struct _column *column = &column_info[column_id];
+	char* number_formatstring;
+
+	if (!column->state.visible)
+		return 0;
+
+	/* get max columnsize */
+	if (opt.symbolic) {
+		switch ((unsigned int)value) {
+		case INT_MAX:
+			lengthData = strlen("INT_MAX");
+			break;
+		case USHRT_MAX:
+			lengthData = strlen("USHRT_MAX");
+			break;
+		case UINT_MAX:
+			lengthData = strlen("UINT_MAX");
+			break;
+		default:
+			lengthData = det_output_column_size(value) +
+				numDigitsDecimalPart + 1;
+		}
+	} else {
+		lengthData = det_output_column_size(value) +
+			numDigitsDecimalPart + 1;
+	}
+	/* leading space */
+	lengthData++;
+
+	/* decimal point if necessary */
+	if (numDigitsDecimalPart)
+		lengthData++;
+
+	lengthHead = MAX(strlen(column->header.name),
+			 strlen(column->header.unit));
+	columnSize = MAX(lengthData, lengthHead);
+
+	/* check if columnsize has changed */
+	if (column->state.last_width < columnSize) {
+		/* column too small */
+		*columnWidthChanged = 1;
+		column->state.last_width = columnSize;
+		column->state.oversized = 0;
+	} else if (column->state.last_width > 1 + columnSize) {
+		/* column too big */
+		if (column->state.oversized >= maxTooLongColumns) {
+			/* column too big for quite a while */
+			*columnWidthChanged = 1;
+			column->state.last_width = columnSize;
+			column->state.oversized = 0;
+		} else {
+			(column->state.oversized)++;
+		}
+	} else {
+		/* This size was needed, keep it */
+		column->state.oversized = 0;
+	}
+	number_formatstring = outStringPart(column->state.last_width,
+			                    numDigitsDecimalPart);
+
+	/* create columns */
+
+	/* output text for symbolic numbers */
+	if (opt.symbolic) {
+		switch ((int)value) {
+		case INT_MAX:
+			for (a = lengthData;
+			     a < MAX(columnSize, column->state.last_width);
+			     a++)
+				strcat(strDataRow, " ");
+			strcat(strDataRow, " INT_MAX");
+			break;
+		case USHRT_MAX:
+			for (a = lengthData;
+			     a < MAX(columnSize, column->state.last_width);
+			     a++)
+				strcat(strDataRow, " ");
+			strcat(strDataRow, " USHRT_MAX");
+			break;
+		case UINT_MAX:
+			for (a = lengthData;
+			     a < MAX(columnSize, column->state.last_width);
+			     a++)
+				strcat(strDataRow, " ");
+			strcat(strDataRow, " UINT_MAX");
+			break;
+		default: /* number */
+			sprintf(tempBuffer, number_formatstring, value);
+			strcat(strDataRow, tempBuffer);
+		}
+	} else {
+		sprintf(tempBuffer, number_formatstring, value);
+		strcat(strDataRow, tempBuffer);
+	}
+	/* 1st header row */
+	for (a = column->state.last_width;
+	     a > strlen(column->header.name); a--)
+		strcat(strHead1Row, " ");
+	strcat(strHead1Row, column->header.name);
+
+	/* 2nd header row */
+	for (a = column->state.last_width;
+	     a > strlen(column->header.unit); a--)
+		strcat(strHead2Row, " ");
+	strcat(strHead2Row, column->header.unit);
+
+	return 0;
+}
+
+int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
+			   char *strDataRow, int column_id, char* value,
+			   int *columnWidthChanged)
+{
+
+	unsigned int maxTooLongColumns = opt.num_flows * 5;
+	int lengthData = 0;
+	int lengthHead = 0;
+	unsigned int columnSize = 0;
+	unsigned int a;
+	struct _column *column = &column_info[column_id];
+
+	if (!column->state.visible)
+		return 0;
+
+	/* get max columnsize */
+	lengthData = strlen(value);
+	lengthHead = MAX(strlen(column->header.name),
+			 strlen(column->header.unit));
+	columnSize = MAX(lengthData, lengthHead) + 1;
+
+	/* check if columnsize has changed */
+	if (column->state.last_width < columnSize) {
+		/* column too small */
+		*columnWidthChanged = 1;
+		column->state.last_width = columnSize;
+		column->state.oversized = 0;
+	} else if (column->state.last_width > 1 + columnSize) {
+		/* column too big */
+		if (column->state.oversized >= maxTooLongColumns) {
+			/* column too big for quite a while */
+			*columnWidthChanged = 1;
+			column->state.last_width = columnSize;
+			column->state.oversized = 0;
+		} else {
+			(column->state.oversized)++;
+		}
+	} else {
+		/* This size was needed, keep it */
+		column->state.oversized = 0;
+	}
+
+	/* create columns */
+	for (a = lengthData+1; a < columnSize; a++)
+		strcat(strDataRow, " ");
+	strcat(strDataRow, value);
+
+	/* 1st header row */
+	for (a = column->state.last_width; a > strlen(column->header.name) + 1;
+	     a--)
+		strcat(strHead1Row, " ");
+	strcat(strHead1Row, column->header.name);
+
+	/* 2nd header Row */
+	for (a = column->state.last_width; a > strlen(column->header.unit) + 1;
+	     a--)
+		strcat(strHead2Row, " ");
+	strcat(strHead2Row, column->header.unit);
+
+	return 0;
+}
+
+/* Output a single report (with header if width has changed */
+char *createOutput(char hash, int id, int type, double begin, double end,
+		   double throughput, double transac,
+		   unsigned int request_blocks, unsigned int response_blocks,
+		   double rttmin, double rttavg, double rttmax,
+		   double iatmin, double iatavg, double iatmax,
+		   double delaymin, double delayavg, double delaymax,
+		   unsigned int cwnd, unsigned int ssth, unsigned int uack,
+		   unsigned int sack, unsigned int lost, unsigned int reor,
+		   unsigned int retr, unsigned int tret, unsigned int fack,
+		   double linrtt, double linrttvar, double linrto,
+		   unsigned int backoff, int ca_state, int snd_mss,  int pmtu,
+		   char* status)
+{
+	int columnWidthChanged = 0;
+	static int counter = 0;
+
+	/* Create Row + Header */
+	char dataString[250];
+	char headerString1[250];
+	char headerString2[250];
+	static char outputString[1000];
+	char tmp[100];
+
+	/* output string
+	param # + flow_id */
+	if (hash)
+		sprintf(dataString, "#");
+
+	if (type)
+		sprintf(dataString, "D%3d", id);
+	else
+		sprintf(dataString, "S%3d", id);
+
+	strcpy(headerString1, column_info[COL_FLOW_ID].header.name);
+	strcpy(headerString2, column_info[COL_FLOW_ID].header.unit);
+
+	if (ca_state == TCP_CA_Open)
+		strcpy(tmp, "open");
+	else if (ca_state == TCP_CA_Disorder)
+		strcpy(tmp, "disorder");
+	else if (ca_state == TCP_CA_CWR)
+		strcpy(tmp, "cwr");
+	else if (ca_state == TCP_CA_Recovery)
+		strcpy(tmp, "recover");
+	else if (ca_state == TCP_CA_Loss)
+		strcpy(tmp, "loss");
+	else
+		strcpy(tmp, "unknown");
+
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_BEGIN, begin, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_END, end, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_THROUGH, throughput, 6, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TRANSAC, transac, 2, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_BLOCK_REQU, request_blocks, 0,
+			   &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_BLOCK_RESP, response_blocks, 0,
+			   &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_RTT_MIN, rttmin, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_RTT_AVG, rttavg, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_RTT_MAX, rttmax, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_IAT_MIN, iatmin, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_IAT_AVG, iatavg, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_IAT_MAX, iatmax, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_DLY_MIN, delaymin, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_DLY_AVG, delayavg, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_DLY_MAX, delaymax, 3, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_CWND, cwnd, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_SSTH, ssth, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_UACK, uack, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_SACK, sack, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_LOST, lost, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_RETR, retr, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_TRET, tret, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_FACK, fack, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_REOR, reor, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_BKOF, backoff, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_RTT, linrtt, 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_RTTVAR, linrttvar, 1, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_TCP_RTO, linrto, 1, &columnWidthChanged);
+	createOutputColumn_str(headerString1, headerString2, dataString,
+			       COL_TCP_CA_STATE, tmp, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_SMSS, snd_mss, 0, &columnWidthChanged);
+	createOutputColumn(headerString1, headerString2, dataString,
+			   COL_PMTU, pmtu, 0, &columnWidthChanged);
+#ifdef DEBUG
+	createOutputColumn_str(headerString1, headerString2, dataString,
+			       COL_STATUS, status, &columnWidthChanged);
+#else
+	UNUSED_ARGUMENT(status);
+#endif /* DEBUG */
+
+	/* newline */
+	strcat(headerString1, "\n");
+	strcat(headerString2, "\n");
+	strcat(dataString, "\n");
+	/* output string end */
+	if (columnWidthChanged > 0 || (counter % 25) == 0) {
+		strcpy(outputString, headerString1);
+		strcat(outputString, headerString2);
+		strcat(outputString, dataString);
+	} else {
+		strcpy(outputString, dataString);
+	}
+	counter++;
+
+	return outputString;
+}
+
+
+static void shutdown_logfile()
+{
+	if (opt.dont_log_logfile)
+		return;
+
+	if (fclose(log_stream) == -1)
+		error(ERR_FATAL, "could not close logfile %s", log_filename);
 }
 
 char *guess_topology (int mtu)
