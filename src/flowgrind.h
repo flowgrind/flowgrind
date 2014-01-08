@@ -44,6 +44,12 @@
 #define SYSCTL_CC_AVAILABLE "net.inet.tcp.cc.available"
 #endif /* __LINUX__ */
 
+/** Transport protocols */
+enum protocol {
+	PROTO_TCP = 1,
+	PROTO_UDP
+};
+
 /** General controller options */
 struct _opt {
 	/** Number of test flows (option -n) */
@@ -66,12 +72,6 @@ struct _opt {
 	char symbolic;
 };
 extern struct _opt opt;
-
-/** Transport protocols */
-enum protocol {
-	PROTO_TCP = 1,
-	PROTO_UDP
-};
 
 /**  Infos about a flowgrind daemon */
 struct _daemon {
