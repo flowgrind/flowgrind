@@ -1206,19 +1206,29 @@ void print_tcp_report_line(char hash, int id,
 		}
 	}
 
-	strcpy(rep_string, createOutput(hash, id, type,
-		time1, time2, thruput, transac,
-		(unsigned int)r->request_blocks_written,(unsigned int)r->response_blocks_written,
-		min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
-		min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
-		min_delay * 1e3, avg_delay * 1e3, max_delay * 1e3,
-		(unsigned int)r->tcp_info.tcpi_snd_cwnd, (unsigned int)r->tcp_info.tcpi_snd_ssthresh, (unsigned int)r->tcp_info.tcpi_unacked,
-		(unsigned int)r->tcp_info.tcpi_sacked, (unsigned int)r->tcp_info.tcpi_lost, (unsigned int)r->tcp_info.tcpi_reordering,
-		(unsigned int)r->tcp_info.tcpi_retrans, (unsigned int)r->tcp_info.tcpi_retransmits, (unsigned int)r->tcp_info.tcpi_fackets,
-		(double)r->tcp_info.tcpi_rtt / 1e3, (double)r->tcp_info.tcpi_rttvar / 1e3, (double)r->tcp_info.tcpi_rto / 1e3,
-		(unsigned int)r->tcp_info.tcpi_backoff, r->tcp_info.tcpi_ca_state, (unsigned int)r->tcp_info.tcpi_snd_mss,
-		r->pmtu, comment_buffer, opt.mbyte
-	));
+	strcpy(rep_string,
+	       createOutput(hash, id, type, time1, time2, thruput,transac,
+			    (unsigned int)r->request_blocks_written,
+			    (unsigned int)r->response_blocks_written,
+			    min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
+			    min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
+			    min_delay * 1e3, avg_delay * 1e3, max_delay * 1e3,
+			    (unsigned int)r->tcp_info.tcpi_snd_cwnd,
+			    (unsigned int)r->tcp_info.tcpi_snd_ssthresh,
+			    (unsigned int)r->tcp_info.tcpi_unacked,
+			    (unsigned int)r->tcp_info.tcpi_sacked,
+			    (unsigned int)r->tcp_info.tcpi_lost,
+			    (unsigned int)r->tcp_info.tcpi_reordering,
+			    (unsigned int)r->tcp_info.tcpi_retrans,
+			    (unsigned int)r->tcp_info.tcpi_retransmits,
+			    (unsigned int)r->tcp_info.tcpi_fackets,
+			    (double)r->tcp_info.tcpi_rtt / 1e3,
+			    (double)r->tcp_info.tcpi_rttvar / 1e3,
+			    (double)r->tcp_info.tcpi_rto / 1e3,
+			    (unsigned int)r->tcp_info.tcpi_backoff,
+			    r->tcp_info.tcpi_ca_state,
+			    (unsigned int)r->tcp_info.tcpi_snd_mss,
+			    r->pmtu, comment_buffer, opt.mbyte));
 	strncpy(report_buffer, rep_string, sizeof(report_buffer));
 	report_buffer[sizeof(report_buffer) - 1] = 0;
 	log_output(report_buffer);
