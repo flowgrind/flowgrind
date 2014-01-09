@@ -2745,7 +2745,6 @@ static void parse_visible_option(char *optarg)
 	}
 }
 
-
 static void parse_cmdline(int argc, char **argv) {
 	int rc = 0;
 	int ch = 0;
@@ -2762,8 +2761,6 @@ static void parse_cmdline(int argc, char **argv) {
 	/* variables from getopt() */
 	extern char *optarg;	/* the option argument */
 	extern int optopt;	/* the option character */
-
-	current_flow_ids[0] = -1;
 
 	#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE, id) \
 		if (current_flow_ids[0] == -1) { \
