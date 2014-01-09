@@ -2691,6 +2691,8 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 
 /**
  * Parse option -c - visible output columns
+ *
+ * @param[in] optarg option argument
  */
 static void parse_visible_option(char *optarg)
 {
@@ -2788,7 +2790,7 @@ static void parse_cmdline(int argc, char **argv) {
 		}
 	}
 
-	/* parse command line*/
+	/* parse command line */
 	while ((ch = getopt(argc, argv,":h:vc:de:i:l:mn:opqw"
 			    "A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1) {
 		switch (ch) {
