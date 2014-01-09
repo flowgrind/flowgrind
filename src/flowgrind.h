@@ -50,6 +50,14 @@ enum protocol {
 	PROTO_UDP
 };
 
+/** Unit of the TCP Stack */
+enum tcp_stack {
+	/** Linux is a segment-based stack */
+	SEGMENT_BASED = 1,
+	/** BSD stacks are bytes-based stacks */
+	BYTE_BASED
+};
+
 /** General controller options */
 struct _opt {
 	/** Number of test flows (option -n) */
@@ -70,6 +78,8 @@ struct _opt {
 	char mbyte;
 	/** Don't use symbolic values instead of number (option -p) */
 	char symbolic;
+	/** Force kernel output to specific unit  (option -u) */
+	enum tcp_stack force_unit;
 };
 extern struct _opt opt;
 

@@ -305,6 +305,8 @@ static void usage(void)
 		"  -o           Overwrite existing log files (default: don't)\n"
 		"  -p           Don't print symbolic values (like INT_MAX) instead of numbers\n"
 		"  -q           Be quiet, do not log to screen (default: off)\n"
+		"  -u (s|b)     Don't determine unit of Kernel TCP metrics automatically\n"
+		"               Force unit to: s = segment, or b = byte\n"
 		"  -w           Write output to logfile (default: off)\n\n"
 
 		"Flow options:\n"
@@ -545,6 +547,7 @@ static void init_options_defaults(void)
 	opt.log_filename_prefix = "flowgrind-";
 	opt.dont_log_logfile = 1;
 	opt.symbolic = 1;
+	opt.force_unit = 0;
 }
 
 static void init_flows_defaults(void)
@@ -1613,12 +1616,14 @@ void check_idle(xmlrpc_client *rpc_client)
 /* enumerate over prepare_flow */
 void prepare_flows(xmlrpc_client *rpc_client)
 {
+	/* prepare all flows */
 	for (int id = 0; id < opt.num_flows; id++) {
 		if (sigint_caught)
 			return;
 		prepare_flow(id, rpc_client);
 	}
 
+	/* prepare headline */
 	char headline[200];
 	int rc;
 	struct utsname me;
@@ -1638,8 +1643,27 @@ void prepare_flows(xmlrpc_client *rpc_client)
 		 (opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
 		 FLOWGRIND_VERSION);
 	log_output(headline);
-}
 
+	/* prepare column headers */
+
+	/* We set the unit of the kernel TCP metrics to bytes if either the
+	 * user forces to use bytes or the source of the first flow is not
+	 * Linux and the user forces not to uses segments */
+	if (opt.force_unit == BYTE_BASED ||
+	    (opt.force_unit != SEGMENT_BASED &&
+	     strcmp(unique_servers[0].os_name, "Linux"))) {
+		column_info[COL_TCP_CWND].header.unit = " [B]";
+		column_info[COL_TCP_SSTH].header.unit = " [B]";
+		column_info[COL_TCP_UACK].header.unit = " [B]";
+		column_info[COL_TCP_SACK].header.unit = " [B]";
+		column_info[COL_TCP_LOST].header.unit = " [B]";
+		column_info[COL_TCP_RETR].header.unit = " [B]";
+		column_info[COL_TCP_TRET].header.unit = " [B]";
+		column_info[COL_TCP_FACK].header.unit = " [B]";
+		column_info[COL_TCP_REOR].header.unit = " [B]";
+		column_info[COL_TCP_BKOF].header.unit = " [B]";
+	}
+}
 
 void prepare_flow(int id, xmlrpc_client *rpc_client)
 {
@@ -2781,7 +2805,7 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 
 	/* parse command line */
-	while ((ch = getopt(argc, argv,":h:vc:de:i:l:mn:opqw"
+	while ((ch = getopt(argc, argv,":h:vc:de:i:l:mn:opqu:w"
 			    "A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1) {
 		switch (ch) {
 
@@ -2839,6 +2863,16 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'q':
 			opt.dont_log_stdout = 1;
 			break;
+		case 'u':
+			if (!strcmp(optarg, "s"))
+				opt.force_unit = SEGMENT_BASED;
+			else if (!strcmp(optarg, "b"))
+				opt.force_unit = BYTE_BASED;
+			else {
+				fprintf(stderr, "%s: unknown argument '%s' "
+					"for option '-u'\n", progname, optarg);
+				usage_hint();
+			}
 		case 'w':
 			opt.dont_log_logfile = 0;
 			break;

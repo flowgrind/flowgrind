@@ -8,7 +8,6 @@
 +add optional columns for sender/receiver buffer
 +implement pthread barrier for mac os x
 +add c style comments to functions for doxygen help
-+allow for heterogeneous OS-Environments (measure Linux against FreeBSD)
 +mutual exclusion options need to be per flow basis instead of globally
 +Fix option -F (comma separation doesn't work)
 +display CPU utilization
