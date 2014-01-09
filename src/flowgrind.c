@@ -1614,34 +1614,30 @@ void check_idle(xmlrpc_client *rpc_client)
 void prepare_flows(xmlrpc_client *rpc_client)
 {
 	for (int id = 0; id < opt.num_flows; id++) {
-
 		if (sigint_caught)
 			return;
-
 		prepare_flow(id, rpc_client);
 	}
 
-	{
-		char headline[200];
-		int rc;
-		struct utsname me;
-		time_t start_ts;
-		char start_ts_buffer[26];
+	char headline[200];
+	int rc;
+	struct utsname me;
+	time_t start_ts;
+	char start_ts_buffer[26];
 
-		rc = uname(&me);
-		start_ts = time(NULL);
-		ctime_r(&start_ts, start_ts_buffer);
-		start_ts_buffer[24] = '\0';
-		snprintf(headline, sizeof(headline), "# %s: controlling host = %s, "
-				"number of flows = %d, reporting interval = %.2fs, "
-				"[through] = %s (%s)\n",
-				(start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
-				(rc == -1 ? "(unknown)" : me.nodename),
-				opt.num_flows, opt.reporting_interval,
-				(opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
-				FLOWGRIND_VERSION);
-		log_output(headline);
-	}
+	rc = uname(&me);
+	start_ts = time(NULL);
+	ctime_r(&start_ts, start_ts_buffer);
+	start_ts_buffer[24] = '\0';
+	snprintf(headline, sizeof(headline),
+		 "# %s: controlling host = %s, number of flows = %d, "
+		 "reporting interval = %.2fs, [through] = %s (%s)\n",
+		 (start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
+		 (rc == -1 ? "(unknown)" : me.nodename),
+		 opt.num_flows, opt.reporting_interval,
+		 (opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
+		 FLOWGRIND_VERSION);
+	log_output(headline);
 }
 
 
@@ -2166,74 +2162,74 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 		}
 
 		switch (distchar) {
-			case 'N':
-			case 'n':
-				distr = NORMAL;
-				if (!param1 || !param2) {
-					fprintf(stderr, "normal distribution needs two non-zero parameters");
-					usage_trafgenopt();
-				}
-				break;
-
-			case 'W':
-			case 'w':
-				distr = WEIBULL;
-				if (!param1 || !param2) {
-					fprintf(stderr, "weibull distribution needs two non-zero parameters\n");
-					usage_trafgenopt();
-				}
-				break;
-
-			case 'U':
-			case 'u':
-				distr = UNIFORM;
-				if  ( param1 <= 0 || param2 <= 0 || (param1 > param2) ) {
-					fprintf(stderr, "uniform distribution needs two positive parameters\n");
-					usage_trafgenopt();
-				}
-				break;
-
-			case 'E':
-			case 'e':
-				distr = EXPONENTIAL;
-				if (param1 <= 0) {
-					fprintf(stderr, "exponential value needs one positive paramters\n");
-					usage_trafgenopt();
-				}
-				break;
-
-			case 'P':
-			case 'p':
-				distr = PARETO;
-				if (!param1 || !param2) {
-					fprintf(stderr, "pareto distribution needs two non-zero parameters\n");
-					usage_trafgenopt();
-				}
-				break;
-
-			case 'L':
-			case 'l':
-				distr = LOGNORMAL;
-				if (!param1 || !param2) {
-					fprintf(stderr, "lognormal distribution needs two non-zero parameters\n");
-					usage_trafgenopt();
-				}
-				break;
-
-
-			case 'C':
-			case 'c':
-				distr = CONSTANT;
-				if (param1 <= 0) {
-					fprintf(stderr, "constant value needs one positive paramters\n");
-					usage_trafgenopt();
-				}
-				break;
-
-
-			default:
-				fprintf(stderr, "Syntax error in traffic generation option: %c is not a distribution.\n", distchar);
+		case 'N':
+		case 'n':
+			distr = NORMAL;
+			if (!param1 || !param2) {
+				fprintf(stderr, "normal distribution needs two non-zero parameters");
 				usage_trafgenopt();
+			}
+			break;
+
+		case 'W':
+		case 'w':
+			distr = WEIBULL;
+			if (!param1 || !param2) {
+				fprintf(stderr, "weibull distribution needs two non-zero parameters\n");
+				usage_trafgenopt();
+			}
+			break;
+
+		case 'U':
+		case 'u':
+			distr = UNIFORM;
+			if  ( param1 <= 0 || param2 <= 0 || (param1 > param2) ) {
+				fprintf(stderr, "uniform distribution needs two positive parameters\n");
+				usage_trafgenopt();
+			}
+			break;
+
+		case 'E':
+		case 'e':
+			distr = EXPONENTIAL;
+			if (param1 <= 0) {
+				fprintf(stderr, "exponential value needs one positive paramters\n");
+				usage_trafgenopt();
+			}
+			break;
+
+		case 'P':
+		case 'p':
+			distr = PARETO;
+			if (!param1 || !param2) {
+				fprintf(stderr, "pareto distribution needs two non-zero parameters\n");
+				usage_trafgenopt();
+			}
+			break;
+
+		case 'L':
+		case 'l':
+			distr = LOGNORMAL;
+			if (!param1 || !param2) {
+				fprintf(stderr, "lognormal distribution needs two non-zero parameters\n");
+				usage_trafgenopt();
+			}
+			break;
+
+
+		case 'C':
+		case 'c':
+			distr = CONSTANT;
+			if (param1 <= 0) {
+				fprintf(stderr, "constant value needs one positive paramters\n");
+				usage_trafgenopt();
+			}
+			break;
+
+
+		default:
+			fprintf(stderr, "Syntax error in traffic generation option: %c is not a distribution.\n", distchar);
+			usage_trafgenopt();
 		}
 
 
@@ -2242,26 +2238,26 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 			for (id = 0; id < MAX_FLOWS; id++) {
 				for (int i = j; i < k; i++) {
 					switch (typechar) {
-						case 'P':
-						case 'p':
-							cflow[id].settings[i].response_trafgen_options.distribution = distr;
-							cflow[id].settings[i].response_trafgen_options.param_one = param1;
-							cflow[id].settings[i].response_trafgen_options.param_two = param2;
-							break;
-						case 'Q':
-						case 'q':
-							cflow[id].settings[i].request_trafgen_options.distribution = distr;
-							cflow[id].settings[i].request_trafgen_options.param_one = param1;
-							cflow[id].settings[i].request_trafgen_options.param_two = param2;
-							break;
-						case 'G':
-						case 'g':
-							cflow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
-							cflow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
-							cflow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
-							break;
+					case 'P':
+					case 'p':
+						cflow[id].settings[i].response_trafgen_options.distribution = distr;
+						cflow[id].settings[i].response_trafgen_options.param_one = param1;
+						cflow[id].settings[i].response_trafgen_options.param_two = param2;
+						break;
+					case 'Q':
+					case 'q':
+						cflow[id].settings[i].request_trafgen_options.distribution = distr;
+						cflow[id].settings[i].request_trafgen_options.param_one = param1;
+						cflow[id].settings[i].request_trafgen_options.param_two = param2;
+						break;
+					case 'G':
+					case 'g':
+						cflow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
+						cflow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
+						cflow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
+						break;
 					}
-				/* sanity check for max block size */
+					/* sanity check for max block size */
 					for (int i = 0; i < 2; i++) {
 						if (distr == CONSTANT && cflow[id].settings[i].maximum_block_size < param1)
 							cflow[id].settings[i].maximum_block_size = param1;
@@ -2273,24 +2269,24 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 		} else {
 			for (int i = j; i < k; i++) {
 				switch (typechar) {
-					case 'P':
-					case 'p':
-						cflow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
-						cflow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
-						cflow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
-						break;
-					case 'Q':
-					case 'q':
-						cflow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
-						cflow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
-						cflow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
-						break;
-					case 'G':
-					case 'g':
-						cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.distribution = distr;
-						cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_one = param1;
-						cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_two = param2;
-						break;
+				case 'P':
+				case 'p':
+					cflow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
+					cflow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
+					cflow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
+					break;
+				case 'Q':
+				case 'q':
+					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
+					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
+					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
+					break;
+				case 'G':
+				case 'g':
+					cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.distribution = distr;
+					cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_one = param1;
+					cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_two = param2;
+					break;
 				}
 			}
 			/* sanity check for max block size */
@@ -2640,37 +2636,35 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			ASSIGN_UNI_FLOW_SETTING(delay[WRITE], optdouble)
 			break;
 		case 'Z':
-			{
-				if (is_trafgenopt || is_timeopt)
-					usage_optcombination();
-				rc = sscanf(arg, "%lf", &optdouble);
-				if (rc != 1 || optdouble < 0) {
-					fprintf(stderr, "Data to be sent must be a non-negativ "
-							"number (in bytes)\n");
-					usage();
-				}
-				if (current_flow_ids[0] == -1) {
-					for (int id = 0; id < MAX_FLOWS; id++) {
-						for (int i = 0; i < 2; i++) {
-							if ((signed)optdouble > cflow[id].settings[i].maximum_block_size)
-								cflow[id].settings[i].maximum_block_size = (signed)optdouble;
-							cflow[id].settings[i].request_trafgen_options.distribution = ONCE;
-						}
-					}
-				} else {
-					for (int i = 0; i < 2; i++) {
-						if ((signed)optdouble > cflow[current_flow_ids[id]].settings[i].maximum_block_size)
-							cflow[current_flow_ids[id]].settings[i].maximum_block_size = (signed)optdouble;
-						cflow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = ONCE;
-					}
-				}
-				ASSIGN_UNI_FLOW_SETTING(duration[WRITE], 0);
-				ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.param_one, optdouble);
-				ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, ONCE);
-				ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
-				is_bulkopt++;
-				break;
+			if (is_trafgenopt || is_timeopt)
+				usage_optcombination();
+			rc = sscanf(arg, "%lf", &optdouble);
+			if (rc != 1 || optdouble < 0) {
+				fprintf(stderr, "Data to be sent must be a non-negativ "
+						"number (in bytes)\n");
+				usage();
 			}
+			if (current_flow_ids[0] == -1) {
+				for (int id = 0; id < MAX_FLOWS; id++) {
+					for (int i = 0; i < 2; i++) {
+						if ((signed)optdouble > cflow[id].settings[i].maximum_block_size)
+							cflow[id].settings[i].maximum_block_size = (signed)optdouble;
+						cflow[id].settings[i].request_trafgen_options.distribution = ONCE;
+					}
+				}
+			} else {
+				for (int i = 0; i < 2; i++) {
+					if ((signed)optdouble > cflow[current_flow_ids[id]].settings[i].maximum_block_size)
+						cflow[current_flow_ids[id]].settings[i].maximum_block_size = (signed)optdouble;
+					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = ONCE;
+				}
+			}
+			ASSIGN_UNI_FLOW_SETTING(duration[WRITE], 0);
+			ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.param_one, optdouble);
+			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, ONCE);
+			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
+			is_bulkopt++;
+			break;
 		}
 	}
 }
@@ -2800,7 +2794,7 @@ static void parse_cmdline(int argc, char **argv) {
 				FLOWGRIND_VERSION);
 			exit(EXIT_SUCCESS);
 
-		/*general options */
+		/* general options */
 		case 'c':
 			parse_visible_option(optarg);
 			break;
@@ -2849,11 +2843,7 @@ static void parse_cmdline(int argc, char **argv) {
 			opt.dont_log_logfile = 0;
 			break;
 
-		/* TODO Move all this flow option parsing stuff to function
-		 * parse_flow_option. As a result the ASSIGN_BI_FLOW_SETTING
-		 * macro is not needed anymore */
-
-		/* flow options */
+		/* flow options w/o endpoint identifier */
 		case 'E':
 			ASSIGN_BI_FLOW_SETTING(byte_counting, 1, id-1);
 			break;
@@ -2902,6 +2892,8 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'Q':
 			ASSIGN_BI_FLOW_SETTING(summarize_only, 1, id-1);
 			break;
+
+		/* flow options w/ endpoint identifier */
 		case 'A':
 		case 'B':
 		case 'C':
@@ -2922,7 +2914,7 @@ static void parse_cmdline(int argc, char **argv) {
 
 		/* missing option-argument */
 		case ':':
-			/* Sepcial case. Option -h can called w/o an argument */
+			/* Sepcial case. Option -h can called w/ and w/o an argument */
 			if (optopt == 'h')
 				usage();
 
