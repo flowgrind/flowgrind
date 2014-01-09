@@ -2115,28 +2115,6 @@ has_more_reports:
 	}
 }
 
-/*
- * Parse optional argument for option -h
- */
-static void parse_help_option(char *params)
-{
-	char argument;
-
-	sscanf(params, "%c", &argument);
-	switch (argument) {
-	case 's':
-		usage_sockopt();
-		break;
-	case 'g':
-		usage_trafgenopt();
-		break;
-	default:
-		fprintf(stderr, "%s: unknown optional argument '%c' for "
-			"option '-h'\n", progname, argument);
-		usage_hint();
-	}
-}
-
 static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 	int rc;
 	char * section;
@@ -2811,7 +2789,16 @@ static void parse_cmdline(int argc, char **argv) {
 
 		/* Miscellaneous */
 		case 'h':
-			parse_help_option(optarg);
+			if (!strcmp(optarg, "s"))
+				usage_sockopt();
+			else if (!strcmp(optarg, "g"))
+				usage_trafgenopt();
+			else {
+				fprintf(stderr, "%s: unknown optional "
+					"argument '%s' for option '-h'\n",
+					progname, optarg);
+				usage_hint();
+			}
 			exit(EXIT_SUCCESS);
 		case 'v':
 			fprintf(stderr, "%s version: %s\n", progname,
