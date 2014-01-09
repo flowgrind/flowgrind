@@ -287,7 +287,7 @@ static void usage(void)
 		"  -c interval,through,transac,blocks,rtt,iat,delay,kernel\n"
 #endif /* DEBUG */
 		"               List of column groups to display in output.\n"
-		"               (default: show all but blocks)\n"
+		"               (default: show all but blocks and delay)\n"
 #ifdef DEBUG
 		"  -d           Increase debugging verbosity. Add option multiple times to\n"
 		"               be even more verbose.\n"
