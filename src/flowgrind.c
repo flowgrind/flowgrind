@@ -2319,7 +2319,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 	source_in6.sin6_family = AF_INET6;
 	struct _daemon* daemon;
 
-	#define ASSIGN_ENDPOINT_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE) \
+	#define ASSIGN_ENDPOINT_SETTING(PROPERTY_NAME, PROPERTY_VALUE) \
 		if (current_flow_ids[0] == -1) { \
 			for (id = 0; id < MAX_FLOWS; id++) { \
 				if (type != 'd') \
@@ -2338,7 +2338,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 				(PROPERTY_VALUE); \
 		}
 
-	#define ASSIGN_ENDPOINT_FLOW_OPTION_STR(PROPERTY_NAME, PROPERTY_VALUE) \
+	#define ASSIGN_ENDPOINT_SETTING_STR(PROPERTY_NAME, PROPERTY_VALUE) \
 		if (current_flow_ids[0] == -1) { \
 			for (id = 0; id < MAX_FLOWS; id++) { \
 				if (type != 'd') \
@@ -2353,7 +2353,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 				strcpy(cflow[current_flow_ids[id]].endpoint[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 		}
 
-	#define ASSIGN_COMMON_FLOW_SETTING(PROPERTY_NAME, PROPERTY_VALUE) \
+	#define ASSIGN_UNI_FLOW_SETTING(PROPERTY_NAME, PROPERTY_VALUE) \
 		if (current_flow_ids[0] == -1) { \
 			int id; \
 			for (id = 0; id < MAX_FLOWS; id++) { \
@@ -2373,7 +2373,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 				(PROPERTY_VALUE); \
 		}
 
-	#define ASSIGN_COMMON_FLOW_SETTING_STR(PROPERTY_NAME, PROPERTY_VALUE) \
+	#define ASSIGN_UNI_FLOW_SETTING_STR(PROPERTY_NAME, PROPERTY_VALUE) \
 		if (current_flow_ids[0] == -1) { \
 			int id; \
 			for (id = 0; id < MAX_FLOWS; id++) { \
@@ -2406,8 +2406,8 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 		case 'A':
 			if (is_bulkopt)
 				usage_optcombination();
-			ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
-			ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
+			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
+			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
 			is_trafgenopt++;
 			break;
 		case 'B':
@@ -2417,10 +2417,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 					"integer (in bytes)\n");
 				usage();
 			}
-			ASSIGN_COMMON_FLOW_SETTING(requested_send_buffer_size, optunsigned)
+			ASSIGN_UNI_FLOW_SETTING(requested_send_buffer_size, optunsigned)
 			break;
 		case 'C':
-			ASSIGN_COMMON_FLOW_SETTING(flow_control, 1)
+			ASSIGN_UNI_FLOW_SETTING(flow_control, 1)
 			break;
 		case 'D':
 			rc = sscanf(arg, "%x", &optunsigned);
@@ -2429,7 +2429,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 						"service code point.\n");
 				usage();
 			}
-			ASSIGN_COMMON_FLOW_SETTING(dscp, optunsigned);
+			ASSIGN_UNI_FLOW_SETTING(dscp, optunsigned);
 			break;
 		case 'H':
 			{
@@ -2512,12 +2512,12 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 					sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
 
 				daemon = get_daemon_by_url(url, rpc_address, port);
-				ASSIGN_ENDPOINT_FLOW_OPTION(daemon, daemon);
-				ASSIGN_ENDPOINT_FLOW_OPTION_STR(test_address, arg);
+				ASSIGN_ENDPOINT_SETTING(daemon, daemon);
+				ASSIGN_ENDPOINT_SETTING_STR(test_address, arg);
 			}
 			break;
 		case 'M':
-			ASSIGN_COMMON_FLOW_SETTING(traffic_dump, 1)
+			ASSIGN_UNI_FLOW_SETTING(traffic_dump, 1)
 			break;
 		case 'O':
 			if (!*arg) {
@@ -2526,23 +2526,23 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			}
 
 			if (!strcmp(arg, "TCP_CORK")) {
-				ASSIGN_COMMON_FLOW_SETTING(cork, 1);
+				ASSIGN_UNI_FLOW_SETTING(cork, 1);
 			}
 			else if (!strcmp(arg, "TCP_ELCN")) {
-				ASSIGN_COMMON_FLOW_SETTING(elcn, 1);
+				ASSIGN_UNI_FLOW_SETTING(elcn, 1);
 			}
 			else if (!strcmp(arg, "TCP_LCD")) {
-				ASSIGN_COMMON_FLOW_SETTING(lcd, 1);
+				ASSIGN_UNI_FLOW_SETTING(lcd, 1);
 			}
 			else if (!strcmp(arg, "TCP_MTCP")) {
-				ASSIGN_COMMON_FLOW_SETTING(mtcp, 1);
+				ASSIGN_UNI_FLOW_SETTING(mtcp, 1);
 			}
 			else if (!strcmp(arg, "TCP_NODELAY")) {
-				ASSIGN_COMMON_FLOW_SETTING(nonagle, 1);
+				ASSIGN_UNI_FLOW_SETTING(nonagle, 1);
 			}
 
 			else if (!strcmp(arg, "ROUTE_RECORD")) {
-				ASSIGN_COMMON_FLOW_SETTING(route_record, 1);
+				ASSIGN_UNI_FLOW_SETTING(route_record, 1);
 
 			/* keep TCP_CONG_MODULE for backward compatibility */}
 			else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
@@ -2550,7 +2550,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 					fprintf(stderr, "Too large string for TCP_CONG_MODULE value");
 					usage_sockopt();
 				}
-				ASSIGN_COMMON_FLOW_SETTING_STR(cc_alg, arg + 16);
+				ASSIGN_UNI_FLOW_SETTING_STR(cc_alg, arg + 16);
 			}
 
 			else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
@@ -2558,14 +2558,14 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 					fprintf(stderr, "Too large string for TCP_CONGESTION value");
 					usage_sockopt();
 				}
-				ASSIGN_COMMON_FLOW_SETTING_STR(cc_alg, arg + 15);
+				ASSIGN_UNI_FLOW_SETTING_STR(cc_alg, arg + 15);
 			}
 
 			else if (!strcmp(arg, "SO_DEBUG")) {
-				ASSIGN_COMMON_FLOW_SETTING(so_debug, 1);
+				ASSIGN_UNI_FLOW_SETTING(so_debug, 1);
 			}
 			else if (!strcmp(arg, "IP_MTU_DISCOVER")) {
-				ASSIGN_COMMON_FLOW_SETTING(ipmtudiscover, 1);
+				ASSIGN_UNI_FLOW_SETTING(ipmtudiscover, 1);
 			}
 			else {
 				fprintf(stderr, "Unknown socket option or socket option not implemented for endpoint\n");
@@ -2573,21 +2573,21 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			}
 			break;
 		case 'P':
-			ASSIGN_COMMON_FLOW_SETTING(pushy, 1)
+			ASSIGN_UNI_FLOW_SETTING(pushy, 1)
 			break;
 		case 'R':
 			if (!*arg) {
 				fprintf(stderr, "-R requires a value for each given endpoint\n");
 				usage();
 			}
-			ASSIGN_COMMON_FLOW_SETTING(write_rate_str, arg)
+			ASSIGN_UNI_FLOW_SETTING(write_rate_str, arg)
 			break;
 		case 'S':
 			if (is_bulkopt)
 				usage_optcombination();
 			rc = sscanf(arg, "%u", &optunsigned);
-			ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.distribution, CONSTANT);
-			ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.param_one, optunsigned);
+			ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.distribution, CONSTANT);
+			ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.param_one, optunsigned);
 			for (int id = 0; id < MAX_FLOWS; id++) {
 				for (int i = 0; i < 2; i++) {
 					if ((signed)optunsigned > cflow[id].settings[i].maximum_block_size)
@@ -2609,7 +2609,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 				fprintf(stderr, "malformed flow duration\n");
 				usage();
 			}
-			ASSIGN_COMMON_FLOW_SETTING(duration[WRITE], optdouble)
+			ASSIGN_UNI_FLOW_SETTING(duration[WRITE], optdouble)
 			is_timeopt++;
 			break;
 		case 'U':
@@ -2619,7 +2619,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 					"positive integer\n", progname);
 				usage_hint();
 			}
-			ASSIGN_COMMON_FLOW_SETTING(maximum_block_size, optunsigned);
+			ASSIGN_UNI_FLOW_SETTING(maximum_block_size, optunsigned);
 			break;
 		case 'W':
 			rc = sscanf(arg, "%u", &optunsigned);
@@ -2628,7 +2628,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 					"integer (in bytes)\n");
 				usage();
 			}
-			ASSIGN_COMMON_FLOW_SETTING(requested_read_buffer_size, optunsigned)
+			ASSIGN_UNI_FLOW_SETTING(requested_read_buffer_size, optunsigned)
 			break;
 		case 'Y':
 			rc = sscanf(arg, "%lf", &optdouble);
@@ -2637,7 +2637,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 						"number (in seconds)\n");
 				usage();
 			}
-			ASSIGN_COMMON_FLOW_SETTING(delay[WRITE], optdouble)
+			ASSIGN_UNI_FLOW_SETTING(delay[WRITE], optdouble)
 			break;
 		case 'Z':
 			{
@@ -2664,10 +2664,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 						cflow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = ONCE;
 					}
 				}
-				ASSIGN_COMMON_FLOW_SETTING(duration[WRITE], 0);
-				ASSIGN_COMMON_FLOW_SETTING(request_trafgen_options.param_one, optdouble);
-				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.distribution, ONCE);
-				ASSIGN_COMMON_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
+				ASSIGN_UNI_FLOW_SETTING(duration[WRITE], 0);
+				ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.param_one, optdouble);
+				ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, ONCE);
+				ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
 				is_bulkopt++;
 				break;
 			}
@@ -2760,7 +2760,7 @@ static void parse_cmdline(int argc, char **argv) {
 	extern char *optarg;	/* the option argument */
 	extern int optopt;	/* the option character */
 
-	#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE, id) \
+	#define ASSIGN_BI_FLOW_SETTING(PROPERTY_NAME, PROPERTY_VALUE, id) \
 		if (current_flow_ids[0] == -1) { \
 			int i; \
 			for (i = 0; i < MAX_FLOWS; i++) { \
@@ -2850,12 +2850,12 @@ static void parse_cmdline(int argc, char **argv) {
 			break;
 
 		/* TODO Move all this flow option parsing stuff to function
-		 * parse_flow_option. As a result the ASSIGN_FLOW_OPTION
+		 * parse_flow_option. As a result the ASSIGN_BI_FLOW_SETTING
 		 * macro is not needed anymore */
 
 		/* flow options */
 		case 'E':
-			ASSIGN_FLOW_OPTION(byte_counting, 1, id-1);
+			ASSIGN_BI_FLOW_SETTING(byte_counting, 1, id-1);
 			break;
 		/* FIXME If more than one number is given, the option is not
 		 * correct handled, e.g. -F 1,2,3 */
@@ -2891,16 +2891,16 @@ static void parse_cmdline(int argc, char **argv) {
 					"valid unsigned integer\n", progname);
 					usage_hint();
 			}
-			ASSIGN_FLOW_OPTION(random_seed, optint, id-1);
+			ASSIGN_BI_FLOW_SETTING(random_seed, optint, id-1);
 			break;
 		case 'L':
-			ASSIGN_FLOW_OPTION(late_connect, 1, id-1);
+			ASSIGN_BI_FLOW_SETTING(late_connect, 1, id-1);
 			break;
 		case 'N':
-			ASSIGN_FLOW_OPTION(shutdown, 1, id-1);
+			ASSIGN_BI_FLOW_SETTING(shutdown, 1, id-1);
 			break;
 		case 'Q':
-			ASSIGN_FLOW_OPTION(summarize_only, 1, id-1);
+			ASSIGN_BI_FLOW_SETTING(summarize_only, 1, id-1);
 			break;
 		case 'A':
 		case 'B':
