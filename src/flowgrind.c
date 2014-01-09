@@ -2673,8 +2673,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			}
 		}
 	}
-
-	#undef ASSIGN_ENDPOINT_FLOW_OPTION
 }
 
 /**
