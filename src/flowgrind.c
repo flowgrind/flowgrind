@@ -2305,18 +2305,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 }
 
 
-#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE, id) \
-			if (current_flow_ids[0] == -1) { \
-				int i; \
-				for (i = 0; i < MAX_FLOWS; i++) { \
-					cflow[i].PROPERTY_NAME = \
-					(PROPERTY_VALUE); \
-				} \
-			} else { \
-				cflow[current_flow_ids[id]].PROPERTY_NAME = \
-				(PROPERTY_VALUE); \
-			}
-
 
 /* Parse flow specific options given on the cmdline */
 static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int id) {
@@ -2757,6 +2745,7 @@ static void parse_visible_option(char *optarg)
 	}
 }
 
+
 static void parse_cmdline(int argc, char **argv) {
 	int rc = 0;
 	int ch = 0;
@@ -2775,6 +2764,18 @@ static void parse_cmdline(int argc, char **argv) {
 	extern int optopt;	/* the option character */
 
 	current_flow_ids[0] = -1;
+
+	#define ASSIGN_FLOW_OPTION(PROPERTY_NAME, PROPERTY_VALUE, id) \
+		if (current_flow_ids[0] == -1) { \
+			int i; \
+			for (i = 0; i < MAX_FLOWS; i++) { \
+				cflow[i].PROPERTY_NAME = \
+				(PROPERTY_VALUE); \
+			} \
+		} else { \
+			cflow[current_flow_ids[id]].PROPERTY_NAME = \
+			(PROPERTY_VALUE); \
+		}
 
 	/* update progname from argv[0] */
 	if (argc > 0) {
@@ -2941,8 +2942,6 @@ static void parse_cmdline(int argc, char **argv) {
 			usage_hint();
 		}
 	}
-
-#undef ASSIGN_FLOW_OPTION
 
 #if 0
 	/* Demonstration how to set arbitary socket options. Note that this is
