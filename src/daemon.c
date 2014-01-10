@@ -161,12 +161,7 @@ static inline int flow_sending(struct timespec *now, struct _flow *flow,
 {
 	return !flow_in_delay(now, flow, direction) &&
 		(flow->settings.duration[direction] < 0 ||
-		 time_diff_now(&flow->stop_timestamp[direction]) < 0.0 ||
-		(flow->settings.request_trafgen_options.distribution == ONCE &&
-		direction == WRITE && flow->settings.response_trafgen_options.param_one > 0 &&
-		flow->current_write_block_size > flow->current_block_bytes_written) ||
-		(flow->settings.request_trafgen_options.distribution == ONCE &&
-		direction == READ && flow->current_read_block_size > flow->current_block_bytes_read));
+		 time_diff_now(&flow->stop_timestamp[direction]) < 0.0);
 }
 
 static inline int flow_block_scheduled(struct timespec *now, struct _flow *flow)
@@ -304,9 +299,11 @@ static int prepare_fds() {
 
 		if (started &&
 		    (flow->finished[READ] ||
+		     !flow->settings.duration[READ] ||
 		     (!flow_in_delay(&now, flow, READ) &&
 		      !flow_sending(&now, flow, READ))) &&
 		    (flow->finished[WRITE] ||
+		     !flow->settings.duration[WRITE] ||
 		     (!flow_in_delay(&now, flow, WRITE) &&
 		      !flow_sending(&now, flow, WRITE)))) {
 
@@ -982,13 +979,11 @@ static int write_data(struct _flow *flow)
 			       flow->current_write_block_size);
 #endif
 			/* we just finished writing a block */
+			flow->current_block_bytes_written = 0;
 			gettime(&flow->last_block_written);
 			for (int i = 0; i < 2; i++)
 				flow->statistics[i].request_blocks_written++;
-			if (flow->settings.response_trafgen_options.distribution == ONCE)
-				continue;
 
-			flow->current_block_bytes_written = 0;
 			interpacket_gap = next_interpacket_gap(flow);
 
 			/* if we calculated a non-zero packet add relative time
@@ -1162,9 +1157,6 @@ static int read_data(struct _flow *flow)
 				for (int i = 0; i < 2; i++)
 					flow->statistics[i].response_blocks_read++;
 				process_rtt(flow);
-				if (flow->settings.response_trafgen_options.distribution == ONCE)
-					return rc;
-
 			} else {
 				/* this is a request block, calculate IAT */
 				for (int i = 0; i < 2; i++)
@@ -1174,12 +1166,9 @@ static int read_data(struct _flow *flow)
 
 				/* send response if requested */
 				if (requested_response_block_size >=
-				    (signed)MIN_BLOCK_SIZE && !flow->finished[READ]) {
+				    (signed)MIN_BLOCK_SIZE && !flow->finished[READ])
 					send_response(flow,
 						      requested_response_block_size);
-					if (flow->settings.request_trafgen_options.distribution == ONCE)
-						return (-1);
-				}
 			}
 		}
 		if (!flow->settings.pushy)

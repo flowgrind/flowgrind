@@ -132,8 +132,7 @@ enum _stochastic_distributions
 	UNIFORM,
 	EXPONENTIAL,
 	PARETO,
-	LOGNORMAL,
-	ONCE
+	LOGNORMAL
 };
 
 struct _trafgen_options

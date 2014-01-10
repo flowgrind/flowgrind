@@ -244,16 +244,6 @@ static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 static int active_flows = 0;
 
-/* FIXME Mutual exclusion flow cannot be handled by global variable since
- * it is a flow option. It must be realized on flow level */
-int is_bulkopt = 0;
-/* FIXME Mutual exclusion flow cannot be handled by global variable since
- * it is a flow option. It must be realized on flow level */
-int is_trafgenopt = 0;
-/* FIXME Mutual exclusion flow cannot be handled by global variable since
- * it is a flow option. It must be realized on flow level */
-int is_timeopt = 0;
-
 /* Forward declarations */
 static void usage(void) __attribute__((noreturn));
 static void usage_sockopt(void) __attribute__((noreturn));
@@ -363,7 +353,7 @@ static void usage(void)
 		"               truncates values if used with stochastic traffic generation\n"
 		"  -W x=#       Set requested receiver buffer (advertised window), in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send, in seconds\n"
-		"  -Z x=#.#     Set amount of data to be send, in bytes (instead of -t)\n",
+/*		"  -Z x=#.#     Set amount of data to be send, in bytes (instead of -t)\n"*/,
 		opt.log_filename_prefix, progname, MIN_BLOCK_SIZE
 		);
 	exit(EXIT_SUCCESS);
@@ -502,17 +492,6 @@ static void usage_trafgenopt(void)
 		"    overwrite each other. -A, -R and -V exist as shortcut only\n",
 		progname);
 	exit(EXIT_SUCCESS);
-}
-
-static void usage_optcombination(void)
-{
-	fprintf(stderr, "Flowgrind cannot set flow duration, traffic generation and "
-			"bulk data transfer options at the same time.\n"
-			"- If you use bulk data transfer option (-Z), don't set flow duration (-T) "
-			"and traffic generation (-G, -A or -S) options\n"
-			"- If you use either flow duration or traffic generation option, "
-			"or both of them, don't set bulk data transfer option\n\n");
-	exit(EXIT_FAILURE);
 }
 
 /**
@@ -981,12 +960,6 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 	}
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
 
-#ifdef DEBUG
-	struct timespec now;
-	gettime(&now);
-	DEBUG_MSG(LOG_DEBUG, "%ld.%ld (add_flow_source() in flowgrind.c)\n",
-		  now.tv_sec, now.tv_nsec);
-#endif /* DEBUG */
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
 		cflow[id].endpoint[SOURCE].daemon->server_url,
 		"add_flow_source", &resultP,
@@ -2395,11 +2368,8 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 
 		switch (ch) {
 		case 'A':
-			if (is_bulkopt)
-				usage_optcombination();
 			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
 			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
-			is_trafgenopt++;
 			break;
 		case 'B':
 			rc = sscanf(arg, "%u", &optunsigned);
@@ -2574,8 +2544,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			ASSIGN_UNI_FLOW_SETTING(write_rate_str, arg)
 			break;
 		case 'S':
-			if (is_bulkopt)
-				usage_optcombination();
 			rc = sscanf(arg, "%u", &optunsigned);
 			ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.distribution, CONSTANT);
 			ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.param_one, optunsigned);
@@ -2585,23 +2553,14 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 						cflow[id].settings[i].maximum_block_size = (signed)optunsigned;
 				}
 			}
-			is_trafgenopt++;
 			break;
 		case 'T':
-			if (is_bulkopt) {
-				fprintf(stderr, "Cannot set flow duration, bulk "
-						"data transfer and traffic generation "
-						"options at the same time.\n"
-						"Disable either of them\n");
-				exit(1);
-			}
 			rc = sscanf(arg, "%lf", &optdouble);
 			if (rc != 1) {
 				fprintf(stderr, "malformed flow duration\n");
 				usage();
 			}
 			ASSIGN_UNI_FLOW_SETTING(duration[WRITE], optdouble)
-			is_timeopt++;
 			break;
 		case 'U':
 			rc = sscanf(arg, "%d", &optunsigned);
@@ -2629,36 +2588,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 				usage();
 			}
 			ASSIGN_UNI_FLOW_SETTING(delay[WRITE], optdouble)
-			break;
-		case 'Z':
-			if (is_trafgenopt || is_timeopt)
-				usage_optcombination();
-			rc = sscanf(arg, "%lf", &optdouble);
-			if (rc != 1 || optdouble < 0) {
-				fprintf(stderr, "Data to be sent must be a non-negativ "
-						"number (in bytes)\n");
-				usage();
-			}
-			if (current_flow_ids[0] == -1) {
-				for (int id = 0; id < MAX_FLOWS; id++) {
-					for (int i = 0; i < 2; i++) {
-						if ((signed)optdouble > cflow[id].settings[i].maximum_block_size)
-							cflow[id].settings[i].maximum_block_size = (signed)optdouble;
-						cflow[id].settings[i].request_trafgen_options.distribution = ONCE;
-					}
-				}
-			} else {
-				for (int i = 0; i < 2; i++) {
-					if ((signed)optdouble > cflow[current_flow_ids[id]].settings[i].maximum_block_size)
-						cflow[current_flow_ids[id]].settings[i].maximum_block_size = (signed)optdouble;
-					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = ONCE;
-				}
-			}
-			ASSIGN_UNI_FLOW_SETTING(duration[WRITE], 0);
-			ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.param_one, optdouble);
-			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, ONCE);
-			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
-			is_bulkopt++;
 			break;
 		}
 	}
@@ -2777,7 +2706,7 @@ static void parse_cmdline(int argc, char **argv) {
 
 	/* parse command line */
 	while ((ch = getopt(argc, argv,":h:vc:de:i:l:mn:opqu:w"
-			    "A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:Z:")) != -1) {
+			    "A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:")) != -1) {
 		switch (ch) {
 
 		/* Miscellaneous */
@@ -2883,10 +2812,7 @@ static void parse_cmdline(int argc, char **argv) {
 			current_flow_ids[id] = -1;
 			break;
 		case 'G':
-			if (is_bulkopt)
-				usage_optcombination();
 			parse_trafgen_option(optarg, current_flow_ids, id-1);
-			is_trafgenopt++;
 			break;
 		case 'J':
 			rc = sscanf(optarg, "%u", &optint);
@@ -2922,7 +2848,6 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'U':
 		case 'W':
 		case 'Y':
-		case 'Z':
 			parse_flow_option(ch, optarg, current_flow_ids, id-1);
 			break;
 
@@ -2979,31 +2904,28 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 	for (id = 0; id<opt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
-		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 && cflow[id].late_connect &&
-				cflow[id].settings[DESTINATION].delay[WRITE] <
-				cflow[id].settings[SOURCE].delay[WRITE]) {
+		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
+		    cflow[id].late_connect &&
+		    cflow[id].settings[DESTINATION].delay[WRITE] <
+		    cflow[id].settings[SOURCE].delay[WRITE]) {
 			fprintf(stderr, "Server flow %d starts earlier than client "
 					"flow while late connecting.\n", id);
 			error = 1;
 		}
 		if (cflow[id].settings[SOURCE].delay[WRITE] > 0 &&
-				(cflow[id].settings[SOURCE].duration[WRITE] == 0 &&
-				cflow[id].settings[SOURCE].request_trafgen_options.distribution != ONCE)) {
+		    cflow[id].settings[SOURCE].duration[WRITE] == 0) {
 			fprintf(stderr, "Client flow %d has a delay but "
 					"no runtime.\n", id);
 			error = 1;
 		}
 		if (cflow[id].settings[DESTINATION].delay[WRITE] > 0 &&
-				(cflow[id].settings[DESTINATION].duration[WRITE] == 0 &&
-				cflow[id].settings[DESTINATION].request_trafgen_options.distribution != ONCE)) {
+		    cflow[id].settings[DESTINATION].duration[WRITE] == 0) {
 			fprintf(stderr, "Server flow %d has a delay but "
 					"no runtime.\n", id);
 			error = 1;
 		}
 		if (!cflow[id].settings[DESTINATION].duration[WRITE] &&
-				!cflow[id].settings[SOURCE].duration[WRITE] &&
-				(cflow[id].settings[SOURCE].request_trafgen_options.distribution != ONCE &&
-				cflow[id].settings[DESTINATION].request_trafgen_options.distribution != ONCE)) {
+		    !cflow[id].settings[SOURCE].duration[WRITE]) {
 			fprintf(stderr, "Server and client flow have both "
 					"zero runtime for flow %d.\n", id);
 			error = 1;
