@@ -259,10 +259,10 @@ static void usage(void) __attribute__((noreturn));
 static void usage_sockopt(void) __attribute__((noreturn));
 static void usage_trafgenopt(void) __attribute__((noreturn));
 static void usage_hint(void) __attribute__((noreturn));
-void prepare_flow(int id, xmlrpc_client *rpc_client);
+static void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void fetch_reports(xmlrpc_client *);
-void report_flow(const struct _daemon* daemon, struct _report* report);
-void print_report(int id, int endpoint, struct _report* report);
+static void report_flow(const struct _daemon* daemon, struct _report* report);
+static void print_report(int id, int endpoint, struct _report* report);
 
 /**
  * Print flowgrind usage and exit
@@ -681,7 +681,7 @@ static void die_if_fault_occurred(xmlrpc_env *env)
 }
 
 /* creates an xmlrpc_client for connect to server, uses global env rpc_env */
-void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
+static void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
 	struct xmlrpc_clientparms clientParms;
 	size_t clientParms_cpsize = XMLRPC_CPSIZE(transport);
 
@@ -709,7 +709,7 @@ void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
 }
 
 /* Checks that all nodes use our flowgrind version */
-void check_version(xmlrpc_client *rpc_client)
+static void check_version(xmlrpc_client *rpc_client)
 {
 	unsigned j;
 	xmlrpc_value * resultP = 0;
@@ -763,7 +763,7 @@ void check_version(xmlrpc_client *rpc_client)
 }
 
 /* Checks that all nodes are currently idle */
-void check_idle(xmlrpc_client *rpc_client)
+static void check_idle(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 
@@ -799,7 +799,7 @@ void check_idle(xmlrpc_client *rpc_client)
 }
 
 /* enumerate over prepare_flow */
-void prepare_flows(xmlrpc_client *rpc_client)
+static void prepare_flows(xmlrpc_client *rpc_client)
 {
 	/* prepare all flows */
 	for (int id = 0; id < opt.num_flows; id++) {
@@ -850,7 +850,7 @@ void prepare_flows(xmlrpc_client *rpc_client)
 	}
 }
 
-void prepare_flow(int id, xmlrpc_client *rpc_client)
+static void prepare_flow(int id, xmlrpc_client *rpc_client)
 {
 	xmlrpc_value *resultP, *extra_options;
 	int i;
@@ -1302,7 +1302,7 @@ has_more_reports:
 
 /* This function allots an report received from one daemon (identified
  * by server_url)  to the proper flow */
-void report_flow(const struct _daemon* daemon, struct _report* report)
+static void report_flow(const struct _daemon* daemon, struct _report* report)
 {
 	const char* server_url = daemon->server_url;
 	int endpoint;
@@ -1408,7 +1408,7 @@ void close_flows(void)
 }
 
 /* New output determines the number of digits before the comma */
-int det_output_column_size(double value)
+static int det_output_column_size(double value)
 {
 	int i = 1;
 	double dez = 10.0;
@@ -1423,7 +1423,7 @@ int det_output_column_size(double value)
 }
 
 /* produces the string command for printf for the right number of digits and decimal part */
-char *outStringPart(int digits, int decimalPart)
+static char *outStringPart(int digits, int decimalPart)
 {
 	static char outstr[30] = {0};
 
@@ -1432,9 +1432,9 @@ char *outStringPart(int digits, int decimalPart)
 	return outstr;
 }
 
-int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
-		       int column_id, double value, int numDigitsDecimalPart,
-		       int *columnWidthChanged)
+static int createOutputColumn(char *strHead1Row, char *strHead2Row,
+			      char *strDataRow, int column_id, double value,
+			      int numDigitsDecimalPart, int *columnWidthChanged)
 {
 	unsigned int maxTooLongColumns = opt.num_flows * 5;
 	int lengthData = 0;
@@ -1551,9 +1551,9 @@ int createOutputColumn(char *strHead1Row, char *strHead2Row, char *strDataRow,
 	return 0;
 }
 
-int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
-			   char *strDataRow, int column_id, char* value,
-			   int *columnWidthChanged)
+static int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
+				  char *strDataRow, int column_id, char* value,
+				  int *columnWidthChanged)
 {
 
 	unsigned int maxTooLongColumns = opt.num_flows * 5;
@@ -1614,7 +1614,7 @@ int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
 }
 
 /* Output a single report (with header if width has changed */
-char *createOutput(char hash, int id, int type, double begin, double end,
+static char *createOutput(char hash, int id, int type, double begin, double end,
 		   double throughput, double transac,
 		   unsigned int request_blocks, unsigned int response_blocks,
 		   double rttmin, double rttavg, double rttmax,
@@ -1751,7 +1751,7 @@ char *createOutput(char hash, int id, int type, double begin, double end,
 	return outputString;
 }
 
-void print_tcp_report_line(char hash, int id,
+static void print_tcp_report_line(char hash, int id,
 		int type, /* 0 source 1 destination */
 		double time1, double time2, struct _report *r)
 {
@@ -1870,7 +1870,7 @@ void print_tcp_report_line(char hash, int id,
 	log_output(report_buffer);
 }
 
-void print_report(int id, int endpoint, struct _report* report)
+static void print_report(int id, int endpoint, struct _report* report)
 {
 	double diff_first_last;
 	double diff_first_now;
@@ -1883,7 +1883,7 @@ void print_report(int id, int endpoint, struct _report* report)
 		0, id, endpoint, diff_first_last, diff_first_now, report);
 }
 
-char *guess_topology (int mtu)
+static char *guess_topology (int mtu)
 {
 	/* Mapping of common MTU sizes to network technologies */
 	struct _mtu_hint {
@@ -1917,7 +1917,7 @@ char *guess_topology (int mtu)
 	return "unknown";
 }
 
-void report_final(void)
+static void report_final(void)
 {
 	int id = 0;
 	char header_buffer[600] = "";
