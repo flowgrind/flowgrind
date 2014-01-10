@@ -4,7 +4,7 @@
 +investigate why libpcap does not work in multiple threads
 +simplify arbitrary socket options
 +do something with UDP/SCTP
-+let option -Z work together with option -G
++allow to send amount of bytes instead duration
 +add optional columns for sender/receiver buffer
 +implement pthread barrier for mac os x
 +add c style comments to functions for doxygen help
