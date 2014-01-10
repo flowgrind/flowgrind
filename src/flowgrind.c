@@ -540,7 +540,7 @@ static void sigint_handler(int sig)
 	}
 }
 
-static void init_options_defaults(void)
+static void init_general_options(void)
 {
 	opt.num_flows = 1;
 	opt.reporting_interval = 0.05;
@@ -550,7 +550,7 @@ static void init_options_defaults(void)
 	opt.force_unit = 0;
 }
 
-static void init_flows_defaults(void)
+static void init_flow_options(void)
 {
 	int id = 1;
 
@@ -615,7 +615,7 @@ static void init_flows_defaults(void)
 	}
 }
 
-static void init_logfile(void)
+static void open_logfile(void)
 {
 	struct timespec now = {0, 0};
 	static char buf[60] = "";
@@ -652,7 +652,7 @@ static void init_logfile(void)
 		error(ERR_FATAL, "could not open logfile %s", log_filename);
 }
 
-static void shutdown_logfile()
+static void close_logfile()
 {
 	if (opt.dont_log_logfile)
 		return;
@@ -3137,10 +3137,10 @@ int main(int argc, char *argv[])
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
-	init_options_defaults();
-	init_flows_defaults();
+	init_general_options();
+	init_flow_options();
 	parse_cmdline(argc, argv);
-	init_logfile();
+	open_logfile();
 	sa.sa_handler = sigint_handler;
 	sa.sa_flags = 0;
 	sigemptyset (&sa.sa_mask);
@@ -3173,7 +3173,7 @@ int main(int argc, char *argv[])
 	fetch_reports(rpc_client);
 	report_final();
 
-	shutdown_logfile();
+	close_logfile();
 
 	xmlrpc_client_destroy(rpc_client);
 	xmlrpc_env_clean(&rpc_env);
