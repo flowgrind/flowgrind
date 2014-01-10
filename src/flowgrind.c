@@ -1720,10 +1720,9 @@ static char *createOutput(char hash, int id, int type, double begin, double end,
 	return outputString;
 }
 
-static void print_tcp_report_line(char hash, int id,
-		int type, /* 0 source 1 destination */
-		double time1, double time2, struct _report *r)
+static void print_report(int id, int endpoint, struct _report* r)
 {
+
 	double min_rtt = r->rtt_min;
 	double max_rtt = r->rtt_max;
 	double avg_rtt;
@@ -1736,10 +1735,8 @@ static void print_tcp_report_line(char hash, int id,
 
 	char comment_buffer[100] = " (";
 	char report_buffer[4000] = "";
-	double thruput;
-	double transac;
 
-#define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
+	#define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
 		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
 		strncat(comment_buffer, (s), sizeof(comment_buffer)-1); }while(0);
 
@@ -1759,7 +1756,7 @@ static void print_tcp_report_line(char hash, int id,
 		min_delay = max_delay = avg_delay = INFINITY;
 
 #ifdef DEBUG
-	if (cflow[id].finished[type])
+	if (cflow[id].finished[endpoint])
 		COMMENT_CAT("stopped")
 	else {
 		char tmp[2];
@@ -1805,14 +1802,19 @@ static void print_tcp_report_line(char hash, int id,
 	if (strlen(comment_buffer) == 2)
 		comment_buffer[0] = '\0';
 
-	thruput = scale_thruput((double)r->bytes_written / (time2 - time1));
-
-	transac = (double)r->response_blocks_read / (time2 - time1);
-
 	char rep_string[4000];
+	double diff_first_last =
+		time_diff(&cflow[id].start_timestamp[endpoint], &r->begin);
+	double diff_first_now =
+		time_diff(&cflow[id].start_timestamp[endpoint], &r->end);
+	double thruput = scale_thruput((double)r->bytes_written /
+				       (diff_first_now - diff_first_last));
+	double transac = (double)r->response_blocks_read /
+			 (diff_first_now - diff_first_last);
 
 	strcpy(rep_string,
-	       createOutput(hash, id, type, time1, time2, thruput,transac,
+	       createOutput(0, id, endpoint, diff_first_last, diff_first_now,
+		            thruput, transac,
 			    (unsigned int)r->request_blocks_written,
 			    (unsigned int)r->response_blocks_written,
 			    min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
@@ -1837,19 +1839,6 @@ static void print_tcp_report_line(char hash, int id,
 	strncpy(report_buffer, rep_string, sizeof(report_buffer));
 	report_buffer[sizeof(report_buffer) - 1] = 0;
 	log_output(report_buffer);
-}
-
-static void print_report(int id, int endpoint, struct _report* report)
-{
-	double diff_first_last;
-	double diff_first_now;
-	struct _cflow *f = &cflow[id];
-
-	diff_first_last = time_diff(&f->start_timestamp[endpoint], &report->begin);
-	diff_first_now = time_diff(&f->start_timestamp[endpoint], &report->end);
-
-	print_tcp_report_line(
-		0, id, endpoint, diff_first_last, diff_first_now, report);
 }
 
 static char *guess_topology (int mtu)
