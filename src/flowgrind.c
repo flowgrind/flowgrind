@@ -258,11 +258,11 @@ int is_timeopt = 0;
 static void usage(void) __attribute__((noreturn));
 static void usage_sockopt(void) __attribute__((noreturn));
 static void usage_trafgenopt(void) __attribute__((noreturn));
-static void usage_optcombination(void) __attribute__((noreturn));
 static void usage_hint(void) __attribute__((noreturn));
-static void die_if_fault_occurred(xmlrpc_env *env);
 void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void fetch_reports(xmlrpc_client *);
+void report_flow(const struct _daemon* daemon, struct _report* report);
+void print_report(int id, int endpoint, struct _report* report);
 
 /**
  * Print flowgrind usage and exit
@@ -661,6 +661,25 @@ static void close_logfile()
 		error(ERR_FATAL, "could not close logfile %s", log_filename);
 }
 
+static void log_output(const char *msg)
+{
+	if (!opt.dont_log_stdout) {
+		printf("%s", msg);
+		fflush(stdout);
+	}
+	if (!opt.dont_log_logfile) {
+		fprintf(log_stream, "%s", msg);
+		fflush(log_stream);
+	}
+}
+
+static void die_if_fault_occurred(xmlrpc_env *env)
+{
+    if (env->fault_occurred)
+	error(ERR_FATAL, "XML-RPC Fault: %s (%d)\n", env->fault_string,
+	      env->fault_code);
+}
+
 /* creates an xmlrpc_client for connect to server, uses global env rpc_env */
 void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
 	struct xmlrpc_clientparms clientParms;
@@ -689,34 +708,703 @@ void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
 			     &clientParms, clientParms_cpsize, rpc_client);
 }
 
-static void log_output(const char *msg)
+/* Checks that all nodes use our flowgrind version */
+void check_version(xmlrpc_client *rpc_client)
 {
-	if (!opt.dont_log_stdout) {
-		printf("%s", msg);
-		fflush(stdout);
+	unsigned j;
+	xmlrpc_value * resultP = 0;
+	char mismatch = 0;
+
+	for (j = 0; j < num_unique_servers; j++) {
+
+		if (sigint_caught)
+			return;
+
+		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
+					"get_version", &resultP, "()");
+		if ((rpc_env.fault_occurred) && (strcasestr(rpc_env.fault_string,"response code is 400"))) {
+			fprintf(stderr, "FATAL: node %s could not parse request.\n "
+				"You are probably trying to use a numeric IPv6 "
+				"address and the node's libxmlrpc is too old, please upgrade!\n",
+				unique_servers[j].server_url);
+		}
+		die_if_fault_occurred(&rpc_env);
+
+		if (resultP) {
+			char* version;
+			int api_version;
+			char* os_name;
+			char* os_release;
+			xmlrpc_decompose_value(&rpc_env, resultP, "{s:s,s:i,s:s,s:s,*}",
+						"version", &version,
+						"api_version", &api_version,
+						"os_name", &os_name,
+						"os_release", &os_release);
+			die_if_fault_occurred(&rpc_env);
+
+			if (strcmp(version, FLOWGRIND_VERSION)) {
+				mismatch = 1;
+				fprintf(stderr, "Warning: Node %s uses version %s\n", unique_servers[j].server_url, version);
+			}
+			unique_servers[j].api_version = api_version;
+			strncpy(unique_servers[j].os_name, os_name, 256);
+			strncpy(unique_servers[j].os_release, os_release, 256);
+			free(version);
+			free(os_name);
+			free(os_release);
+			xmlrpc_DECREF(resultP);
+		}
 	}
-	if (!opt.dont_log_logfile) {
-		fprintf(log_stream, "%s", msg);
-		fflush(log_stream);
+
+	if (mismatch) {
+		fprintf(stderr, "Our version is %s\n\nContinuing in 10 seconds.\n", FLOWGRIND_VERSION);
+		sleep(10);
 	}
 }
 
-/* Finds the daemon (or creating a new one) for a given server_url,
- * uses global static unique_servers variable for storage */
-static struct _daemon * get_daemon_by_url(const char* server_url, const char* server_name, unsigned short server_port) {
-	unsigned int i;
-	/* If we have already a daemon for this URL return a pointer to it */
-	for (i = 0; i < num_unique_servers; i++) {
-		if (!strcmp(unique_servers[i].server_url, server_url))
-			return &unique_servers[i];
+/* Checks that all nodes are currently idle */
+void check_idle(xmlrpc_client *rpc_client)
+{
+	xmlrpc_value * resultP = 0;
+
+	for (unsigned int j = 0; j < num_unique_servers; j++) {
+
+		if (sigint_caught)
+			return;
+
+		xmlrpc_client_call2f(&rpc_env, rpc_client,
+				     unique_servers[j].server_url,
+				     "get_status", &resultP, "()");
+		die_if_fault_occurred(&rpc_env);
+
+		if (resultP) {
+			int started;
+			int num_flows;
+
+			xmlrpc_decompose_value(&rpc_env, resultP,
+					       "{s:i,s:i,*}", "started",
+					       &started, "num_flows",
+					       &num_flows);
+			die_if_fault_occurred(&rpc_env);
+
+			if (started || num_flows)
+				error(ERR_FATAL, "node %s is busy. %d flows, "
+				      "started=%d\n",
+				      unique_servers[j].server_url,
+				      num_flows, started);
+
+			xmlrpc_DECREF(resultP);
+		}
 	}
-	/* didn't find anything, seems to be a new one */
-	i = num_unique_servers;
-	memset(&unique_servers[i], 0, sizeof(struct _daemon));
-	strcpy(unique_servers[i].server_url, server_url);
-	strcpy(unique_servers[i].server_name, server_name);
-	unique_servers[i].server_port = server_port;
-	return &unique_servers[num_unique_servers++];
+}
+
+/* enumerate over prepare_flow */
+void prepare_flows(xmlrpc_client *rpc_client)
+{
+	/* prepare all flows */
+	for (int id = 0; id < opt.num_flows; id++) {
+		if (sigint_caught)
+			return;
+		prepare_flow(id, rpc_client);
+	}
+
+	/* prepare headline */
+	char headline[200];
+	int rc;
+	struct utsname me;
+	time_t start_ts;
+	char start_ts_buffer[26];
+
+	rc = uname(&me);
+	start_ts = time(NULL);
+	ctime_r(&start_ts, start_ts_buffer);
+	start_ts_buffer[24] = '\0';
+	snprintf(headline, sizeof(headline),
+		 "# %s: controlling host = %s, number of flows = %d, "
+		 "reporting interval = %.2fs, [through] = %s (%s)\n",
+		 (start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
+		 (rc == -1 ? "(unknown)" : me.nodename),
+		 opt.num_flows, opt.reporting_interval,
+		 (opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
+		 FLOWGRIND_VERSION);
+	log_output(headline);
+
+	/* prepare column headers */
+
+	/* We set the unit of the kernel TCP metrics to bytes if either the
+	 * user forces to use bytes or the source of the first flow is not
+	 * Linux and the user forces not to uses segments */
+	if (opt.force_unit == BYTE_BASED ||
+	    (opt.force_unit != SEGMENT_BASED &&
+	     strcmp(unique_servers[0].os_name, "Linux"))) {
+		column_info[COL_TCP_CWND].header.unit = " [B]";
+		column_info[COL_TCP_SSTH].header.unit = " [B]";
+		column_info[COL_TCP_UACK].header.unit = " [B]";
+		column_info[COL_TCP_SACK].header.unit = " [B]";
+		column_info[COL_TCP_LOST].header.unit = " [B]";
+		column_info[COL_TCP_RETR].header.unit = " [B]";
+		column_info[COL_TCP_TRET].header.unit = " [B]";
+		column_info[COL_TCP_FACK].header.unit = " [B]";
+		column_info[COL_TCP_REOR].header.unit = " [B]";
+		column_info[COL_TCP_BKOF].header.unit = " [B]";
+	}
+}
+
+void prepare_flow(int id, xmlrpc_client *rpc_client)
+{
+	xmlrpc_value *resultP, *extra_options;
+	int i;
+
+	int listen_data_port;
+	DEBUG_MSG(LOG_WARNING, "prepare flow %d destination", id);
+
+	/* Contruct extra socket options array */
+	extra_options = xmlrpc_array_new(&rpc_env);
+	for (i = 0; i < cflow[id].settings[DESTINATION].num_extra_socket_options; i++) {
+
+		xmlrpc_value *value;
+		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
+			 "level", cflow[id].settings[DESTINATION].extra_socket_options[i].level,
+			 "optname", cflow[id].settings[DESTINATION].extra_socket_options[i].optname);
+
+		value = xmlrpc_base64_new(&rpc_env, cflow[id].settings[DESTINATION].extra_socket_options[i].optlen, (unsigned char*)cflow[id].settings[DESTINATION].extra_socket_options[i].optval);
+
+		xmlrpc_struct_set_value(&rpc_env, option, "value", value);
+
+		xmlrpc_array_append_item(&rpc_env, extra_options, option);
+		xmlrpc_DECREF(value);
+		xmlrpc_DECREF(option);
+	}
+	xmlrpc_client_call2f(&rpc_env, rpc_client,
+		cflow[id].endpoint[DESTINATION].daemon->server_url,
+		"add_flow_destination", &resultP,
+		"("
+		"{s:s}"
+		"{s:d,s:d,s:d,s:d,s:d}"
+		"{s:i,s:i}"
+		"{s:i}"
+		"{s:b,s:b,s:b,s:b,s:b}"
+		"{s:i,s:i}"
+		"{s:i,s:d,s:d}" /* request */
+		"{s:i,s:d,s:d}" /* response */
+		"{s:i,s:d,s:d}" /* interpacket_gap */
+		"{s:b,s:b,s:i,s:i}"
+		"{s:s}"
+		"{s:i,s:i,s:i,s:i,s:i}"
+#ifdef HAVE_LIBPCAP
+		"{s:s}"
+#endif /* HAVE_LIBPCAP */
+		"{s:i,s:A}"
+		")",
+
+		/* general flow settings */
+		"bind_address", cflow[id].endpoint[DESTINATION].test_address,
+
+		"write_delay", cflow[id].settings[DESTINATION].delay[WRITE],
+		"write_duration", cflow[id].settings[DESTINATION].duration[WRITE],
+		"read_delay", cflow[id].settings[SOURCE].delay[WRITE],
+		"read_duration", cflow[id].settings[SOURCE].duration[WRITE],
+		"reporting_interval", cflow[id].summarize_only ? 0 : opt.reporting_interval,
+
+		"requested_send_buffer_size", cflow[id].settings[DESTINATION].requested_send_buffer_size,
+		"requested_read_buffer_size", cflow[id].settings[DESTINATION].requested_read_buffer_size,
+
+		"maximum_block_size", cflow[id].settings[DESTINATION].maximum_block_size,
+
+		"traffic_dump", cflow[id].settings[DESTINATION].traffic_dump,
+		"so_debug", cflow[id].settings[DESTINATION].so_debug,
+		"route_record", (int)cflow[id].settings[DESTINATION].route_record,
+		"pushy", cflow[id].settings[DESTINATION].pushy,
+		"shutdown", (int)cflow[id].shutdown,
+
+		"write_rate", cflow[id].settings[DESTINATION].write_rate,
+		"random_seed",cflow[id].random_seed,
+
+		"traffic_generation_request_distribution", cflow[id].settings[DESTINATION].request_trafgen_options.distribution,
+		"traffic_generation_request_param_one", cflow[id].settings[DESTINATION].request_trafgen_options.param_one,
+		"traffic_generation_request_param_two", cflow[id].settings[DESTINATION].request_trafgen_options.param_two,
+
+		"traffic_generation_response_distribution", cflow[id].settings[DESTINATION].response_trafgen_options.distribution,
+		"traffic_generation_response_param_one", cflow[id].settings[DESTINATION].response_trafgen_options.param_one,
+		"traffic_generation_response_param_two", cflow[id].settings[DESTINATION].response_trafgen_options.param_two,
+
+		"traffic_generation_gap_distribution", cflow[id].settings[DESTINATION].interpacket_gap_trafgen_options.distribution,
+		"traffic_generation_gap_param_one", cflow[id].settings[DESTINATION].interpacket_gap_trafgen_options.param_one,
+		"traffic_generation_gap_param_two", cflow[id].settings[DESTINATION].interpacket_gap_trafgen_options.param_two,
+
+	"flow_control", cflow[id].settings[DESTINATION].flow_control,
+		"byte_counting", cflow[id].byte_counting,
+		"cork", (int)cflow[id].settings[DESTINATION].cork,
+		"nonagle", cflow[id].settings[DESTINATION].nonagle,
+
+		"cc_alg", cflow[id].settings[DESTINATION].cc_alg,
+
+		"elcn", cflow[id].settings[DESTINATION].elcn,
+		"lcd", cflow[id].settings[DESTINATION].lcd,
+		"mtcp", cflow[id].settings[DESTINATION].mtcp,
+		"dscp", (int)cflow[id].settings[DESTINATION].dscp,
+		"ipmtudiscover", cflow[id].settings[DESTINATION].ipmtudiscover,
+#ifdef HAVE_LIBPCAP
+		"filename_prefix", opt.log_filename_prefix,
+#endif /* HAVE_LIBPCAP */
+		"num_extra_socket_options", cflow[id].settings[DESTINATION].num_extra_socket_options,
+		"extra_socket_options", extra_options);
+
+	die_if_fault_occurred(&rpc_env);
+
+	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,s:i,*}",
+		"flow_id", &cflow[id].endpoint_id[DESTINATION],
+		"listen_data_port", &listen_data_port,
+		"real_listen_send_buffer_size", &cflow[id].endpoint[DESTINATION].send_buffer_size_real,
+		"real_listen_read_buffer_size", &cflow[id].endpoint[DESTINATION].receive_buffer_size_real);
+	die_if_fault_occurred(&rpc_env);
+
+	if (resultP)
+		xmlrpc_DECREF(resultP);
+
+	/* Contruct extra socket options array */
+	extra_options = xmlrpc_array_new(&rpc_env);
+	for (i = 0; i < cflow[id].settings[SOURCE].num_extra_socket_options; i++) {
+
+		xmlrpc_value *value;
+		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
+			 "level", cflow[id].settings[SOURCE].extra_socket_options[i].level,
+			 "optname", cflow[id].settings[SOURCE].extra_socket_options[i].optname);
+
+		value = xmlrpc_base64_new(&rpc_env, cflow[id].settings[SOURCE].extra_socket_options[i].optlen, (unsigned char*)cflow[id].settings[SOURCE].extra_socket_options[i].optval);
+
+		xmlrpc_struct_set_value(&rpc_env, option, "value", value);
+
+		xmlrpc_array_append_item(&rpc_env, extra_options, option);
+		xmlrpc_DECREF(value);
+		xmlrpc_DECREF(option);
+	}
+	DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
+
+#ifdef DEBUG
+	struct timespec now;
+	gettime(&now);
+	DEBUG_MSG(LOG_DEBUG, "%ld.%ld (add_flow_source() in flowgrind.c)\n",
+		  now.tv_sec, now.tv_nsec);
+#endif /* DEBUG */
+	xmlrpc_client_call2f(&rpc_env, rpc_client,
+		cflow[id].endpoint[SOURCE].daemon->server_url,
+		"add_flow_source", &resultP,
+		"("
+		"{s:s}"
+		"{s:d,s:d,s:d,s:d,s:d}"
+		"{s:i,s:i}"
+		"{s:i}"
+		"{s:b,s:b,s:b,s:b,s:b}"
+		"{s:i,s:i}"
+		"{s:i,s:d,s:d}" /* request */
+		"{s:i,s:d,s:d}" /* response */
+		"{s:i,s:d,s:d}" /* interpacket_gap */
+		"{s:b,s:b,s:i,s:i}"
+		"{s:s}"
+		"{s:i,s:i,s:i,s:i,s:i}"
+#ifdef HAVE_LIBPCAP
+		"{s:s}"
+#endif /* HAVE_LIBPCAP */
+		"{s:i,s:A}"
+		"{s:s,s:i,s:i}"
+		")",
+
+		/* general flow settings */
+		"bind_address", cflow[id].endpoint[SOURCE].test_address,
+
+		"write_delay", cflow[id].settings[SOURCE].delay[WRITE],
+		"write_duration", cflow[id].settings[SOURCE].duration[WRITE],
+		"read_delay", cflow[id].settings[DESTINATION].delay[WRITE],
+		"read_duration", cflow[id].settings[DESTINATION].duration[WRITE],
+		"reporting_interval", cflow[id].summarize_only ? 0 : opt.reporting_interval,
+
+		"requested_send_buffer_size", cflow[id].settings[SOURCE].requested_send_buffer_size,
+		"requested_read_buffer_size", cflow[id].settings[SOURCE].requested_read_buffer_size,
+
+		"maximum_block_size", cflow[id].settings[SOURCE].maximum_block_size,
+
+		"traffic_dump", cflow[id].settings[SOURCE].traffic_dump,
+		"so_debug", cflow[id].settings[SOURCE].so_debug,
+		"route_record", (int)cflow[id].settings[SOURCE].route_record,
+		"pushy", cflow[id].settings[SOURCE].pushy,
+		"shutdown", (int)cflow[id].shutdown,
+
+		"write_rate", cflow[id].settings[SOURCE].write_rate,
+		"random_seed",cflow[id].random_seed,
+
+		"traffic_generation_request_distribution", cflow[id].settings[SOURCE].request_trafgen_options.distribution,
+		"traffic_generation_request_param_one", cflow[id].settings[SOURCE].request_trafgen_options.param_one,
+		"traffic_generation_request_param_two", cflow[id].settings[SOURCE].request_trafgen_options.param_two,
+
+		"traffic_generation_response_distribution", cflow[id].settings[SOURCE].response_trafgen_options.distribution,
+		"traffic_generation_response_param_one", cflow[id].settings[SOURCE].response_trafgen_options.param_one,
+		"traffic_generation_response_param_two", cflow[id].settings[SOURCE].response_trafgen_options.param_two,
+
+		"traffic_generation_gap_distribution", cflow[id].settings[SOURCE].interpacket_gap_trafgen_options.distribution,
+		"traffic_generation_gap_param_one", cflow[id].settings[SOURCE].interpacket_gap_trafgen_options.param_one,
+		"traffic_generation_gap_param_two", cflow[id].settings[SOURCE].interpacket_gap_trafgen_options.param_two,
+
+
+		"flow_control", cflow[id].settings[SOURCE].flow_control,
+		"byte_counting", cflow[id].byte_counting,
+		"cork", (int)cflow[id].settings[SOURCE].cork,
+		"nonagle", (int)cflow[id].settings[SOURCE].nonagle,
+
+		"cc_alg", cflow[id].settings[SOURCE].cc_alg,
+
+		"elcn", cflow[id].settings[SOURCE].elcn,
+		"lcd", cflow[id].settings[SOURCE].lcd,
+		"mtcp", cflow[id].settings[SOURCE].mtcp,
+		"dscp", (int)cflow[id].settings[SOURCE].dscp,
+		"ipmtudiscover", cflow[id].settings[SOURCE].ipmtudiscover,
+#ifdef HAVE_LIBPCAP
+		"filename_prefix", opt.log_filename_prefix,
+#endif /* HAVE_LIBPCAP */
+		"num_extra_socket_options", cflow[id].settings[SOURCE].num_extra_socket_options,
+		"extra_socket_options", extra_options,
+
+		/* source settings */
+		"destination_address", cflow[id].endpoint[DESTINATION].test_address,
+		"destination_port", listen_data_port,
+		"late_connect", (int)cflow[id].late_connect);
+	die_if_fault_occurred(&rpc_env);
+
+	xmlrpc_DECREF(extra_options);
+
+	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,*}",
+		"flow_id", &cflow[id].endpoint_id[SOURCE],
+		"real_send_buffer_size", &cflow[id].endpoint[SOURCE].send_buffer_size_real,
+		"real_read_buffer_size", &cflow[id].endpoint[SOURCE].receive_buffer_size_real);
+	die_if_fault_occurred(&rpc_env);
+
+	if (resultP)
+		xmlrpc_DECREF(resultP);
+	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
+}
+
+/* start flows */
+static void grind_flows(xmlrpc_client *rpc_client)
+{
+	xmlrpc_value * resultP = 0;
+
+	unsigned j;
+
+	struct timespec lastreport_end;
+	struct timespec lastreport_begin;
+	struct timespec now;
+
+	gettime(&lastreport_end);
+	gettime(&lastreport_begin);
+	gettime(&now);
+
+	for (j = 0; j < num_unique_servers; j++) {
+
+		if (sigint_caught)
+			return;
+		DEBUG_MSG(LOG_ERR, "starting flow on server %d", j);
+		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
+			"start_flows", &resultP,
+			"({s:i})", "start_timestamp", now.tv_sec + 2);
+		die_if_fault_occurred(&rpc_env);
+		if (resultP)
+			xmlrpc_DECREF(resultP);
+	}
+
+	active_flows = opt.num_flows;
+
+	while (!sigint_caught) {
+
+		if ( time_diff_now(&lastreport_begin) <  opt.reporting_interval ) {
+			usleep(opt.reporting_interval - time_diff(&lastreport_begin,&lastreport_end) );
+			continue;
+		}
+		gettime(&lastreport_begin);
+		fetch_reports(rpc_client);
+		gettime(&lastreport_end);
+
+		if (active_flows < 1)
+			/* All flows have ended */
+			return;
+	}
+}
+
+/* Poll the daemons for reports */
+static void fetch_reports(xmlrpc_client *rpc_client) {
+
+	xmlrpc_value * resultP = 0;
+
+	for (unsigned int j = 0; j < num_unique_servers; j++) {
+
+		int array_size, has_more;
+		xmlrpc_value *rv = 0;
+
+has_more_reports:
+
+		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
+			"get_reports", &resultP, "()");
+		if (rpc_env.fault_occurred) {
+			fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+			rpc_env.fault_string, rpc_env.fault_code);
+			continue;
+		}
+
+		if (!resultP)
+			continue;
+
+		array_size = xmlrpc_array_size(&rpc_env, resultP);
+		if (!array_size) {
+			fprintf(stderr, "Empty array in get_reports reply\n");
+			continue;
+		}
+
+		xmlrpc_array_read_item(&rpc_env, resultP, 0, &rv);
+		xmlrpc_read_int(&rpc_env, rv, &has_more);
+		if (rpc_env.fault_occurred) {
+			fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+			rpc_env.fault_string, rpc_env.fault_code);
+			xmlrpc_DECREF(rv);
+			continue;
+		}
+		xmlrpc_DECREF(rv);
+
+		for (int i = 1; i < array_size; i++) {
+			xmlrpc_value *rv = 0;
+
+			xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
+			if (rv) {
+				struct _report report;
+				int begin_sec, begin_nsec, end_sec, end_nsec;
+
+				int tcpi_snd_cwnd;
+				int tcpi_snd_ssthresh;
+				int tcpi_unacked;
+				int tcpi_sacked;
+				int tcpi_lost;
+				int tcpi_retrans;
+				int tcpi_retransmits;
+				int tcpi_fackets;
+				int tcpi_reordering;
+				int tcpi_rtt;
+				int tcpi_rttvar;
+				int tcpi_rto;
+				int tcpi_backoff;
+				int tcpi_ca_state;
+				int tcpi_snd_mss;
+				int bytes_read_low, bytes_read_high;
+				int bytes_written_low, bytes_written_high;
+
+				xmlrpc_decompose_value(&rpc_env, rv,
+					"("
+					"{s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
+					"{s:i,s:i,s:i,s:i,*}" /* bytes */
+					"{s:i,s:i,s:i,s:i,*}" /* blocks */
+					"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT, Delay */
+					"{s:i,s:i,*}" /* MTU */
+					"{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
+					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
+					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
+					"{s:i,*}"
+					")",
+
+					"id", &report.id,
+					"type", &report.type,
+					"begin_tv_sec", &begin_sec,
+					"begin_tv_nsec", &begin_nsec,
+					"end_tv_sec", &end_sec,
+					"end_tv_nsec", &end_nsec,
+
+					"bytes_read_high", &bytes_read_high,
+					"bytes_read_low", &bytes_read_low,
+					"bytes_written_high", &bytes_written_high,
+					"bytes_written_low", &bytes_written_low,
+
+					"request_blocks_read", &report.request_blocks_read,
+					"request_blocks_written", &report.request_blocks_written,
+					"response_blocks_read", &report.response_blocks_read,
+					"response_blocks_written", &report.response_blocks_written,
+
+					"rtt_min", &report.rtt_min,
+					"rtt_max", &report.rtt_max,
+					"rtt_sum", &report.rtt_sum,
+					"iat_min", &report.iat_min,
+					"iat_max", &report.iat_max,
+					"iat_sum", &report.iat_sum,
+					"delay_min", &report.delay_min,
+					"delay_max", &report.delay_max,
+					"delay_sum", &report.delay_sum,
+
+					"pmtu", &report.pmtu,
+					"imtu", &report.imtu,
+
+					"tcpi_snd_cwnd", &tcpi_snd_cwnd,
+					"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
+					"tcpi_unacked", &tcpi_unacked,
+					"tcpi_sacked", &tcpi_sacked,
+					"tcpi_lost", &tcpi_lost,
+
+					"tcpi_retrans", &tcpi_retrans,
+					"tcpi_retransmits", &tcpi_retransmits,
+					"tcpi_fackets", &tcpi_fackets,
+					"tcpi_reordering", &tcpi_reordering,
+					"tcpi_rtt", &tcpi_rtt,
+
+					"tcpi_rttvar", &tcpi_rttvar,
+					"tcpi_rto", &tcpi_rto,
+					"tcpi_backoff", &tcpi_backoff,
+					"tcpi_ca_state", &tcpi_ca_state,
+					"tcpi_snd_mss", &tcpi_snd_mss,
+
+					"status", &report.status
+				);
+				xmlrpc_DECREF(rv);
+#ifdef HAVE_UNSIGNED_LONG_LONG_INT
+				report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
+				report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
+#else
+				report.bytes_read = (uint32_t)bytes_read_low;
+				report.bytes_written = (uint32_t)bytes_written_low;
+#endif /* HAVE_UNSIGNED_LONG_LONG_INT */
+
+				/* Kernel metrics (tcp_info). Other OS than Linux may not send
+				 * valid values here, for the moment we don't care and handle
+				 * this in the output/display routines */
+				report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
+				report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
+				report.tcp_info.tcpi_unacked = tcpi_unacked;
+				report.tcp_info.tcpi_sacked = tcpi_sacked;
+				report.tcp_info.tcpi_lost = tcpi_lost;
+				report.tcp_info.tcpi_retrans = tcpi_retrans;
+				report.tcp_info.tcpi_retransmits = tcpi_retransmits;
+				report.tcp_info.tcpi_fackets = tcpi_fackets;
+				report.tcp_info.tcpi_reordering = tcpi_reordering;
+				report.tcp_info.tcpi_rtt = tcpi_rtt;
+				report.tcp_info.tcpi_rttvar = tcpi_rttvar;
+				report.tcp_info.tcpi_rto = tcpi_rto;
+				report.tcp_info.tcpi_backoff = tcpi_backoff;
+				report.tcp_info.tcpi_ca_state = tcpi_ca_state;
+				report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
+
+				report.begin.tv_sec = begin_sec;
+				report.begin.tv_nsec = begin_nsec;
+				report.end.tv_sec = end_sec;
+				report.end.tv_nsec = end_nsec;
+
+				report_flow(&unique_servers[j], &report);
+			}
+		}
+		xmlrpc_DECREF(resultP);
+
+		if (has_more)
+			goto has_more_reports;
+	}
+}
+
+/* This function allots an report received from one daemon (identified
+ * by server_url)  to the proper flow */
+void report_flow(const struct _daemon* daemon, struct _report* report)
+{
+	const char* server_url = daemon->server_url;
+	int endpoint;
+	int id;
+	struct _cflow *f;
+
+	/* Get matching flow for report */
+	/* TODO Maybe just use compare daemon pointers? */
+	for (id = 0; id < opt.num_flows; id++) {
+		f = &cflow[id];
+
+		for (endpoint = 0; endpoint < 2; endpoint++) {
+			if (f->endpoint_id[endpoint] == report->id &&
+			    !strcmp(server_url, f->endpoint[endpoint].daemon->server_url))
+				goto exit_outer_loop;
+		}
+	}
+exit_outer_loop:
+
+	if (id >= opt.num_flows) {
+		DEBUG_MSG(LOG_ERR, "Got report from nonexistent flow, ignoring");
+		return;
+	}
+
+	if (f->start_timestamp[endpoint].tv_sec == 0) {
+		f->start_timestamp[endpoint] = report->begin;
+	}
+
+	if (report->type == TOTAL) {
+		DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);
+		/* Final report, keep it for later */
+		free(f->final_report[endpoint]);
+		f->final_report[endpoint] = malloc(sizeof(struct _report));
+		*f->final_report[endpoint] = *report;
+
+		if (!f->finished[endpoint]) {
+			f->finished[endpoint] = 1;
+			if (f->finished[1 - endpoint]) {
+				active_flows--;
+				DEBUG_MSG(LOG_DEBUG, "remaining active flows: %d", active_flows);
+#ifdef DEBUG
+				assert(active_flows >= 0);
+#endif /* DEBUG */
+			}
+		}
+		return;
+	}
+
+	print_report(id, endpoint, report);
+}
+
+void close_flow(int id)
+{
+	DEBUG_MSG(LOG_WARNING, "closing flow %d.", id);
+
+	xmlrpc_env env;
+	xmlrpc_client *client;
+
+	if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
+		return;
+
+	/* We use new env and client, old one might be in fault condition */
+	xmlrpc_env_init(&env);
+	xmlrpc_client_create(&env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &client);
+	die_if_fault_occurred(&env);
+	xmlrpc_env_clean(&env);
+
+	for (unsigned int endpoint = 0; endpoint < 2; endpoint++) {
+		xmlrpc_value * resultP = 0;
+
+		if (cflow[id].endpoint_id[endpoint] == -1 ||
+				cflow[id].finished[endpoint]) {
+			/* Endpoint does not need closing */
+			continue;
+		}
+
+		cflow[id].finished[endpoint] = 1;
+
+		xmlrpc_env_init(&env);
+
+		xmlrpc_client_call2f(&env, client,
+			cflow[id].endpoint[endpoint].daemon->server_url,
+			"stop_flow", &resultP, "({s:i})", "flow_id", cflow[id].endpoint_id[endpoint]);
+		if (resultP)
+			xmlrpc_DECREF(resultP);
+
+		xmlrpc_env_clean(&env);
+	}
+
+
+	if (active_flows > 0)
+		active_flows--;
+
+	xmlrpc_client_destroy(client);
+	DEBUG_MSG(LOG_WARNING, "closed flow %d.", id);
+}
+
+void close_flows(void)
+{
+	int id;
+	for (id = 0; id < opt.num_flows; id++)
+		close_flow(id);
 }
 
 /* New output determines the number of digits before the comma */
@@ -1408,711 +2096,22 @@ void report_final(void)
 
 }
 
-/* This function allots an report received from one daemon (identified
- * by server_url)  to the proper flow */
-void report_flow(const struct _daemon* daemon, struct _report* report)
-{
-	const char* server_url = daemon->server_url;
-	int endpoint;
-	int id;
-	struct _cflow *f;
-
-	/* Get matching flow for report */
-	/* TODO Maybe just use compare daemon pointers? */
-	for (id = 0; id < opt.num_flows; id++) {
-		f = &cflow[id];
-
-		for (endpoint = 0; endpoint < 2; endpoint++) {
-			if (f->endpoint_id[endpoint] == report->id &&
-			    !strcmp(server_url, f->endpoint[endpoint].daemon->server_url))
-				goto exit_outer_loop;
-		}
+/* Finds the daemon (or creating a new one) for a given server_url,
+ * uses global static unique_servers variable for storage */
+static struct _daemon * get_daemon_by_url(const char* server_url, const char* server_name, unsigned short server_port) {
+	unsigned int i;
+	/* If we have already a daemon for this URL return a pointer to it */
+	for (i = 0; i < num_unique_servers; i++) {
+		if (!strcmp(unique_servers[i].server_url, server_url))
+			return &unique_servers[i];
 	}
-exit_outer_loop:
-
-	if (id >= opt.num_flows) {
-		DEBUG_MSG(LOG_ERR, "Got report from nonexistent flow, ignoring");
-		return;
-	}
-
-	if (f->start_timestamp[endpoint].tv_sec == 0) {
-		f->start_timestamp[endpoint] = report->begin;
-	}
-
-	if (report->type == TOTAL) {
-		DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);
-		/* Final report, keep it for later */
-		free(f->final_report[endpoint]);
-		f->final_report[endpoint] = malloc(sizeof(struct _report));
-		*f->final_report[endpoint] = *report;
-
-		if (!f->finished[endpoint]) {
-			f->finished[endpoint] = 1;
-			if (f->finished[1 - endpoint]) {
-				active_flows--;
-				DEBUG_MSG(LOG_DEBUG, "remaining active flows: %d", active_flows);
-#ifdef DEBUG
-				assert(active_flows >= 0);
-#endif /* DEBUG */
-			}
-		}
-		return;
-	}
-
-	print_report(id, endpoint, report);
-}
-
-void close_flow(int id)
-{
-	DEBUG_MSG(LOG_WARNING, "closing flow %d.", id);
-
-	xmlrpc_env env;
-	xmlrpc_client *client;
-
-	if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
-		return;
-
-	/* We use new env and client, old one might be in fault condition */
-	xmlrpc_env_init(&env);
-	xmlrpc_client_create(&env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &client);
-	die_if_fault_occurred(&env);
-	xmlrpc_env_clean(&env);
-
-	for (unsigned int endpoint = 0; endpoint < 2; endpoint++) {
-		xmlrpc_value * resultP = 0;
-
-		if (cflow[id].endpoint_id[endpoint] == -1 ||
-				cflow[id].finished[endpoint]) {
-			/* Endpoint does not need closing */
-			continue;
-		}
-
-		cflow[id].finished[endpoint] = 1;
-
-		xmlrpc_env_init(&env);
-
-		xmlrpc_client_call2f(&env, client,
-			cflow[id].endpoint[endpoint].daemon->server_url,
-			"stop_flow", &resultP, "({s:i})", "flow_id", cflow[id].endpoint_id[endpoint]);
-		if (resultP)
-			xmlrpc_DECREF(resultP);
-
-		xmlrpc_env_clean(&env);
-	}
-
-
-	if (active_flows > 0)
-		active_flows--;
-
-	xmlrpc_client_destroy(client);
-	DEBUG_MSG(LOG_WARNING, "closed flow %d.", id);
-}
-
-
-void close_flows(void)
-{
-	int id;
-	for (id = 0; id < opt.num_flows; id++)
-		close_flow(id);
-}
-
-static void die_if_fault_occurred(xmlrpc_env *env)
-{
-    if (env->fault_occurred)
-	error(ERR_FATAL, "XML-RPC Fault: %s (%d)\n", env->fault_string,
-	      env->fault_code);
-}
-
-/* Checks that all nodes use our flowgrind version */
-void check_version(xmlrpc_client *rpc_client)
-{
-	unsigned j;
-	xmlrpc_value * resultP = 0;
-	char mismatch = 0;
-
-	for (j = 0; j < num_unique_servers; j++) {
-
-		if (sigint_caught)
-			return;
-
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
-					"get_version", &resultP, "()");
-		if ((rpc_env.fault_occurred) && (strcasestr(rpc_env.fault_string,"response code is 400"))) {
-			fprintf(stderr, "FATAL: node %s could not parse request.\n "
-				"You are probably trying to use a numeric IPv6 "
-				"address and the node's libxmlrpc is too old, please upgrade!\n",
-				unique_servers[j].server_url);
-		}
-		die_if_fault_occurred(&rpc_env);
-
-		if (resultP) {
-			char* version;
-			int api_version;
-			char* os_name;
-			char* os_release;
-			xmlrpc_decompose_value(&rpc_env, resultP, "{s:s,s:i,s:s,s:s,*}",
-						"version", &version,
-						"api_version", &api_version,
-						"os_name", &os_name,
-						"os_release", &os_release);
-			die_if_fault_occurred(&rpc_env);
-
-			if (strcmp(version, FLOWGRIND_VERSION)) {
-				mismatch = 1;
-				fprintf(stderr, "Warning: Node %s uses version %s\n", unique_servers[j].server_url, version);
-			}
-			unique_servers[j].api_version = api_version;
-			strncpy(unique_servers[j].os_name, os_name, 256);
-			strncpy(unique_servers[j].os_release, os_release, 256);
-			free(version);
-			free(os_name);
-			free(os_release);
-			xmlrpc_DECREF(resultP);
-		}
-	}
-
-	if (mismatch) {
-		fprintf(stderr, "Our version is %s\n\nContinuing in 10 seconds.\n", FLOWGRIND_VERSION);
-		sleep(10);
-	}
-}
-
-/* Checks that all nodes are currently idle */
-void check_idle(xmlrpc_client *rpc_client)
-{
-	xmlrpc_value * resultP = 0;
-
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
-
-		if (sigint_caught)
-			return;
-
-		xmlrpc_client_call2f(&rpc_env, rpc_client,
-				     unique_servers[j].server_url,
-				     "get_status", &resultP, "()");
-		die_if_fault_occurred(&rpc_env);
-
-		if (resultP) {
-			int started;
-			int num_flows;
-
-			xmlrpc_decompose_value(&rpc_env, resultP,
-					       "{s:i,s:i,*}", "started",
-					       &started, "num_flows",
-					       &num_flows);
-			die_if_fault_occurred(&rpc_env);
-
-			if (started || num_flows)
-				error(ERR_FATAL, "node %s is busy. %d flows, "
-				      "started=%d\n",
-				      unique_servers[j].server_url,
-				      num_flows, started);
-
-			xmlrpc_DECREF(resultP);
-		}
-	}
-}
-
-/* enumerate over prepare_flow */
-void prepare_flows(xmlrpc_client *rpc_client)
-{
-	/* prepare all flows */
-	for (int id = 0; id < opt.num_flows; id++) {
-		if (sigint_caught)
-			return;
-		prepare_flow(id, rpc_client);
-	}
-
-	/* prepare headline */
-	char headline[200];
-	int rc;
-	struct utsname me;
-	time_t start_ts;
-	char start_ts_buffer[26];
-
-	rc = uname(&me);
-	start_ts = time(NULL);
-	ctime_r(&start_ts, start_ts_buffer);
-	start_ts_buffer[24] = '\0';
-	snprintf(headline, sizeof(headline),
-		 "# %s: controlling host = %s, number of flows = %d, "
-		 "reporting interval = %.2fs, [through] = %s (%s)\n",
-		 (start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
-		 (rc == -1 ? "(unknown)" : me.nodename),
-		 opt.num_flows, opt.reporting_interval,
-		 (opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
-		 FLOWGRIND_VERSION);
-	log_output(headline);
-
-	/* prepare column headers */
-
-	/* We set the unit of the kernel TCP metrics to bytes if either the
-	 * user forces to use bytes or the source of the first flow is not
-	 * Linux and the user forces not to uses segments */
-	if (opt.force_unit == BYTE_BASED ||
-	    (opt.force_unit != SEGMENT_BASED &&
-	     strcmp(unique_servers[0].os_name, "Linux"))) {
-		column_info[COL_TCP_CWND].header.unit = " [B]";
-		column_info[COL_TCP_SSTH].header.unit = " [B]";
-		column_info[COL_TCP_UACK].header.unit = " [B]";
-		column_info[COL_TCP_SACK].header.unit = " [B]";
-		column_info[COL_TCP_LOST].header.unit = " [B]";
-		column_info[COL_TCP_RETR].header.unit = " [B]";
-		column_info[COL_TCP_TRET].header.unit = " [B]";
-		column_info[COL_TCP_FACK].header.unit = " [B]";
-		column_info[COL_TCP_REOR].header.unit = " [B]";
-		column_info[COL_TCP_BKOF].header.unit = " [B]";
-	}
-}
-
-void prepare_flow(int id, xmlrpc_client *rpc_client)
-{
-	xmlrpc_value *resultP, *extra_options;
-	int i;
-
-	int listen_data_port;
-	DEBUG_MSG(LOG_WARNING, "prepare flow %d destination", id);
-
-	/* Contruct extra socket options array */
-	extra_options = xmlrpc_array_new(&rpc_env);
-	for (i = 0; i < cflow[id].settings[DESTINATION].num_extra_socket_options; i++) {
-
-		xmlrpc_value *value;
-		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
-			 "level", cflow[id].settings[DESTINATION].extra_socket_options[i].level,
-			 "optname", cflow[id].settings[DESTINATION].extra_socket_options[i].optname);
-
-		value = xmlrpc_base64_new(&rpc_env, cflow[id].settings[DESTINATION].extra_socket_options[i].optlen, (unsigned char*)cflow[id].settings[DESTINATION].extra_socket_options[i].optval);
-
-		xmlrpc_struct_set_value(&rpc_env, option, "value", value);
-
-		xmlrpc_array_append_item(&rpc_env, extra_options, option);
-		xmlrpc_DECREF(value);
-		xmlrpc_DECREF(option);
-	}
-	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint[DESTINATION].daemon->server_url,
-		"add_flow_destination", &resultP,
-		"("
-		"{s:s}"
-		"{s:d,s:d,s:d,s:d,s:d}"
-		"{s:i,s:i}"
-		"{s:i}"
-		"{s:b,s:b,s:b,s:b,s:b}"
-		"{s:i,s:i}"
-		"{s:i,s:d,s:d}" /* request */
-		"{s:i,s:d,s:d}" /* response */
-		"{s:i,s:d,s:d}" /* interpacket_gap */
-		"{s:b,s:b,s:i,s:i}"
-		"{s:s}"
-		"{s:i,s:i,s:i,s:i,s:i}"
-#ifdef HAVE_LIBPCAP
-		"{s:s}"
-#endif /* HAVE_LIBPCAP */
-		"{s:i,s:A}"
-		")",
-
-		/* general flow settings */
-		"bind_address", cflow[id].endpoint[DESTINATION].test_address,
-
-		"write_delay", cflow[id].settings[DESTINATION].delay[WRITE],
-		"write_duration", cflow[id].settings[DESTINATION].duration[WRITE],
-		"read_delay", cflow[id].settings[SOURCE].delay[WRITE],
-		"read_duration", cflow[id].settings[SOURCE].duration[WRITE],
-		"reporting_interval", cflow[id].summarize_only ? 0 : opt.reporting_interval,
-
-		"requested_send_buffer_size", cflow[id].settings[DESTINATION].requested_send_buffer_size,
-		"requested_read_buffer_size", cflow[id].settings[DESTINATION].requested_read_buffer_size,
-
-		"maximum_block_size", cflow[id].settings[DESTINATION].maximum_block_size,
-
-		"traffic_dump", cflow[id].settings[DESTINATION].traffic_dump,
-		"so_debug", cflow[id].settings[DESTINATION].so_debug,
-		"route_record", (int)cflow[id].settings[DESTINATION].route_record,
-		"pushy", cflow[id].settings[DESTINATION].pushy,
-		"shutdown", (int)cflow[id].shutdown,
-
-		"write_rate", cflow[id].settings[DESTINATION].write_rate,
-		"random_seed",cflow[id].random_seed,
-
-		"traffic_generation_request_distribution", cflow[id].settings[DESTINATION].request_trafgen_options.distribution,
-		"traffic_generation_request_param_one", cflow[id].settings[DESTINATION].request_trafgen_options.param_one,
-		"traffic_generation_request_param_two", cflow[id].settings[DESTINATION].request_trafgen_options.param_two,
-
-		"traffic_generation_response_distribution", cflow[id].settings[DESTINATION].response_trafgen_options.distribution,
-		"traffic_generation_response_param_one", cflow[id].settings[DESTINATION].response_trafgen_options.param_one,
-		"traffic_generation_response_param_two", cflow[id].settings[DESTINATION].response_trafgen_options.param_two,
-
-		"traffic_generation_gap_distribution", cflow[id].settings[DESTINATION].interpacket_gap_trafgen_options.distribution,
-		"traffic_generation_gap_param_one", cflow[id].settings[DESTINATION].interpacket_gap_trafgen_options.param_one,
-		"traffic_generation_gap_param_two", cflow[id].settings[DESTINATION].interpacket_gap_trafgen_options.param_two,
-
-	"flow_control", cflow[id].settings[DESTINATION].flow_control,
-		"byte_counting", cflow[id].byte_counting,
-		"cork", (int)cflow[id].settings[DESTINATION].cork,
-		"nonagle", cflow[id].settings[DESTINATION].nonagle,
-
-		"cc_alg", cflow[id].settings[DESTINATION].cc_alg,
-
-		"elcn", cflow[id].settings[DESTINATION].elcn,
-		"lcd", cflow[id].settings[DESTINATION].lcd,
-		"mtcp", cflow[id].settings[DESTINATION].mtcp,
-		"dscp", (int)cflow[id].settings[DESTINATION].dscp,
-		"ipmtudiscover", cflow[id].settings[DESTINATION].ipmtudiscover,
-#ifdef HAVE_LIBPCAP
-		"filename_prefix", opt.log_filename_prefix,
-#endif /* HAVE_LIBPCAP */
-		"num_extra_socket_options", cflow[id].settings[DESTINATION].num_extra_socket_options,
-		"extra_socket_options", extra_options);
-
-	die_if_fault_occurred(&rpc_env);
-
-	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,s:i,*}",
-		"flow_id", &cflow[id].endpoint_id[DESTINATION],
-		"listen_data_port", &listen_data_port,
-		"real_listen_send_buffer_size", &cflow[id].endpoint[DESTINATION].send_buffer_size_real,
-		"real_listen_read_buffer_size", &cflow[id].endpoint[DESTINATION].receive_buffer_size_real);
-	die_if_fault_occurred(&rpc_env);
-
-	if (resultP)
-		xmlrpc_DECREF(resultP);
-
-	/* Contruct extra socket options array */
-	extra_options = xmlrpc_array_new(&rpc_env);
-	for (i = 0; i < cflow[id].settings[SOURCE].num_extra_socket_options; i++) {
-
-		xmlrpc_value *value;
-		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
-			 "level", cflow[id].settings[SOURCE].extra_socket_options[i].level,
-			 "optname", cflow[id].settings[SOURCE].extra_socket_options[i].optname);
-
-		value = xmlrpc_base64_new(&rpc_env, cflow[id].settings[SOURCE].extra_socket_options[i].optlen, (unsigned char*)cflow[id].settings[SOURCE].extra_socket_options[i].optval);
-
-		xmlrpc_struct_set_value(&rpc_env, option, "value", value);
-
-		xmlrpc_array_append_item(&rpc_env, extra_options, option);
-		xmlrpc_DECREF(value);
-		xmlrpc_DECREF(option);
-	}
-	DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
-
-#ifdef DEBUG
-	struct timespec now;
-	gettime(&now);
-	DEBUG_MSG(LOG_DEBUG, "%ld.%ld (add_flow_source() in flowgrind.c)\n",
-		  now.tv_sec, now.tv_nsec);
-#endif /* DEBUG */
-	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint[SOURCE].daemon->server_url,
-		"add_flow_source", &resultP,
-		"("
-		"{s:s}"
-		"{s:d,s:d,s:d,s:d,s:d}"
-		"{s:i,s:i}"
-		"{s:i}"
-		"{s:b,s:b,s:b,s:b,s:b}"
-		"{s:i,s:i}"
-		"{s:i,s:d,s:d}" /* request */
-		"{s:i,s:d,s:d}" /* response */
-		"{s:i,s:d,s:d}" /* interpacket_gap */
-		"{s:b,s:b,s:i,s:i}"
-		"{s:s}"
-		"{s:i,s:i,s:i,s:i,s:i}"
-#ifdef HAVE_LIBPCAP
-		"{s:s}"
-#endif /* HAVE_LIBPCAP */
-		"{s:i,s:A}"
-		"{s:s,s:i,s:i}"
-		")",
-
-		/* general flow settings */
-		"bind_address", cflow[id].endpoint[SOURCE].test_address,
-
-		"write_delay", cflow[id].settings[SOURCE].delay[WRITE],
-		"write_duration", cflow[id].settings[SOURCE].duration[WRITE],
-		"read_delay", cflow[id].settings[DESTINATION].delay[WRITE],
-		"read_duration", cflow[id].settings[DESTINATION].duration[WRITE],
-		"reporting_interval", cflow[id].summarize_only ? 0 : opt.reporting_interval,
-
-		"requested_send_buffer_size", cflow[id].settings[SOURCE].requested_send_buffer_size,
-		"requested_read_buffer_size", cflow[id].settings[SOURCE].requested_read_buffer_size,
-
-		"maximum_block_size", cflow[id].settings[SOURCE].maximum_block_size,
-
-		"traffic_dump", cflow[id].settings[SOURCE].traffic_dump,
-		"so_debug", cflow[id].settings[SOURCE].so_debug,
-		"route_record", (int)cflow[id].settings[SOURCE].route_record,
-		"pushy", cflow[id].settings[SOURCE].pushy,
-		"shutdown", (int)cflow[id].shutdown,
-
-		"write_rate", cflow[id].settings[SOURCE].write_rate,
-		"random_seed",cflow[id].random_seed,
-
-		"traffic_generation_request_distribution", cflow[id].settings[SOURCE].request_trafgen_options.distribution,
-		"traffic_generation_request_param_one", cflow[id].settings[SOURCE].request_trafgen_options.param_one,
-		"traffic_generation_request_param_two", cflow[id].settings[SOURCE].request_trafgen_options.param_two,
-
-		"traffic_generation_response_distribution", cflow[id].settings[SOURCE].response_trafgen_options.distribution,
-		"traffic_generation_response_param_one", cflow[id].settings[SOURCE].response_trafgen_options.param_one,
-		"traffic_generation_response_param_two", cflow[id].settings[SOURCE].response_trafgen_options.param_two,
-
-		"traffic_generation_gap_distribution", cflow[id].settings[SOURCE].interpacket_gap_trafgen_options.distribution,
-		"traffic_generation_gap_param_one", cflow[id].settings[SOURCE].interpacket_gap_trafgen_options.param_one,
-		"traffic_generation_gap_param_two", cflow[id].settings[SOURCE].interpacket_gap_trafgen_options.param_two,
-
-
-		"flow_control", cflow[id].settings[SOURCE].flow_control,
-		"byte_counting", cflow[id].byte_counting,
-		"cork", (int)cflow[id].settings[SOURCE].cork,
-		"nonagle", (int)cflow[id].settings[SOURCE].nonagle,
-
-		"cc_alg", cflow[id].settings[SOURCE].cc_alg,
-
-		"elcn", cflow[id].settings[SOURCE].elcn,
-		"lcd", cflow[id].settings[SOURCE].lcd,
-		"mtcp", cflow[id].settings[SOURCE].mtcp,
-		"dscp", (int)cflow[id].settings[SOURCE].dscp,
-		"ipmtudiscover", cflow[id].settings[SOURCE].ipmtudiscover,
-#ifdef HAVE_LIBPCAP
-		"filename_prefix", opt.log_filename_prefix,
-#endif /* HAVE_LIBPCAP */
-		"num_extra_socket_options", cflow[id].settings[SOURCE].num_extra_socket_options,
-		"extra_socket_options", extra_options,
-
-		/* source settings */
-		"destination_address", cflow[id].endpoint[DESTINATION].test_address,
-		"destination_port", listen_data_port,
-		"late_connect", (int)cflow[id].late_connect);
-	die_if_fault_occurred(&rpc_env);
-
-	xmlrpc_DECREF(extra_options);
-
-	xmlrpc_parse_value(&rpc_env, resultP, "{s:i,s:i,s:i,*}",
-		"flow_id", &cflow[id].endpoint_id[SOURCE],
-		"real_send_buffer_size", &cflow[id].endpoint[SOURCE].send_buffer_size_real,
-		"real_read_buffer_size", &cflow[id].endpoint[SOURCE].receive_buffer_size_real);
-	die_if_fault_occurred(&rpc_env);
-
-	if (resultP)
-		xmlrpc_DECREF(resultP);
-	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
-}
-
-/* start flows */
-static void grind_flows(xmlrpc_client *rpc_client)
-{
-	xmlrpc_value * resultP = 0;
-
-	unsigned j;
-
-	struct timespec lastreport_end;
-	struct timespec lastreport_begin;
-	struct timespec now;
-
-	gettime(&lastreport_end);
-	gettime(&lastreport_begin);
-	gettime(&now);
-
-	for (j = 0; j < num_unique_servers; j++) {
-
-		if (sigint_caught)
-			return;
-		DEBUG_MSG(LOG_ERR, "starting flow on server %d", j);
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
-			"start_flows", &resultP,
-			"({s:i})", "start_timestamp", now.tv_sec + 2);
-		die_if_fault_occurred(&rpc_env);
-		if (resultP)
-			xmlrpc_DECREF(resultP);
-	}
-
-	active_flows = opt.num_flows;
-
-	while (!sigint_caught) {
-
-		if ( time_diff_now(&lastreport_begin) <  opt.reporting_interval ) {
-			usleep(opt.reporting_interval - time_diff(&lastreport_begin,&lastreport_end) );
-			continue;
-		}
-		gettime(&lastreport_begin);
-		fetch_reports(rpc_client);
-		gettime(&lastreport_end);
-
-		if (active_flows < 1)
-			/* All flows have ended */
-			return;
-	}
-}
-
-/* Poll the daemons for reports */
-static void fetch_reports(xmlrpc_client *rpc_client) {
-
-	xmlrpc_value * resultP = 0;
-
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
-
-		int array_size, has_more;
-		xmlrpc_value *rv = 0;
-
-has_more_reports:
-
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
-			"get_reports", &resultP, "()");
-		if (rpc_env.fault_occurred) {
-			fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-			rpc_env.fault_string, rpc_env.fault_code);
-			continue;
-		}
-
-		if (!resultP)
-			continue;
-
-		array_size = xmlrpc_array_size(&rpc_env, resultP);
-		if (!array_size) {
-			fprintf(stderr, "Empty array in get_reports reply\n");
-			continue;
-		}
-
-		xmlrpc_array_read_item(&rpc_env, resultP, 0, &rv);
-		xmlrpc_read_int(&rpc_env, rv, &has_more);
-		if (rpc_env.fault_occurred) {
-			fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
-			rpc_env.fault_string, rpc_env.fault_code);
-			xmlrpc_DECREF(rv);
-			continue;
-		}
-		xmlrpc_DECREF(rv);
-
-		for (int i = 1; i < array_size; i++) {
-			xmlrpc_value *rv = 0;
-
-			xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
-			if (rv) {
-				struct _report report;
-				int begin_sec, begin_nsec, end_sec, end_nsec;
-
-				int tcpi_snd_cwnd;
-				int tcpi_snd_ssthresh;
-				int tcpi_unacked;
-				int tcpi_sacked;
-				int tcpi_lost;
-				int tcpi_retrans;
-				int tcpi_retransmits;
-				int tcpi_fackets;
-				int tcpi_reordering;
-				int tcpi_rtt;
-				int tcpi_rttvar;
-				int tcpi_rto;
-				int tcpi_backoff;
-				int tcpi_ca_state;
-				int tcpi_snd_mss;
-				int bytes_read_low, bytes_read_high;
-				int bytes_written_low, bytes_written_high;
-
-				xmlrpc_decompose_value(&rpc_env, rv,
-					"("
-					"{s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
-					"{s:i,s:i,s:i,s:i,*}" /* bytes */
-					"{s:i,s:i,s:i,s:i,*}" /* blocks */
-					"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT, Delay */
-					"{s:i,s:i,*}" /* MTU */
-					"{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
-					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
-					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
-					"{s:i,*}"
-					")",
-
-					"id", &report.id,
-					"type", &report.type,
-					"begin_tv_sec", &begin_sec,
-					"begin_tv_nsec", &begin_nsec,
-					"end_tv_sec", &end_sec,
-					"end_tv_nsec", &end_nsec,
-
-					"bytes_read_high", &bytes_read_high,
-					"bytes_read_low", &bytes_read_low,
-					"bytes_written_high", &bytes_written_high,
-					"bytes_written_low", &bytes_written_low,
-
-					"request_blocks_read", &report.request_blocks_read,
-					"request_blocks_written", &report.request_blocks_written,
-					"response_blocks_read", &report.response_blocks_read,
-					"response_blocks_written", &report.response_blocks_written,
-
-					"rtt_min", &report.rtt_min,
-					"rtt_max", &report.rtt_max,
-					"rtt_sum", &report.rtt_sum,
-					"iat_min", &report.iat_min,
-					"iat_max", &report.iat_max,
-					"iat_sum", &report.iat_sum,
-					"delay_min", &report.delay_min,
-					"delay_max", &report.delay_max,
-					"delay_sum", &report.delay_sum,
-
-					"pmtu", &report.pmtu,
-					"imtu", &report.imtu,
-
-					"tcpi_snd_cwnd", &tcpi_snd_cwnd,
-					"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
-					"tcpi_unacked", &tcpi_unacked,
-					"tcpi_sacked", &tcpi_sacked,
-					"tcpi_lost", &tcpi_lost,
-
-					"tcpi_retrans", &tcpi_retrans,
-					"tcpi_retransmits", &tcpi_retransmits,
-					"tcpi_fackets", &tcpi_fackets,
-					"tcpi_reordering", &tcpi_reordering,
-					"tcpi_rtt", &tcpi_rtt,
-
-					"tcpi_rttvar", &tcpi_rttvar,
-					"tcpi_rto", &tcpi_rto,
-					"tcpi_backoff", &tcpi_backoff,
-					"tcpi_ca_state", &tcpi_ca_state,
-					"tcpi_snd_mss", &tcpi_snd_mss,
-
-					"status", &report.status
-				);
-				xmlrpc_DECREF(rv);
-#ifdef HAVE_UNSIGNED_LONG_LONG_INT
-				report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
-				report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
-#else
-				report.bytes_read = (uint32_t)bytes_read_low;
-				report.bytes_written = (uint32_t)bytes_written_low;
-#endif /* HAVE_UNSIGNED_LONG_LONG_INT */
-
-				/* Kernel metrics (tcp_info). Other OS than Linux may not send
-				 * valid values here, for the moment we don't care and handle
-				 * this in the output/display routines */
-				report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
-				report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
-				report.tcp_info.tcpi_unacked = tcpi_unacked;
-				report.tcp_info.tcpi_sacked = tcpi_sacked;
-				report.tcp_info.tcpi_lost = tcpi_lost;
-				report.tcp_info.tcpi_retrans = tcpi_retrans;
-				report.tcp_info.tcpi_retransmits = tcpi_retransmits;
-				report.tcp_info.tcpi_fackets = tcpi_fackets;
-				report.tcp_info.tcpi_reordering = tcpi_reordering;
-				report.tcp_info.tcpi_rtt = tcpi_rtt;
-				report.tcp_info.tcpi_rttvar = tcpi_rttvar;
-				report.tcp_info.tcpi_rto = tcpi_rto;
-				report.tcp_info.tcpi_backoff = tcpi_backoff;
-				report.tcp_info.tcpi_ca_state = tcpi_ca_state;
-				report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
-
-				report.begin.tv_sec = begin_sec;
-				report.begin.tv_nsec = begin_nsec;
-				report.end.tv_sec = end_sec;
-				report.end.tv_nsec = end_nsec;
-
-				report_flow(&unique_servers[j], &report);
-			}
-		}
-		xmlrpc_DECREF(resultP);
-
-		if (has_more)
-			goto has_more_reports;
-	}
+	/* didn't find anything, seems to be a new one */
+	i = num_unique_servers;
+	memset(&unique_servers[i], 0, sizeof(struct _daemon));
+	strcpy(unique_servers[i].server_url, server_url);
+	strcpy(unique_servers[i].server_name, server_name);
+	unique_servers[i].server_port = server_port;
+	return &unique_servers[num_unique_servers++];
 }
 
 static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
@@ -2301,8 +2300,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 		}
 	}
 }
-
-
 
 /* Parse flow specific options given on the cmdline */
 static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int id) {
