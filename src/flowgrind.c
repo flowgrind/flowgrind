@@ -1354,57 +1354,53 @@ exit_outer_loop:
 	print_report(id, endpoint, report);
 }
 
-void close_flow(int id)
+static void close_flows(void)
 {
-	DEBUG_MSG(LOG_WARNING, "closing flow %d.", id);
-
 	xmlrpc_env env;
 	xmlrpc_client *client;
 
-	if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
-		return;
 
-	/* We use new env and client, old one might be in fault condition */
-	xmlrpc_env_init(&env);
-	xmlrpc_client_create(&env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &client);
-	die_if_fault_occurred(&env);
-	xmlrpc_env_clean(&env);
+	for (unsigned int id = 0; id < opt.num_flows; id++) {
+		DEBUG_MSG(LOG_WARNING, "closing flow %d.", id);
 
-	for (unsigned int endpoint = 0; endpoint < 2; endpoint++) {
-		xmlrpc_value * resultP = 0;
-
-		if (cflow[id].endpoint_id[endpoint] == -1 ||
-				cflow[id].finished[endpoint]) {
-			/* Endpoint does not need closing */
+		if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
 			continue;
+
+		/* We use new env and client, old one might be in fault condition */
+		xmlrpc_env_init(&env);
+		xmlrpc_client_create(&env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &client);
+		die_if_fault_occurred(&env);
+		xmlrpc_env_clean(&env);
+
+		for (unsigned int endpoint = 0; endpoint < 2; endpoint++) {
+			xmlrpc_value * resultP = 0;
+
+			if (cflow[id].endpoint_id[endpoint] == -1 ||
+					cflow[id].finished[endpoint]) {
+				/* Endpoint does not need closing */
+				continue;
+			}
+
+			cflow[id].finished[endpoint] = 1;
+
+			xmlrpc_env_init(&env);
+
+			xmlrpc_client_call2f(&env, client,
+				cflow[id].endpoint[endpoint].daemon->server_url,
+				"stop_flow", &resultP, "({s:i})", "flow_id", cflow[id].endpoint_id[endpoint]);
+			if (resultP)
+				xmlrpc_DECREF(resultP);
+
+			xmlrpc_env_clean(&env);
 		}
 
-		cflow[id].finished[endpoint] = 1;
 
-		xmlrpc_env_init(&env);
+		if (active_flows > 0)
+			active_flows--;
 
-		xmlrpc_client_call2f(&env, client,
-			cflow[id].endpoint[endpoint].daemon->server_url,
-			"stop_flow", &resultP, "({s:i})", "flow_id", cflow[id].endpoint_id[endpoint]);
-		if (resultP)
-			xmlrpc_DECREF(resultP);
-
-		xmlrpc_env_clean(&env);
+		xmlrpc_client_destroy(client);
+		DEBUG_MSG(LOG_WARNING, "closed flow %d.", id);
 	}
-
-
-	if (active_flows > 0)
-		active_flows--;
-
-	xmlrpc_client_destroy(client);
-	DEBUG_MSG(LOG_WARNING, "closed flow %d.", id);
-}
-
-void close_flows(void)
-{
-	int id;
-	for (id = 0; id < opt.num_flows; id++)
-		close_flow(id);
 }
 
 /* New output determines the number of digits before the comma */
