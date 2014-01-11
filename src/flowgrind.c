@@ -631,7 +631,7 @@ static void open_logfile(void)
 		error(ERR_FATAL, "could not open logfile %s", log_filename);
 }
 
-static void close_logfile()
+static void close_logfile(void)
 {
 	if (opt.dont_log_logfile)
 		return;

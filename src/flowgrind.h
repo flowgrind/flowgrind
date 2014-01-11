@@ -81,9 +81,8 @@ struct _opt {
 	/** Force kernel output to specific unit  (option -u) */
 	enum tcp_stack force_unit;
 };
-extern struct _opt opt;
 
-/**  Infos about a flowgrind daemon */
+/** Infos about a flowgrind daemon */
 struct _daemon {
 /* Note: a daemon can potentially managing multiple flows */
 	/** XMLRPC URL for this daemon */
@@ -118,7 +117,7 @@ struct _cflow {
 	/** Used transport protocol */
 	enum protocol proto;
 
-	/* TODO All this flow option members are duplicates from the
+	/* TODO Some of this flow option members are duplicates from the
 	 * _flow_settings struct (see common.h). Flowgrind contoller
 	 * should use this one */
 
@@ -149,12 +148,13 @@ struct _cflow {
 	struct _report *final_report[2];
 };
 
+extern struct _opt opt;
+
 /* XXX add a brief description doxygen */
 inline static double scale_thruput(double thruput)
 {
 	if (opt.mbyte)
 		return thruput / (1<<20);
-	return thruput / 1e6 *(1<<3);
+	return thruput / 1e6 * (1<<3);
 }
-
 #endif /* _FLOWGRIND_H_ */
