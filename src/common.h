@@ -123,17 +123,17 @@ enum _stochastic_distributions
 {
 	/** No stochastic distribution */
 	CONSTANT='0',
-	/** http://mathworld.wolfram.com/NormalDistribution.html */
+	/** Normal distribution */
 	NORMAL,
-	/** http://mathworld.wolfram.com/WeibullDistribution.html */
+	/** Weibull distribution */
 	WEIBULL,
-	/** http://mathworld.wolfram.com/UniformDistribution.html */
+	/** Uniform distribution */
 	UNIFORM,
-	/** http://mathworld.wolfram.com/ExponentialDistribution.html */
+	/** Exponential distribution */
 	EXPONENTIAL,
-	/** http://mathworld.wolfram.com/ParetoDistribution.html */
+	/** Pareto distribution */
 	PARETO,
-	/** http://mathworld.wolfram.com/LogNormalDistribution.html */
+	/** Log Normal distribution */
 	LOGNORMAL
 };
 

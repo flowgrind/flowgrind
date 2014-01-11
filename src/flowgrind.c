@@ -2583,9 +2583,10 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 }
 
 /**
- * Parse option -c - visible output columns
+ * Parse argument for option -c to hide/show intermediated interval report
+ * columns
  *
- * @param[in] optarg option argument
+ * @param[in] optarg argument for option -c
  */
 static void parse_visible_option(char *optarg)
 {

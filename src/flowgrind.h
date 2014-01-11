@@ -46,7 +46,9 @@
 
 /** Transport protocols */
 enum protocol {
+	/** Transmission Control Protocol */
 	PROTO_TCP = 1,
+	/** User Datagram Protocol */
 	PROTO_UDP
 };
 
