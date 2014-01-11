@@ -81,10 +81,16 @@
 #define UNUSED_ARGUMENT(x) (void)x
 
 /** Assign value if it less than current one */
-#define ASSIGN_MIN(s, c) if ((s)>(c)) (s) = (c)
+#define ASSIGN_MIN(s, c)	    \
+	({ typeof (s) _s = (s);	    \
+	   typeof (c) _c = (c);	    \
+	   if (_s > _c) s = c; })
 
 /** Assign value if it more than current one */
-#define ASSIGN_MAX(s, c) if ((s)<(c)) (s) = (c)
+#define ASSIGN_MAX(s, c)	    \
+	({ typeof (s) _s = (s);	    \
+	   typeof (c) _c = (c);	    \
+	   if (_s < _c) s = c; })
 
 /** Error types */
 enum error_type {
