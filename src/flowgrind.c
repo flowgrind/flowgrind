@@ -1175,11 +1175,6 @@ static void report_flow(const struct _daemon* daemon, struct _report* report)
 	}
 exit_outer_loop:
 
-	if (id >= opt.num_flows) {
-		DEBUG_MSG(LOG_ERR, "Got report from nonexistent flow, ignoring");
-		return;
-	}
-
 	if (f->start_timestamp[endpoint].tv_sec == 0)
 		f->start_timestamp[endpoint] = report->begin;
 
