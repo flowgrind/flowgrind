@@ -55,104 +55,29 @@
 #include "debug.h"
 #include "flowgrind.h"
 
-/* FIXME If the daemon (for example a FreeBSD) does not report the
- * CA state it will always displayed as "open" */
-
-#ifndef __LINUX__
-/** Values for Linux tcpi_state, if not compiled on Linux */
-enum tcp_ca_state
-{
-	TCP_CA_Open = 0,
-	TCP_CA_Disorder = 1,
-	TCP_CA_CWR = 2,
-	TCP_CA_Recovery = 3,
-	TCP_CA_Loss = 4
-};
-#endif /* __LINUX__ */
-
-/** Output columns for the intermediated interval reports */
-enum column_types
-{
-	/** Flow ID */
-	COL_FLOW_ID = 0,
-	/** Report interval @{ */
-	COL_BEGIN,
-	COL_END,					    /** @} */
-	/** Throughput per seconds */
-	COL_THROUGH,
-	/** Transactions per second */
-	COL_TRANSAC,
-	/** Blocks per second @{ */
-	COL_BLOCK_REQU,
-	COL_BLOCK_RESP,					    /** @} */
-	/** Application level round-trip time @{ */
-	COL_RTT_MIN,
-	COL_RTT_AVG,
-	COL_RTT_MAX,					    /** @} */
-	/** Application level inter-arrival time @{ */
-	COL_IAT_MIN,
-	COL_IAT_AVG,
-	COL_IAT_MAX,					    /** @} */
-	/** Application level one-way delay @{ */
-	COL_DLY_MIN,
-	COL_DLY_AVG,
-	COL_DLY_MAX,					    /** @} */
-	/** Metric from the Linux / BSD TCP stack @{ */
-	COL_TCP_CWND,
-	COL_TCP_SSTH,
-	COL_TCP_UACK,
-	COL_TCP_SACK,
-	COL_TCP_LOST,
-	COL_TCP_RETR,
-	COL_TCP_TRET,
-	COL_TCP_FACK,
-	COL_TCP_REOR,
-	COL_TCP_BKOF,
-	COL_TCP_RTT,
-	COL_TCP_RTTVAR,
-	COL_TCP_RTO,
-	COL_TCP_CA_STATE,
-	COL_SMSS,
-	COL_PMTU,					    /** @} */
-#ifdef DEBUG
-	/** Read / write status */
-	COL_STATUS
-#endif /* DEBUG */
-};
-
-/** Header of the intermediated interval report column */
-struct _column_header
-{
-	/** First header row: name of the column */
-	const char* name;
-	/** Second header row: unit of the column */
-	const char* unit;
-};
-
-/** State of the intermediated interval report column */
-struct _column_state
-{
-	/** Dynamically turn an column on/off */
-	bool visible;
-	/** How often the current column width was too high */
-	unsigned int oversized;
-	/** Last width of the column */
-	unsigned int last_width;
-};
-
-/** Intermediated interval report column */
-struct _column
-{
-	/** Unique column identifier */
-	enum column_types type;
-	/** Column header (name and unit) */
-	struct _column_header header;
-	/** State of the column */
-	struct _column_state state;
-};
+/* XXX add a brief description doxygen */
+FILE *log_stream = NULL;
+/* XXX add a brief description doxygen */
+char *log_filename = NULL;
+/* XXX add a brief description doxygen */
+char sigint_caught = 0;
+/* XXX add a brief description doxygen */
+xmlrpc_env rpc_env;
+/** Name of the executable */
+static char progname[50] = "flowgrind";
+/** Unique (by URL) flowgrind daemons */
+static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
+/** Number of flowgrind dameons */
+static unsigned int num_unique_servers = 0;
+/** General controller options */
+struct _opt opt;
+/** Infos about all flows including flow options */
+static struct _cflow cflow[MAX_FLOWS];
+/** Number of currently active flows */
+static int active_flows = 0;
 
 /** Infos about the intermediated interval report columns */
-static struct _column column_info[] = {
+struct _column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
 	 .header.unit = "#   ", .state.visible = true},
 	{.type = COL_BEGIN, .header.name = " begin",
@@ -223,40 +148,12 @@ static struct _column column_info[] = {
 #endif /* DEBUG */
 };
 
-/* XXX add a brief description doxygen */
-FILE *log_stream = NULL;
-/* XXX add a brief description doxygen */
-char *log_filename = NULL;
-/* XXX add a brief description doxygen */
-char sigint_caught = 0;
-/* XXX add a brief description doxygen */
-xmlrpc_env rpc_env;
-/** Name of the executable */
-static char progname[50] = "flowgrind";
-/** Unique (by URL) flowgrind daemons */
-static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
-/** Number of flowgrind dameons */
-static unsigned int num_unique_servers = 0;
-/** General controller options */
-struct _opt opt;
-/** Infos about all flows including flow options */
-static struct _cflow cflow[MAX_FLOWS];
-/** Number of currently active flows */
-static int active_flows = 0;
-
 /* Forward declarations */
-static void usage(void) __attribute__((noreturn));
-static void usage_sockopt(void) __attribute__((noreturn));
-static void usage_trafgenopt(void) __attribute__((noreturn));
-static void usage_hint(void) __attribute__((noreturn));
 static void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void fetch_reports(xmlrpc_client *);
 static void report_flow(const struct _daemon* daemon, struct _report* report);
 static void print_report(int id, int endpoint, struct _report* report);
 
-/**
- * Print flowgrind usage and exit
- */
 static void usage(void)
 {
 	fprintf(stderr,
@@ -359,9 +256,6 @@ static void usage(void)
 	exit(EXIT_SUCCESS);
 }
 
-/**
- * Print help on socket options and exit
- */
 static void usage_sockopt(void)
 {
 	fprintf(stderr,
@@ -431,9 +325,6 @@ static void usage_sockopt(void)
 	exit(EXIT_SUCCESS);
 }
 
-/**
- * Print help on traffic generation and exit
- */
 static void usage_trafgenopt(void)
 {
 	fprintf(stderr,
@@ -494,9 +385,6 @@ static void usage_trafgenopt(void)
 	exit(EXIT_SUCCESS);
 }
 
-/**
- * Print hint upon an error while parsing the command line
- */
 static void usage_hint(void)
 {
 	fprintf(stderr, "Try '%s -h' for more information\n", progname);
