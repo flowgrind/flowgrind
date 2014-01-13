@@ -277,7 +277,7 @@ static void usage_hint(void) __attribute__((noreturn));
 /**
  * Initialization of general controller options
  */
-static void init_general_options(void) ;
+static void init_general_options(void);
 
 /**
  * To show intermediated interval report columns
@@ -296,4 +296,13 @@ inline static void show_columns(unsigned int numargs, ...);
  * @see enum column_id
  */
 inline static void hide_columns(unsigned int numargs, ...);
+
+/**
+ * Parse argument for option -c to hide/show intermediated interval report
+ * columns
+ *
+ * @param[in] optarg argument for option -c
+ */
+static void parse_visible_option(char *optarg);
+
 #endif /* _FLOWGRIND_H_ */

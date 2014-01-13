@@ -59,7 +59,7 @@
 FILE *log_stream = NULL;
 /* XXX add a brief description doxygen */
 char *log_filename = NULL;
-/* XXX add a brief description doxygen */
+/** SIGINT (CTRL-C) received? */
 static bool sigint_caught = false;
 /* XXX add a brief description doxygen */
 xmlrpc_env rpc_env;
@@ -2454,12 +2454,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 	}
 }
 
-/**
- * Parse argument for option -c to hide/show intermediated interval report
- * columns
- *
- * @param[in] optarg argument for option -c
- */
 static void parse_visible_option(char *optarg)
 {
 	/* Reset all default visibility settings */
