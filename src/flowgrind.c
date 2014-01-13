@@ -422,9 +422,7 @@ static void init_general_options(void)
 
 static void init_flow_options(void)
 {
-	int id = 1;
-
-	for (id = 0; id < MAX_FLOWS; id++) {
+	for (int id = 0; id < MAX_FLOWS; id++) {
 
 		cflow[id].proto = PROTO_TCP;
 
@@ -581,11 +579,10 @@ static void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
 /* Checks that all nodes use our flowgrind version */
 static void check_version(xmlrpc_client *rpc_client)
 {
-	unsigned j;
 	xmlrpc_value * resultP = 0;
 	char mismatch = 0;
 
-	for (j = 0; j < num_unique_servers; j++) {
+	for (unsigned int j = 0; j < num_unique_servers; j++) {
 
 		if (sigint_caught)
 			return;
@@ -723,14 +720,13 @@ static void prepare_flows(xmlrpc_client *rpc_client)
 static void prepare_flow(int id, xmlrpc_client *rpc_client)
 {
 	xmlrpc_value *resultP, *extra_options;
-	int i;
 
 	int listen_data_port;
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d destination", id);
 
 	/* Contruct extra socket options array */
 	extra_options = xmlrpc_array_new(&rpc_env);
-	for (i = 0; i < cflow[id].settings[DESTINATION].num_extra_socket_options; i++) {
+	for (int i = 0; i < cflow[id].settings[DESTINATION].num_extra_socket_options; i++) {
 
 		xmlrpc_value *value;
 		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
@@ -834,7 +830,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 	/* Contruct extra socket options array */
 	extra_options = xmlrpc_array_new(&rpc_env);
-	for (i = 0; i < cflow[id].settings[SOURCE].num_extra_socket_options; i++) {
+	for (int i = 0; i < cflow[id].settings[SOURCE].num_extra_socket_options; i++) {
 
 		xmlrpc_value *value;
 		xmlrpc_value *option = xmlrpc_build_value(&rpc_env, "{s:i,s:i}",
@@ -952,8 +948,6 @@ static void grind_flows(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 
-	unsigned j;
-
 	struct timespec lastreport_end;
 	struct timespec lastreport_begin;
 	struct timespec now;
@@ -962,7 +956,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 	gettime(&lastreport_begin);
 	gettime(&now);
 
-	for (j = 0; j < num_unique_servers; j++) {
+	for (unsigned int j = 0; j < num_unique_servers; j++) {
 
 		if (sigint_caught)
 			return;
@@ -1301,7 +1295,6 @@ static int createOutputColumn(char *strHead1Row, char *strHead2Row,
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
 	char tempBuffer[50];
-	unsigned int a;
 	struct _column *column = &column_info[column_id];
 	char* number_formatstring;
 
@@ -1368,21 +1361,21 @@ static int createOutputColumn(char *strHead1Row, char *strHead2Row,
 	if (opt.symbolic) {
 		switch ((int)value) {
 		case INT_MAX:
-			for (a = lengthData;
+			for (unsigned int a = lengthData;
 			     a < MAX(columnSize, column->state.last_width);
 			     a++)
 				strcat(strDataRow, " ");
 			strcat(strDataRow, " INT_MAX");
 			break;
 		case USHRT_MAX:
-			for (a = lengthData;
+			for (unsigned int a = lengthData;
 			     a < MAX(columnSize, column->state.last_width);
 			     a++)
 				strcat(strDataRow, " ");
 			strcat(strDataRow, " USHRT_MAX");
 			break;
 		case UINT_MAX:
-			for (a = lengthData;
+			for (unsigned int a = lengthData;
 			     a < MAX(columnSize, column->state.last_width);
 			     a++)
 				strcat(strDataRow, " ");
@@ -1397,13 +1390,13 @@ static int createOutputColumn(char *strHead1Row, char *strHead2Row,
 		strcat(strDataRow, tempBuffer);
 	}
 	/* 1st header row */
-	for (a = column->state.last_width;
+	for (unsigned int a = column->state.last_width;
 	     a > strlen(column->header.name); a--)
 		strcat(strHead1Row, " ");
 	strcat(strHead1Row, column->header.name);
 
 	/* 2nd header row */
-	for (a = column->state.last_width;
+	for (unsigned int a = column->state.last_width;
 	     a > strlen(column->header.unit); a--)
 		strcat(strHead2Row, " ");
 	strcat(strHead2Row, column->header.unit);
@@ -1420,7 +1413,6 @@ static int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
 	int lengthData = 0;
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
-	unsigned int a;
 	struct _column *column = &column_info[column_id];
 
 	if (!column->state.visible)
@@ -1454,19 +1446,19 @@ static int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
 	}
 
 	/* create columns */
-	for (a = lengthData+1; a < columnSize; a++)
+	for (unsigned int a = lengthData+1; a < columnSize; a++)
 		strcat(strDataRow, " ");
 	strcat(strDataRow, value);
 
 	/* 1st header row */
-	for (a = column->state.last_width; a > strlen(column->header.name) + 1;
-	     a--)
+	for (unsigned int a = column->state.last_width;
+	     a > strlen(column->header.name) + 1; a--)
 		strcat(strHead1Row, " ");
 	strcat(strHead1Row, column->header.name);
 
 	/* 2nd header Row */
-	for (a = column->state.last_width; a > strlen(column->header.unit) + 1;
-	     a--)
+	for (unsigned int a = column->state.last_width;
+	     a > strlen(column->header.unit) + 1; a--)
 		strcat(strHead2Row, " ");
 	strcat(strHead2Row, column->header.unit);
 
@@ -1759,7 +1751,7 @@ static char *guess_topology (int mtu)
 		{296,  "PPP (low delay)"},
 	};
 
-	for (size_t i = 0;
+	for (unsigned int i = 0;
 	     i < sizeof(mtu_hints) / sizeof(struct _mtu_hint); i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
@@ -1768,11 +1760,10 @@ static char *guess_topology (int mtu)
 
 static void report_final(void)
 {
-	int id = 0;
 	char header_buffer[600] = "";
 	char header_nibble[600] = "";
 
-	for (id = 0; id < opt.num_flows; id++) {
+	for (int id = 0; id < opt.num_flows; id++) {
 
 #define CAT(fmt, args...) do {\
 	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
@@ -1940,26 +1931,22 @@ static void report_final(void)
 			log_output(header_buffer);
 
 		}
-
 	}
-
 }
 
 /* Finds the daemon (or creating a new one) for a given server_url,
  * uses global static unique_servers variable for storage */
 static struct _daemon * get_daemon_by_url(const char* server_url, const char* server_name, unsigned short server_port) {
-	unsigned int i;
 	/* If we have already a daemon for this URL return a pointer to it */
-	for (i = 0; i < num_unique_servers; i++) {
+	for (unsigned int i = 0; i < num_unique_servers; i++) {
 		if (!strcmp(unique_servers[i].server_url, server_url))
 			return &unique_servers[i];
 	}
 	/* didn't find anything, seems to be a new one */
-	i = num_unique_servers;
-	memset(&unique_servers[i], 0, sizeof(struct _daemon));
-	strcpy(unique_servers[i].server_url, server_url);
-	strcpy(unique_servers[i].server_name, server_name);
-	unique_servers[i].server_port = server_port;
+	memset(&unique_servers[num_unique_servers], 0, sizeof(struct _daemon));
+	strcpy(unique_servers[num_unique_servers].server_url, server_url);
+	strcpy(unique_servers[num_unique_servers].server_name, server_name);
+	unique_servers[num_unique_servers].server_port = server_port;
 	return &unique_servers[num_unique_servers++];
 }
 
@@ -2084,8 +2071,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id) {
 
 
 		if (current_flow_ids[0] == -1) {
-			int id;
-			for (id = 0; id < MAX_FLOWS; id++) {
+			for (int id = 0; id < MAX_FLOWS; id++) {
 				for (int i = j; i < k; i++) {
 					switch (typechar) {
 					case 'P':
