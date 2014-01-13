@@ -44,11 +44,17 @@
 #define SYSCTL_CC_AVAILABLE "net.inet.tcp.cc.available"
 #endif /* __LINUX__ */
 
-/** Shortcut for show_columns(unsigned int numargs, ...) */
-#define SHOW_COLUMNS(...)  (show_columns(NUMARGS(__VA_ARGS__), __VA_ARGS__))
+/** Shortcut for show_columns() */
+#define SHOW_COLUMNS(...)						    \
+	(set_column_visibility(true, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** Shortcut for hide_columns(unsigned int numargs, ...) */
-#define HIDE_COLUMNS(...)  (hide_columns(NUMARGS(__VA_ARGS__), __VA_ARGS__))
+/** Shortcut for hide_columns() */
+#define HIDE_COLUMNS(...)						    \
+	(set_column_visibility(false, NARGS(__VA_ARGS__), __VA_ARGS__))
+
+/** Shortcut for set_column_header_unit() */
+#define SET_COLUMN_HEADER_UNIT(unit, ...)				    \
+	(set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
 /** Transport protocols */
 enum protocol {
@@ -280,22 +286,24 @@ static void usage_hint(void) __attribute__((noreturn));
 static void init_general_options(void);
 
 /**
- * To show intermediated interval report columns
+ * To show/hide intermediated interval report columns
  *
- * @param[in] numargs number of given arguments
+ * @param[in] bool column visibility
+ * @param[in] nargs length of variable argument list
  * @param[in] ... column IDs
  * @see enum column_id
  */
-inline static void show_columns(unsigned int numargs, ...);
+static void set_column_visibility(bool visibility, unsigned int nvargs, ...);
 
 /**
- * To hide intermediated interval report columns
+ * To set the unit the in header of intermediated interval report columns
  *
- * @param[in] numargs number of given arguments
+ * @param[in] unit unit of column header as string
+ * @param[in] nargs length of variable argument list
  * @param[in] ... column IDs
  * @see enum column_id
  */
-inline static void hide_columns(unsigned int numargs, ...);
+static void set_column_unit(const char *unit, unsigned int nargs, ...);
 
 /**
  * Parse argument for option -c to hide/show intermediated interval report
