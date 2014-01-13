@@ -80,6 +80,9 @@
 /** Suppress warning for unused argument */
 #define UNUSED_ARGUMENT(x) (void)x
 
+/** To determine number of parameters */
+#define NUMARGS(...) (sizeof((int[]){__VA_ARGS__})/sizeof(int))
+
 /** Assign value if it less than current one */
 #define ASSIGN_MIN(s, c)	    \
 	({ typeof (s) _s = (s);	    \
