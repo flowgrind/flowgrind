@@ -56,13 +56,13 @@
 #include "flowgrind.h"
 
 /* XXX add a brief description doxygen */
-FILE *log_stream = NULL;
+static FILE *log_stream = NULL;
 /* XXX add a brief description doxygen */
-char *log_filename = NULL;
+static char *log_filename = NULL;
 /** SIGINT (CTRL-C) received? */
 static bool sigint_caught = false;
 /* XXX add a brief description doxygen */
-xmlrpc_env rpc_env;
+static xmlrpc_env rpc_env;
 /** Name of the executable */
 static char progname[50] = "flowgrind";
 /** Unique (by URL) flowgrind daemons */
