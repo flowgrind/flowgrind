@@ -701,18 +701,12 @@ static void prepare_flows(xmlrpc_client *rpc_client)
 	 * Linux and the user forces not to uses segments */
 	if (opt.force_unit == BYTE_BASED ||
 	    (opt.force_unit != SEGMENT_BASED &&
-	     strcmp(unique_servers[0].os_name, "Linux"))) {
-		column_info[COL_TCP_CWND].header.unit = " [B]";
-		column_info[COL_TCP_SSTH].header.unit = " [B]";
-		column_info[COL_TCP_UACK].header.unit = " [B]";
-		column_info[COL_TCP_SACK].header.unit = " [B]";
-		column_info[COL_TCP_LOST].header.unit = " [B]";
-		column_info[COL_TCP_RETR].header.unit = " [B]";
-		column_info[COL_TCP_TRET].header.unit = " [B]";
-		column_info[COL_TCP_FACK].header.unit = " [B]";
-		column_info[COL_TCP_REOR].header.unit = " [B]";
-		column_info[COL_TCP_BKOF].header.unit = " [B]";
-	}
+	     strcmp(unique_servers[0].os_name, "Linux")))
+		SET_COLUMN_HEADER_UNIT(" [B]", COL_TCP_CWND, COL_TCP_SSTH,
+				       COL_TCP_UACK, COL_TCP_SACK,
+				       COL_TCP_LOST, COL_TCP_RETR,
+				       COL_TCP_TRET, COL_TCP_FACK,
+				       COL_TCP_REOR, COL_TCP_BKOF);
 }
 
 static void prepare_flow(int id, xmlrpc_client *rpc_client)
@@ -1248,28 +1242,28 @@ static void close_flows(void)
 	}
 }
 
-inline static void show_columns(unsigned int numargs, ...)
+static void set_column_visibility(bool visibility, unsigned int nargs, ...)
 {
         va_list ap;
         enum column_id col_id;
 
-        va_start(ap, numargs);
-        while (numargs--) {
+        va_start(ap, nargs);
+        while (nargs--) {
                 col_id = va_arg(ap, enum column_id);
-                column_info[col_id].state.visible = true;
+                column_info[col_id].state.visible = visibility;
         }
         va_end(ap);
 }
 
-inline static void hide_columns(unsigned int numargs, ...)
+static void set_column_unit(const char *unit, unsigned int nargs, ...)
 {
         va_list ap;
         enum column_id col_id;
 
-        va_start(ap, numargs);
-        while (numargs--) {
+        va_start(ap, nargs);
+        while (nargs--) {
                 col_id = va_arg(ap, enum column_id);
-                column_info[col_id].state.visible = false;
+                column_info[col_id].header.unit = unit;
         }
         va_end(ap);
 }
@@ -2457,13 +2451,19 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 static void parse_visible_option(char *optarg)
 {
 	/* Reset all default visibility settings */
-	for (unsigned int i = 0;
-	     i < sizeof(column_info) / sizeof(struct _column); i++)
-		column_info[i].state.visible = false;
+	HIDE_COLUMNS(COL_BEGIN, COL_END, COL_THROUGH, COL_TRANSAC,
+		     COL_BLOCK_REQU, COL_BLOCK_RESP, COL_RTT_MIN, COL_RTT_AVG,
+		     COL_RTT_MAX, COL_IAT_MIN, COL_IAT_AVG, COL_IAT_MAX,
+		     COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX, COL_TCP_CWND,
+		     COL_TCP_SSTH, COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
+		     COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
+		     COL_TCP_BKOF, COL_TCP_RTT, COL_TCP_RTTVAR, COL_TCP_RTO,
+		     COL_TCP_CA_STATE, COL_SMSS, COL_PMTU);
+#ifdef DEBUG
+	HIDE_COLUMNS(COL_STATUS);
+#endif /* DEBUG */
 
-	/* Show always flow ID */
-	SHOW_COLUMNS(COL_FLOW_ID);
-
+	/* Set visibility according option */
 	for (char *token = strtok(optarg, ","); token;
 	     token = strtok(NULL, ",")) {
 		if (!strcmp(token, "interval"))
