@@ -278,7 +278,7 @@ static void usage_trafgenopt(void) __attribute__((noreturn));
 /**
  * Print hint upon an error while parsing the command line
  */
-static void usage_hint(void) __attribute__((noreturn));
+inline static void usage_hint(void) __attribute__((noreturn));
 
 /**
  * Initialization of general controller options

@@ -385,7 +385,7 @@ static void usage_trafgenopt(void)
 	exit(EXIT_SUCCESS);
 }
 
-static void usage_hint(void)
+inline static void usage_hint(void)
 {
 	fprintf(stderr, "Try '%s -h' for more information\n", progname);
 	exit(EXIT_FAILURE);
