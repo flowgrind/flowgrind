@@ -67,7 +67,7 @@ enum protocol {
 /** Unit of the TCP Stack */
 enum tcp_stack {
 	/** Linux is a segment-based stack */
-	SEGMENT_BASED = 1,
+	SEGMENT_BASED = 0,
 	/** BSD stacks are bytes-based stacks */
 	BYTE_BASED
 };
