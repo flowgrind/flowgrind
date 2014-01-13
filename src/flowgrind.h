@@ -277,6 +277,11 @@ static void usage_trafgenopt(void) __attribute__((noreturn));
 static void usage_hint(void) __attribute__((noreturn));
 
 /**
+ * Initialization of general controller options
+ */
+static void init_general_options(void) ;
+
+/**
  * To show intermediated interval report columns
  *
  * @param[in] numargs number of given arguments
