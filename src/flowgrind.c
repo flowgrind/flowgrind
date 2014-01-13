@@ -529,7 +529,7 @@ static void close_logfile(void)
 		error(ERR_FATAL, "could not close logfile %s", log_filename);
 }
 
-static void log_output(const char *msg)
+inline static void log_output(const char *msg)
 {
 	if (!opt.dont_log_stdout) {
 		printf("%s", msg);
@@ -541,7 +541,7 @@ static void log_output(const char *msg)
 	}
 }
 
-static void die_if_fault_occurred(xmlrpc_env *env)
+inline static void die_if_fault_occurred(xmlrpc_env *env)
 {
     if (env->fault_occurred)
 	error(ERR_FATAL, "XML-RPC Fault: %s (%d)\n", env->fault_string,
