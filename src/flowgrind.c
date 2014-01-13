@@ -681,6 +681,7 @@ static void prepare_flows(xmlrpc_client *rpc_client)
 	char start_ts_buffer[26];
 
 	rc = uname(&me);
+	/* TODO Use fg_time.c here */
 	start_ts = time(NULL);
 	ctime_r(&start_ts, start_ts_buffer);
 	start_ts_buffer[24] = '\0';
@@ -1113,9 +1114,11 @@ has_more_reports:
 				report.bytes_written = (uint32_t)bytes_written_low;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */
 
-				/* Kernel metrics (tcp_info). Other OS than Linux may not send
-				 * valid values here, for the moment we don't care and handle
-				 * this in the output/display routines */
+				/* FIXME Kernel metrics (tcp_info). Other OS than
+				 * Linux may not send valid values here. For
+				 * the moment we don't care and handle this in
+				 * the output/display routines. However, this
+				 * do not work in heterogeneous environments */
 				report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
 				report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
 				report.tcp_info.tcpi_unacked = tcpi_unacked;
