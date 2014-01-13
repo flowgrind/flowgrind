@@ -413,11 +413,12 @@ static void init_general_options(void)
 	opt.reporting_interval = 0.05;
 	opt.dont_log_stdout = false;
 	opt.dont_log_logfile = true;
+	opt.log_filename = NULL;
 	opt.log_filename_prefix = "flowgrind-";
 	opt.clobber = false;
 	opt.mbyte = false;
 	opt.symbolic = true;
-	opt.force_unit = 0;
+	opt.force_unit = NAN;
 }
 
 static void init_flow_options(void)
