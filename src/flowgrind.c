@@ -663,11 +663,10 @@ static void check_idle(xmlrpc_client *rpc_client)
 	}
 }
 
-/* enumerate over prepare_flow */
-static void prepare_flows(xmlrpc_client *rpc_client)
+static void prepare_grind(xmlrpc_client *rpc_client)
 {
-	/* prepare all flows */
-	for (int id = 0; id < opt.num_flows; id++) {
+	/* prepare flows */
+	for (unsigned int id = 0; id < opt.num_flows; id++) {
 		if (sigint_caught)
 			return;
 		prepare_flow(id, rpc_client);
@@ -695,19 +694,33 @@ static void prepare_flows(xmlrpc_client *rpc_client)
 		 FLOWGRIND_VERSION);
 	log_output(headline);
 
-	/* prepare column headers */
+	/* prepare column visibility based on involved OSes */
+	bool has_linux, has_freebsd;
+	for (unsigned int j = 0; j < num_unique_servers; j++)
+		if (!strcmp(unique_servers[j].os_name, "Linux"))
+			has_linux = true;
+		else if (!strcmp(unique_servers[j].os_name, "FreeBSD"))
+			has_freebsd = true;
+		else if (has_linux && has_freebsd)
+			break;
+	if (!has_linux)
+		HIDE_COLUMNS(COL_TCP_UACK, COL_TCP_SACK, COL_TCP_RETR,
+			     COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
+			     COL_TCP_BKOF, COL_TCP_CA_STATE);
+	if (!has_freebsd)
+		HIDE_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_RTT,
+			     COL_TCP_RTTVAR, COL_TCP_RTO, COL_SMSS);
 
-	/* We set the unit of the kernel TCP metrics to bytes if either the
-	 * user forces to use bytes or the source of the first flow is not
-	 * Linux and the user forces not to uses segments */
-	if (opt.force_unit == BYTE_BASED ||
-	    (opt.force_unit != SEGMENT_BASED &&
-	     strcmp(unique_servers[0].os_name, "Linux")))
-		SET_COLUMN_HEADER_UNIT(" [B]", COL_TCP_CWND, COL_TCP_SSTH,
-				       COL_TCP_UACK, COL_TCP_SACK,
-				       COL_TCP_LOST, COL_TCP_RETR,
-				       COL_TCP_TRET, COL_TCP_FACK,
-				       COL_TCP_REOR, COL_TCP_BKOF);
+	/* TODO Show transac and RTT column only if reverse traffic is
+	 * enabled */
+
+	/* set unit for kernel TCP metrics to bytes */
+	if (opt.force_unit == BYTE_BASED || (opt.force_unit != SEGMENT_BASED &&
+	    strcmp(unique_servers[0].os_name, "Linux")))
+		SET_COLUMN_UNIT(" [B]", COL_TCP_CWND, COL_TCP_SSTH,
+				COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
+				COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK,
+				COL_TCP_REOR, COL_TCP_BKOF);
 }
 
 static void prepare_flow(int id, xmlrpc_client *rpc_client)
@@ -2914,7 +2927,7 @@ int main(int argc, char *argv[])
 
 	DEBUG_MSG(LOG_WARNING, "prepare flows");
 	if (!sigint_caught)
-		prepare_flows(rpc_client);
+		prepare_grind(rpc_client);
 
 	DEBUG_MSG(LOG_WARNING, "start flows");
 	if (!sigint_caught)

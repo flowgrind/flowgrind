@@ -53,7 +53,7 @@
 	(set_column_visibility(false, NARGS(__VA_ARGS__), __VA_ARGS__))
 
 /** Shortcut for set_column_header_unit() */
-#define SET_COLUMN_HEADER_UNIT(unit, ...)				    \
+#define SET_COLUMN_UNIT(unit, ...)					    \
 	(set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
 /** Transport protocols */

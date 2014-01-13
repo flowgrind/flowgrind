@@ -15,5 +15,4 @@
 + do not call /sbin/sysctl out of flowgrind
 + apply Linux kernel coding style
 + improve output for heterogeneous OS-Environments
-+ only display column if controller has something to print (RTT, transac columns
- if traffic on reverse path, kernel columns based on the involved OSes,...)
++ only display RTT/transac column if reverse traffic is enabled
