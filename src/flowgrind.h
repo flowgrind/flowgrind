@@ -156,7 +156,6 @@ struct _opt {
 	/** Force kernel output to specific unit  (option -u) */
 	enum tcp_stack force_unit;
 };
-extern struct _opt opt;
 
 /** Infos about a flowgrind daemon */
 struct _daemon {
@@ -254,7 +253,6 @@ struct _column
         /** State of the column */
         struct _column_state state;
 };
-extern struct _column column_info[];
 
 /**
  * Print flowgrind usage and exit
@@ -288,18 +286,7 @@ static void init_general_options(void) ;
  * @param[in] ... column IDs
  * @see enum column_id
  */
-inline static void show_columns(unsigned int numargs, ...)
-{
-        va_list ap;
-        enum column_id col_id;
-
-        va_start(ap, numargs);
-        while (numargs--) {
-                col_id = va_arg(ap, enum column_id);
-                column_info[col_id].state.visible = true;
-        }
-        va_end(ap);
-}
+inline static void show_columns(unsigned int numargs, ...);
 
 /**
  * To hide intermediated interval report columns
@@ -308,24 +295,5 @@ inline static void show_columns(unsigned int numargs, ...)
  * @param[in] ... column IDs
  * @see enum column_id
  */
-inline static void hide_columns(unsigned int numargs, ...)
-{
-	va_list ap;
-	enum column_id col_id;
-
-	va_start(ap, numargs);
-	while (numargs--) {
-		col_id = va_arg(ap, enum column_id);
-		column_info[col_id].state.visible = false;
-	}
-        va_end(ap);
-}
-
-/* XXX add a brief description doxygen */
-inline static double scale_thruput(double thruput)
-{
-	if (opt.mbyte)
-		return thruput / (1<<20);
-	return thruput / 1e6 * (1<<3);
-}
+inline static void hide_columns(unsigned int numargs, ...);
 #endif /* _FLOWGRIND_H_ */

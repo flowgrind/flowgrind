@@ -70,14 +70,14 @@ static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
 /** General controller options */
-struct _opt opt;
+static struct _opt opt;
 /** Infos about all flows including flow options */
 static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 static int active_flows = 0;
 
 /** Infos about the intermediated interval report columns */
-struct _column column_info[] = {
+static struct _column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
 	 .header.unit = "#   ", .state.visible = true},
 	{.type = COL_BEGIN, .header.name = " begin",
@@ -1248,6 +1248,32 @@ static void close_flows(void)
 	}
 }
 
+inline static void show_columns(unsigned int numargs, ...)
+{
+        va_list ap;
+        enum column_id col_id;
+
+        va_start(ap, numargs);
+        while (numargs--) {
+                col_id = va_arg(ap, enum column_id);
+                column_info[col_id].state.visible = true;
+        }
+        va_end(ap);
+}
+
+inline static void hide_columns(unsigned int numargs, ...)
+{
+        va_list ap;
+        enum column_id col_id;
+
+        va_start(ap, numargs);
+        while (numargs--) {
+                col_id = va_arg(ap, enum column_id);
+                column_info[col_id].state.visible = false;
+        }
+        va_end(ap);
+}
+
 /* New output determines the number of digits before the comma */
 static int det_output_column_size(double value)
 {
@@ -1587,6 +1613,13 @@ static char *createOutput(char hash, int id, int type, double begin, double end,
 	counter++;
 
 	return outputString;
+}
+
+inline static double scale_thruput(double thruput)
+{
+        if (opt.mbyte)
+                return thruput / (1<<20);
+        return thruput / 1e6 * (1<<3);
 }
 
 static void print_report(int id, int endpoint, struct _report* r)
