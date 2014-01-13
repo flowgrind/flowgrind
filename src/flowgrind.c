@@ -411,9 +411,12 @@ static void init_general_options(void)
 {
 	opt.num_flows = 1;
 	opt.reporting_interval = 0.05;
+	opt.dont_log_stdout = false;
+	opt.dont_log_logfile = true;
 	opt.log_filename_prefix = "flowgrind-";
-	opt.dont_log_logfile = 1;
-	opt.symbolic = 1;
+	opt.clobber = false;
+	opt.mbyte = false;
+	opt.symbolic = true;
 	opt.force_unit = 0;
 }
 
@@ -2612,7 +2615,7 @@ static void parse_cmdline(int argc, char **argv) {
 			break;
 		case 'm':
 			column_info[COL_THROUGH].header.unit = " [MB/s]";
-			opt.mbyte = 1;
+			opt.mbyte = true;
 			break;
 		case 'n':
 			rc = sscanf(optarg, "%hd", &opt.num_flows);
@@ -2624,13 +2627,13 @@ static void parse_cmdline(int argc, char **argv) {
 			}
 			break;
 		case 'o':
-			opt.clobber = 1;
+			opt.clobber = true;
 			break;
 		case 'p':
-			opt.symbolic = 0;
+			opt.symbolic = false;
 			break;
 		case 'q':
-			opt.dont_log_stdout = 1;
+			opt.dont_log_stdout = true;
 			break;
 		case 'u':
 			if (!strcmp(optarg, "s"))
@@ -2643,7 +2646,7 @@ static void parse_cmdline(int argc, char **argv) {
 				usage_hint();
 			}
 		case 'w':
-			opt.dont_log_logfile = 0;
+			opt.dont_log_logfile = false;
 			break;
 
 		/* flow options w/o endpoint identifier */

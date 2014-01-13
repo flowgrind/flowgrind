@@ -140,19 +140,19 @@ struct _opt {
 	/** Length of reporting interval, in seconds (option -i) */
 	double reporting_interval;
 	/** Write output to screen (option -q) */
-	char dont_log_stdout;
+	bool dont_log_stdout;
 	/** Write output to logfile (option -w) */
-	char dont_log_logfile;
+	bool dont_log_logfile;
 	/** Name of logfile (option -l) */
 	char *log_filename;
 	/** Prefix for log- and dumpfile (option -e) */
 	char *log_filename_prefix;
 	/** Overwrite existing log files (option -o) */
-	char clobber;
+	bool clobber;
 	/** Report in MByte/s instead of MBit/s (option -m) */
-	char mbyte;
+	bool mbyte;
 	/** Don't use symbolic values instead of number (option -p) */
-	char symbolic;
+	bool symbolic;
 	/** Force kernel output to specific unit  (option -u) */
 	enum tcp_stack force_unit;
 };
