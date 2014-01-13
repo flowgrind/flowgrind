@@ -60,7 +60,7 @@ FILE *log_stream = NULL;
 /* XXX add a brief description doxygen */
 char *log_filename = NULL;
 /* XXX add a brief description doxygen */
-char sigint_caught = 0;
+static bool sigint_caught = false;
 /* XXX add a brief description doxygen */
 xmlrpc_env rpc_env;
 /** Name of the executable */
@@ -397,11 +397,11 @@ static void sigint_handler(int sig)
 
 	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
 
-	if (sigint_caught == 0) {
+	if (!sigint_caught) {
 		fprintf(stderr, "# received SIGINT, trying to gracefully "
 			"close flows. Press CTRL+C again to force "
 			"termination.\n");
-		sigint_caught = 1;
+		sigint_caught = true;
 	} else {
 		exit(EXIT_FAILURE);
 	}
