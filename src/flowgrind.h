@@ -44,6 +44,12 @@
 #define SYSCTL_CC_AVAILABLE "net.inet.tcp.cc.available"
 #endif /* __LINUX__ */
 
+/** Shortcut for show_columns(unsigned int numargs, ...) */
+#define SHOW_COLUMNS(...)  (show_columns(NUMARGS(__VA_ARGS__), __VA_ARGS__))
+
+/** Shortcut for hide_columns(unsigned int numargs, ...) */
+#define HIDE_COLUMNS(...)  (hide_columns(NUMARGS(__VA_ARGS__), __VA_ARGS__))
+
 /** Transport protocols */
 enum protocol {
 	/** Transmission Control Protocol */
@@ -151,6 +157,45 @@ struct _cflow {
 };
 
 extern struct _opt opt;
+/**
+ * To show intermediated interval report columns
+ *
+ * @param[in] numargs number of given arguments
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
+inline static void show_columns(unsigned int numargs, ...)
+{
+        va_list ap;
+        enum column_id col_id;
+
+        va_start(ap, numargs);
+        while (numargs--) {
+                col_id = va_arg(ap, enum column_id);
+                column_info[col_id].state.visible = true;
+        }
+        va_end(ap);
+}
+
+/**
+ * To hide intermediated interval report columns
+ *
+ * @param[in] numargs number of given arguments
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
+inline static void hide_columns(unsigned int numargs, ...)
+{
+	va_list ap;
+	enum column_id col_id;
+
+	va_start(ap, numargs);
+	while (numargs--) {
+		col_id = va_arg(ap, enum column_id);
+		column_info[col_id].state.visible = false;
+	}
+        va_end(ap);
+}
 
 /* XXX add a brief description doxygen */
 inline static double scale_thruput(double thruput)

@@ -2591,59 +2591,41 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 static void parse_visible_option(char *optarg)
 {
 	/* Reset all default visibility settings */
-	for (size_t i = 0;
+	for (unsigned int i = 0;
 	     i < sizeof(column_info) / sizeof(struct _column); i++)
 		column_info[i].state.visible = false;
 
 	/* Show always flow ID */
-	column_info[COL_FLOW_ID].state.visible = true;
+	SHOW_COLUMNS(COL_FLOW_ID);
 
 	for (char *token = strtok(optarg, ","); token;
 	     token = strtok(NULL, ",")) {
-		if (!strcmp(token, "interval")) {
-			column_info[COL_BEGIN].state.visible = true;
-			column_info[COL_END].state.visible = true;
-		} else if (!strcmp(token, "through")) {
-			column_info[COL_THROUGH].state.visible = true;
-		} else if (!strcmp(token, "transac")) {
-			column_info[COL_TRANSAC].state.visible = true;
-		} else if (!strcmp(token, "blocks")) {
-			column_info[COL_BLOCK_REQU].state.visible = true;
-			column_info[COL_BLOCK_RESP].state.visible = true;
-		} else if (!strcmp(token, "rtt")) {
-			column_info[COL_RTT_MIN].state.visible = true;
-			column_info[COL_RTT_AVG].state.visible = true;
-			column_info[COL_RTT_MAX].state.visible = true;
-		} else if (!strcmp(token, "iat")) {
-			column_info[COL_IAT_MIN].state.visible = true;
-			column_info[COL_IAT_AVG].state.visible = true;
-			column_info[COL_IAT_MAX].state.visible = true;
-		} else if (!strcmp(token, "delay")) {
-			column_info[COL_DLY_MIN].state.visible = true;
-			column_info[COL_DLY_AVG].state.visible = true;
-			column_info[COL_DLY_MAX].state.visible = true;
-		} else if (!strcmp(token, "kernel")) {
-			column_info[COL_TCP_CWND].state.visible = true;
-			column_info[COL_TCP_SSTH].state.visible = true;
-			column_info[COL_TCP_UACK].state.visible = true;
-			column_info[COL_TCP_SACK].state.visible = true;
-			column_info[COL_TCP_LOST].state.visible = true;
-			column_info[COL_TCP_RETR].state.visible = true;
-			column_info[COL_TCP_TRET].state.visible = true;
-			column_info[COL_TCP_FACK].state.visible = true;
-			column_info[COL_TCP_REOR].state.visible = true;
-			column_info[COL_TCP_BKOF].state.visible = true;
-			column_info[COL_TCP_RTT].state.visible = true;
-			column_info[COL_TCP_RTTVAR].state.visible = true;
-			column_info[COL_TCP_RTO].state.visible = true;
-			column_info[COL_TCP_CA_STATE].state.visible = true;
-			column_info[COL_SMSS].state.visible = true;
-			column_info[COL_PMTU].state.visible = true;
+		if (!strcmp(token, "interval"))
+			SHOW_COLUMNS(COL_BEGIN, COL_END);
+		else if (!strcmp(token, "through"))
+			SHOW_COLUMNS(COL_THROUGH);
+		else if (!strcmp(token, "transac"))
+			SHOW_COLUMNS(COL_TRANSAC);
+		else if (!strcmp(token, "blocks"))
+			SHOW_COLUMNS(COL_BLOCK_REQU, COL_BLOCK_RESP);
+		else if (!strcmp(token, "rtt"))
+			SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
+		else if (!strcmp(token, "iat"))
+			SHOW_COLUMNS(COL_IAT_MIN, COL_IAT_AVG, COL_IAT_MAX);
+		else if (!strcmp(token, "delay"))
+			SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
+		else if (!strcmp(token, "kernel"))
+			SHOW_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_UACK,
+				     COL_TCP_SACK, COL_TCP_LOST, COL_TCP_RETR,
+				     COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
+				     COL_TCP_BKOF, COL_TCP_RTT, COL_TCP_RTTVAR,
+				     COL_TCP_RTO, COL_TCP_CA_STATE, COL_SMSS,
+				     COL_PMTU);
 #ifdef DEBUG
-		} else if (!strcmp(token, "status")) {
-			column_info[COL_STATUS].state.visible = true;
+		else if (!strcmp(token, "status"))
+			SHOW_COLUMNS(COL_STATUS);
 #endif /* DEBUG */
-		} else {
+		else {
 			fprintf(stderr, "%s: malformed option '-c' \n",
 				progname);
 			usage_hint();
