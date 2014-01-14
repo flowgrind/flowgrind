@@ -784,7 +784,7 @@ void* daemon_main(void* ptr __attribute__((unused)))
 		int need_timeout = prepare_fds();
 
 		timeout.tv_sec = 0;
-		timeout.tv_nsec = 10000;
+		timeout.tv_nsec = DEFAULT_SELECT_TIMEOUT;
 		DEBUG_MSG(LOG_DEBUG, "calling pselect() need_timeout: %i",
 			  need_timeout);
 		int rc = pselect(maxfd + 1, &rfds, &wfds, &efds,

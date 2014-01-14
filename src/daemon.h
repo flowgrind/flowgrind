@@ -35,6 +35,9 @@
 
 #include "common.h"
 
+/** time select() will block waiting for a file descriptor to become ready */
+#define DEFAULT_SELECT_TIMEOUT  10000000
+
 enum flow_state
 {
 	/* SOURCE */
