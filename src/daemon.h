@@ -35,25 +35,12 @@
 
 #include "common.h"
 
-void *daemon_main(void* ptr);
-
-pthread_t daemon_thread;
-
-/* Through this pipe we wakeup the thread from select */
-extern int daemon_pipe[2];
-
-extern char dumping;
-
-extern pthread_mutex_t mutex;
-
 enum flow_state
 {
 	/* SOURCE */
 	GRIND_WAIT_CONNECT = 0,
-
 	/* DESTINATION */
 	GRIND_WAIT_ACCEPT,
-
 	/* RUN */
 	GRIND
 };
@@ -171,21 +158,6 @@ struct _flow
 	char* error;
 };
 
-extern struct _flow flows[MAX_FLOWS];
-extern unsigned int num_flows;
-
-extern struct _report* reports;
-extern struct _report* reports_last;
-extern unsigned int pending_reports;
-
-void add_report(struct _report* report);
-
-/* Gets 50 reports. There may be more pending but there's a limit on how
- * large a reply can get */
-struct _report* get_reports(int *has_more);
-
-extern char started;
-
 #define REQUEST_ADD_DESTINATION 0
 #define REQUEST_ADD_SOURCE 1
 #define REQUEST_START_FLOWS 2
@@ -254,11 +226,31 @@ struct _request_get_status
 	int num_flows;
 };
 
+pthread_t daemon_thread;
+
+/* Through this pipe we wakeup the thread from select */
+extern int daemon_pipe[2];
+
+extern char started;
+extern char dumping;
+extern pthread_mutex_t mutex;
+extern struct _flow flows[MAX_FLOWS];
+extern unsigned int num_flows;
+extern struct _report* reports;
+extern struct _report* reports_last;
+extern unsigned int pending_reports;
+
+/* Gets 50 reports. There may be more pending but there's a limit on how
+ * large a reply can get */
+struct _report* get_reports(int *has_more);
+
 #ifdef HAVE_LIBPCAP
 char * dump_filename_prefix_client;
 char * dump_filename_prefix_server;
 #endif /* HAVE_LIBPCAP */
 
+void *daemon_main(void* ptr);
+void add_report(struct _report* report);
 void flow_error(struct _flow *flow, const char *fmt, ...);
 void request_error(struct _request *request, const char *fmt, ...);
 int set_flow_tcp_options(struct _flow *flow);
