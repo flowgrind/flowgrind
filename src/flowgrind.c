@@ -391,7 +391,7 @@ inline static void usage_hint(void)
 	exit(EXIT_FAILURE);
 }
 
-static void sigint_handler(int sig)
+static void sighandler(int sig)
 {
 	UNUSED_ARGUMENT(sig);
 
@@ -2891,9 +2891,13 @@ static void parse_cmdline(int argc, char **argv) {
 int main(int argc, char *argv[])
 {
 	struct sigaction sa;
+	sa.sa_handler = sighandler;
+	sa.sa_flags = 0;
+	sigemptyset (&sa.sa_mask);
+	if (sigaction(SIGINT, &sa, NULL))
+		error(ERR_FATAL, "Error: Could not set handler for SIGINT\n");
 
 	xmlrpc_client *rpc_client = 0;
-
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
@@ -2901,12 +2905,6 @@ int main(int argc, char *argv[])
 	init_flow_options();
 	parse_cmdline(argc, argv);
 	open_logfile();
-	sa.sa_handler = sigint_handler;
-	sa.sa_flags = 0;
-	sigemptyset (&sa.sa_mask);
-	if (sigaction(SIGINT, &sa, NULL)) {
-		fprintf(stderr, "Error: Could not set handler for SIGINT\n");
-	}
 	prepare_xmlrpc_client(&rpc_client);
 
 	DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
