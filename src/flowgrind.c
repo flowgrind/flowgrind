@@ -1309,9 +1309,9 @@ static char *outStringPart(int digits, int decimalPart)
 	return outstr;
 }
 
-static int createOutputColumn(char *strHead1Row, char *strHead2Row,
-			      char *strDataRow, int column_id, double value,
-			      int numDigitsDecimalPart, int *columnWidthChanged)
+static void createOutputColumn(char *strHead1Row, char *strHead2Row,
+			       char *strDataRow, int column_id, double value,
+			       int numDigitsDecimalPart, int *columnWidthChanged)
 {
 	unsigned int maxTooLongColumns = opt.num_flows * 5;
 	int lengthData = 0;
@@ -1322,7 +1322,7 @@ static int createOutputColumn(char *strHead1Row, char *strHead2Row,
 	char* number_formatstring;
 
 	if (!column->state.visible)
-		return 0;
+		return;
 
 	/* get max columnsize */
 	if (opt.symbolic) {
@@ -1423,13 +1423,11 @@ static int createOutputColumn(char *strHead1Row, char *strHead2Row,
 	     a > strlen(column->header.unit); a--)
 		strcat(strHead2Row, " ");
 	strcat(strHead2Row, column->header.unit);
-
-	return 0;
 }
 
-static int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
-				  char *strDataRow, int column_id, char* value,
-				  int *columnWidthChanged)
+static void createOutputColumn_str(char *strHead1Row, char *strHead2Row,
+				   char *strDataRow, int column_id,
+				   char* value, int *columnWidthChanged)
 {
 
 	unsigned int maxTooLongColumns = opt.num_flows * 5;
@@ -1439,7 +1437,7 @@ static int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
 	struct _column *column = &column_info[column_id];
 
 	if (!column->state.visible)
-		return 0;
+		return;
 
 	/* get max columnsize */
 	lengthData = strlen(value);
@@ -1484,8 +1482,6 @@ static int createOutputColumn_str(char *strHead1Row, char *strHead2Row,
 	     a > strlen(column->header.unit) + 1; a--)
 		strcat(strHead2Row, " ");
 	strcat(strHead2Row, column->header.unit);
-
-	return 0;
 }
 
 /* Output a single report (with header if width has changed */
@@ -2946,5 +2942,4 @@ int main(int argc, char *argv[])
 	xmlrpc_client_teardown_global_const();
 
 	DEBUG_MSG(LOG_WARNING, "bye");
-	return 0;
 }
