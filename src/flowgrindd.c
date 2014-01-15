@@ -29,13 +29,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
-#ifdef WIN
-#  include <windows.h>
-#else
-#  include <unistd.h>
-#endif /* WIN */
-
+#include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
 #include <signal.h>
@@ -630,7 +624,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"{s:i,s:i,s:i,s:i,s:i,s:i}" /* timeval */
 			"{s:i,s:i,s:i,s:i}" /* bytes */
 			"{s:i,s:i,s:i,s:i}" /* block counts */
-			"{s:d,s:d,s:d,s:d,s:d,s:d}" /* RTT, IAT */
+			"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d}" /* RTT, IAT, Delay */
 			"{s:i,s:i}" /* MTU */
 			"{s:i,s:i,s:i,s:i,s:i}" /* TCP info */
 			"{s:i,s:i,s:i,s:i,s:i}" /* ...      */
@@ -661,6 +655,9 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"iat_min", report->iat_min,
 			"iat_max", report->iat_max,
 			"iat_sum", report->iat_sum,
+			"delay_min", report->delay_min,
+			"delay_max", report->delay_max,
+			"delay_sum", report->delay_sum,
 
 			"pmtu", report->pmtu,
 			"imtu", report->imtu,

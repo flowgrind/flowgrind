@@ -1,18 +1,14 @@
 Release 0.7.0 (2013-X-X)
 - Output tcp_info kernel variables under FreeBSD
-  Thanks Alexander
+- Allow to set CPU affinity
 - Set localhost as default flow target/source instead of 127.0.0.1 to obey OS
   defaults in regards to IPv4 vs IPv6.
-- Preliminary supprt for mixed (FreeBSD, Linux) flows
-  Thanks Arnd
+- Preliminary support for mixed (FreeBSD, Linux) flows
 - Closes LP#1212680 reported and fixed by Midori Kato
 - Revised docu (help, manpage etc)
-- Enable to set amount of data to be send instead of duartion
-  Thanks Midori Kato
-- Closes LP#1237447 reported by Alexander
-  Thanks Arnd
+- Closes LP#1237447
 - Change flowgrind's timer management to achieve a nanosecond precision
-  Thanks Alexander
+- Add 1-way delay measurements
 
 Release 0.6.1 (2013-7-5)
 - Closes LP#1196940, LP#1196972
@@ -20,7 +16,6 @@ Release 0.6.1 (2013-7-5)
 
 Release 0.6.0 (2013-4-24)
 - Full IPv6 support (control and test connection)
-  Thanks Arnd.
 
 Release 0.5.9 (2012-11-1)
 - Support for pluggable congestion control modules in FreeBSD 9

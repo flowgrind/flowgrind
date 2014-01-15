@@ -4,6 +4,7 @@
  */
 
 /*
+ * Copyright (C) 2013 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
  * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
@@ -40,11 +41,10 @@
 #include <netinet/in_systm.h>
 #include <netinet/tcp.h>
 
-#define UNUSED_ARGUMENT(x) (void)x
-
 #include "gitversion.h"
 
 #ifdef GITVERSION
+/** Flowgrind version number */
 #define FLOWGRIND_VERSION GITVERSION
 #elif defined PACKAGE_VERSION
 #define FLOWGRIND_VERSION PACKAGE_VERSION
@@ -52,18 +52,14 @@
 #define FLOWGRIND_VERSION "(n/a)"
 #endif /* GITVERSION */
 
-/* Flowgrind's xmlrpc API version in integer representation */
+/** XML-RPC API version in integer representation */
 #define FLOWGRIND_API_VERSION 3
 
+/** Daemon's default listen port */
 #define DEFAULT_LISTEN_PORT 5999
 
-#define ERR_FATAL 0
-#define ERR_WARNING 1
-
-#define ASSIGN_MIN(s, c) if ((s)>(c)) (s) = (c)
-#define ASSIGN_MAX(s, c) if ((s)<(c)) (s) = (c)
-
-void error(int errcode, const char *fmt, ...);
+/** Maximal number of parallel flows */
+#define MAX_FLOWS 2048
 
 #define WRITE 0
 #define READ 1
@@ -74,11 +70,40 @@ void error(int errcode, const char *fmt, ...);
 #define MAX_EXTRA_SOCKET_OPTIONS 10
 #define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
 
-#define MAX_FLOWS 2048
-
 #ifndef TCP_CA_NAME_MAX
 #define TCP_CA_NAME_MAX 16
 #endif /* TCP_CA_NAME_MAX */
+
+/** Minium block (message) size we can send*/
+#define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
+
+/** Suppress warning for unused argument */
+#define UNUSED_ARGUMENT(x) (void)x
+
+/** To determine number of parameters */
+#define NARGS(...) (sizeof((int[]){__VA_ARGS__})/sizeof(int))
+
+/** Assign value if it less than current one */
+#define ASSIGN_MIN(s, c)	    \
+	({ typeof (s) _s = (s);	    \
+	   typeof (c) _c = (c);	    \
+	   if (_s > _c) s = c; })
+
+/** Assign value if it more than current one */
+#define ASSIGN_MAX(s, c)	    \
+	({ typeof (s) _s = (s);	    \
+	   typeof (c) _c = (c);	    \
+	   if (_s < _c) s = c; })
+
+/** Error types */
+enum error_type {
+	/** Fatal error; exit program */
+	ERR_FATAL,
+	/** Normal error; do not abort execution */
+	ERR_WARNING,
+	/** CMD parsing error; exit program */
+	ERR_USAGE
+};
 
 /** Flow endpoint */
 enum flow_endpoint {
@@ -96,42 +121,41 @@ enum _extra_socket_option_level
 	level_ipproto_udp
 };
 
-/*
- * our data block has the following layout:
- *
- * this_block_size (int32_t), request_block_size (int32_t), data (timeval), trail
- *
- * this_block_size:     the size of our request or response block (we generate
- *                      a request block here)
- *
- * request_block_size:  the size of the response block we request
- *                      0 if we dont request a response block
- *                     -1 indicates this is a response block (needed for parsing data)
- *
- * data                 RTT data if this is a response block
- *
- * trail:               trailing garbage to fill up the blocksize (not used)
- */
-
-#define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
-struct _block
-{
-	int32_t this_block_size;
-	int32_t request_block_size;
-	struct timespec data;
-	struct timespec data2; /* used to access 64bit timeval on 32bit arch */
-};
-
+/** Stochastic distributions for traffic generation */
 enum _stochastic_distributions
 {
+	/** No stochastic distribution */
 	CONSTANT='0',
+	/** Normal distribution */
 	NORMAL,
+	/** Weibull distribution */
 	WEIBULL,
+	/** Uniform distribution */
 	UNIFORM,
+	/** Exponential distribution */
 	EXPONENTIAL,
+	/** Pareto distribution */
 	PARETO,
-	LOGNORMAL,
-	ONCE
+	/** Log Normal distribution */
+	LOGNORMAL
+};
+
+/** Flowgrind's data block layout */
+struct _block
+{
+	/** Size of our request or response block */
+	int32_t this_block_size;
+
+	/** Size of the response block we request
+	 *
+	 *  0 indicates that we don't request a response block
+	 * -1 indicates this is a response block (needed for parsing data) */
+	int32_t request_block_size;
+
+	/** Sending timestap for calculating delay and RTT */
+	struct timespec data;
+	/** Used to access 64bit timespec on 32bit arch */
+	struct timespec data2;
 };
 
 struct _trafgen_options
@@ -237,8 +261,26 @@ struct _report
 	unsigned int response_blocks_read;
 	unsigned int response_blocks_written;
 
-	double rtt_min, rtt_max, rtt_sum;
-	double iat_min, iat_max, iat_sum;
+	/* TODO Create an array for IAT / RTT and delay */
+
+	/** Minimum interarrival time */
+	double iat_min;
+	/** Maximum interarrival time */
+	double iat_max;
+	/** Accumulated interarrival time */
+	double iat_sum;
+	/** Minimum one-way delay */
+	double delay_min;
+	/** Maximum one-way delay */
+	double delay_max;
+	/** Accumulated one-way delay */
+	double delay_sum;
+	/** Minimum round-trip time */
+	double rtt_min;
+	/** Maximum round-trip time */
+	double rtt_max;
+	/** Accumulated round-trip time */
+	double rtt_sum;
 
 	/* on the Daemon this is filled from the os specific
 	 * tcp_info struct */
@@ -251,5 +293,7 @@ struct _report
 
 	struct _report* next;
 };
+
+void error(enum error_type errcode, const char *fmt, ...);
 
 #endif /* _COMMON_H_*/
