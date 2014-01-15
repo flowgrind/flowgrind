@@ -57,7 +57,6 @@ AC_TYPE_UNSIGNED_LONG_LONG_INT
 AC_CHECK_FUNCS([ \
 	bzero \
 	getopt_long \
-	clock_gettime \
 	memset \
 	pselect \
 	socket \
