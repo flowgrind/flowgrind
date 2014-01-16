@@ -2,7 +2,7 @@ Source: flowgrind
 Section: net
 Priority: extra
 Maintainer: Christian Samsel <christian.samsel@rwth-aachen.de>
-Build-Depends: debhelper (>= 7), cdbs, autotools-dev, libxmlrpc-c3-dev, libcurl4-gnutls-dev | libcurl4-openssl-dev, libgsl0-dev, libpcap-dev
+Build-Depends: debhelper (>= 7), autotools-dev, libxmlrpc-c3-dev, libcurl4-gnutls-dev | libcurl4-openssl-dev, libgsl0-dev, libpcap-dev
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/flowgrind/
 Vcs-Git: git://github.com/flowgrind/flowgrind.git
@@ -18,7 +18,7 @@ Description: Distributed network performance measurement tool
  is used to schedule flows between and collect live samples from
  nodes running the flowgrindd daemon.
  Features:
-  * Measure bandwith, delay, IAT and sample TCP kernel metrics (tcp_info)
+  * Measure bandwidth, delay, IAT and sample TCP kernel metrics (tcp_info)
   * Bulk transfers, rate-limited flows, sophisticated request/response test
   * Report observed MSS/MTU size
   * Set buffer size on per flow basis
