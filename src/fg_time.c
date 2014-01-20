@@ -37,29 +37,29 @@
 
 const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size)
 {
-        struct tm tm;
+	struct tm tm;
 
 	/* Converts the calendar time to broken-down time representation,
 	 * expressed relative to the user's specified timezone */
-        tzset();
-        localtime_r(&tp->tv_sec, &tm);
+	tzset();
+	localtime_r(&tp->tv_sec, &tm);
 
 	/* Converts broken-down time representation into a string */
-        size_t len = strftime(buf, size, "%F %T", &tm);
+	size_t len = strftime(buf, size, "%F %T", &tm);
 
-        /* Append nanoseconds to string */
-        snprintf(buf+len, size-len, ".%09ld", tp->tv_nsec);
+	/* Append nanoseconds to string */
+	snprintf(buf+len, size-len, ".%09ld", tp->tv_nsec);
 
-        return buf;
+	return buf;
 }
 
 const char *ctimespec(const struct timespec *tp)
 {
-        static char buf[30];
+	static char buf[30];
 
-        ctimespec_r(tp, buf, sizeof(buf));
+	ctimespec_r(tp, buf, sizeof(buf));
 
-        return buf;
+	return buf;
 }
 
 double time_diff(const struct timespec *tp1, const struct timespec *tp2)

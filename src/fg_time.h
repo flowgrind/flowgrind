@@ -57,7 +57,7 @@ const char *ctimespec(const struct timespec *tp);
 
 /**
  * Returns the time difference between two specific points in time
- * 
+ *
  * Negative if the first point in time is chronologically after the second one
  *
  * @param[in] tp1 point in time

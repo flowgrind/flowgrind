@@ -2,19 +2,15 @@
 +add some way of specifying normal distribution to -R
 +add interleaving threshold
 +investigate why libpcap does not work in multiple threads
-+simplify arbitrary socket options
++simplify arbitrary socket options (eg. new socket opions in Linux 3.13)
 +do something with UDP/SCTP
 +xml style output
 +let option -Z work together with option -G
 +add optional columns for sender/receiver buffer
 +implement pthread barrier for mac os x
-+add c style comments to functions for doxygen help
-+allow for heterogeneous OS-Environments (measure Linux against FreeBSD)
 +mutual exclusion options need to be per flow basis instead of globally
 +Fix option -F (comma separation doesn't work)
-+add 1-way delay measurement
 +display CPU utilization
 +investigate why flowgrind burns so much CPU (in comparison to netperf)
 +adapt man pages to the newest changes in help
 +do not call /sbin/sysctl out of flowgrind
-+apply Linux kernel coding style
