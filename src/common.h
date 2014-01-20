@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+ * Copyright (C) 2013-2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
  * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
@@ -61,12 +61,6 @@
 /** Maximal number of parallel flows */
 #define MAX_FLOWS 2048
 
-#define WRITE 0
-#define READ 1
-
-#define INTERVAL 0
-#define TOTAL 1
-
 #define MAX_EXTRA_SOCKET_OPTIONS 10
 #define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
 
@@ -107,8 +101,26 @@ enum error_type {
 
 /** Flow endpoint */
 enum flow_endpoint {
+	/** Enpoint thats opens the connection */
 	SOURCE = 0,
+	/** Endpoint that accepts the connection */
 	DESTINATION,
+};
+
+/** I/O operation */
+enum io_ops {
+	/** Write operation */
+	WRITE = 0,
+	/** Read operation */
+	READ
+};
+
+/** Report types */
+enum interval_type {
+	/** Intermediated interval report */
+	INTERVAL = 0,
+	/** Final report */
+	FINAL
 };
 
 enum _extra_socket_option_level
@@ -245,7 +257,7 @@ struct _fg_tcp_info
 struct _report
 {
 	int id;
-	/* Is this an INTERVAL or TOTAL (final) report? */
+	/* Is this an INTERVAL or FINAL report? */
 	int type;
 	struct timespec begin;
 	struct timespec end;

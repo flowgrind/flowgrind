@@ -1189,7 +1189,7 @@ exit_outer_loop:
 	if (f->start_timestamp[endpoint].tv_sec == 0)
 		f->start_timestamp[endpoint] = report->begin;
 
-	if (report->type == TOTAL) {
+	if (report->type == FINAL) {
 		DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);
 		/* Final report, keep it for later */
 		free(f->final_report[endpoint]);

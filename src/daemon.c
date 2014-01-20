@@ -308,16 +308,16 @@ static int prepare_fds() {
 		      !flow_sending(&now, flow, WRITE)))) {
 
 			/* On Other OSes than Linux or FreeBSD, tcp_info will contain all zeroes */
-			flow->statistics[TOTAL].has_tcp_info =
+			flow->statistics[FINAL].has_tcp_info =
 				get_tcp_info(flow,
-					     &flow->statistics[TOTAL].tcp_info)
+					     &flow->statistics[FINAL].tcp_info)
 					? 0 : 1;
 
 			flow->pmtu = get_pmtu(flow->fd);
 
 			if (flow->settings.reporting_interval)
 				report_flow(flow, INTERVAL);
-			report_flow(flow, TOTAL);
+			report_flow(flow, FINAL);
 			uninit_flow(flow);
 			remove_flow(--i);
 			continue;
@@ -401,15 +401,15 @@ static void stop_flow(struct _request_stop_flow *request)
 		for (unsigned int i = 0; i < num_flows; i++) {
 			struct _flow *flow = &flows[i];
 
-			flow->statistics[TOTAL].has_tcp_info =
+			flow->statistics[FINAL].has_tcp_info =
 				get_tcp_info(flow,
-					     &flow->statistics[TOTAL].tcp_info)
+					     &flow->statistics[FINAL].tcp_info)
 					? 0 : 1;
 			flow->pmtu = get_pmtu(flow->fd);
 
 			if (flow->settings.reporting_interval)
 				report_flow(flow, INTERVAL);
-			report_flow(flow, TOTAL);
+			report_flow(flow, FINAL);
 
 			uninit_flow(flow);
 			remove_flow(i);
@@ -425,15 +425,15 @@ static void stop_flow(struct _request_stop_flow *request)
 			continue;
 
 		/* On Other OSes than Linux or FreeBSD, tcp_info will contain all zeroes */
-		flow->statistics[TOTAL].has_tcp_info =
+		flow->statistics[FINAL].has_tcp_info =
 			get_tcp_info(flow,
-				     &flow->statistics[TOTAL].tcp_info)
+				     &flow->statistics[FINAL].tcp_info)
 				? 0 : 1;
 		flow->pmtu = get_pmtu(flow->fd);
 
 		if (flow->settings.reporting_interval)
 			report_flow(flow, INTERVAL);
-		report_flow(flow, TOTAL);
+		report_flow(flow, FINAL);
 
 		uninit_flow(flow);
 		remove_flow(i);
@@ -500,7 +500,7 @@ static void process_requests()
 }
 
 /*
- * Prepare a report. type is either INTERVAL or TOTAL
+ * Prepare a report. type is either INTERVAL or FINAL
  */
 static void report_flow(struct _flow* flow, int type)
 {
@@ -556,7 +556,7 @@ static void report_flow(struct _flow* flow, int type)
 		/* Get latest MTU */
 		flow->pmtu = get_pmtu(flow->fd);
 		report->pmtu = flow->pmtu;
-		if (type == TOTAL)
+		if (type == FINAL)
 			report->imtu = get_imtu(flow->fd);
 		else
 			report->imtu = 0;
@@ -764,13 +764,13 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 		continue;
 remove:
 		if (flow->fd != -1) {
-			flow->statistics[TOTAL].has_tcp_info =
+			flow->statistics[FINAL].has_tcp_info =
 				get_tcp_info(flow,
-					     &flow->statistics[TOTAL].tcp_info)
+					     &flow->statistics[FINAL].tcp_info)
 					? 0 : 1;
 		}
 		flow->pmtu = get_pmtu(flow->fd);
-		report_flow(flow, TOTAL);
+		report_flow(flow, FINAL);
 		uninit_flow(flow);
 		remove_flow(i);
 		DEBUG_MSG(LOG_ERR, "removed flow %d", flow->id);
@@ -812,7 +812,7 @@ void add_report(struct _report* report)
 	pthread_mutex_lock(&mutex);
 	DEBUG_MSG(LOG_DEBUG, "add_report aquired mutex");
 	/* Do not keep too much data */
-	if (pending_reports >= 250 && report->type != TOTAL) {
+	if (pending_reports >= 250 && report->type != FINAL) {
 		free(report);
 		pthread_mutex_unlock(&mutex);
 		return;
@@ -881,7 +881,7 @@ void init_flow(struct _flow* flow, int is_source)
 	flow->finished[READ] = flow->finished[WRITE] = 0;
 
 	flow->addr = 0;
-	/* INTERVAL and TOTAL */
+	/* INTERVAL and FINAL */
 	for (int i = 0; i < 2; i++) {
 		flow->statistics[i].bytes_read = 0;
 		flow->statistics[i].bytes_written = 0;
