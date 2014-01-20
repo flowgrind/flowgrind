@@ -146,9 +146,9 @@ struct _general_options {
 	/** Length of reporting interval, in seconds (option -i) */
 	double reporting_interval;
 	/** Write output to screen (option -q) */
-	bool dont_log_stdout;
+	bool log_to_stdout;
 	/** Write output to logfile (option -w) */
-	bool dont_log_logfile;
+	bool log_to_file;
 	/** Name of logfile (option -l) */
 	char *log_filename;
 	/** Prefix for log- and dumpfile (option -e) */

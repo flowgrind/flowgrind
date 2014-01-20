@@ -411,8 +411,8 @@ static void init_general_options(void)
 {
 	copt.num_flows = 1;
 	copt.reporting_interval = 0.05;
-	copt.dont_log_stdout = false;
-	copt.dont_log_logfile = true;
+	copt.log_to_stdout = true;
+	copt.log_to_file = false;
 	copt.log_filename = NULL;
 	copt.log_filename_prefix = "flowgrind-";
 	copt.clobber = false;
@@ -490,7 +490,7 @@ static void open_logfile(void)
 	static char buf[60] = "";
 	int len = 0;
 
-	if (copt.dont_log_logfile)
+	if (!copt.log_to_file)
 		return;
 
 	if (copt.log_filename) {
@@ -523,7 +523,7 @@ static void open_logfile(void)
 
 static void close_logfile(void)
 {
-	if (copt.dont_log_logfile)
+	if (!copt.log_to_file)
 		return;
 
 	if (fclose(log_stream) == -1)
@@ -532,11 +532,11 @@ static void close_logfile(void)
 
 inline static void log_output(const char *msg)
 {
-	if (!copt.dont_log_stdout) {
+	if (copt.log_to_stdout) {
 		printf("%s", msg);
 		fflush(stdout);
 	}
-	if (!copt.dont_log_logfile) {
+	if (copt.log_to_file) {
 		fprintf(log_stream, "%s", msg);
 		fflush(log_stream);
 	}
@@ -2618,7 +2618,7 @@ static void parse_cmdline(int argc, char **argv) {
 			copt.symbolic = false;
 			break;
 		case 'q':
-			copt.dont_log_stdout = true;
+			copt.log_to_stdout = false;
 			break;
 		case 'u':
 			if (!strcmp(optarg, "s"))
@@ -2631,7 +2631,7 @@ static void parse_cmdline(int argc, char **argv) {
 				usage_hint();
 			}
 		case 'w':
-			copt.dont_log_logfile = false;
+			copt.log_to_file = true;
 			break;
 
 		/* flow options w/o endpoint identifier */
