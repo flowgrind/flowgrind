@@ -134,10 +134,10 @@ enum _extra_socket_option_level
 };
 
 /** Stochastic distributions for traffic generation */
-enum _stochastic_distributions
+enum distributions
 {
 	/** No stochastic distribution */
-	CONSTANT='0',
+	CONSTANT = 0,
 	/** Normal distribution */
 	NORMAL,
 	/** Weibull distribution */
@@ -172,7 +172,7 @@ struct _block
 
 struct _trafgen_options
 {
-	enum _stochastic_distributions distribution;
+	enum distributions distribution;
 	double param_one;
 	double param_two;
 

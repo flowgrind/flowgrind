@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+ * Copyright (C) 2013-2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Arnd Hannemann <arnd@arndnet.de>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
@@ -1982,7 +1982,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 	for (section = strtok(params, ":"); section; section = strtok(NULL, ":")) {
 		double param1 = 0, param2 = 0, unused;
 		char endpointchar, typechar, distchar;
-		enum _stochastic_distributions distr = 0;
+		enum distributions distr = CONSTANT;
 		int j = 0;
 		int k = 0;
 
