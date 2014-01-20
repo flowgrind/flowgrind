@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+ * Copyright (C) 2013-2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Arnd Hannemann <arnd@arndnet.de>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
@@ -140,7 +140,7 @@ enum column_id
 };
 
 /** General controller options */
-struct _opt {
+struct _general_options {
 	/** Number of test flows (option -n) */
 	unsigned short num_flows;
 	/** Length of reporting interval, in seconds (option -i) */

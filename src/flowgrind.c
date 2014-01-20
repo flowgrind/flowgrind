@@ -70,7 +70,7 @@ static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
 /** General controller options */
-static struct _opt opt;
+static struct _general_options copt;
 /** Infos about all flows including flow options */
 static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
@@ -251,7 +251,7 @@ static void usage(void)
 		"  -W x=#       Set requested receiver buffer (advertised window), in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send, in seconds\n"
 /*		"  -Z x=#.#     Set amount of data to be send, in bytes (instead of -t)\n"*/,
-		opt.log_filename_prefix, progname, MIN_BLOCK_SIZE
+		copt.log_filename_prefix, progname, MIN_BLOCK_SIZE
 		);
 	exit(EXIT_SUCCESS);
 }
@@ -409,16 +409,16 @@ static void sighandler(int sig)
 
 static void init_general_options(void)
 {
-	opt.num_flows = 1;
-	opt.reporting_interval = 0.05;
-	opt.dont_log_stdout = false;
-	opt.dont_log_logfile = true;
-	opt.log_filename = NULL;
-	opt.log_filename_prefix = "flowgrind-";
-	opt.clobber = false;
-	opt.mbyte = false;
-	opt.symbolic = true;
-	opt.force_unit = INT_MAX;
+	copt.num_flows = 1;
+	copt.reporting_interval = 0.05;
+	copt.dont_log_stdout = false;
+	copt.dont_log_logfile = true;
+	copt.log_filename = NULL;
+	copt.log_filename_prefix = "flowgrind-";
+	copt.clobber = false;
+	copt.mbyte = false;
+	copt.symbolic = true;
+	copt.force_unit = INT_MAX;
 }
 
 static void init_flow_options(void)
@@ -490,30 +490,30 @@ static void open_logfile(void)
 	static char buf[60] = "";
 	int len = 0;
 
-	if (opt.dont_log_logfile)
+	if (copt.dont_log_logfile)
 		return;
 
-	if (opt.log_filename) {
-		if (!opt.log_filename_prefix || strcmp(opt.log_filename_prefix, "log-") == 0)
-			log_filename = opt.log_filename;
+	if (copt.log_filename) {
+		if (!copt.log_filename_prefix || strcmp(copt.log_filename_prefix, "log-") == 0)
+			log_filename = copt.log_filename;
 		else {
-			log_filename = malloc(strlen(opt.log_filename_prefix) +
-						strlen(opt.log_filename) + 2);
-			strcpy(log_filename, opt.log_filename_prefix);
-			strcat(log_filename, opt.log_filename);
+			log_filename = malloc(strlen(copt.log_filename_prefix) +
+						strlen(copt.log_filename) + 2);
+			strcpy(log_filename, copt.log_filename_prefix);
+			strcat(log_filename, copt.log_filename);
 		}
 	} else {
 		gettime(&now);
 		len = strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
-		log_filename = malloc(strlen(opt.log_filename_prefix) + len + 1 + strlen(".log") );
-		strcpy(log_filename, opt.log_filename_prefix);
+		log_filename = malloc(strlen(copt.log_filename_prefix) + len + 1 + strlen(".log") );
+		strcpy(log_filename, copt.log_filename_prefix);
 		strcat(log_filename, buf);
 		strcat(log_filename, ".log");
 	}
 
 	DEBUG_MSG(LOG_NOTICE, "logging to \"%s\"", log_filename);
 
-	if (!opt.clobber && access(log_filename, R_OK) == 0)
+	if (!copt.clobber && access(log_filename, R_OK) == 0)
 		error(ERR_FATAL, "log file exists");
 
 	log_stream = fopen(log_filename, "w");
@@ -523,7 +523,7 @@ static void open_logfile(void)
 
 static void close_logfile(void)
 {
-	if (opt.dont_log_logfile)
+	if (copt.dont_log_logfile)
 		return;
 
 	if (fclose(log_stream) == -1)
@@ -532,11 +532,11 @@ static void close_logfile(void)
 
 inline static void log_output(const char *msg)
 {
-	if (!opt.dont_log_stdout) {
+	if (!copt.dont_log_stdout) {
 		printf("%s", msg);
 		fflush(stdout);
 	}
-	if (!opt.dont_log_logfile) {
+	if (!copt.dont_log_logfile) {
 		fprintf(log_stream, "%s", msg);
 		fflush(log_stream);
 	}
@@ -667,7 +667,7 @@ static void check_idle(xmlrpc_client *rpc_client)
 static void prepare_grinding(xmlrpc_client *rpc_client)
 {
 	/* prepare flows */
-	for (unsigned int id = 0; id < opt.num_flows; id++) {
+	for (unsigned int id = 0; id < copt.num_flows; id++) {
 		if (sigint_caught)
 			return;
 		prepare_flow(id, rpc_client);
@@ -690,8 +690,8 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 		 "reporting interval = %.2fs, [through] = %s (%s)\n",
 		 (start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
 		 (rc == -1 ? "(unknown)" : me.nodename),
-		 opt.num_flows, opt.reporting_interval,
-		 (opt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
+		 copt.num_flows, copt.reporting_interval,
+		 (copt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
 		 FLOWGRIND_VERSION);
 	log_output(headline);
 
@@ -716,7 +716,7 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 	 * enabled */
 
 	/* set unit for kernel TCP metrics to bytes */
-	if (opt.force_unit == BYTE_BASED || (opt.force_unit != SEGMENT_BASED &&
+	if (copt.force_unit == BYTE_BASED || (copt.force_unit != SEGMENT_BASED &&
 	    strcmp(unique_servers[0].os_name, "Linux")))
 		SET_COLUMN_UNIT(" [B]", COL_TCP_CWND, COL_TCP_SSTH,
 				COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
@@ -776,7 +776,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"write_duration", cflow[id].settings[DESTINATION].duration[WRITE],
 		"read_delay", cflow[id].settings[SOURCE].delay[WRITE],
 		"read_duration", cflow[id].settings[SOURCE].duration[WRITE],
-		"reporting_interval", cflow[id].summarize_only ? 0 : opt.reporting_interval,
+		"reporting_interval", cflow[id].summarize_only ? 0 : copt.reporting_interval,
 
 		"requested_send_buffer_size", cflow[id].settings[DESTINATION].requested_send_buffer_size,
 		"requested_read_buffer_size", cflow[id].settings[DESTINATION].requested_read_buffer_size,
@@ -817,7 +817,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"dscp", (int)cflow[id].settings[DESTINATION].dscp,
 		"ipmtudiscover", cflow[id].settings[DESTINATION].ipmtudiscover,
 #ifdef HAVE_LIBPCAP
-		"filename_prefix", opt.log_filename_prefix,
+		"filename_prefix", copt.log_filename_prefix,
 #endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", cflow[id].settings[DESTINATION].num_extra_socket_options,
 		"extra_socket_options", extra_options);
@@ -883,7 +883,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"write_duration", cflow[id].settings[SOURCE].duration[WRITE],
 		"read_delay", cflow[id].settings[DESTINATION].delay[WRITE],
 		"read_duration", cflow[id].settings[DESTINATION].duration[WRITE],
-		"reporting_interval", cflow[id].summarize_only ? 0 : opt.reporting_interval,
+		"reporting_interval", cflow[id].summarize_only ? 0 : copt.reporting_interval,
 
 		"requested_send_buffer_size", cflow[id].settings[SOURCE].requested_send_buffer_size,
 		"requested_read_buffer_size", cflow[id].settings[SOURCE].requested_read_buffer_size,
@@ -925,7 +925,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"dscp", (int)cflow[id].settings[SOURCE].dscp,
 		"ipmtudiscover", cflow[id].settings[SOURCE].ipmtudiscover,
 #ifdef HAVE_LIBPCAP
-		"filename_prefix", opt.log_filename_prefix,
+		"filename_prefix", copt.log_filename_prefix,
 #endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", cflow[id].settings[SOURCE].num_extra_socket_options,
 		"extra_socket_options", extra_options,
@@ -976,11 +976,11 @@ static void grind_flows(xmlrpc_client *rpc_client)
 			xmlrpc_DECREF(resultP);
 	}
 
-	active_flows = opt.num_flows;
+	active_flows = copt.num_flows;
 
 	while (!sigint_caught) {
-		if ( time_diff_now(&lastreport_begin) <  opt.reporting_interval ) {
-			usleep(opt.reporting_interval - time_diff(&lastreport_begin,&lastreport_end) );
+		if ( time_diff_now(&lastreport_begin) <  copt.reporting_interval ) {
+			usleep(copt.reporting_interval - time_diff(&lastreport_begin,&lastreport_end) );
 			continue;
 		}
 		gettime(&lastreport_begin);
@@ -1175,7 +1175,7 @@ static void report_flow(const struct _daemon* daemon, struct _report* report)
 
 	/* Get matching flow for report */
 	/* TODO Maybe just use compare daemon pointers? */
-	for (id = 0; id < opt.num_flows; id++) {
+	for (id = 0; id < copt.num_flows; id++) {
 		f = &cflow[id];
 
 		for (endpoint = 0; endpoint < 2; endpoint++) {
@@ -1217,7 +1217,7 @@ static void close_flows(void)
 	xmlrpc_env env;
 	xmlrpc_client *client;
 
-	for (unsigned int id = 0; id < opt.num_flows; id++) {
+	for (unsigned int id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "closing flow %d.", id);
 
 		if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
@@ -1313,7 +1313,7 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 			  char *strDataRow, int column_id, double value,
 			  int numDigitsDecimalPart, int *columnWidthChanged)
 {
-	unsigned int maxTooLongColumns = opt.num_flows * 5;
+	unsigned int maxTooLongColumns = copt.num_flows * 5;
 	int lengthData = 0;
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
@@ -1325,7 +1325,7 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 		return;
 
 	/* get max columnsize */
-	if (opt.symbolic) {
+	if (copt.symbolic) {
 		switch ((unsigned int)value) {
 		case INT_MAX:
 			lengthData = strlen("INT_MAX");
@@ -1381,7 +1381,7 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 	/* create columns */
 
 	/* output text for symbolic numbers */
-	if (opt.symbolic) {
+	if (copt.symbolic) {
 		switch ((int)value) {
 		case INT_MAX:
 			for (unsigned int a = lengthData;
@@ -1430,7 +1430,7 @@ static void create_column_str(char *strHead1Row, char *strHead2Row,
 			      char* value, int *columnWidthChanged)
 {
 
-	unsigned int maxTooLongColumns = opt.num_flows * 5;
+	unsigned int maxTooLongColumns = copt.num_flows * 5;
 	int lengthData = 0;
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
@@ -1622,7 +1622,7 @@ static char *create_output(char hash, int id, int type, double begin, double end
 
 inline static double scale_thruput(double thruput)
 {
-        if (opt.mbyte)
+        if (copt.mbyte)
                 return thruput / (1<<20);
         return thruput / 1e6 * (1<<3);
 }
@@ -1785,7 +1785,7 @@ static void report_final(void)
 	char header_buffer[600] = "";
 	char header_nibble[600] = "";
 
-	for (int id = 0; id < opt.num_flows; id++) {
+	for (int id = 0; id < copt.num_flows; id++) {
 
 #define CAT(fmt, args...) do {\
 	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
@@ -1869,7 +1869,7 @@ static void report_final(void)
 				thruput_read = scale_thruput(thruput_read);
 				thruput_written = scale_thruput(thruput_written);
 
-				if (opt.mbyte)
+				if (copt.mbyte)
 					CATC("through = %.6f/%.6fMbyte/s (out/in)", thruput_written, thruput_read);
 				else
 					CATC("through = %.6f/%.6fMbit/s (out/in)", thruput_written, thruput_read);
@@ -2584,11 +2584,11 @@ static void parse_cmdline(int argc, char **argv) {
 			break;
 
 		case 'e':
-			opt.log_filename_prefix = optarg;
+			copt.log_filename_prefix = optarg;
 			break;
 		case 'i':
-			rc = sscanf(optarg, "%lf", &opt.reporting_interval);
-			if (rc != 1 || opt.reporting_interval <= 0) {
+			rc = sscanf(optarg, "%lf", &copt.reporting_interval);
+			if (rc != 1 || copt.reporting_interval <= 0) {
 				fprintf(stderr, "%s: reporting interval must "
 					"be a positive number (in seconds)\n",
 					progname);
@@ -2596,15 +2596,15 @@ static void parse_cmdline(int argc, char **argv) {
 			}
 			break;
 		case 'l':
-			opt.log_filename = optarg;
+			copt.log_filename = optarg;
 			break;
 		case 'm':
 			column_info[COL_THROUGH].header.unit = " [MB/s]";
-			opt.mbyte = true;
+			copt.mbyte = true;
 			break;
 		case 'n':
-			rc = sscanf(optarg, "%hd", &opt.num_flows);
-			if (rc != 1 || opt.num_flows > MAX_FLOWS) {
+			rc = sscanf(optarg, "%hd", &copt.num_flows);
+			if (rc != 1 || copt.num_flows > MAX_FLOWS) {
 				fprintf(stderr, "%s: number of test flows "
 					"must be within [1..%d]\n",
 					progname, MAX_FLOWS);
@@ -2612,26 +2612,26 @@ static void parse_cmdline(int argc, char **argv) {
 			}
 			break;
 		case 'o':
-			opt.clobber = true;
+			copt.clobber = true;
 			break;
 		case 'p':
-			opt.symbolic = false;
+			copt.symbolic = false;
 			break;
 		case 'q':
-			opt.dont_log_stdout = true;
+			copt.dont_log_stdout = true;
 			break;
 		case 'u':
 			if (!strcmp(optarg, "s"))
-				opt.force_unit = SEGMENT_BASED;
+				copt.force_unit = SEGMENT_BASED;
 			else if (!strcmp(optarg, "b"))
-				opt.force_unit = BYTE_BASED;
+				copt.force_unit = BYTE_BASED;
 			else {
 				fprintf(stderr, "%s: unknown argument '%s' "
 					"for option '-u'\n", progname, optarg);
 				usage_hint();
 			}
 		case 'w':
-			opt.dont_log_logfile = false;
+			copt.dont_log_logfile = false;
 			break;
 
 		/* flow options w/o endpoint identifier */
@@ -2746,11 +2746,11 @@ static void parse_cmdline(int argc, char **argv) {
 #endif
 
 	/* Sanity checking flow options */
-	if (opt.num_flows <= max_flow_specifier) {
+	if (copt.num_flows <= max_flow_specifier) {
 		fprintf(stderr, "Must not specify option for non-existing flow.\n");
 		error = 1;
 	}
-	for (id = 0; id<opt.num_flows; id++) {
+	for (id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
 		    cflow[id].late_connect &&
