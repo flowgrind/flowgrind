@@ -1,8 +1,8 @@
 #!/usr/bin/make -f
 
-# Using CDBS for packaging
+%:
+	dh $@
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/cdbs/1/class/autotools.mk
-
-DEB_DESTDIR = $(CURDIR)/debian/flowgrind
+# tell dh_strip that our debugging package is named flowgrind-dbg
+override_dh_strip:
+	dh_strip --dbg-package=flowgrind-dbg

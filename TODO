@@ -2,7 +2,7 @@
 + add some way of specifying normal distribution to -R
 + add interleaving threshold
 + investigate why libpcap does not work in multiple threads
-+ simplify arbitrary socket options
++ simplify arbitrary socket optionsi (eg. new socket opions in Linux 3.13)
 + do something with UDP/SCTP
 + allow to send amount of bytes instead duration
 + add optional columns for sender/receiver buffer
@@ -10,9 +10,10 @@
 + add c style comments to functions for doxygen help
 + fix option -F (comma separation doesn't work)
 + display CPU utilization
-+ investigate why flowgrind burns so much CPU (in comparison to netperf)
++ investigate why flowgrindd burns so much CPU (in comparison to netperf)
 + adapt man pages to the newest changes in help
 + do not call /sbin/sysctl out of flowgrind
 + apply Linux kernel coding style
 + improve output for heterogeneous OS-Environments
 + only display RTT/transac column if reverse traffic is enabled
++ enable 1-way delay measurement
