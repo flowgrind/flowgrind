@@ -172,7 +172,7 @@ static void usage(void)
 #ifdef DEBUG
 		"  -c interval,through,transac,blocks,rtt,iat,delay,kernel,status\n"
 #else
-		"  -c interval,through,transac,blocks,rtt,iat,delay,kernel\n"
+		"  -c interval,through,transac,blocks,rtt,iat,kernel\n"
 #endif /* DEBUG */
 		"               List of column groups to display in output.\n"
 		"               (default: show all but blocks and delay)\n"
@@ -1559,12 +1559,18 @@ static char *create_output(char hash, int id, int type, double begin, double end
 		      iatavg, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_IAT_MAX,
 		      iatmax, 3, &columnWidthChanged);
+#ifdef DEBUG
 	create_column(headerString1, headerString2, dataString, COL_DLY_MIN,
 		      delaymin, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_DLY_AVG,
 		      delayavg, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_DLY_MAX,
 		      delaymax, 3, &columnWidthChanged);
+#else
+	UNUSED_ARGUMENT(delaymin);
+	UNUSED_ARGUMENT(delayavg);
+	UNUSED_ARGUMENT(delaymax);
+#endif /* DEBUG */
 	create_column(headerString1, headerString2, dataString, COL_TCP_CWND,
 		      cwnd, 0, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_TCP_SSTH,
@@ -1914,6 +1920,7 @@ static void report_final(void)
 					     min_iat*1e3, avg_iat*1e3, max_iat*1e3);
 				}
 
+#ifdef DEBUG
 				/* delay */
 				if (cflow[id].final_report[endpoint]->request_blocks_read) {
 					double min_delay = cflow[id].final_report[endpoint]->delay_min;
@@ -1923,6 +1930,7 @@ static void report_final(void)
 					CATC("DLY = %.3f/%.3f/%.3f (min/avg/max)",
 					     min_delay*1e3, avg_delay*1e3, max_delay*1e3);
 				}
+#endif /* DEBUG */
 
 
 				free(cflow[id].final_report[endpoint]);
@@ -2466,13 +2474,12 @@ static void parse_visible_option(char *optarg)
 	HIDE_COLUMNS(COL_BEGIN, COL_END, COL_THROUGH, COL_TRANSAC,
 		     COL_BLOCK_REQU, COL_BLOCK_RESP, COL_RTT_MIN, COL_RTT_AVG,
 		     COL_RTT_MAX, COL_IAT_MIN, COL_IAT_AVG, COL_IAT_MAX,
-		     COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX, COL_TCP_CWND,
-		     COL_TCP_SSTH, COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
-		     COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
-		     COL_TCP_BKOF, COL_TCP_RTT, COL_TCP_RTTVAR, COL_TCP_RTO,
-		     COL_TCP_CA_STATE, COL_SMSS, COL_PMTU);
+		     COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_UACK, COL_TCP_SACK,
+		     COL_TCP_LOST, COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK,
+		     COL_TCP_REOR, COL_TCP_BKOF, COL_TCP_RTT, COL_TCP_RTTVAR,
+		     COL_TCP_RTO, COL_TCP_CA_STATE, COL_SMSS, COL_PMTU);
 #ifdef DEBUG
-	HIDE_COLUMNS(COL_STATUS);
+	HIDE_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX, COL_STATUS);
 #endif /* DEBUG */
 
 	/* Set visibility according option */
@@ -2490,8 +2497,10 @@ static void parse_visible_option(char *optarg)
 			SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
 		else if (!strcmp(token, "iat"))
 			SHOW_COLUMNS(COL_IAT_MIN, COL_IAT_AVG, COL_IAT_MAX);
+#ifdef DEBUG
 		else if (!strcmp(token, "delay"))
 			SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
+#endif /* DEBUG */
 		else if (!strcmp(token, "kernel"))
 			SHOW_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_UACK,
 				     COL_TCP_SACK, COL_TCP_LOST, COL_TCP_RETR,
