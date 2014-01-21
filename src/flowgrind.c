@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
