@@ -28,27 +28,26 @@
 
 #include <errno.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "common.h"
 #include "debug.h"
 
-void error(int errcode, const char *fmt, ...)
+void error(enum error_type errcode, const char *fmt, ...)
 {
 	va_list ap;
+	bool terminate = false;
 	const char *prefix;
-	int fatal = 1;
 	static char error_string[1024];
 
 	switch (errcode) {
 	case ERR_FATAL:
 		prefix = "fatal";
+		terminate = true;
 		break;
 	case ERR_WARNING:
 		prefix = "warning";
-		fatal = 0;
 		break;
 	default:
 		prefix = "(UNKNOWN ERROR TYPE)";
@@ -58,6 +57,6 @@ void error(int errcode, const char *fmt, ...)
 	va_end(ap);
 
 	fprintf(stderr, "%s: %s\n", prefix, error_string);
-	if (fatal)
-		exit(1);
+	if (terminate)
+		exit(EXIT_FAILURE);
 }
