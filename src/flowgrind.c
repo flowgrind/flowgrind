@@ -56,9 +56,9 @@
 #include "debug.h"
 #include "flowgrind.h"
 
-/* XXX add a brief description doxygen */
+/** Logfile for measurement output */
 static FILE *log_stream = NULL;
-/* XXX add a brief description doxygen */
+/** Name of logfile */
 static char *log_filename = NULL;
 /** SIGINT (CTRL-C) received? */
 static bool sigint_caught = false;
@@ -77,6 +77,8 @@ static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 static int active_flows = 0;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /** Infos about the intermediated interval report columns */
 static struct _column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
@@ -148,6 +150,7 @@ static struct _column column_info[] = {
 	 .header.unit = " ", .state.visible = true}
 #endif /* DEBUG */
 };
+#pragma GCC diagnostic pop
 
 /* Forward declarations */
 static void prepare_flow(int id, xmlrpc_client *rpc_client);
@@ -181,13 +184,9 @@ static void usage(void)
 		"               be even more verbose.\n"
 #endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
-		"  -e PRE       Prepend prefix PRE to log and dump filename\n"
-		"               (default: \"%1$s\")\n"
-#else
-		"  -e PRE       Prepend prefix PRE to log filename (default: \"%1$s\")\n"
+		"  -e PRE       Prepend prefix PRE to dump filename (default: \"%1$s\")\n"
 #endif /* HAVE_LIBPCAP */
 		"  -i #.#       Reporting interval, in seconds (default: 0.05s)\n"
-		"  -l NAME      Use log filename NAME (default: timestamp)\n"
 		"  -m           Report throughput in 2**20 bytes/s (default: 10**6 bit/s)\n"
 		"  -n #         Number of test flows (default: 1)\n"
 		"  -o           Overwrite existing log files (default: don't)\n"
@@ -195,7 +194,7 @@ static void usage(void)
 		"  -q           Be quiet, do not log to screen (default: off)\n"
 		"  -u (s|b)     Don't determine unit of Kernel TCP metrics automatically\n"
 		"               Force unit to: s = segment, or b = byte\n"
-		"  -w           Write output to logfile (default: off)\n\n"
+		"  -w [FILE]    Write output to logfile FILE (default: %2$s-'timestamp'.log)\n\n"
 
 		"Flow options:\n"
 		"  Some of these options take the flow endpoint as argument, denoted by 'x' in\n"
@@ -252,7 +251,7 @@ static void usage(void)
 		"  -W x=#       Set requested receiver buffer (advertised window), in bytes\n"
 		"  -Y x=#.#     Set initial delay before the host starts to send, in seconds\n"
 /*		"  -Z x=#.#     Set amount of data to be send, in bytes (instead of -t)\n"*/,
-		copt.log_filename_prefix, progname, MIN_BLOCK_SIZE
+		copt.dump_prefix, progname, MIN_BLOCK_SIZE
 		);
 	exit(EXIT_SUCCESS);
 }
@@ -414,8 +413,9 @@ static void init_general_options(void)
 	copt.reporting_interval = 0.05;
 	copt.log_to_stdout = true;
 	copt.log_to_file = false;
-	copt.log_filename = NULL;
-	copt.log_filename_prefix = "flowgrind-";
+#ifdef HAVE_LIBPCAP
+	copt.dump_prefix = "flowgrind-";
+#endif /* HAVE_LIBPCAP */
 	copt.clobber = false;
 	copt.mbyte = false;
 	copt.symbolic = true;
@@ -487,39 +487,32 @@ static void init_flow_options(void)
 
 static void open_logfile(void)
 {
-	struct timespec now = {0, 0};
-	static char buf[60] = "";
-	int len = 0;
-
 	if (!copt.log_to_file)
 		return;
 
-	if (copt.log_filename) {
-		if (!copt.log_filename_prefix || strcmp(copt.log_filename_prefix, "log-") == 0)
-			log_filename = copt.log_filename;
-		else {
-			log_filename = malloc(strlen(copt.log_filename_prefix) +
-						strlen(copt.log_filename) + 2);
-			strcpy(log_filename, copt.log_filename_prefix);
-			strcat(log_filename, copt.log_filename);
-		}
-	} else {
-		gettime(&now);
-		len = strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S", localtime(&now.tv_sec));
-		log_filename = malloc(strlen(copt.log_filename_prefix) + len + 1 + strlen(".log") );
-		strcpy(log_filename, copt.log_filename_prefix);
-		strcat(log_filename, buf);
-		strcat(log_filename, ".log");
-	}
+	/* Log filename is not given by cmdline */
+	if (!log_filename) {
+		struct timespec now;
+		char buf[60];
 
-	DEBUG_MSG(LOG_NOTICE, "logging to \"%s\"", log_filename);
+		gettime(&now);
+		/* TODO Do not call strftime(); use functions from fg_time.h */
+		strftime(buf, sizeof(buf), "%F-%T", localtime(&now.tv_sec));
+		if (asprintf(&log_filename, "%s-%s.log", progname, buf) == -1)
+			/* TODO Avoid code duplication by introducing a new
+			 * error type 'ERR_MEM' for printing error msg */
+			error(ERR_FATAL, "could not allocate memory for the "
+			      "log filename");
+	}
 
 	if (!copt.clobber && access(log_filename, R_OK) == 0)
 		error(ERR_FATAL, "log file exists");
 
 	log_stream = fopen(log_filename, "w");
-	if (log_stream == NULL)
-		error(ERR_FATAL, "could not open logfile %s", log_filename);
+	if (!log_stream)
+		error(ERR_FATAL, "could not open logfile '%s'", log_filename);
+
+	DEBUG_MSG(LOG_NOTICE, "logging to '%s'", log_filename);
 }
 
 static void close_logfile(void)
@@ -528,7 +521,9 @@ static void close_logfile(void)
 		return;
 
 	if (fclose(log_stream) == -1)
-		error(ERR_FATAL, "could not close logfile %s", log_filename);
+		error(ERR_FATAL, "could not close logfile '%s'", log_filename);
+
+	free(log_filename);
 }
 
 inline static void log_output(const char *msg)
@@ -818,7 +813,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"dscp", (int)cflow[id].settings[DESTINATION].dscp,
 		"ipmtudiscover", cflow[id].settings[DESTINATION].ipmtudiscover,
 #ifdef HAVE_LIBPCAP
-		"filename_prefix", copt.log_filename_prefix,
+		"dump_prefix", copt.dump_prefix,
 #endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", cflow[id].settings[DESTINATION].num_extra_socket_options,
 		"extra_socket_options", extra_options);
@@ -926,7 +921,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"dscp", (int)cflow[id].settings[SOURCE].dscp,
 		"ipmtudiscover", cflow[id].settings[SOURCE].ipmtudiscover,
 #ifdef HAVE_LIBPCAP
-		"filename_prefix", copt.log_filename_prefix,
+		"dump_prefix", copt.dump_prefix,
 #endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", cflow[id].settings[SOURCE].num_extra_socket_options,
 		"extra_socket_options", extra_options,
@@ -2564,7 +2559,7 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 
 	/* parse command line */
-	while ((ch = getopt(argc, argv,":h:vc:de:i:l:mn:opqu:w"
+	while ((ch = getopt(argc, argv,":h:vc:de:i:mn:opqu:w:"
 			    "A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:")) != -1) {
 		switch (ch) {
 		/* Miscellaneous */
@@ -2592,9 +2587,8 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'd':
 			increase_debuglevel();
 			break;
-
 		case 'e':
-			copt.log_filename_prefix = optarg;
+			copt.dump_prefix = optarg;
 			break;
 		case 'i':
 			rc = sscanf(optarg, "%lf", &copt.reporting_interval);
@@ -2604,9 +2598,6 @@ static void parse_cmdline(int argc, char **argv) {
 					progname);
 				usage_hint();
 			}
-			break;
-		case 'l':
-			copt.log_filename = optarg;
 			break;
 		case 'm':
 			column_info[COL_THROUGH].header.unit = " [MB/s]";
@@ -2642,6 +2633,7 @@ static void parse_cmdline(int argc, char **argv) {
 			}
 		case 'w':
 			copt.log_to_file = true;
+			log_filename = strdup(optarg);
 			break;
 
 		/* flow options w/o endpoint identifier */
@@ -2711,20 +2703,25 @@ static void parse_cmdline(int argc, char **argv) {
 
 		/* missing option-argument */
 		case ':':
-			/* Sepcial case. Option -h can called w/ and w/o an
-			 * argument */
+			/* Special cases. Following options can also be called
+			 * w/o an argument */
 			if (optopt == 'h')
 				usage();
-
-			fprintf(stderr, "%s: option '-%c' requires an "
-				"argument\n", progname, optopt);
-			usage_hint();
+			else if (optopt == 'w')
+				copt.log_to_file = true;
+			else {
+				fprintf(stderr, "%s: option '-%c' requires an "
+					"argument\n", progname, optopt);
+				usage_hint();
+			}
+			break;
 
 		/* unknown option */
 		case '?':
 			fprintf(stderr, "%s: unknown option '-%c'\n",
 				progname, optopt);
 			usage_hint();
+			break;
 		}
 	}
 #if 0

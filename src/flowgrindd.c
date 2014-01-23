@@ -254,7 +254,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
 #ifdef HAVE_LIBPCAP
-		"filename_prefix", &dump_filename_prefix_client,
+		"dump_prefix", &dump_prefix,
 #endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options,
@@ -451,7 +451,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
 #ifdef HAVE_LIBPCAP
-		"filename_prefix", &dump_filename_prefix_client,
+		"dump_prefix", &dump_prefix,
 #endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options);
@@ -1035,7 +1035,7 @@ static void parse_option(int argc, char ** argv)
 		case 'w':
 		case 'W':
 #ifdef HAVE_LIBPCAP
-			dump_filename_prefix_server = optarg;
+			dump_dir = optarg;
 			break;
 #endif /* HAVE_LIBPCAP */
 		default:

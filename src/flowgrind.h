@@ -149,10 +149,10 @@ struct _general_options {
 	bool log_to_stdout;
 	/** Write output to logfile (option -w) */
 	bool log_to_file;
-	/** Name of logfile (option -l) */
-	char *log_filename;
-	/** Prefix for log- and dumpfile (option -e) */
-	char *log_filename_prefix;
+#ifdef HAVE_LIBPCAP
+	/** Prefix for dumpfile (option -e) */
+	char *dump_prefix;
+#endif /* HAVE_LIBPCAP */
 	/** Overwrite existing log files (option -o) */
 	bool clobber;
 	/** Report in MByte/s instead of MBit/s (option -m) */
@@ -284,6 +284,16 @@ inline static void usage_hint(void) __attribute__((noreturn));
  * Initialization of general controller options
  */
 static void init_general_options(void);
+
+/**
+ * Create a logfile for measurement output
+ */
+static void open_logfile(void)
+
+/**
+ * Close measurement output file
+ */
+static void close_logfile(void)
 
 /**
  * To show/hide intermediated interval report columns

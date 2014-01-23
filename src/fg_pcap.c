@@ -224,11 +224,11 @@ static void* fg_pcap_work(void* arg)
 	/* generate a nice filename */
 	dump_filename[0] = '\0';
 
-	/* prefix */
-	if (dump_filename_prefix_server)
-		strcat(dump_filename, dump_filename_prefix_server);
-	if (dump_filename_prefix_client)
-		strcat(dump_filename, dump_filename_prefix_client);
+	/* dir and prefix */
+	if (dump_dir)
+		strcat(dump_filename, dump_dir);
+	if (dump_prefix)
+		strcat(dump_filename, dump_prefix);
 
 	/* timestamp */
 	gettime(&now);
