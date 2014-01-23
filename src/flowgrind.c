@@ -77,6 +77,8 @@ static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 static int active_flows = 0;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /** Infos about the intermediated interval report columns */
 static struct _column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
@@ -148,6 +150,7 @@ static struct _column column_info[] = {
 	 .header.unit = " ", .state.visible = true}
 #endif /* DEBUG */
 };
+#pragma GCC diagnostic pop
 
 /* Forward declarations */
 static void prepare_flow(int id, xmlrpc_client *rpc_client);
