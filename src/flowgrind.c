@@ -2559,7 +2559,7 @@ static void parse_cmdline(int argc, char **argv) {
 	}
 
 	/* parse command line */
-	while ((ch = getopt(argc, argv,":h:vc:de:i:mn:opqu:w:"
+	while ((ch = getopt(argc, argv,":h:vc:de:i:mn:opqu:w::"
 			    "A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:")) != -1) {
 		switch (ch) {
 		/* Miscellaneous */
@@ -2633,7 +2633,8 @@ static void parse_cmdline(int argc, char **argv) {
 			}
 		case 'w':
 			copt.log_to_file = true;
-			log_filename = strdup(optarg);
+			if (optarg)
+				log_filename = strdup(optarg);
 			break;
 
 		/* flow options w/o endpoint identifier */
