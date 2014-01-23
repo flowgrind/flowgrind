@@ -63,6 +63,8 @@ AC_CHECK_FUNCS([ \
 	strchr \
 	strerror \
 	uname \
+    asprintf \
+    strdup \
 ], [], [AC_MSG_ERROR(required function not found.)]
 )
 
