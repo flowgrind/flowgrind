@@ -27,9 +27,6 @@ case $host in
   *linux*)
     AC_DEFINE([__LINUX__], [1], [Linux])
     ;;
-  *solaris*)
-    AC_DEFINE([__SOLARIS__], [1], [Solaris])
-    ;;
 esac
 
 AC_C_CONST
@@ -67,7 +64,6 @@ AC_CHECK_FUNCS([ \
     strdup \
 ], [], [AC_MSG_ERROR(required function not found.)]
 )
-
 
 AC_HEADER_STDC
 

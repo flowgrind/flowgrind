@@ -78,9 +78,7 @@
 #define SOL_IP IPPROTO_IP
 #endif /* SOL_IP */
 
-#ifdef __SOLARIS__
-#define RANDOM_MAX  4294967295UL    /* 2**32-1 */
-#elif __DARWIN__
+#ifdef __DARWIN__
 #define RANDOM_MAX  LONG_MAX        /* Darwin */
 #else
 #define RANDOM_MAX  RAND_MAX        /* Linux, FreeBSD */
