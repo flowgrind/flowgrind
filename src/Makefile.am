@@ -15,6 +15,6 @@ flowgrindd_SOURCES = common.c daemon.h daemon.c debug.c destination.h destinatio
 flowgrindd_LDADD = $(LIBS) $(XMLRPC_C_SERVER_LDADD) $(PCAP_LDADD) $(GSL_LDADD)
 flowgrindd_CFLAGS = $(AM_CFLAGS) $(PCAP_CFLAGS) $(XMLRPC_C_SERVER_CFLAGS) $(GSL_CFLAGS)
 
-flowgrind_stop_SOURCES = flowgrind_stop.c
+flowgrind_stop_SOURCES = flowgrind_stop.h flowgrind_stop.c
 flowgrind_stop_LDADD = $(LIBS) $(CURL_LDADD) $(XMLRPC_C_CLIENT_LDADD)
 flowgrind_stop_CFLAGS = $(AM_CFLAGS) $(CURL_FLAGS) $(XMLRPC_C_CLIENT_CFLAGS)

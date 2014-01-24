@@ -4,6 +4,7 @@
  */
 
 /*
+ * Copyright (C) 2013-2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
  * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
@@ -28,35 +29,39 @@
 
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
-#endif /* HAVE_GETOPT_LONG */
-
-#include "common.h"
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
 
-/* Program name. Can get updated from argv[0] in parse_cmdline */
+#include "common.h"
+
+/** Name of the executable */
 static char progname[50] = "flowgrind-stop";
 
-void usage()
+static void usage()
 {
-	printf(
-		"Usage: %1$s <address list>\n"
-		"       %1$s -h|-v\n\n"
-		"This program stops all flows on the daemons running at the given addresses.\n\n"
-		"Options: -h This help\n"
-		"         -v Print version number and exit\n\n"
+	fprintf(stderr,
+		"Usage: %1$s [OPTION]... [ADDRESS]...\n"
+		"Stop all flows on the daemons running at the given addresses.\n\n"
+
+		"Mandatory arguments to long options are mandatory for short options too.\n"
+		"  -h, --help     display this help and exit\n"
+		"  -v, --version  print version information and exit\n\n"
+
 		"Example:\n"
 		"   %1$s localhost 127.2.3.4:5999 example.com\n",
 		progname);
-
-	exit(1);
+	exit(EXIT_SUCCESS);
 }
 
-void stop_flows(char* address)
+inline static void usage_hint(void)
+{
+	fprintf(stderr, "Try '%s -h' for more information\n", progname);
+	exit(EXIT_FAILURE);
+}
+
+static void stop_flows(char* address)
 {
 	xmlrpc_env env;
 	xmlrpc_client *client = 0;
@@ -103,7 +108,6 @@ void stop_flows(char* address)
 		xmlrpc_DECREF(resultP);
 
 cleanup:
-
 	if (env.fault_occurred) {
 		fprintf(stderr, "Could not stop flows on %s: %s (%d)\n",
 			host, env.fault_string, env.fault_code);
@@ -116,56 +120,54 @@ cleanup:
 
 int main(int argc, char *argv[])
 {
-	char ch, *tok;
-	int i;
-	xmlrpc_env rpc_env;
-
 	/* update progname from argv[0] */
 	if (argc > 0) {
 		/* Strip path */
-		tok = strrchr(argv[0], '/');
+		char *tok = strrchr(argv[0], '/');
 		if (tok)
 			tok++;
 		else
 			tok = argv[0];
-		if (*tok) {
-			strncpy(progname, tok, sizeof(progname));
-			progname[sizeof(progname) - 1] = 0;
-		}
+		strncpy(progname, tok, sizeof(progname));
+		progname[sizeof(progname) - 1] = 0;
 	}
 
-#ifdef HAVE_GETOPT_LONG
-	/* getopt_long isn't portable, it's GNU extension */
-	struct option lo[] = {  {"help", 0, 0, 'h' },
-							{"version", 0, 0, 'v'},
-							{0, 0, 0, 0}
-				};
-	while ((ch = getopt_long(argc, argv, "hv", lo, 0)) != -1) {
-#else
-	while ((ch = getopt(argc, argv, "hv")) != -1) {
-#endif /* HAVE_GETOPT_LONG */
+	/* long options */
+	static const struct option long_opt[] = {
+		{"help", no_argument, 0, 'h'},
+		{"version", no_argument, 0, 'v'},
+		{NULL, 0, NULL, 0}
+	};
+
+	/* short options */
+	static const char *short_opt = "hv";
+
+	/* parse command line */
+	int ch;
+	while ((ch = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
 		switch (ch) {
-			case 'h':
-				usage();
-				break;
-			case 'v':
-				fprintf(stderr, "flowgrind version: %s\n", FLOWGRIND_VERSION);
-				exit(0);
-				break;
-			default:
-				usage();
-				break;
+		case 'h':
+			usage();
+			break;
+		case 'v':
+			fprintf(stderr, "%s version: %s\n", progname,
+				FLOWGRIND_VERSION);
+			exit(EXIT_SUCCESS);
+
+		/* unknown option or missing option-argument */
+		case '?':
+			usage_hint();
+			break;
 		}
 	}
 
+	xmlrpc_env rpc_env;
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
-	for (i = optind; i < argc; i++) {
+	for (int i = optind; i < argc; i++)
 		stop_flows(argv[i]);
-	}
 
 	xmlrpc_env_clean(&rpc_env);
-
 	xmlrpc_client_teardown_global_const();
 }
