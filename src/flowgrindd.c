@@ -4,6 +4,7 @@
  */
 
 /*
+ * Copyright (C) 2013-2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Arnd Hannemann <arnd@arndnet.de>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
@@ -39,10 +40,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <netdb.h>
-
-#ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
-#endif /* HAVE_GETOPT_LONG */
 
 /* CPU affinity */
 #ifdef __LINUX__
@@ -71,30 +69,38 @@
 unsigned port = DEFAULT_LISTEN_PORT;
 char *rpc_bind_addr = NULL;
 int cpu = -1;				    /* No CPU affinity */
+/** Name of the executable */
 static char progname[50] = "flowgrindd";
 
-static void __attribute__((noreturn)) usage(void)
+static void usage(void)
 {
 	fprintf(stderr,
-#ifdef HAVE_LIBPCAP
-		"Usage: %1$s [-p #] [-b addr] [-d] [-c #] [-w dir/] [-v]\n"
-#else
-		"Usage: %1$s [-p #] [-b addr] [-d] [-c #] [-v]\n"
-#endif /* HAVE_LIBPCAP */
-		"\t-p #\t\tXML-RPC server port\n"
-		"\t-b addr\t\tXML-RPC server bind address\n"
+		"Usage: %1$s [OPTION]...\n"
+		"Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X.\n\n"
+
+		"Mandatory arguments to long options are mandatory for short options too.\n"
+		"  -b ADDR        XML-RPC server bind address\n"
+		"  -c #           bound daemon to specific CPU\n"
 #ifdef DEBUG
-		"\t-d\t\tincrease debug verbosity, add multiple times (no daemon, log to stderr)\n"
+		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
+		"                 increase the verbosity (no daemon, log to stderr)\n"
 #else
-		"\t-d\t\tdon't fork into background\n"
+		"  -d             don't fork into background\n"
 #endif /* DEBUG */
-		"\t-c #\t\tbound daemon to specific CPU\n"
+		"  -h, --help     display this help and exit\n"
+		"  -p #           XML-RPC server port\n"
 #ifdef HAVE_LIBPCAP
-		"\t-w\t\ttarget directory for dumps\n"
+		"  -w DIR         target directory for dumps\n"
 #endif /* HAVE_LIBPCAP */
-		"\t-v\t\tPrint version information and exit\n",
+		"  -v, --version  print version information and exit\n",
 		progname);
-	exit(1);
+	exit(EXIT_SUCCESS);
+}
+
+inline static void usage_hint(void)
+{
+	fprintf(stderr, "Try '%s -h' for more information\n", progname);
+	exit(EXIT_FAILURE);
 }
 
 static void sighandler(int sig)
@@ -978,83 +984,8 @@ void set_affinity(int cpu)
 			  progname, getpid(), cpu);
 }
 
-static void parse_option(int argc, char ** argv)
+static void parse_cmdline(int argc, char *argv[])
 {
-	int ch, rc;
-	int argcorig = argc;
-#ifdef HAVE_GETOPT_LONG
-	/* getopt_long isn't portable, it's GNU extension */
-	struct option lo[] = {  {"help", 0, 0, 'h' },
-				{"version", 0, 0, 'v'},
-				{"debug", 0, 0, 'd'},
-				{0, 0, 0, 0}
-				};
-	while ((ch = getopt_long(argc, argv, "dDhp:vVw:W:b:c:", lo, 0)) != -1) {
-#else
-	while ((ch = getopt(argc, argv, "dDhp:vVw:W:b:c:")) != -1) {
-#endif /* HAVE_GETOPT_LONG */
-		switch (ch) {
-		case 'h':
-			usage();
-			break;
-		case 'd':
-		case 'D':
-			log_type = LOGTYPE_STDERR;
-			increase_debuglevel();
-			break;
-		case 'c':
-			rc = sscanf(optarg, "%i", &cpu);
-			if (rc != 1) {
-				fprintf(stderr, "failed to "
-					"parse CPU number.\n");
-			}
-			break;
-		case 'p':
-			rc = sscanf(optarg, "%u", &port);
-			if (rc != 1) {
-				fprintf(stderr, "failed to "
-					"parse port number.\n");
-				usage();
-			}
-			// TODO check if port is in valid range
-			break;
-		case 'b':
-			rpc_bind_addr = malloc(strlen(optarg)+1);
-			rc = sscanf(optarg, "%s", rpc_bind_addr);
-			if (rc != 1) {
-				fprintf(stderr, "failed to "
-					"parse bind address.\n");
-				usage();
-			}
-			break;
-		case 'v':
-		case 'V':
-			fprintf(stderr, "flowgrindd version: %s\n", FLOWGRIND_VERSION);
-			exit(0);
-
-		case 'w':
-		case 'W':
-#ifdef HAVE_LIBPCAP
-			dump_dir = optarg;
-			break;
-#endif /* HAVE_LIBPCAP */
-		default:
-			usage();
-		}
-	}
-	argc = argcorig;
-	argc -= optind;
-
-	if (argc != 0)
-		usage();
-}
-
-int main(int argc, char ** argv)
-{
-	struct sigaction sa;
-
-	xmlrpc_env env;
-
 	/* update progname from argv[0] */
 	if (argc > 0) {
 		/* Strip path */
@@ -1063,11 +994,95 @@ int main(int argc, char ** argv)
 			tok++;
 		else
 			tok = argv[0];
-		if (*tok) {
-			strncpy(progname, tok, sizeof(progname));
-			progname[sizeof(progname) - 1] = 0;
+		strncpy(progname, tok, sizeof(progname));
+		progname[sizeof(progname) - 1] = 0;
+	}
+
+	/* long options */
+	static const struct option long_opt[] = {
+		{"help", no_argument, 0, 'h'},
+		{"version", no_argument, 0, 'v'},
+#ifdef DEBUG
+		{"debug", no_argument, 0, 'd'},
+#endif /* DEBUG */
+		{NULL, 0, NULL, 0}
+	};
+
+	/* short options */
+#ifdef HAVE_LIBPCAP
+	static const char *short_opt = "b:c:dhp:w:v";
+#else
+	static const char *short_opt = "b:c:dhp:v";
+#endif /* HAVE_LIBPCAP */
+
+	/* variables from getopt() */
+	extern char *optarg;    /* the option argument */
+	extern int optind;	/* index of the next element */
+	int ch = 0;		/* getopt_long() return value */
+
+	/* parse command line */
+	while ((ch = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
+		switch (ch) {
+		case 'b':
+			rpc_bind_addr = strdup(optarg);
+			if (sscanf(optarg, "%s", rpc_bind_addr) != 1) {
+				fprintf(stderr, "failed to parse bind address\n");
+				usage_hint();
+			}
+			break;
+		case 'c':
+			if (sscanf(optarg, "%i", &cpu) != 1) {
+				fprintf(stderr, "failed to parse CPU number\n");
+				usage_hint();
+			}
+			break;
+		case 'd':
+			log_type = LOGTYPE_STDERR;
+			increase_debuglevel();
+			break;
+		case 'h':
+			usage();
+			break;
+		case 'p':
+			if (sscanf(optarg, "%u", &port) != 1) {
+				fprintf(stderr, "failed to parse port number\n");
+				usage_hint();
+			}
+			break;
+#ifdef HAVE_LIBPCAP
+		case 'w':
+			dump_dir = optarg;
+			break;
+#endif /* HAVE_LIBPCAP */
+		case 'v':
+			fprintf(stderr, "%s version: %s\n", progname,
+				FLOWGRIND_VERSION);
+			exit(EXIT_SUCCESS);
+
+		/* unknown option or missing option-argument */
+		case '?':
+			usage_hint();
+			break;
 		}
 	}
+
+	/* Do we have remaning command line arguments? */
+	if (optind < argc) {
+		fprintf(stderr, "%s: invalid arguments: ", progname);
+		while (optind < argc)
+			fprintf(stderr, "%s ", argv[optind++]);
+		fprintf(stderr, "\n");
+		usage_hint();
+	}
+
+	// TODO more sanity checks... (e.g. if port is in valid range)
+}
+
+int main(int argc, char *argv[])
+{
+	struct sigaction sa;
+
+	xmlrpc_env env;
 
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
 		error(ERR_FATAL, "Could not ignore SIGPIPE: %s",
@@ -1082,7 +1097,7 @@ int main(int argc, char ** argv)
 	sigaction (SIGALRM, &sa, NULL);
 	sigaction (SIGCHLD, &sa, NULL);
 
-	parse_option(argc, argv);
+	parse_cmdline(argc, argv);
 	logging_init();
 #ifdef HAVE_LIBPCAP
 	fg_pcap_init();
@@ -1106,6 +1121,4 @@ int main(int argc, char ** argv)
 	run_rpc_server(&env, port);
 
 	fprintf(stderr, "Control should never reach end of main()\n");
-
-	return 0;
 }
