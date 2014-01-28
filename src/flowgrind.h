@@ -298,12 +298,12 @@ static void close_logfile(void);
 /**
  * To show/hide intermediated interval report columns
  *
- * @param[in] bool column visibility
+ * @param[in] visibility show column
  * @param[in] nargs length of variable argument list
  * @param[in] ... column IDs
  * @see enum column_id
  */
-static void set_column_visibility(bool visibility, unsigned int nvargs, ...);
+static void set_column_visibility(bool visibility, unsigned int nargs, ...);
 
 /**
  * To set the unit the in header of intermediated interval report columns
