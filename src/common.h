@@ -158,9 +158,10 @@ struct _block
 	/** Size of our request or response block */
 	int32_t this_block_size;
 
-	/** Size of the response block we request
+	/**
+	 *  Size of the response block we request
 	 *
-	 *  0 indicates that we don't request a response block
+	 *  0 indicates that we don't request a response block <BR>
 	 * -1 indicates this is a response block (needed for parsing data) */
 	int32_t request_block_size;
 
