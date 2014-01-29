@@ -139,8 +139,15 @@ enum column_id
 #endif /* DEBUG */
 };
 
-/** General controller options */
-struct _general_options {
+/** For long options with no equivalent short option, use a pseudo short option */
+enum long_opt_only
+{
+	HELP_OPTION = CHAR_MAX + 1,
+	LOG_FILE_OPTION
+};
+
+/** Controller options */
+struct _controller_options {
 	/** Number of test flows (option -n) */
 	unsigned short num_flows;
 	/** Length of reporting interval, in seconds (option -i) */
@@ -159,7 +166,7 @@ struct _general_options {
 	bool mbyte;
 	/** Don't use symbolic values instead of number (option -p) */
 	bool symbolic;
-	/** Force kernel output to specific unit  (option -u) */
+	/** Force kernel output to specific unit  (option -s) */
 	enum tcp_stack force_unit;
 };
 

@@ -50,6 +50,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <getopt.h>
 
 #include "common.h"
 #include "fg_socket.h"
@@ -70,8 +71,8 @@ static char progname[50] = "flowgrind";
 static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
-/** General controller options */
-static struct _general_options copt;
+/** Controller options */
+static struct _controller_options copt;
 /** Infos about all flows including flow options */
 static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
@@ -161,40 +162,50 @@ static void print_report(int id, int endpoint, struct _report* report);
 static void usage(void)
 {
 	fprintf(stderr,
-		"Usage %2$s [-h [s|g] | -v]\n"
-		"      %2$s [general options] [flow options]\n\n"
+		"Usage: %1$s [OPTION]...\n"
+		"Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X.\n\n"
 
-		"%2$s allows you to generate traffic among hosts in your network.\n\n"
-
-		"Miscellaneous:\n"
-		"  -h           Show this help and exit\n"
-		"  -h (s|g)     Show additional help for socket options or traffic generation\n"
-		"  -v           Print version information and exit\n\n"
+		"Mandatory arguments to long options are mandatory for short options too.\n\n"
 
 		"General options:\n"
+		"  -h             display this help and exit (same as --help)\n"
+		"      --help[=WHAT]\n"
+		"                 display help and exit. Optional WHAT can either be 'socket' for\n"
+		"                 help on socket options or 'traffic' traffic generation help\n"
+		"  -v, --version  print version information and exit\n\n"
+
+		"Controller options:\n"
+		"  -c, --show-colon=TYPE[,TYPE]...\n"
+		"                 display intermediated interval report column COL in output.\n"
+		"                 Allowed values for TYPE are: 'interval', 'through', 'transac', \n"
 #ifdef DEBUG
-		"  -c interval,through,transac,blocks,rtt,iat,delay,kernel,status\n"
+		"                 'blocks', 'rtt', 'iat', 'delay', 'kernel', 'status'\n"
+		"                 (default: show all but blocks and delay)\n"
 #else
-		"  -c interval,through,transac,blocks,rtt,iat,kernel\n"
+		"                 'blocks', 'rtt', 'iat', 'kernel'\n"
+		"                 (default: show all but blocks and delay)\n"
 #endif /* DEBUG */
-		"               List of column groups to display in output.\n"
-		"               (default: show all but blocks and delay)\n"
 #ifdef DEBUG
-		"  -d           Increase debugging verbosity. Add option multiple times to\n"
-		"               be even more verbose.\n"
+		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
+		"                 increase the verbosity\n"
 #endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
-		"  -e PRE       Prepend prefix PRE to dump filename (default: \"%1$s\")\n"
+		"  -e, --dump-prefix=PRE\n"
+		"                 prepend prefix PRE to dump filename (default: \"%2$s\")\n"
 #endif /* HAVE_LIBPCAP */
-		"  -i #.#       Reporting interval, in seconds (default: 0.05s)\n"
-		"  -m           Report throughput in 2**20 bytes/s (default: 10**6 bit/s)\n"
-		"  -n #         Number of test flows (default: 1)\n"
-		"  -o           Overwrite existing log files (default: don't)\n"
-		"  -p           Don't print symbolic values (like INT_MAX) instead of numbers\n"
-		"  -q           Be quiet, do not log to screen (default: off)\n"
-		"  -u (s|b)     Don't determine unit of Kernel TCP metrics automatically\n"
-		"               Force unit to: s = segment, or b = byte\n"
-		"  -w [FILE]    Write output to logfile FILE (default: %2$s-'timestamp'.log)\n\n"
+		"  -i, --report-interval=#.#\n"
+		"                 reporting interval, in seconds (default: 0.05s)\n"
+		"      --log-file[=FILE]\n"
+		"                 write output to logfile FILE (default: %1$s-'timestamp'.log)\n"
+		"  -m             report throughput in 2**20 bytes/s (default: 10**6 bit/s)\n"
+		"  -n, --flows=#  number of test flows (default: 1)\n"
+		"  -o             overwrite existing log files (default: don't)\n"
+		"  -p             don't print symbolic values (like INT_MAX) instead of numbers\n"
+		"  -q, --quiet    be quiet, do not log to screen (default: off)\n"
+		"  -s, --tcp-stack=TYPE\n"
+		"                 don't determine unit of source TCP stacks automatically. Force\n"
+		"                 unit to TYPE, where TYPE is 'segment' or 'byte'\n"
+		"  -w             write output to logfile (same as --log-file)\n\n"
 
 		"Flow options:\n"
 		"  Some of these options take the flow endpoint as argument, denoted by 'x' in\n"
@@ -203,56 +214,54 @@ static void usage(void)
 		"  specify different values for each endpoints, separate them by comma. For\n"
 		"  instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
-		"  -A x         Use minimal response size needed for RTT calculation\n"
-		"               (same as -G s=p,C,%3$d)\n"
-		"  -B x=#       Set requested sending buffer, in bytes\n"
-		"  -C x         Stop flow if it is experiencing local congestion\n"
-		"  -D x=DSCP    DSCP value for TOS byte\n"
-		"  -E           Enumerate bytes in payload instead of sending zeros\n"
-		"  -F #{,#}     Flow options following this option apply only to flow #{,#}.\n"
-		"               Useful in combination with -n to set specific options\n"
-		"               for certain flows. Numbering starts with 0, so -F 1 refers\n"
-		"               to the second flow\n"
+		"  -A x           use minimal response size needed for RTT calculation\n"
+		"                 (same as -G s=p,C,%3$d)\n"
+		"  -B x=#         set requested sending buffer, in bytes\n"
+		"  -C x           stop flow if it is experiencing local congestion\n"
+		"  -D x=DSCP      DSCP value for TOS byte\n"
+		"  -E             enumerate bytes in payload instead of sending zeros\n"
+		"  -F #[,#]...    flow options following this option apply only to the given flow \n"
+		"                 IDs. Useful in combination with -n to set specific options\n"
+		"                 for certain flows. Numbering starts with 0, so -F 1 refers\n"
+		"                 to the second flow\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g),(C|U|E|N|L|P|W),#1,[#2]\n"
 #else
 		"  -G x=(q|p|g),(C|U),#1,[#2]\n"
 #endif /* HAVE_LIBGSL */
-		"               Activate stochastic traffic generation and set parameters\n"
-		"               according to the used distribution. See 'flowgrind -h g' for\n"
-		"               additional information\n"
+		"                 activate stochastic traffic generation and set parameters\n"
+		"                 according to the used distribution. For additional information \n"
+		"                 see 'flowgrind --help=traffic'\n"
 		"  -H x=HOST[/CONTROL[:PORT]]\n"
-		"               Test from/to HOST. Optional argument is the address and port\n"
-		"               for the CONTROL connection to the same host.\n"
-		"               An endpoint that isn't specified is assumed to be localhost\n"
-		"  -J #         Use random seed # (default: read /dev/urandom)\n"
-		"  -L           Call connect() on test socket immediately before starting to\n"
-		"               send data (late connect). If not specified the test connection\n"
-		"               is established in the preparation phase before the test starts\n"
+		"                 test from/to HOST. Optional argument is the address and port\n"
+		"                 for the CONTROL connection to the same host.\n"
+		"                 An endpoint that isn't specified is assumed to be localhost\n"
+		"  -J #           use random seed # (default: read /dev/urandom)\n"
+		"  -L             call connect() on test socket immediately before starting to\n"
+		"                 send data (late connect). If not specified the test connection\n"
+		"                 is established in the preparation phase before the test starts\n"
 #ifdef HAVE_LIBPCAP
-		"  -M x         dump traffic using libpcap\n"
+		"  -M x           dump traffic using libpcap\n"
 #endif /* HAVE_LIBPCAP */
-		"  -N           shutdown() each socket direction after test flow\n"
-		"  -O x=OPT     Set socket option OPT on test socket. See 'flowgrind -h s' for\n"
-		"               additional information\n"
-		"  -P x         Do not iterate through select() to continue sending in case\n"
-		"               block size did not suffice to fill sending queue (pushy)\n"
-		"  -Q           Summarize only, no intermediated interval reports are\n"
-		"               computed (quiet)\n"
+		"  -N             shutdown() each socket direction after test flow\n"
+		"  -O x=OPT       set socket option OPT on test socket. For additional information\n"
+		"                 see 'flowgrind --help=socket'\n"
+		"  -P x           do not iterate through select() to continue sending in case\n"
+		"                 block size did not suffice to fill sending queue (pushy)\n"
+		"  -Q             summarize only, no intermediated interval reports are\n"
+		"                 computed (quiet)\n"
 		"  -R x=#.#(z|k|M|G)(b|B|o)\n"
-		"               send at specified rate per second, where:\n"
-		"               z = 2**0, k = 2**10, M = 2**20, G = 2**30\n"
-		"               b = bits/s (default), B = bytes/s, o = blocks/s\n"
-		"               (same as -G s=g,C,#)\n"
-		"  -S x=#       Set block (message) size, in bytes (same as -G s=q,C,#)\n"
-		"  -T x=#.#     Set flow duration, in seconds (default: s=10,d=0)\n"
-		"  -U #         Set application buffer size, in bytes (default: 8192)\n"
-		"               truncates values if used with stochastic traffic generation\n"
-		"  -W x=#       Set requested receiver buffer (advertised window), in bytes\n"
-		"  -Y x=#.#     Set initial delay before the host starts to send, in seconds\n"
-/*		"  -Z x=#.#     Set amount of data to be send, in bytes (instead of -t)\n"*/,
-		copt.dump_prefix, progname, MIN_BLOCK_SIZE
-		);
+		"                 send at specified rate per second, where: z = 2**0, k = 2**10,\n"
+		"                 M = 2**20, G = 2**30 b = bits/s (default), B = bytes/s,\n"
+		"                 o = blocks/s (same as -G s=g,C,#)\n"
+		"  -S x=#         set block (message) size, in bytes (same as -G s=q,C,#)\n"
+		"  -T x=#.#       set flow duration, in seconds (default: s=10,d=0)\n"
+		"  -U #           set application buffer size, in bytes (default: 8192)\n"
+		"                 truncates values if used with stochastic traffic generation\n"
+		"  -W x=#         set requested receiver buffer (advertised window), in bytes\n"
+		"  -Y x=#.#       set initial delay before the host starts to send, in seconds\n"
+/*		"  -Z x=#.#       set amount of data to be send, in bytes (instead of -t)\n"*/,
+		progname, copt.dump_prefix, MIN_BLOCK_SIZE);
 	exit(EXIT_SUCCESS);
 }
 
@@ -2027,7 +2036,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 
 		switch (distchar) {
 		case 'N':
-		case 'n':
 			distr = NORMAL;
 			if (!param1 || !param2) {
 				fprintf(stderr, "normal distribution needs two non-zero parameters");
@@ -2035,7 +2043,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 			}
 			break;
 		case 'W':
-		case 'w':
 			distr = WEIBULL;
 			if (!param1 || !param2) {
 				fprintf(stderr, "weibull distribution needs two non-zero parameters\n");
@@ -2043,7 +2050,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 			}
 			break;
 		case 'U':
-		case 'u':
 			distr = UNIFORM;
 			if  ( param1 <= 0 || param2 <= 0 || (param1 > param2) ) {
 				fprintf(stderr, "uniform distribution needs two positive parameters\n");
@@ -2051,7 +2057,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 			}
 			break;
 		case 'E':
-		case 'e':
 			distr = EXPONENTIAL;
 			if (param1 <= 0) {
 				fprintf(stderr, "exponential value needs one positive paramters\n");
@@ -2059,7 +2064,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 			}
 			break;
 		case 'P':
-		case 'p':
 			distr = PARETO;
 			if (!param1 || !param2) {
 				fprintf(stderr, "pareto distribution needs two non-zero parameters\n");
@@ -2067,7 +2071,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 			}
 			break;
 		case 'L':
-		case 'l':
 			distr = LOGNORMAL;
 			if (!param1 || !param2) {
 				fprintf(stderr, "lognormal distribution needs two non-zero parameters\n");
@@ -2075,7 +2078,6 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 			}
 			break;
 		case 'C':
-		case 'c':
 			distr = CONSTANT;
 			if (param1 <= 0) {
 				fprintf(stderr, "constant value needs one positive paramters\n");
@@ -2515,9 +2517,8 @@ static void parse_visible_option(char *optarg)
 	}
 }
 
-static void parse_cmdline(int argc, char **argv) {
+static void parse_cmdline(int argc, char *argv[]) {
 	int rc = 0;
-	int ch = 0;
 	int id = 0;
 	int error = 0;
 	char *tok = NULL;
@@ -2528,14 +2529,9 @@ static void parse_cmdline(int argc, char **argv) {
 	int optint = 0;
 	double optdouble = 0.0;
 
-	/* variables from getopt() */
-	extern char *optarg;	/* the option argument */
-	extern int optopt;	/* the option character */
-
 	#define ASSIGN_BI_FLOW_SETTING(PROPERTY_NAME, PROPERTY_VALUE, id) \
 		if (current_flow_ids[0] == -1) { \
-			int i; \
-			for (i = 0; i < MAX_FLOWS; i++) { \
+			for (int i = 0; i < MAX_FLOWS; i++) { \
 				cflow[i].PROPERTY_NAME = \
 				(PROPERTY_VALUE); \
 			} \
@@ -2552,35 +2548,70 @@ static void parse_cmdline(int argc, char **argv) {
 			tok++;
 		else
 			tok = argv[0];
-		if (*tok) {
-			strncpy(progname, tok, sizeof(progname));
-			progname[sizeof(progname) - 1] = 0;
-		}
+		strncpy(progname, tok, sizeof(progname));
+		progname[sizeof(progname) - 1] = 0;
 	}
 
+	/* long options */
+	static const struct option long_opt[] = {
+		{"help", optional_argument, 0, HELP_OPTION},
+		{"version",no_argument, 0, 'v'},
+		{"show-colon", required_argument, 0, 'c'},
+#ifdef DEBUG
+		{"debug", no_argument, 0, 'd'},
+#endif /* DEBUG */
+		{"dump-prefix", required_argument, 0, 'e'},
+		{"report-interval", required_argument, 0, 'i'},
+		{"log-file", optional_argument, 0, LOG_FILE_OPTION},
+		{"flows", required_argument, 0, 'n'},
+		{"quite",no_argument, 0, 'q'},
+		{"tcp-stack", required_argument, 0, 's'},
+		{NULL, 0, NULL, 0}
+	};
+
+	/* short options */
+#ifdef DEBUG
+	static const char *short_opt = "hvc:de:i:mn:opqs:w"
+		"A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:";
+#else
+	static const char *short_opt = "hvc:e:i:mn:opqs:w"
+		"A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:";
+#endif /* DEBUG */
+
+	/* variables from getopt() */
+	extern char *optarg;	/* option argument */
+	extern int optind;      /* index of the next element */
+	int longindex = 0;	/* index of the long option */
+	int ch = 0;             /* getopt_long() return value */
+
 	/* parse command line */
-	while ((ch = getopt(argc, argv,":h:vc:de:i:mn:opqu:w::"
-			    "A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:")) != -1) {
+	while ((ch = getopt_long(argc, argv, short_opt, long_opt,
+				 &longindex)) != -1) {
 		switch (ch) {
-		/* Miscellaneous */
+		/* general options */
 		case 'h':
-			if (!strcmp(optarg, "s"))
+			usage();
+			break;
+		case HELP_OPTION:
+			if (!optarg)
+				usage();
+			else if (!strcmp(optarg, "socket"))
 				usage_sockopt();
-			else if (!strcmp(optarg, "g"))
+			else if (!strcmp(optarg, "traffic"))
 				usage_trafgenopt();
 			else {
-				fprintf(stderr, "%s: unknown optional "
-					"argument '%s' for option '-h'\n",
-					progname, optarg);
+				fprintf(stderr, "%s: invalid argument '%s' for "
+					"'--%s'\n", progname, optarg,
+					long_opt[longindex].name);
 				usage_hint();
 			}
-			exit(EXIT_SUCCESS);
+			break;
 		case 'v':
 			fprintf(stderr, "%s version: %s\n", progname,
 				FLOWGRIND_VERSION);
 			exit(EXIT_SUCCESS);
 
-		/* general options */
+		/* controller options */
 		case 'c':
 			parse_visible_option(optarg);
 			break;
@@ -2599,9 +2630,14 @@ static void parse_cmdline(int argc, char **argv) {
 				usage_hint();
 			}
 			break;
+		case LOG_FILE_OPTION:
+			copt.log_to_file = true;
+			if (optarg)
+				log_filename = strdup(optarg);
+			break;
 		case 'm':
-			column_info[COL_THROUGH].header.unit = " [MB/s]";
 			copt.mbyte = true;
+			column_info[COL_THROUGH].header.unit = " [MB/s]";
 			break;
 		case 'n':
 			rc = sscanf(optarg, "%hd", &copt.num_flows);
@@ -2621,20 +2657,27 @@ static void parse_cmdline(int argc, char **argv) {
 		case 'q':
 			copt.log_to_stdout = false;
 			break;
-		case 'u':
-			if (!strcmp(optarg, "s"))
+		case 's':
+			if (!strcmp(optarg, "segment"))
 				copt.force_unit = SEGMENT_BASED;
-			else if (!strcmp(optarg, "b"))
+			else if (!strcmp(optarg, "byte"))
 				copt.force_unit = BYTE_BASED;
 			else {
-				fprintf(stderr, "%s: unknown argument '%s' "
-					"for option '-u'\n", progname, optarg);
+				/* TODO Use a more elegant way to distinguish
+				 * between long and short option */
+				if (!longindex)
+					fprintf(stderr, "%s: invalid argument "
+						"'%s' for option '-s'\n",
+						progname, optarg);
+				else
+					fprintf(stderr, "%s: invalid argument "
+						"'%s' for option '--%s'\n",
+						progname, optarg,
+						long_opt[longindex].name);
 				usage_hint();
 			}
 		case 'w':
 			copt.log_to_file = true;
-			if (optarg)
-				log_filename = strdup(optarg);
 			break;
 
 		/* flow options w/o endpoint identifier */
@@ -2702,29 +2745,22 @@ static void parse_cmdline(int argc, char **argv) {
 			parse_flow_option(ch, optarg, current_flow_ids, id-1);
 			break;
 
-		/* missing option-argument */
-		case ':':
-			/* Special cases. Following options can also be called
-			 * w/o an argument */
-			if (optopt == 'h')
-				usage();
-			else if (optopt == 'w')
-				copt.log_to_file = true;
-			else {
-				fprintf(stderr, "%s: option '-%c' requires an "
-					"argument\n", progname, optopt);
-				usage_hint();
-			}
-			break;
-
-		/* unknown option */
+		/* unknown option or missing option-argument */
 		case '?':
-			fprintf(stderr, "%s: unknown option '-%c'\n",
-				progname, optopt);
 			usage_hint();
 			break;
 		}
 	}
+
+	/* Do we have remaning command line arguments? */
+	if (optind < argc) {
+		fprintf(stderr, "%s: invalid arguments: ", progname);
+		while (optind < argc)
+			fprintf(stderr, "%s ", argv[optind++]);
+		fprintf(stderr, "\n");
+		usage_hint();
+	}
+
 #if 0
 	/* Demonstration how to set arbitary socket options. Note that this is
 	 * only intended for quickly testing new options without having to
