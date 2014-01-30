@@ -38,7 +38,7 @@ void increase_debuglevel(void);
 
 #ifdef DEBUG
 
-#include <unistd.h>
+#include <limits.h>
 #include <pthread.h>
 
 /**

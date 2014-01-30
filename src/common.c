@@ -27,9 +27,10 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <errno.h>
-#include <string.h>
-#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include "common.h"
 #include "debug.h"
