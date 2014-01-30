@@ -2689,9 +2689,6 @@ static void parse_cmdline(int argc, char *argv[]) {
 			}
 			current_flow_ids[id] = -1;
 			break;
-		case 'G':
-			parse_trafgen_option(optarg, current_flow_ids, id-1);
-			break;
 		case 'I':
 			SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
 			break;
@@ -2715,6 +2712,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 			break;
 
 		/* flow options w/ endpoint identifier */
+		case 'G':
+			parse_trafgen_option(optarg, current_flow_ids, id-1);
+			break;
 		case 'A':
 		case 'B':
 		case 'C':
