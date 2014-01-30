@@ -98,11 +98,11 @@ static struct _column column_info[] = {
 	{.type = COL_BLOCK_RESP, .header.name = " resp",
 	 .header.unit = " [#]", .state.visible = false},
 	{.type = COL_RTT_MIN, .header.name = " min RTT",
-	 .header.unit = " [ms]", .state.visible = true},
+	 .header.unit = " [ms]", .state.visible = false},
 	{.type = COL_RTT_AVG, .header.name = " avg RTT",
-	 .header.unit = " [ms]", .state.visible = true},
+	 .header.unit = " [ms]", .state.visible = false},
 	{.type = COL_RTT_MAX, .header.name = " max RTT",
-	 .header.unit = " [ms]", .state.visible = true},
+	 .header.unit = " [ms]", .state.visible = false},
 	{.type = COL_IAT_MIN, .header.name = " min IAT",
 	 .header.unit = " [ms]", .state.visible = true},
 	{.type = COL_IAT_AVG, .header.name = " avg IAT",
@@ -149,7 +149,7 @@ static struct _column column_info[] = {
 	 .header.unit = "[B]", .state.visible = true},
 #ifdef DEBUG
 	{.type = COL_STATUS, .header.name = " status",
-	 .header.unit = " ", .state.visible = true}
+	 .header.unit = " ", .state.visible = false}
 #endif /* DEBUG */
 };
 #pragma GCC diagnostic pop
@@ -178,13 +178,12 @@ static void usage(void)
 		"Controller options:\n"
 		"  -c, --show-colon=TYPE[,TYPE]...\n"
 		"                 display intermediated interval report column COL in output.\n"
-		"                 Allowed values for TYPE are: 'interval', 'through', 'transac', \n"
+		"                 Allowed values for TYPE are: 'interval', 'through', 'transac',\n"
+		"                 'iat', 'kernel' (all show per default), and 'blocks', 'rtt',\n"
 #ifdef DEBUG
-		"                 'blocks', 'rtt', 'iat', 'delay', 'kernel', 'status'\n"
-		"                 (default: show all but blocks and delay)\n"
+		"                 'delay', 'status' (optional)\n"
 #else
-		"                 'blocks', 'rtt', 'iat', 'kernel'\n"
-		"                 (default: show all but blocks and delay)\n"
+		"                 'delay' (optional)\n"
 #endif /* DEBUG */
 #ifdef DEBUG
 		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
@@ -238,6 +237,7 @@ static void usage(void)
 		"                 for the CONTROL connection to the same host.\n"
 		"                 An endpoint that isn't specified is assumed to be localhost\n"
 		"  -J #           use random seed # (default: read /dev/urandom)\n"
+		"  -I             enable one-way delay calculation (no clock synchronization)\n"
 		"  -L             call connect() on test socket immediately before starting to\n"
 		"                 send data (late connect). If not specified the test connection\n"
 		"                 is established in the preparation phase before the test starts\n"
@@ -717,9 +717,6 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 	if (!has_freebsd)
 		HIDE_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_RTT,
 			     COL_TCP_RTTVAR, COL_TCP_RTO, COL_SMSS);
-
-	/* TODO Show transac and RTT column only if reverse traffic is
-	 * enabled */
 
 	/* set unit for kernel TCP metrics to bytes */
 	if (copt.force_unit == BYTE_BASED || (copt.force_unit != SEGMENT_BASED &&
@@ -1564,18 +1561,12 @@ static char *create_output(char hash, int id, int type, double begin, double end
 		      iatavg, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_IAT_MAX,
 		      iatmax, 3, &columnWidthChanged);
-#ifdef DEBUG
 	create_column(headerString1, headerString2, dataString, COL_DLY_MIN,
 		      delaymin, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_DLY_AVG,
 		      delayavg, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_DLY_MAX,
 		      delaymax, 3, &columnWidthChanged);
-#else
-	UNUSED_ARGUMENT(delaymin);
-	UNUSED_ARGUMENT(delayavg);
-	UNUSED_ARGUMENT(delaymax);
-#endif /* DEBUG */
 	create_column(headerString1, headerString2, dataString, COL_TCP_CWND,
 		      cwnd, 0, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_TCP_SSTH,
@@ -1887,13 +1878,11 @@ static void report_final(void)
 					CATC("through = %.6f/%.6fMbit/s (out/in)", thruput_written, thruput_read);
 
 				/* transactions */
-
 				transactions_per_sec = cflow[id].final_report[endpoint]->response_blocks_read / MAX(duration_read, duration_write);
 				if (isnan(transactions_per_sec))
 					transactions_per_sec = 0.0;
 				if (transactions_per_sec)
 					CATC("transactions/s = %.2f", transactions_per_sec);
-
 				/* blocks */
 				if (cflow[id].final_report[endpoint]->request_blocks_written || cflow[id].final_report[endpoint]->request_blocks_read)
 					CATC("request blocks = %u/%u (out/in)",
@@ -1904,7 +1893,6 @@ static void report_final(void)
 					CATC("response blocks = %u/%u (out/in)",
 					cflow[id].final_report[endpoint]->response_blocks_written,
 					cflow[id].final_report[endpoint]->response_blocks_read);
-
 				/* rtt */
 				if (cflow[id].final_report[endpoint]->response_blocks_read) {
 					double min_rtt = cflow[id].final_report[endpoint]->rtt_min;
@@ -1914,7 +1902,6 @@ static void report_final(void)
 					CATC("RTT = %.3f/%.3f/%.3f (min/avg/max)",
 					     min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
 				}
-
 				/* iat */
 				if (cflow[id].final_report[endpoint]->request_blocks_read) {
 					double min_iat = cflow[id].final_report[endpoint]->iat_min;
@@ -1924,8 +1911,6 @@ static void report_final(void)
 					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)",
 					     min_iat*1e3, avg_iat*1e3, max_iat*1e3);
 				}
-
-#ifdef DEBUG
 				/* delay */
 				if (cflow[id].final_report[endpoint]->request_blocks_read) {
 					double min_delay = cflow[id].final_report[endpoint]->delay_min;
@@ -1935,8 +1920,6 @@ static void report_final(void)
 					CATC("DLY = %.3f/%.3f/%.3f (min/avg/max)",
 					     min_delay*1e3, avg_delay*1e3, max_delay*1e3);
 				}
-#endif /* DEBUG */
-
 
 				free(cflow[id].final_report[endpoint]);
 
@@ -2254,6 +2237,7 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 
 		switch (ch) {
 		case 'A':
+			SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
 			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
 			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
 			break;
@@ -2466,21 +2450,22 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 	}
 }
 
-static void parse_visible_option(char *optarg)
+static void parse_colon_option(char *optarg)
 {
-	/* Reset all default visibility settings */
+	/* To make it easy (independed of default values), hide all colons */
 	HIDE_COLUMNS(COL_BEGIN, COL_END, COL_THROUGH, COL_TRANSAC,
 		     COL_BLOCK_REQU, COL_BLOCK_RESP, COL_RTT_MIN, COL_RTT_AVG,
 		     COL_RTT_MAX, COL_IAT_MIN, COL_IAT_AVG, COL_IAT_MAX,
-		     COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_UACK, COL_TCP_SACK,
-		     COL_TCP_LOST, COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK,
-		     COL_TCP_REOR, COL_TCP_BKOF, COL_TCP_RTT, COL_TCP_RTTVAR,
-		     COL_TCP_RTO, COL_TCP_CA_STATE, COL_SMSS, COL_PMTU);
+		     COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX, COL_TCP_CWND,
+		     COL_TCP_SSTH, COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
+		     COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
+		     COL_TCP_BKOF, COL_TCP_RTT, COL_TCP_RTTVAR, COL_TCP_RTO,
+		     COL_TCP_CA_STATE, COL_SMSS, COL_PMTU);
 #ifdef DEBUG
-	HIDE_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX, COL_STATUS);
+	HIDE_COLUMNS(COL_STATUS);
 #endif /* DEBUG */
 
-	/* Set visibility according option */
+	/* Set colon visibility according option */
 	for (char *token = strtok(optarg, ","); token;
 	     token = strtok(NULL, ",")) {
 		if (!strcmp(token, "interval"))
@@ -2495,10 +2480,8 @@ static void parse_visible_option(char *optarg)
 			SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
 		else if (!strcmp(token, "iat"))
 			SHOW_COLUMNS(COL_IAT_MIN, COL_IAT_AVG, COL_IAT_MAX);
-#ifdef DEBUG
 		else if (!strcmp(token, "delay"))
 			SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
-#endif /* DEBUG */
 		else if (!strcmp(token, "kernel"))
 			SHOW_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_UACK,
 				     COL_TCP_SACK, COL_TCP_LOST, COL_TCP_RETR,
@@ -2573,10 +2556,10 @@ static void parse_cmdline(int argc, char *argv[]) {
 	/* short options */
 #ifdef DEBUG
 	static const char *short_opt = "hvc:de:i:mn:opqs:w"
-		"A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:";
+		"A:B:CD:EF:G:H:IJ:LNM:O:P:QR:S:T:U:W:Y:";
 #else
 	static const char *short_opt = "hvc:e:i:mn:opqs:w"
-		"A:B:CD:EF:G:H:J:LNM:O:P:QR:S:T:U:W:Y:";
+		"A:B:CD:EF:G:H:IJ:LNM:O:P:QR:S:T:U:W:Y:";
 #endif /* DEBUG */
 
 	/* variables from getopt() */
@@ -2614,7 +2597,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 		/* controller options */
 		case 'c':
-			parse_visible_option(optarg);
+			parse_colon_option(optarg);
 			break;
 		case 'd':
 			increase_debuglevel();
@@ -2708,6 +2691,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 			break;
 		case 'G':
 			parse_trafgen_option(optarg, current_flow_ids, id-1);
+			break;
+		case 'I':
+			SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
 			break;
 		case 'J':
 			rc = sscanf(optarg, "%u", &optint);

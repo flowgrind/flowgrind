@@ -314,6 +314,6 @@ static void set_column_unit(const char *unit, unsigned int nargs, ...);
  *
  * @param[in] optarg argument for option -c
  */
-static void parse_visible_option(char *optarg);
+static void parse_colon_option(char *optarg);
 
 #endif /* _FLOWGRIND_H_ */
