@@ -78,6 +78,7 @@ static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 static int active_flows = 0;
 
+/* Cover gcc bug (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36446) */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /** Infos about the intermediated interval report columns */
@@ -416,7 +417,7 @@ static void sighandler(int sig)
 	}
 }
 
-static void init_general_options(void)
+static void init_controller_options(void)
 {
 	copt.num_flows = 1;
 	copt.reporting_interval = 0.05;
@@ -2948,7 +2949,7 @@ int main(int argc, char *argv[])
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
-	init_general_options();
+	init_controller_options();
 	init_flow_options();
 	parse_cmdline(argc, argv);
 	open_logfile();

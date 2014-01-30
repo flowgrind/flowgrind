@@ -267,39 +267,25 @@ struct _column
         struct _column_state state;
 };
 
-/**
- * Print flowgrind usage and exit
- */
+/** Print flowgrind usage and exit */
 static void usage(void) __attribute__((noreturn));
 
-/**
- * Print help on socket options and exit
- */
+/** Print help on socket options and exit */
 static void usage_sockopt(void) __attribute__((noreturn));
 
-/**
- * Print help on traffic generation and exit
- */
+/** Print help on traffic generation and exit */
 static void usage_trafgenopt(void) __attribute__((noreturn));
 
-/**
- * Print hint upon an error while parsing the command line
- */
+/** Print hint upon an error while parsing the command line */
 inline static void usage_hint(void) __attribute__((noreturn));
 
-/**
- * Initialization of general controller options
- */
-static void init_general_options(void);
+/** Initialization of general controller options */
+static void init_controller_options(void);
 
-/**
- * Create a logfile for measurement output
- */
+/** Create a logfile for measurement output */
 static void open_logfile(void);
 
-/**
- * Close measurement output file
- */
+/** Close measurement output file */
 static void close_logfile(void);
 
 /**

@@ -30,14 +30,10 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-/**
- * Print flowgrind_stop usage and exit
- */
+/** Print flowgrind_stop usage and exit */
 static void usage(void) __attribute__((noreturn));
 
-/**
- * Print hint upon an error while parsing the command line
- */
+/** Print hint upon an error while parsing the command line */
 inline static void usage_hint(void) __attribute__((noreturn));
 
 #endif /* _FLOWGRIND_STOP_H_ */
