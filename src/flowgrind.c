@@ -52,10 +52,27 @@
 #include <syslog.h>
 #include <getopt.h>
 
+/* xmlrpc-c */
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/client.h>
+
+#include "flowgrind.h"
 #include "common.h"
+#include "fg_time.h"
 #include "fg_socket.h"
 #include "debug.h"
-#include "flowgrind.h"
+
+/** Shortcut for show_columns() */
+#define SHOW_COLUMNS(...)                                                   \
+        (set_column_visibility(true, NARGS(__VA_ARGS__), __VA_ARGS__))
+
+/** Shortcut for hide_columns() */
+#define HIDE_COLUMNS(...)                                                   \
+        (set_column_visibility(false, NARGS(__VA_ARGS__), __VA_ARGS__))
+
+/** Shortcut for set_column_header_unit() */
+#define SET_COLUMN_UNIT(unit, ...)                                          \
+        (set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
 /** Logfile for measurement output */
 static FILE *log_stream = NULL;
@@ -64,20 +81,17 @@ static char *log_filename = NULL;
 /** SIGINT (CTRL-C) received? */
 static bool sigint_caught = false;
 /* XXX add a brief description doxygen */
-static xmlrpc_env rpc_env;
+static xmlrpc_env rpc_env = {};
 /** Unique (by URL) flowgrind daemons */
 static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
 /** Controller options */
-static struct _controller_options copt;
+static struct _controller_options copt = {};
 /** Infos about all flows including flow options */
 static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 static int active_flows = 0;
-
-/* String containing name the program is called with */
-extern const char *progname;
 
 /* To cover a gcc bug (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36446) */
 #pragma GCC diagnostic push
@@ -155,12 +169,24 @@ static struct _column column_info[] = {
 };
 #pragma GCC diagnostic pop
 
+/* External global variables */
+extern const char *progname;
+
 /* Forward declarations */
+static void usage(void) __attribute__((noreturn));
+static void usage_sockopt(void) __attribute__((noreturn));
+static void usage_trafgenopt(void) __attribute__((noreturn));
+inline static void usage_hint(void) __attribute__((noreturn));
 static void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void fetch_reports(xmlrpc_client *);
+static void set_column_visibility(bool visibility, unsigned int nargs, ...);
+static void set_column_unit(const char *unit, unsigned int nargs, ...);
 static void report_flow(const struct _daemon* daemon, struct _report* report);
 static void print_report(int id, int endpoint, struct _report* report);
 
+/**
+ * Print flowgrind usage and exit
+ */
 static void usage(void)
 {
 	fprintf(stderr,
@@ -267,6 +293,9 @@ static void usage(void)
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Print help on socket options and exit
+ */
 static void usage_sockopt(void)
 {
 	fprintf(stderr,
@@ -336,6 +365,9 @@ static void usage_sockopt(void)
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Print help on traffic generation and exit
+ */
 static void usage_trafgenopt(void)
 {
 	fprintf(stderr,
@@ -396,6 +428,9 @@ static void usage_trafgenopt(void)
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Print hint upon an error while parsing the command line
+ */
 inline static void usage_hint(void)
 {
 	fprintf(stderr, "Try '%s -h' for more information\n", progname);
@@ -418,6 +453,9 @@ static void sighandler(int sig)
 	}
 }
 
+/**
+ * Initialization of general controller options
+ */
 static void init_controller_options(void)
 {
 	copt.num_flows = 1;
@@ -496,6 +534,9 @@ static void init_flow_options(void)
 	}
 }
 
+/**
+ * Create a logfile for measurement output
+ */
 static void open_logfile(void)
 {
 	if (!copt.log_to_file)
@@ -526,6 +567,9 @@ static void open_logfile(void)
 	DEBUG_MSG(LOG_NOTICE, "logging to '%s'", log_filename);
 }
 
+/**
+ * Close measurement output file
+ */
 static void close_logfile(void)
 {
 	if (!copt.log_to_file)
@@ -1263,6 +1307,14 @@ static void close_flows(void)
 	}
 }
 
+/**
+ * To show/hide intermediated interval report columns
+ *
+ * @param[in] visibility show column
+ * @param[in] nargs length of variable argument list
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
 static void set_column_visibility(bool visibility, unsigned int nargs, ...)
 {
         va_list ap;
@@ -1276,6 +1328,14 @@ static void set_column_visibility(bool visibility, unsigned int nargs, ...)
         va_end(ap);
 }
 
+/**
+ * To set the unit the in header of intermediated interval report columns
+ *
+ * @param[in] unit unit of column header as string
+ * @param[in] nargs length of variable argument list
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
 static void set_column_unit(const char *unit, unsigned int nargs, ...)
 {
         va_list ap;
@@ -2451,6 +2511,12 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 	}
 }
 
+/**
+ * Parse argument for option -c to hide/show intermediated interval report
+ * columns
+ *
+ * @param[in] optarg argument for option -c
+ */
 static void parse_colon_option(char *optarg)
 {
 	/* To make it easy (independed of default values), hide all colons */

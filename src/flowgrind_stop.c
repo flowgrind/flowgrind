@@ -28,17 +28,26 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <getopt.h>
 
+/* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
 
 #include "common.h"
 
-/* String containing name the program is called with */
+/* External global variables */
 extern const char *progname;
 
+/* Forward declarations */
+static void usage(void) __attribute__((noreturn));
+inline static void usage_hint(void) __attribute__((noreturn));
+
+/**
+ * Print flowgrind-stop usage and exit
+ */
 static void usage()
 {
 	fprintf(stderr,
@@ -55,6 +64,9 @@ static void usage()
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Print hint upon an error while parsing the command line
+ */
 inline static void usage_hint(void)
 {
 	fprintf(stderr, "Try '%s -h' for more information\n", progname);

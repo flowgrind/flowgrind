@@ -50,6 +50,7 @@
 #include <sys/cpuset.h>
 #endif /* __LINUX__ */
 
+/* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
@@ -59,20 +60,30 @@
 #include "daemon.h"
 #include "log.h"
 #include "fg_time.h"
-#include "debug.h"
 #include "fg_math.h"
+#include "debug.h"
 
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
 
-unsigned port = DEFAULT_LISTEN_PORT;
-char *rpc_bind_addr = NULL;
-int cpu = -1;				    /* No CPU affinity */
+/* XXX add a brief description doxygen */
+static unsigned port = DEFAULT_LISTEN_PORT;
+/* XXX add a brief description doxygen */
+static char *rpc_bind_addr = NULL;
+/* XXX add a brief description doxygen */
+static int cpu = -1;				    /* No CPU affinity */
 
-/* String containing name the program is called with */
+/* External global variables */
 extern const char *progname;
 
+/* Forward declarations */
+static void usage(void) __attribute__((noreturn));
+inline static void usage_hint(void) __attribute__((noreturn));
+
+/**
+ * Print flowgrindd usage and exit
+ */
 static void usage(void)
 {
 	fprintf(stderr,
@@ -98,6 +109,9 @@ static void usage(void)
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Print hint upon an error while parsing the command line
+ */
 inline static void usage_hint(void)
 {
 	fprintf(stderr, "Try '%s -h' for more information\n", progname);
@@ -985,6 +999,12 @@ void set_affinity(int cpu)
 			  progname, getpid(), cpu);
 }
 
+/**
+ * Parse command line options to initialize global options
+ *
+ * @param[in] argc number of command line arguments
+ * @param[in] argv arguments provided by the command line
+ */
 static void parse_cmdline(int argc, char *argv[])
 {
 	/* long options */
