@@ -389,8 +389,8 @@ static void usage_trafgenopt(void)
 		"Notes: \n"
 		"  - The man page contains more explained examples\n"
 		"  - Using bidirectional traffic generation can lead to unexpected results\n"
-		"  - Usage of -G in conjunction with -A, -R, -V is not recommended, as they\n"
-		"    overwrite each other. -A, -R and -V exist as shortcut only\n",
+		"  - Usage of -G in conjunction with -A, -R, -S is not recommended, as they\n"
+		"    overwrite each other. -A, -R and -S exist as shortcut only\n",
 		progname);
 	exit(EXIT_SUCCESS);
 }
