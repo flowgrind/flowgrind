@@ -36,8 +36,8 @@
 
 #include "common.h"
 
-/** Name of the executable */
-static char progname[50] = "flowgrind-stop";
+/* String containing name the program is called with */
+extern const char *progname;
 
 static void usage()
 {
@@ -121,16 +121,7 @@ cleanup:
 int main(int argc, char *argv[])
 {
 	/* update progname from argv[0] */
-	if (argc > 0) {
-		/* Strip path */
-		char *tok = strrchr(argv[0], '/');
-		if (tok)
-			tok++;
-		else
-			tok = argv[0];
-		strncpy(progname, tok, sizeof(progname));
-		progname[sizeof(progname) - 1] = 0;
-	}
+	set_progname(argv[0]);
 
 	/* long options */
 	static const struct option long_opt[] = {

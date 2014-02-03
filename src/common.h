@@ -307,6 +307,16 @@ struct _report
 	struct _report* next;
 };
 
+/** String containing name the program is called with */
+extern const char *progname;
+
+/**
+ * Set global variable 'progname', based on argv[0]
+ *
+ * @param[in] argv0 the name by which the program was called (argv[0])
+ */
+void set_progname(const char *argv0);
+
 void error(enum error_type errcode, const char *fmt, ...);
 
 #endif /* _COMMON_H_*/

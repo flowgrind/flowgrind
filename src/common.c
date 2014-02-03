@@ -27,12 +27,30 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <errno.h>
-#include <stdarg.h>
+#include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
 #include "common.h"
 #include "debug.h"
+
+const char *progname = NULL;
+
+void set_progname(const char *argv0)
+{
+	/* Sanity check. POSIX requires the invoking process to pass a non-NULL
+	 * argv[0] */
+	if (argv0 == NULL) {
+		fprintf(stderr, "A NULL argv[0] was passed through an exec "
+			"system call.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* Strip path */
+	const char *slash = strrchr(argv0, '/');
+	const char *base = (slash != NULL ? slash + 1 : argv0);
+	progname = base;
+}
 
 void error(enum error_type errcode, const char *fmt, ...)
 {

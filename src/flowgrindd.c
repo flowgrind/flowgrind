@@ -69,8 +69,9 @@
 unsigned port = DEFAULT_LISTEN_PORT;
 char *rpc_bind_addr = NULL;
 int cpu = -1;				    /* No CPU affinity */
-/** Name of the executable */
-static char progname[50] = "flowgrindd";
+
+/* String containing name the program is called with */
+extern const char *progname;
 
 static void usage(void)
 {
@@ -986,18 +987,6 @@ void set_affinity(int cpu)
 
 static void parse_cmdline(int argc, char *argv[])
 {
-	/* update progname from argv[0] */
-	if (argc > 0) {
-		/* Strip path */
-		char *tok = strrchr(argv[0], '/');
-		if (tok)
-			tok++;
-		else
-			tok = argv[0];
-		strncpy(progname, tok, sizeof(progname));
-		progname[sizeof(progname) - 1] = 0;
-	}
-
 	/* long options */
 	static const struct option long_opt[] = {
 		{"help", no_argument, 0, 'h'},
@@ -1097,6 +1086,7 @@ int main(int argc, char *argv[])
 	sigaction (SIGALRM, &sa, NULL);
 	sigaction (SIGCHLD, &sa, NULL);
 
+	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
 	logging_init();
 #ifdef HAVE_LIBPCAP

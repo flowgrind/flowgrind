@@ -65,8 +65,6 @@ static char *log_filename = NULL;
 static bool sigint_caught = false;
 /* XXX add a brief description doxygen */
 static xmlrpc_env rpc_env;
-/** Name of the executable */
-static char progname[50] = "flowgrind";
 /** Unique (by URL) flowgrind daemons */
 static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
@@ -78,7 +76,10 @@ static struct _cflow cflow[MAX_FLOWS];
 /** Number of currently active flows */
 static int active_flows = 0;
 
-/* Cover gcc bug (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36446) */
+/* String containing name the program is called with */
+extern const char *progname;
+
+/* To cover a gcc bug (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36446) */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /** Infos about the intermediated interval report columns */
@@ -2524,18 +2525,6 @@ static void parse_cmdline(int argc, char *argv[]) {
 			(PROPERTY_VALUE); \
 		}
 
-	/* update progname from argv[0] */
-	if (argc > 0) {
-		/* Strip path */
-		tok = strrchr(argv[0], '/');
-		if (tok)
-			tok++;
-		else
-			tok = argv[0];
-		strncpy(progname, tok, sizeof(progname));
-		progname[sizeof(progname) - 1] = 0;
-	}
-
 	/* long options */
 	static const struct option long_opt[] = {
 		{"help", optional_argument, 0, HELP_OPTION},
@@ -2935,6 +2924,7 @@ int main(int argc, char *argv[])
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
+	set_progname(argv[0]);
 	init_controller_options();
 	init_flow_options();
 	parse_cmdline(argc, argv);
