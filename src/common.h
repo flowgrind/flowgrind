@@ -59,6 +59,7 @@
 
 /* XXX add a brief description doxygen */
 #define MAX_EXTRA_SOCKET_OPTIONS 10
+
 /* XXX add a brief description doxygen */
 #define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
 
@@ -123,8 +124,7 @@ enum interval_type {
 };
 
 /* XXX add a brief description doxygen (no underscore for enum) */
-enum _extra_socket_option_level
-{
+enum _extra_socket_option_level {
 	level_sol_socket,
 	level_sol_tcp,
 	level_ipproto_ip,
@@ -134,8 +134,7 @@ enum _extra_socket_option_level
 };
 
 /** Stochastic distributions for traffic generation */
-enum distributions
-{
+enum distributions {
 	/** No stochastic distribution */
 	CONSTANT = 0,
 	/** Normal distribution */
@@ -153,8 +152,7 @@ enum distributions
 };
 
 /** Flowgrind's data block layout */
-struct _block
-{
+struct _block {
 	/** Size of our request or response block */
 	int32_t this_block_size;
 
@@ -172,8 +170,7 @@ struct _block
 };
 
 /* XXX add a brief description doxygen */
-struct _trafgen_options
-{
+struct _trafgen_options {
 	enum distributions distribution;
 	double param_one;
 	double param_two;
@@ -181,8 +178,7 @@ struct _trafgen_options
 };
 
 /* Common to both endpoints */
-struct _flow_settings
-{
+struct _flow_settings {
 	char bind_address[1000];
 
 	double delay[2];
@@ -236,8 +232,7 @@ struct _flow_settings
 
 /* Flowgrinds view on the tcp_info struct for
  * serialization / deserialization */
-struct _fg_tcp_info
-{
+struct _fg_tcp_info {
 	int tcpi_snd_cwnd;
 	int tcpi_snd_ssthresh;
 	int tcpi_unacked;
@@ -256,8 +251,7 @@ struct _fg_tcp_info
 };
 
 /* Report (measurement sample) of a flow */
-struct _report
-{
+struct _report {
 	int id;
 	/* Is this an INTERVAL or FINAL report? */
 	int type;

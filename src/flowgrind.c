@@ -76,20 +76,28 @@
 
 /** Logfile for measurement output */
 static FILE *log_stream = NULL;
+
 /** Name of logfile */
 static char *log_filename = NULL;
+
 /** SIGINT (CTRL-C) received? */
 static bool sigint_caught = false;
+
 /* XXX add a brief description doxygen */
 static xmlrpc_env rpc_env = {};
+
 /** Unique (by URL) flowgrind daemons */
 static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
+
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
+
 /** Controller options */
 static struct _controller_options copt = {};
+
 /** Infos about all flows including flow options */
 static struct _cflow cflow[MAX_FLOWS];
+
 /** Number of currently active flows */
 static int active_flows = 0;
 

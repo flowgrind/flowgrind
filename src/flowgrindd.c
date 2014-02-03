@@ -69,8 +69,10 @@
 
 /* XXX add a brief description doxygen */
 static unsigned port = DEFAULT_LISTEN_PORT;
+
 /* XXX add a brief description doxygen */
 static char *rpc_bind_addr = NULL;
+
 /* XXX add a brief description doxygen */
 static int cpu = -1;				    /* No CPU affinity */
 
