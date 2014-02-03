@@ -1,6 +1,6 @@
 /**
  * @file flowgrind.h
- * @brief Flowgrind Controller
+ * @brief Flowgrind controller
  */
 
 /*

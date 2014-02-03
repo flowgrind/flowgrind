@@ -1,6 +1,6 @@
 /**
  * @file fg_pcap.h
- * @brief Packet capture support for the Flowgrind Daemon
+ * @brief Packet capture support for the Flowgrind daemon
  */
 
 /*

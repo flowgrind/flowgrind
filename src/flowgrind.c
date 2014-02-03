@@ -1,6 +1,6 @@
 /**
  * @file flowgrind.c
- * @brief Flowgrind Controller
+ * @brief Flowgrind controller
  */
 
 /*
@@ -62,15 +62,15 @@
 #include "fg_socket.h"
 #include "debug.h"
 
-/** Shortcut for show_columns() */
+/** To show intermediated interval report columns */
 #define SHOW_COLUMNS(...)                                                   \
         (set_column_visibility(true, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** Shortcut for hide_columns() */
+/** To hide intermediated interval report columns */
 #define HIDE_COLUMNS(...)                                                   \
         (set_column_visibility(false, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** Shortcut for set_column_header_unit() */
+/** To set the unit of intermediated interval report columns */
 #define SET_COLUMN_UNIT(unit, ...)                                          \
         (set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
@@ -1310,7 +1310,7 @@ static void close_flows(void)
 /**
  * To show/hide intermediated interval report columns
  *
- * @param[in] visibility show column
+ * @param[in] visibility show/hide column
  * @param[in] nargs length of variable argument list
  * @param[in] ... column IDs
  * @see enum column_id

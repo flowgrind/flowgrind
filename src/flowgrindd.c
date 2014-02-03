@@ -1,6 +1,6 @@
 /**
  * @file flowgrindd.c
- * @brief Flowgrind Daemon
+ * @brief Flowgrind daemon
  */
 
 /*
