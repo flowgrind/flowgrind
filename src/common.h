@@ -71,6 +71,10 @@
 /** Minium block (message) size we can send */
 #define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
 
+/** These macros gain us a few percent of speed @{ */
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)			    /** @} */
+
 /** Suppress warning for unused argument */
 #define UNUSED_ARGUMENT(x) (void)x
 
