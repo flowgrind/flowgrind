@@ -80,14 +80,19 @@ static int cpu = -1;				    /* No CPU affinity */
 extern const char *progname;
 
 /* Forward declarations */
-static void usage(void) __attribute__((noreturn));
-inline static void usage_hint(void) __attribute__((noreturn));
+static void usage(short status) __attribute__((noreturn));
 
 /**
  * Print flowgrindd usage and exit
  */
-static void usage(void)
+static void usage(short status)
 {
+	/* Syntax error. Emit 'try help' to stderr and exit */
+	if (status != EXIT_SUCCESS) {
+		fprintf(stderr, "Try '%s -h' for more information\n", progname);
+		exit(status);
+	}
+
 	fprintf(stderr,
 		"Usage: %1$s [OPTION]...\n"
 		"Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X.\n\n"
@@ -109,15 +114,6 @@ static void usage(void)
 		"  -v, --version  print version information and exit\n",
 		progname);
 	exit(EXIT_SUCCESS);
-}
-
-/**
- * Print hint upon an error while parsing the command line
- */
-inline static void usage_hint(void)
-{
-	fprintf(stderr, "Try '%s -h' for more information\n", progname);
-	exit(EXIT_FAILURE);
 }
 
 static void sighandler(int sig)
@@ -839,9 +835,8 @@ cleanup:
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_status failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method get_status successful");
-	}
 
 	return ret;
 }
@@ -850,10 +845,8 @@ void create_daemon_thread()
 {
 	int flags;
 
-	if (pipe(daemon_pipe) == -1) {
-		fprintf(stderr, "Could not create pipe: %d", errno);
-		exit(1);
-	}
+	if (pipe(daemon_pipe) == -1)
+		crit("could not create pipe");
 
 	if ((flags = fcntl(daemon_pipe[0], F_GETFL, 0)) == -1)
 		flags = 0;
@@ -862,10 +855,8 @@ void create_daemon_thread()
 	pthread_mutex_init(&mutex, NULL);
 
 	int rc = pthread_create(&daemon_thread, NULL, daemon_main, 0);
-	if (rc) {
-		fprintf(stderr, "Could not start thread: %d", errno);
-		exit(1);
-	}
+	if (rc)
+		crit("could not start thread");
 }
 
 /* creates listen socket for the xmlrpc server */
@@ -1037,14 +1028,14 @@ static void parse_cmdline(int argc, char *argv[])
 		case 'b':
 			rpc_bind_addr = strdup(optarg);
 			if (sscanf(optarg, "%s", rpc_bind_addr) != 1) {
-				fprintf(stderr, "failed to parse bind address\n");
-				usage_hint();
+				errx("failed to parse bind address");
+				usage(EXIT_FAILURE);
 			}
 			break;
 		case 'c':
 			if (sscanf(optarg, "%i", &cpu) != 1) {
-				fprintf(stderr, "failed to parse CPU number\n");
-				usage_hint();
+				errx("failed to parse CPU number");
+				usage(EXIT_FAILURE);
 			}
 			break;
 		case 'd':
@@ -1052,12 +1043,12 @@ static void parse_cmdline(int argc, char *argv[])
 			increase_debuglevel();
 			break;
 		case 'h':
-			usage();
+			usage(EXIT_SUCCESS);
 			break;
 		case 'p':
 			if (sscanf(optarg, "%u", &port) != 1) {
-				fprintf(stderr, "failed to parse port number\n");
-				usage_hint();
+				errx("failed to parse port number");
+				usage(EXIT_FAILURE);
 			}
 			break;
 #ifdef HAVE_LIBPCAP
@@ -1072,7 +1063,7 @@ static void parse_cmdline(int argc, char *argv[])
 
 		/* unknown option or missing option-argument */
 		case '?':
-			usage_hint();
+			usage(EXIT_FAILURE);
 			break;
 		}
 	}
@@ -1083,7 +1074,7 @@ static void parse_cmdline(int argc, char *argv[])
 		while (optind < argc)
 			fprintf(stderr, "%s ", argv[optind++]);
 		fprintf(stderr, "\n");
-		usage_hint();
+		usage(EXIT_FAILURE);
 	}
 
 	// TODO more sanity checks... (e.g. if port is in valid range)
@@ -1128,5 +1119,5 @@ int main(int argc, char *argv[])
 
 	run_rpc_server(&env, port);
 
-	fprintf(stderr, "Control should never reach end of main()\n");
+	critx("control should never reach end of main()");
 }
