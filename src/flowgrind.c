@@ -537,8 +537,7 @@ static void init_flow_options(void)
 		int rc = read(data, &cflow[id].random_seed, sizeof (int) );
 		close(data);
 		if(rc == -1)
-			error(ERR_FATAL, "read /dev/urandom failed: %s",
-			      strerror(errno));
+			crit("read /dev/urandom failed");
 	}
 }
 
@@ -559,18 +558,15 @@ static void open_logfile(void)
 		/* TODO Do not call strftime(); use functions from fg_time.h */
 		strftime(buf, sizeof(buf), "%F-%T", localtime(&now.tv_sec));
 		if (asprintf(&log_filename, "%s-%s.log", progname, buf) == -1)
-			/* TODO Avoid code duplication by introducing a new
-			 * error type 'ERR_MEM' for printing error msg */
-			error(ERR_FATAL, "could not allocate memory for the "
-			      "log filename");
+			critx("could not allocate memory for the log filename");
 	}
 
 	if (!copt.clobber && access(log_filename, R_OK) == 0)
-		error(ERR_FATAL, "log file exists");
+		critx("log file exists");
 
 	log_stream = fopen(log_filename, "w");
 	if (!log_stream)
-		error(ERR_FATAL, "could not open logfile '%s'", log_filename);
+		critx("could not open logfile '%s'", log_filename);
 
 	DEBUG_MSG(LOG_NOTICE, "logging to '%s'", log_filename);
 }
@@ -584,7 +580,7 @@ static void close_logfile(void)
 		return;
 
 	if (fclose(log_stream) == -1)
-		error(ERR_FATAL, "could not close logfile '%s'", log_filename);
+		critx("could not close logfile '%s'", log_filename);
 
 	free(log_filename);
 }
@@ -604,8 +600,7 @@ inline static void log_output(const char *msg)
 inline static void die_if_fault_occurred(xmlrpc_env *env)
 {
     if (env->fault_occurred)
-	error(ERR_FATAL, "XML-RPC Fault: %s (%d)\n", env->fault_string,
-	      env->fault_code);
+	critx("XML-RPC Fault: %s (%d)\n", env->fault_string, env->fault_code);
 }
 
 /* creates an xmlrpc_client for connect to server, uses global env rpc_env */
@@ -714,10 +709,9 @@ static void check_idle(xmlrpc_client *rpc_client)
 			die_if_fault_occurred(&rpc_env);
 
 			if (started || num_flows)
-				error(ERR_FATAL, "node %s is busy. %d flows, "
-				      "started=%d\n",
-				      unique_servers[j].server_url,
-				      num_flows, started);
+				critx("node %s is busy. %d flows, started=%d",
+				       unique_servers[j].server_url, num_flows,
+				       started);
 			xmlrpc_DECREF(resultP);
 		}
 	}
@@ -2992,7 +2986,7 @@ int main(int argc, char *argv[])
 	sa.sa_flags = 0;
 	sigemptyset (&sa.sa_mask);
 	if (sigaction(SIGINT, &sa, NULL))
-		error(ERR_FATAL, "Error: Could not set handler for SIGINT\n");
+		critx("could not set handler for SIGINT");
 
 	xmlrpc_client *rpc_client = 0;
 	xmlrpc_env_init(&rpc_env);

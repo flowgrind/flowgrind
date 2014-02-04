@@ -41,11 +41,8 @@ void set_progname(const char *argv0)
 {
 	/* Sanity check. POSIX requires the invoking process to pass a non-NULL
 	 * argv[0] */
-	if (argv0 == NULL) {
-		fprintf(stderr, "A NULL argv[0] was passed through an exec "
-			"system call.\n");
-		exit(EXIT_FAILURE);
-	}
+	if (argv0 == NULL)
+		errx("a NULL argv[0] was passed through an exec system call");
 
 	/* Strip path */
 	const char *slash = strrchr(argv0, '/');
@@ -53,29 +50,40 @@ void set_progname(const char *argv0)
 	progname = base;
 }
 
-void error(enum error_type errcode, const char *fmt, ...)
+void error(enum error_levels level, int errnum, const char *message, ...)
 {
 	va_list ap;
-	bool terminate = false;
-	const char *prefix;
-	static char error_string[1024];
+	const char *err_prefix;
+	const char *err_errnum;
 
-	switch (errcode) {
-	case ERR_FATAL:
-		prefix = "fatal";
-		terminate = true;
-		break;
+	switch (level) {
 	case ERR_WARNING:
-		prefix = "warning";
+		err_prefix = "warning";
+		break;
+	case ERR_ERROR:
+	case ERR_CRIT:
+		err_prefix = "error";
 		break;
 	default:
-		prefix = "(UNKNOWN ERROR TYPE)";
+		err_prefix = "unknown error";
 	}
-	va_start(ap, fmt);
-	vsnprintf(error_string, sizeof(error_string), fmt, ap);
+
+	fprintf(stderr, "%s: %s: ", progname, err_prefix);
+
+	va_start(ap, message);
+	vfprintf(stderr, message, ap);
 	va_end(ap);
 
-	fprintf(stderr, "%s: %s\n", prefix, error_string);
-	if (terminate)
+	if (errnum) {
+		err_errnum = strerror(errnum);
+		if (!err_errnum)
+			err_errnum = "unknown system error";
+		fprintf (stderr, ": %s", err_errnum);
+	}
+
+	fprintf(stderr, "\n");
+	fflush (stderr);
+
+	if (level > ERR_ERROR)
 		exit(EXIT_FAILURE);
 }

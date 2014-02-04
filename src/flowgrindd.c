@@ -1095,11 +1095,8 @@ int main(int argc, char *argv[])
 
 	xmlrpc_env env;
 
-	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-		error(ERR_FATAL, "Could not ignore SIGPIPE: %s",
-				strerror(errno));
-		/* NOTREACHED */
-	}
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		crit("could not ignore SIGPIPE");
 
 	sa.sa_handler = sighandler;
 	sa.sa_flags = 0;
@@ -1117,9 +1114,8 @@ int main(int argc, char *argv[])
 	if (log_type == LOGTYPE_SYSLOG) {
 		/* Need to call daemon() before creating the thread because
 		 * it internally calls fork() which does not copy threads. */
-		if (daemon(0, 0) == -1) {
-			error(ERR_FATAL, "daemon() failed: %s", strerror(errno));
-		}
+		if (daemon(0, 0) == -1)
+			crit("daemon() failed");
 		logging_log(LOG_NOTICE, "flowgrindd daemonized");
 	}
 

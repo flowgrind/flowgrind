@@ -31,6 +31,7 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <limits.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -93,14 +94,35 @@
 	   typeof (c) _c = (c);	    \
 	   if (_s < _c) s = c; })
 
-/** Error types */
-enum error_type {
-	/** Fatal error; exit program */
-	ERR_FATAL,
-	/** Normal error; do not abort execution */
-	ERR_WARNING,
-	/** CMD parsing error; exit program */
-	ERR_USAGE
+/** To report an critical error w/ the corresponding system error message */
+#define crit(...) (error(ERR_CRIT, errno, __VA_ARGS__))
+/** To report an critical error w/ the system error message 'code' */
+#define critc(code, ...) (error(ERR_CRIT, code, __VA_ARGS__))
+/** To report an critical error w/o a system error message */
+#define critx(...) (error(ERR_CRIT, 0, __VA_ARGS__))
+
+/** To report an error w/ the corresponding system error message */
+#define err(...) (error(ERR_ERROR, errno, __VA_ARGS__))
+/** To report an error w/ the system error message 'code' */
+#define errc(code, ...) (error(ERR_ERROR, code, __VA_ARGS__))
+/** To report an error w/o a system error message */
+#define errx(...) (error(ERR_ERROR, 0, __VA_ARGS__))
+
+/** To report a warning w/ the corresponding system error message */
+#define warn(...) (error(ERR_WARNING, errno, __VA_ARGS__))
+/** To report a warning w/ the system error message 'code' */
+#define warnc(code, ...) (error(ERR_WARNING, code, __VA_ARGS__))
+/** To report a warning w/ a system error message */
+#define warnx(...) (error(ERR_WARNING, 0, __VA_ARGS__))
+
+/** Error level, in order of increasing importance: */
+enum error_levels {
+	/** Warning conditions */
+	ERR_WARNING = 0,
+	/** Error conditions */
+	ERR_ERROR,
+	/** Critical conditions */
+	ERR_CRIT,
 };
 
 /** Flow endpoint */
@@ -316,6 +338,20 @@ extern const char *progname;
  */
 void set_progname(const char *argv0);
 
-void error(enum error_type errcode, const char *fmt, ...);
+/**
+ * General error-reporting function
+ *
+ * It outputs to stderr the program name, a colon and a space, a fixed error
+ * message based on the error level, and a second colon and a space followed
+ * by the error message. If errnum is nonzero, a third colon and a
+ * space followed by the string given by strerror(errnum) is printed
+ *
+ * @param[in] level error level. An error level higher then ERR_ERROR calls
+ * exit() to terminate using given status
+ * @param[in] errnum error number. If nonzero the corresponding system error
+ * message is printed
+ * @param[in] message error message in printf-style format with optional args
+ */
+void error(enum error_levels level, int errnum, const char *message, ...);
 
 #endif /* _COMMON_H_*/

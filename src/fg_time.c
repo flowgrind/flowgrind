@@ -117,19 +117,16 @@ int gettime(struct timespec *tp)
 	/* Find out clock resolution */
 	if (!res.tv_sec && !res.tv_nsec) {
 		if (clock_getres(CLOCK_REALTIME, &res) != 0)
-			error(ERR_FATAL, "clock_getres() failed: %s",
-			      strerror(errno));
+			err("clock_getres() failed");
 
 		/* Clock resolution is low than expected (1ns) */
 		if (res.tv_nsec != 1)
-			error(ERR_WARNING, "Low clock resolution: %ldns",
-			      res.tv_nsec);
+			warnx("Low clock resolution: %ldns", res.tv_nsec);
 	}
 
 	/* Get wall-clock time */
 	if (clock_gettime(CLOCK_REALTIME, tp) != 0)
-		error(ERR_FATAL, "clock_gettime() failed: %s",
-		      strerror(errno));
+		crit("clock_gettime() failed");
 
 	/* Return clock resolution */
 	return res.tv_nsec;
