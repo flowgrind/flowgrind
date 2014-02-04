@@ -30,6 +30,7 @@
 #include <time.h>
 
 #include "log.h"
+#include "common.h"
 
 char timestr[20];
 char *logstr = NULL;
@@ -38,11 +39,8 @@ int log_type = LOGTYPE_SYSLOG;
 void logging_init (void)
 {
 	logstr = malloc(LOGGING_MAXLEN);
-	if (logstr == NULL) {
-		fprintf(stderr, "Error: Unable to allocate memory for logging "
-			"string.\n");
-		exit(1);
-	}
+	if (logstr == NULL)
+		critx("unable to allocate memory for logging string");
 
 	switch (log_type) {
 	case LOGTYPE_SYSLOG:
