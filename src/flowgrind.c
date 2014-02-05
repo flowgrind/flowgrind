@@ -58,7 +58,10 @@
 
 #include "flowgrind.h"
 #include "common.h"
+#include "fg_error.h"
+#include "fg_progname.h"
 #include "fg_time.h"
+#include "fg_stdlib.h"
 #include "fg_socket.h"
 #include "debug.h"
 

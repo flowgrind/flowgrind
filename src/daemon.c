@@ -57,9 +57,11 @@
 
 #include "common.h"
 #include "debug.h"
+#include "fg_error.h"
+#include "fg_math.h"
+#include "fg_stdlib.h"
 #include "fg_socket.h"
 #include "fg_time.h"
-#include "fg_math.h"
 #include "log.h"
 #include "daemon.h"
 #include "source.h"

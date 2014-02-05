@@ -58,7 +58,6 @@
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
 
-#include "common.h"
 #include "debug.h"
 #include "fg_socket.h"
 

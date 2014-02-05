@@ -54,14 +54,13 @@
 #include <pthread.h>
 #include <float.h>
 
-#include "common.h"
 #include "debug.h"
+#include "fg_error.h"
+#include "fg_math.h"
 #include "fg_pcap.h"
 #include "fg_socket.h"
 #include "fg_time.h"
-#include "fg_math.h"
 #include "log.h"
-#include "daemon.h"
 
 void remove_flow(unsigned int i);
 

@@ -43,7 +43,6 @@
 
 #include "daemon.h"
 #include "debug.h"
-#include "common.h"
 #include "fg_math.h"
 #include "trafgen.h"
 

@@ -26,13 +26,12 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <stdbool.h>
 
-#include "common.h"
+#include "fg_error.h"
 #include "fg_time.h"
 
 const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size)

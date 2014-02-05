@@ -38,6 +38,7 @@
 #include <string.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <netinet/tcp.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <getopt.h>
@@ -59,8 +60,11 @@
 #include "common.h"
 #include "daemon.h"
 #include "log.h"
-#include "fg_time.h"
+#include "fg_error.h"
 #include "fg_math.h"
+#include "fg_progname.h"
+#include "fg_time.h"
+#include "fg_stdlib.h"
 #include "debug.h"
 
 #ifdef HAVE_LIBPCAP

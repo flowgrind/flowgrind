@@ -38,10 +38,10 @@
 #include <float.h>
 #include <fenv.h>
 
-#include "common.h"
 #include "debug.h"
 #include "fg_math.h"
-#include "daemon.h"
+#include "fg_error.h"
+#include "fg_stdlib.h"
 
 #ifdef HAVE_LIBGSL
 #include <gsl/gsl_rng.h>

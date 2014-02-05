@@ -30,7 +30,7 @@
 #include <time.h>
 
 #include "log.h"
-#include "common.h"
+#include "fg_error.h"
 
 char timestr[20];
 char *logstr = NULL;

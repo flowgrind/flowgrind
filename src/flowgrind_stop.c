@@ -37,6 +37,8 @@
 #include <xmlrpc-c/client.h>
 
 #include "common.h"
+#include "fg_error.h"
+#include "fg_progname.h"
 
 /* External global variables */
 extern const char *progname;
