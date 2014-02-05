@@ -87,7 +87,7 @@ static char *log_filename = NULL;
 static bool sigint_caught = false;
 
 /* XXX add a brief description doxygen */
-static xmlrpc_env rpc_env = {};
+static xmlrpc_env rpc_env;
 
 /** Unique (by URL) flowgrind daemons */
 static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
@@ -96,7 +96,7 @@ static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 static unsigned int num_unique_servers = 0;
 
 /** Controller options */
-static struct _controller_options copt = {};
+static struct _controller_options copt;
 
 /** Infos about all flows including flow options */
 static struct _cflow cflow[MAX_FLOWS];
@@ -1220,7 +1220,7 @@ static void report_flow(const struct _daemon* daemon, struct _report* report)
 	const char* server_url = daemon->server_url;
 	int endpoint;
 	int id;
-	struct _cflow *f;
+	struct _cflow *f = NULL;
 
 	/* Get matching flow for report */
 	/* TODO Maybe just use compare daemon pointers? */
