@@ -112,7 +112,7 @@ void time_add(struct timespec *tp, double seconds);
  * nanoseconds since the Epoch
  *
  * @param[out] tp current time in seconds and nanoseconds since the Epoch
- * @return clock resolution
+ * @return return 0 for success, or -1 for failure
  */
 int gettime(struct timespec *tp);
 
