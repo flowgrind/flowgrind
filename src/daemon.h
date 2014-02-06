@@ -32,6 +32,9 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #ifdef HAVE_LIBGSL
 #include <gsl/gsl_rng.h>
 #endif /* HAVE_LIBGSL */
