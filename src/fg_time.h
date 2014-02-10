@@ -37,8 +37,8 @@
 #define NSEC_PER_SEC	1000000000L
 
 /**
- * Converts timespec struct into a null-terminated string and stores the string
- * in a user-supplied buffer
+ * Converts timespec struct @p tp into a null-terminated string and stores the
+ * string in a user-supplied buffer @p buf
  *
  * @param[in] tp point in time
  * @param[out] buf buffer with room for at least 30 bytes
@@ -48,7 +48,7 @@
 const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size);
 
 /**
- * Converts timespec struct into a null-terminated string
+ * Converts timespec struct @p tp into a null-terminated string
  *
  * @param[in] tp point in time
  * @return string of the form '2013-12-09 12:00:48.34369902'
@@ -56,7 +56,8 @@ const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size);
 const char *ctimespec(const struct timespec *tp);
 
 /**
- * Returns the time difference between two specific points in time
+ * Returns the time difference between two the specific points in time @p tp1
+ * and @p tp2
  *
  * Negative if the first point in time is chronologically after the second one
  *
@@ -67,7 +68,7 @@ const char *ctimespec(const struct timespec *tp);
 double time_diff(const struct timespec *tp1, const struct timespec *tp2);
 
 /**
- * Returns time difference between now and a specific point in time
+ * Returns time difference between now and the specific point in time @p tp
  *
  * @param[in] tp point in time
  * @return time difference in nanoseconds
@@ -75,7 +76,8 @@ double time_diff(const struct timespec *tp1, const struct timespec *tp2);
 double time_diff_now(const struct timespec *tp);
 
 /**
- * Returns true if second point in time is chronologically after the first one
+ * Returns true if second point in time @p tp2 is chronologically after the
+ * first point in time @p tp1
  *
  * @param[in] tp1 point in time
  * @param[in] tp2 point in time
@@ -84,7 +86,7 @@ double time_diff_now(const struct timespec *tp);
 bool time_is_after(const struct timespec *tp1, const struct timespec *tp2);
 
 /**
- * Normalizes timespec struct
+ * Normalizes timespec struct @p tp
  *
  * Ensures that the equation 0 <= tp->tv_nsec < NSEC_PER_SEC holds, meaning
  * that the amount of nanoseconds is not negative less than one second
@@ -95,7 +97,7 @@ bool time_is_after(const struct timespec *tp1, const struct timespec *tp2);
 bool normalize_tp(struct timespec *tp);
 
 /**
- * Add an amount of time to a specific point in time
+ * Add an amount of time @p seconds to a specific point in time @p tp
  *
  * @param[in,out] tp point in time
  * @param[in] seconds amount of time in seconds

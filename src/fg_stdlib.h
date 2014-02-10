@@ -34,7 +34,7 @@
 /** Suppress warning for unused argument */
 #define UNUSED_ARGUMENT(x) (void)x
 
-/** To determine number of parameters */
+/** To determine the number of input arguments passed to a funczion call */
 #define NARGS(...) (sizeof((int[]){__VA_ARGS__})/sizeof(int))
 
 /** Assign value if it less than current one */

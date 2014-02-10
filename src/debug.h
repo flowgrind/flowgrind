@@ -44,9 +44,9 @@ void increase_debuglevel(void);
 /**
  * Print debug message to standard error
  *
- * In case the debug level is higher than the given debug level, print debug
- * message together with current time, the delta in time since the last and
- * first debug call, the function in which the debug call occurs, and the
+ * If the debug level is higher than the given debug level @p LVL, print debug
+ * message @p MSG together with current time, the delta in time since the last
+ * and first debug call, the function in which the debug call occurs, and the
  * process and thread PID
  */
 #define DEBUG_MSG(LVL, MSG, ...)					     \
