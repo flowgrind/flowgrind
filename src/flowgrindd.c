@@ -63,6 +63,7 @@
 #include "fg_error.h"
 #include "fg_math.h"
 #include "fg_progname.h"
+#include "fg_string.h"
 #include "fg_time.h"
 #include "fg_stdlib.h"
 #include "debug.h"
@@ -1074,10 +1075,11 @@ static void parse_cmdline(int argc, char *argv[])
 
 	/* Do we have remaning command line arguments? */
 	if (optind < argc) {
-		fprintf(stderr, "%s: invalid arguments: ", progname);
+		char *args = NULL;
 		while (optind < argc)
-			fprintf(stderr, "%s ", argv[optind++]);
-		fprintf(stderr, "\n");
+			asprintf_append(&args, "%s ", argv[optind++]);
+		errx("invalid arguments: %s", args);
+		free(args);
 		usage(EXIT_FAILURE);
 	}
 
