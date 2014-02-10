@@ -72,8 +72,9 @@ enum error_levels {
  * exit() to terminate using given status
  * @param[in] errnum error number. If nonzero the corresponding system error
  * message is printed
- * @param[in] message error message in printf-style format with optional args
+ * @param[in] fmt error message in printf-style format with optional args
  */
-void error(enum error_levels level, int errnum, const char *message, ...);
+void error(enum error_levels level, int errnum, const char *fmt, ...)
+	__attribute__((format(printf, 3, 4)));
 
 #endif /* _FG_ERROR_H_ */

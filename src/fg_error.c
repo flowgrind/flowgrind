@@ -32,7 +32,7 @@
 #include "fg_progname.h"
 #include "fg_error.h"
 
-void error(enum error_levels level, int errnum, const char *message, ...)
+void error(enum error_levels level, int errnum, const char *fmt, ...)
 {
 	va_list ap;
 	const char *err_prefix;
@@ -52,8 +52,8 @@ void error(enum error_levels level, int errnum, const char *message, ...)
 
 	fprintf(stderr, "%s: %s: ", progname, err_prefix);
 
-	va_start(ap, message);
-	vfprintf(stderr, message, ap);
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 
 	if (errnum) {
