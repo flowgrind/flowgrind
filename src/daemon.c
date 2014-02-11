@@ -186,10 +186,7 @@ void uninit_flow(struct _flow *flow)
 		fg_pcap_cleanup(flow);
 	}
 #endif
-	free(flow->read_block);
-	free(flow->write_block);
-	free(flow->addr);
-	free(flow->error);
+	free_all(flow->read_block, flow->write_block, flow->addr, flow->error);
 	free_math_functions(flow);
 }
 

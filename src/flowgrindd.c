@@ -368,13 +368,9 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"real_read_buffer_size", request->real_read_buffer_size);
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
-	free(destination_host);
-	free(cc_alg);
-	free(bind_address);
+	if (request)
+		free_all(request->r.error, request);
+	free_all(destination_host, cc_alg, bind_address);
 
 	if (extra_options)
 		xmlrpc_DECREF(extra_options);
@@ -554,12 +550,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"real_listen_read_buffer_size", request->real_listen_read_buffer_size);
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
-	free(cc_alg);
-	free(bind_address);
+	if (request)
+		free_all(request->r.error, request);
+	free_all(cc_alg, bind_address);
 
 	if (extra_options)
 		xmlrpc_DECREF(extra_options);
@@ -607,10 +600,8 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	ret = xmlrpc_build_value(env, "i", 0);
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
+	if (request)
+		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method start_flows failed: %s", env->fault_string);
@@ -759,10 +750,8 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	ret = xmlrpc_build_value(env, "()");
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
+	if (request)
+		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method stop_flow failed: %s", env->fault_string);
@@ -833,10 +822,8 @@ static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 		"num_flows", request->num_flows);
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
+	if (request)
+		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_status failed: %s", env->fault_string);

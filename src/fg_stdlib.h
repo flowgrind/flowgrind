@@ -37,6 +37,17 @@
 /** To determine the number of input arguments passed to a funczion call */
 #define NARGS(...) (sizeof((int[]){__VA_ARGS__})/sizeof(int))
 
+/** To vectorize an arbitrary function that takes any type of pointer */
+#define FN_APPLY(type, fn, ...) do {				\
+	void *stopper = (int[]){0};				\
+	void **list = (type*[]){__VA_ARGS__, stopper};		\
+	for (int i=0; list[i] != stopper; i++)			\
+		fn(list[i]);					\
+} while(0)
+
+/** To free() an arbitrary number of variables */
+#define free_all(...) FN_APPLY(void, free, __VA_ARGS__);
+
 /** Assign value if it less than current one */
 #define ASSIGN_MIN(s, c)	    \
 	({ typeof (s) _s = (s);	    \

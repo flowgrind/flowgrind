@@ -671,9 +671,7 @@ static void check_version(xmlrpc_client *rpc_client)
 			unique_servers[j].api_version = api_version;
 			strncpy(unique_servers[j].os_name, os_name, 256);
 			strncpy(unique_servers[j].os_release, os_release, 256);
-			free(version);
-			free(os_name);
-			free(os_release);
+			free_all(version, os_name, os_release);
 			xmlrpc_DECREF(resultP);
 		}
 	}
