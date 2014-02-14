@@ -1,6 +1,6 @@
 /**
  * @file daemon.c
- * @brief Routines used by the Flowgrind Daemon
+ * @brief Routines used by the Flowgrind daemon
  */
 
 /*
@@ -57,9 +57,11 @@
 
 #include "common.h"
 #include "debug.h"
+#include "fg_error.h"
+#include "fg_math.h"
+#include "fg_stdlib.h"
 #include "fg_socket.h"
 #include "fg_time.h"
-#include "fg_math.h"
 #include "log.h"
 #include "daemon.h"
 #include "source.h"
@@ -184,10 +186,7 @@ void uninit_flow(struct _flow *flow)
 		fg_pcap_cleanup(flow);
 	}
 #endif
-	free(flow->read_block);
-	free(flow->write_block);
-	free(flow->addr);
-	free(flow->error);
+	free_all(flow->read_block, flow->write_block, flow->addr, flow->error);
 	free_math_functions(flow);
 }
 
@@ -229,8 +228,7 @@ static void prepare_wfds(struct timespec *now, struct _flow *flow, fd_set *wfds)
 				  flow->id);
 			rc = shutdown(flow->fd,SHUT_WR);
 			if (rc == -1)
-				error(ERR_WARNING, "shutdown() SHUT_WR failed: "
-				      "%s", strerror(errno));
+				warn("shutdown() SHUT_WR failed");
 		}
 	}
 
@@ -243,12 +241,10 @@ static int prepare_rfds(struct timespec *now, struct _flow *flow, fd_set *rfds)
 
 	if (!flow_in_delay(now, flow, READ) && !flow_sending(now, flow, READ)) {
 		if (!flow->finished[READ] && flow->settings.shutdown) {
-			error(ERR_WARNING, "server flow %u missed to shutdown",
-			      flow->id);
+			warnx("server flow %u missed to shutdown", flow->id);
 			rc = shutdown(flow->fd, SHUT_RD);
 			if (rc == -1)
-				error(ERR_WARNING, "shutdown SHUT_RD "
-				      "failed: %s", strerror(errno));
+				warn("shutdown SHUT_RD failed");
 			flow->finished[READ] = 1;
 		}
 	}
@@ -637,8 +633,7 @@ int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
 
 	rc = getsockopt(flow->fd, IPPROTO_TCP, TCP_INFO, &tmp_info, &info_len);
 	if (rc == -1) {
-		error(ERR_WARNING, "getsockopt() failed: %s",
-		      strerror(errno));
+		warn("getsockopt() failed");
 		return -1;
 	}
 	#define CPY_INFO_MEMBER(a) info->a = (int) tmp_info.a;
@@ -735,14 +730,12 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 						(void *)&error_number,
 						&error_number_size);
 				if (rc == -1) {
-					error(ERR_WARNING, "failed to get "
-					      "errno for non-blocking connect: "
-					      "%s", strerror(errno));
+					warn("failed to get errno for"
+					     "non-blocking connect");
 					goto remove;
 				}
 				if (error_number != 0) {
-					fprintf(stderr, "connect: %s\n",
-						strerror(error_number));
+					warnc(error_number, "connect");
 					goto remove;
 				}
 			}
@@ -790,9 +783,7 @@ void* daemon_main(void* ptr __attribute__((unused)))
 		if (rc < 0) {
 			if (errno == EINTR)
 				continue;
-			error(ERR_FATAL, "pselect() failed: %s",
-			      strerror(errno));
-			exit(1);
+			crit("pselect() failed");
 		}
 		DEBUG_MSG(LOG_DEBUG, "pselect() finished");
 
@@ -949,7 +940,7 @@ static int write_data(struct _flow *flow)
 			DEBUG_MSG(LOG_WARNING, "write() returned %d on flow %d, "
 				   "fd %d: %s", rc, flow->id, flow->fd,
 				   strerror(errno));
-			flow_error(flow, "Premature end of test: %s",
+			flow_error(flow, "premature end of test: %s",
 				   strerror(errno));
 			return rc;
 		}
@@ -1057,8 +1048,7 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 		DEBUG_MSG(LOG_ERR, "server shut down test socket of "
 			  "flow %d", flow->id);
 		if (!flow->finished[READ] || !flow->settings.shutdown)
-			error(ERR_WARNING, "Premature shutdown of server "
-			      "flow");
+			warnx("premature shutdown of server flow");
 			flow->finished[READ] = 1;
 			return -1;
 	}

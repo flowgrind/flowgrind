@@ -1,6 +1,6 @@
 /**
  * @file fg_pcap.c
- * @brief Packet capture support for the Flowgrind Daemon
+ * @brief Packet capture support for the Flowgrind daemon
  */
 
 /*
@@ -37,7 +37,6 @@
 #include <pthread.h>
 #include <errno.h>
 
-#include "common.h"
 #include "debug.h"
 #include "fg_socket.h"
 #include "fg_time.h"

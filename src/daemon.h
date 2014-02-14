@@ -1,6 +1,6 @@
 /**
  * @file daemon.h
- * @brief Routines used by the Flowgrind Daemon
+ * @brief Routines used by the Flowgrind daemon
  */
 
 /*

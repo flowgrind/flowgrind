@@ -1,6 +1,6 @@
 /**
  * @file common.h
- * @brief Routines used by the Flowgrind Daemon and Controller
+ * @brief Data structures used by the Flowgrind daemon and controller
  */
 
 /*
@@ -30,17 +30,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#include <limits.h>
-#include <stdio.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/in_systm.h>
-#include <netinet/tcp.h>
-
 #include "gitversion.h"
 
 #ifdef GITVERSION
@@ -61,47 +50,23 @@
 /** Maximal number of parallel flows */
 #define MAX_FLOWS 2048
 
+/* XXX add a brief description doxygen */
 #define MAX_EXTRA_SOCKET_OPTIONS 10
+
+/* XXX add a brief description doxygen */
 #define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
 
 #ifndef TCP_CA_NAME_MAX
+/* XXX add a brief description doxygen */
 #define TCP_CA_NAME_MAX 16
 #endif /* TCP_CA_NAME_MAX */
 
-/** Minium block (message) size we can send*/
+/** Minium block (message) size we can send */
 #define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
-
-/** Suppress warning for unused argument */
-#define UNUSED_ARGUMENT(x) (void)x
-
-/** To determine number of parameters */
-#define NARGS(...) (sizeof((int[]){__VA_ARGS__})/sizeof(int))
-
-/** Assign value if it less than current one */
-#define ASSIGN_MIN(s, c)	    \
-	({ typeof (s) _s = (s);	    \
-	   typeof (c) _c = (c);	    \
-	   if (_s > _c) s = c; })
-
-/** Assign value if it more than current one */
-#define ASSIGN_MAX(s, c)	    \
-	({ typeof (s) _s = (s);	    \
-	   typeof (c) _c = (c);	    \
-	   if (_s < _c) s = c; })
-
-/** Error types */
-enum error_type {
-	/** Fatal error; exit program */
-	ERR_FATAL,
-	/** Normal error; do not abort execution */
-	ERR_WARNING,
-	/** CMD parsing error; exit program */
-	ERR_USAGE
-};
 
 /** Flow endpoint */
 enum flow_endpoint {
-	/** Enpoint thats opens the connection */
+	/** Endpoint that opens the connection */
 	SOURCE = 0,
 	/** Endpoint that accepts the connection */
 	DESTINATION,
@@ -123,8 +88,8 @@ enum interval_type {
 	FINAL
 };
 
-enum _extra_socket_option_level
-{
+/* XXX add a brief description doxygen (no underscore for enum) */
+enum _extra_socket_option_level {
 	level_sol_socket,
 	level_sol_tcp,
 	level_ipproto_ip,
@@ -134,8 +99,7 @@ enum _extra_socket_option_level
 };
 
 /** Stochastic distributions for traffic generation */
-enum distributions
-{
+enum distributions {
 	/** No stochastic distribution */
 	CONSTANT = 0,
 	/** Normal distribution */
@@ -153,8 +117,7 @@ enum distributions
 };
 
 /** Flowgrind's data block layout */
-struct _block
-{
+struct _block {
 	/** Size of our request or response block */
 	int32_t this_block_size;
 
@@ -171,8 +134,8 @@ struct _block
 	struct timespec data2;
 };
 
-struct _trafgen_options
-{
+/* XXX add a brief description doxygen */
+struct _trafgen_options {
 	enum distributions distribution;
 	double param_one;
 	double param_two;
@@ -180,8 +143,7 @@ struct _trafgen_options
 };
 
 /* Common to both endpoints */
-struct _flow_settings
-{
+struct _flow_settings {
 	char bind_address[1000];
 
 	double delay[2];
@@ -235,8 +197,7 @@ struct _flow_settings
 
 /* Flowgrinds view on the tcp_info struct for
  * serialization / deserialization */
-struct _fg_tcp_info
-{
+struct _fg_tcp_info {
 	int tcpi_snd_cwnd;
 	int tcpi_snd_ssthresh;
 	int tcpi_unacked;
@@ -255,8 +216,7 @@ struct _fg_tcp_info
 };
 
 /* Report (measurement sample) of a flow */
-struct _report
-{
+struct _report {
 	int id;
 	/* Is this an INTERVAL or FINAL report? */
 	int type;
@@ -276,11 +236,11 @@ struct _report
 
 	/* TODO Create an array for IAT / RTT and delay */
 
-	/** Minimum interarrival time */
+	/** Minimum inter-arrival time */
 	double iat_min;
-	/** Maximum interarrival time */
+	/** Maximum inter-arrival time */
 	double iat_max;
-	/** Accumulated interarrival time */
+	/** Accumulated inter-arrival time */
 	double iat_sum;
 	/** Minimum one-way delay */
 	double delay_min;
@@ -306,7 +266,5 @@ struct _report
 
 	struct _report* next;
 };
-
-void error(enum error_type errcode, const char *fmt, ...);
 
 #endif /* _COMMON_H_*/

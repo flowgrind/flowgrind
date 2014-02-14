@@ -1,6 +1,6 @@
 /**
  * @file trafgen.h
- * @brief Routines used by the Flowgrind Daemon for advanced traffic generation
+ * @brief Routines used by the Flowgrind daemon for advanced traffic generation
  */
 
 /*

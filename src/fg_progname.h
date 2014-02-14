@@ -1,12 +1,10 @@
 /**
- * @file fg_pcap.h
- * @brief Packet capture support for the Flowgrind daemon
+ * @file fg_progname.h
+ * @brief Program name management
  */
 
 /*
- * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
- * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
- * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
+ * Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  *
  * This file is part of Flowgrind. Flowgrind is free software; you can
  * redistribute it and/or modify it under the terms of the GNU General
@@ -22,29 +20,21 @@
  *
  */
 
-#ifndef _FG_PCAP_H_
-#define _FG_PCAP_H_
+#ifndef _FG_PROGNAME_H_
+#define _FG_PROGNAME_H_
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#include <pcap.h>
-#include <pthread.h>
+/** String containing name the program is called with */
+extern const char *progname;
 
-#include "daemon.h"
+/**
+ * Set global variable 'progname', based on argv[0]
+ *
+ * @param[in] argv0 the name by which the program was called (argv[0])
+ */
+void set_progname(const char *argv0);
 
-void fg_pcap_init();
-void fg_pcap_go(struct _flow *);
-void fg_pcap_cleanup(void* arg);
-
-pthread_mutex_t pcap_mutex;
-
-/* pthread barrier does not exists in Darwin */
-#ifndef __DARWIN__
-pthread_barrier_t pcap_barrier;
-#endif /* __DARWIN__ */
-
-pcap_if_t * alldevs;
-
-#endif /* _FG_PCAP_H_ */
+#endif /* _FG_PROGNAME_H_*/

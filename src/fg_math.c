@@ -38,10 +38,10 @@
 #include <float.h>
 #include <fenv.h>
 
-#include "common.h"
 #include "debug.h"
 #include "fg_math.h"
-#include "daemon.h"
+#include "fg_error.h"
+#include "fg_stdlib.h"
 
 #ifdef HAVE_LIBGSL
 #include <gsl/gsl_rng.h>
@@ -86,10 +86,8 @@ extern void init_math_functions (struct _flow *flow, unsigned long seed)
 		int data = open("/dev/urandom", O_RDONLY);
 		rc = read(data, &seed, sizeof (long) );
 		close(data);
-		if(rc == -1) {
-			error(ERR_FATAL, "read /dev/urandom failed: %s",
-			      strerror(errno));
-		}
+		if(rc == -1)
+			crit("read /dev/urandom failed");
 	}
 
 #ifdef HAVE_LIBGSL

@@ -26,13 +26,12 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <stdbool.h>
 
-#include "common.h"
+#include "fg_error.h"
 #include "fg_time.h"
 
 const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size)
@@ -114,23 +113,16 @@ int gettime(struct timespec *tp)
 {
 	static struct timespec res = {.tv_sec = 0, .tv_nsec = 0};
 
-	/* Find out clock resolution */
+	/* Find out clock resolution. Will only be retrieved on first call */
 	if (!res.tv_sec && !res.tv_nsec) {
 		if (clock_getres(CLOCK_REALTIME, &res) != 0)
-			error(ERR_FATAL, "clock_getres() failed: %s",
-			      strerror(errno));
+			err("unable to determine clock resolution");
 
-		/* Clock resolution is low than expected (1ns) */
+		/* Clock resolution is lower than expected (1ns) */
 		if (res.tv_nsec != 1)
-			error(ERR_WARNING, "Low clock resolution: %ldns",
-			      res.tv_nsec);
+			warnx("low clock resolution: %ldns", res.tv_nsec);
 	}
 
 	/* Get wall-clock time */
-	if (clock_gettime(CLOCK_REALTIME, tp) != 0)
-		error(ERR_FATAL, "clock_gettime() failed: %s",
-		      strerror(errno));
-
-	/* Return clock resolution */
-	return res.tv_nsec;
+	return clock_gettime(CLOCK_REALTIME, tp);
 }

@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <errno.h>
@@ -57,7 +58,6 @@
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
 
-#include "common.h"
 #include "debug.h"
 #include "fg_socket.h"
 

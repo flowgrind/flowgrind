@@ -28,19 +28,35 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <getopt.h>
 
+/* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
 
 #include "common.h"
+#include "fg_error.h"
+#include "fg_progname.h"
 
-/** Name of the executable */
-static char progname[50] = "flowgrind-stop";
+/* External global variables */
+extern const char *progname;
 
-static void usage()
+/* Forward declarations */
+static void usage(short status) __attribute__((noreturn));
+
+/**
+ * Print flowgrind-stop usage and exit
+ */
+static void usage(short status)
 {
+	/* Syntax error. Emit 'try help' to stderr and exit */
+	if (status != EXIT_SUCCESS) {
+		fprintf(stderr, "Try '%s -h' for more information\n", progname);
+		exit(status);
+	}
+
 	fprintf(stderr,
 		"Usage: %1$s [OPTION]... [ADDRESS]...\n"
 		"Stop all flows on the daemons running at the given addresses.\n\n"
@@ -55,12 +71,6 @@ static void usage()
 	exit(EXIT_SUCCESS);
 }
 
-inline static void usage_hint(void)
-{
-	fprintf(stderr, "Try '%s -h' for more information\n", progname);
-	exit(EXIT_FAILURE);
-}
-
 static void stop_flows(char* address)
 {
 	xmlrpc_env env;
@@ -71,7 +81,7 @@ static void stop_flows(char* address)
 	char host[1000], url[1000];
 
 	if (strlen(address) > sizeof(url) - 50) {
-		fprintf(stderr, "Address too long: %s\n", address);
+		errx("address too long: %s", address);
 		return;
 	}
 
@@ -81,12 +91,12 @@ static void stop_flows(char* address)
 	p = strchr(host, ':');
 	if (p) {
 		if (p == host) {
-			fprintf(stderr, "Error, no address given: %s\n", address);
+			errx("no address given: %s", address);
 			return;
 		}
 		port = atoi(p + 1);
 		if (port < 1 || port > 65535) {
-			fprintf(stderr, "Error, invalid port given: %s\n", address);
+			errx("invalid port given: %s", address);
 			return;
 		}
 		*p = 0;
@@ -109,8 +119,8 @@ static void stop_flows(char* address)
 
 cleanup:
 	if (env.fault_occurred) {
-		fprintf(stderr, "Could not stop flows on %s: %s (%d)\n",
-			host, env.fault_string, env.fault_code);
+		warnx("could not stop flows on %s: %s (%d)",
+		      host, env.fault_string, env.fault_code);
 	}
 	if (client)
 		xmlrpc_client_destroy(client);
@@ -121,16 +131,7 @@ cleanup:
 int main(int argc, char *argv[])
 {
 	/* update progname from argv[0] */
-	if (argc > 0) {
-		/* Strip path */
-		char *tok = strrchr(argv[0], '/');
-		if (tok)
-			tok++;
-		else
-			tok = argv[0];
-		strncpy(progname, tok, sizeof(progname));
-		progname[sizeof(progname) - 1] = 0;
-	}
+	set_progname(argv[0]);
 
 	/* long options */
 	static const struct option long_opt[] = {
@@ -147,7 +148,7 @@ int main(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
 		switch (ch) {
 		case 'h':
-			usage();
+			usage(EXIT_SUCCESS);
 			break;
 		case 'v':
 			fprintf(stderr, "%s version: %s\n", progname,
@@ -156,7 +157,7 @@ int main(int argc, char *argv[])
 
 		/* unknown option or missing option-argument */
 		case '?':
-			usage_hint();
+			usage(EXIT_FAILURE);
 			break;
 		}
 	}

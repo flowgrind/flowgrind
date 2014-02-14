@@ -1,6 +1,6 @@
 /**
  * @file flowgrind.h
- * @brief Flowgrind Controller
+ * @brief Flowgrind controller
  */
 
 /*
@@ -31,11 +31,10 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#include <xmlrpc-c/base.h>
-#include <xmlrpc-c/client.h>
+#include <stdbool.h>
+#include <limits.h>
 
 #include "common.h"
-#include "fg_time.h"
 
 #ifdef __LINUX__
 /** Sysctl for quering available congestion control algorithms */
@@ -43,18 +42,6 @@
 #elif __FreeBSD__
 #define SYSCTL_CC_AVAILABLE "net.inet.tcp.cc.available"
 #endif /* __LINUX__ */
-
-/** Shortcut for show_columns() */
-#define SHOW_COLUMNS(...)						    \
-	(set_column_visibility(true, NARGS(__VA_ARGS__), __VA_ARGS__))
-
-/** Shortcut for hide_columns() */
-#define HIDE_COLUMNS(...)						    \
-	(set_column_visibility(false, NARGS(__VA_ARGS__), __VA_ARGS__))
-
-/** Shortcut for set_column_header_unit() */
-#define SET_COLUMN_UNIT(unit, ...)					    \
-	(set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
 /** Transport protocols */
 enum protocol {
@@ -74,8 +61,7 @@ enum tcp_stack {
 
 #ifndef __LINUX__
 /** Values for Linux tcpi_state, if not compiled on Linux */
-enum tcp_ca_state
-{
+enum tcp_ca_state {
 	/** TCP sender follows fast path execution (normal state) */
         TCP_CA_Open = 0,
 	/** TCP sender receives duplicate ACKs or SACKs */
@@ -90,8 +76,7 @@ enum tcp_ca_state
 #endif /* __LINUX__ */
 
 /** IDs to explicit address an intermediated interval report column */
-enum column_id
-{
+enum column_id {
         /** Flow ID */
         COL_FLOW_ID = 0,
         /** Report interval @{ */
@@ -140,9 +125,10 @@ enum column_id
 };
 
 /** For long options with no equivalent short option, use a pseudo short option */
-enum long_opt_only
-{
+enum long_opt_only {
+	/** Pseudo short option for option --help */
 	HELP_OPTION = CHAR_MAX + 1,
+	/** Pseudo short option for option --log-file */
 	LOG_FILE_OPTION
 };
 
@@ -237,8 +223,7 @@ struct _cflow {
 };
 
 /** Header of an intermediated interval report column */
-struct _column_header
-{
+struct _column_header {
         /** First header row: name of the column */
         const char* name;
         /** Second header row: unit of the column */
@@ -246,8 +231,7 @@ struct _column_header
 };
 
 /** State of an intermediated interval report column */
-struct _column_state
-{
+struct _column_state {
         /** Dynamically turn an column on/off */
         bool visible;
         /** How often the current column width was too high */
@@ -257,8 +241,7 @@ struct _column_state
 };
 
 /** Intermediated interval report column */
-struct _column
-{
+struct _column {
         /** Unique column identifier */
         enum column_id type;
         /** Column header (name and unit) */
@@ -266,68 +249,5 @@ struct _column
         /** State of the column */
         struct _column_state state;
 };
-
-/**
- * Print flowgrind usage and exit
- */
-static void usage(void) __attribute__((noreturn));
-
-/**
- * Print help on socket options and exit
- */
-static void usage_sockopt(void) __attribute__((noreturn));
-
-/**
- * Print help on traffic generation and exit
- */
-static void usage_trafgenopt(void) __attribute__((noreturn));
-
-/**
- * Print hint upon an error while parsing the command line
- */
-inline static void usage_hint(void) __attribute__((noreturn));
-
-/**
- * Initialization of general controller options
- */
-static void init_general_options(void);
-
-/**
- * Create a logfile for measurement output
- */
-static void open_logfile(void);
-
-/**
- * Close measurement output file
- */
-static void close_logfile(void);
-
-/**
- * To show/hide intermediated interval report columns
- *
- * @param[in] visibility show column
- * @param[in] nargs length of variable argument list
- * @param[in] ... column IDs
- * @see enum column_id
- */
-static void set_column_visibility(bool visibility, unsigned int nargs, ...);
-
-/**
- * To set the unit the in header of intermediated interval report columns
- *
- * @param[in] unit unit of column header as string
- * @param[in] nargs length of variable argument list
- * @param[in] ... column IDs
- * @see enum column_id
- */
-static void set_column_unit(const char *unit, unsigned int nargs, ...);
-
-/**
- * Parse argument for option -c to hide/show intermediated interval report
- * columns
- *
- * @param[in] optarg argument for option -c
- */
-static void parse_visible_option(char *optarg);
 
 #endif /* _FLOWGRIND_H_ */

@@ -1,6 +1,6 @@
 /**
  * @file flowgrindd.c
- * @brief Flowgrind Daemon
+ * @brief Flowgrind daemon
  */
 
 /*
@@ -38,6 +38,7 @@
 #include <string.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <netinet/tcp.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <getopt.h>
@@ -50,6 +51,7 @@
 #include <sys/cpuset.h>
 #endif /* __LINUX__ */
 
+/* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
@@ -58,22 +60,44 @@
 #include "common.h"
 #include "daemon.h"
 #include "log.h"
-#include "fg_time.h"
-#include "debug.h"
+#include "fg_error.h"
 #include "fg_math.h"
+#include "fg_progname.h"
+#include "fg_string.h"
+#include "fg_time.h"
+#include "fg_stdlib.h"
+#include "debug.h"
 
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
 
-unsigned port = DEFAULT_LISTEN_PORT;
-char *rpc_bind_addr = NULL;
-int cpu = -1;				    /* No CPU affinity */
-/** Name of the executable */
-static char progname[50] = "flowgrindd";
+/* XXX add a brief description doxygen */
+static unsigned port = DEFAULT_LISTEN_PORT;
 
-static void usage(void)
+/* XXX add a brief description doxygen */
+static char *rpc_bind_addr = NULL;
+
+/* XXX add a brief description doxygen */
+static int cpu = -1;				    /* No CPU affinity */
+
+/* External global variables */
+extern const char *progname;
+
+/* Forward declarations */
+static void usage(short status) __attribute__((noreturn));
+
+/**
+ * Print flowgrindd usage and exit
+ */
+static void usage(short status)
 {
+	/* Syntax error. Emit 'try help' to stderr and exit */
+	if (status != EXIT_SUCCESS) {
+		fprintf(stderr, "Try '%s -h' for more information\n", progname);
+		exit(status);
+	}
+
 	fprintf(stderr,
 		"Usage: %1$s [OPTION]...\n"
 		"Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X.\n\n"
@@ -95,12 +119,6 @@ static void usage(void)
 		"  -v, --version  print version information and exit\n",
 		progname);
 	exit(EXIT_SUCCESS);
-}
-
-inline static void usage_hint(void)
-{
-	fprintf(stderr, "Try '%s -h' for more information\n", progname);
-	exit(EXIT_FAILURE);
 }
 
 static void sighandler(int sig)
@@ -350,13 +368,9 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"real_read_buffer_size", request->real_read_buffer_size);
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
-	free(destination_host);
-	free(cc_alg);
-	free(bind_address);
+	if (request)
+		free_all(request->r.error, request);
+	free_all(destination_host, cc_alg, bind_address);
 
 	if (extra_options)
 		xmlrpc_DECREF(extra_options);
@@ -536,12 +550,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"real_listen_read_buffer_size", request->real_listen_read_buffer_size);
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
-	free(cc_alg);
-	free(bind_address);
+	if (request)
+		free_all(request->r.error, request);
+	free_all(cc_alg, bind_address);
 
 	if (extra_options)
 		xmlrpc_DECREF(extra_options);
@@ -589,10 +600,8 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	ret = xmlrpc_build_value(env, "i", 0);
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
+	if (request)
+		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method start_flows failed: %s", env->fault_string);
@@ -741,10 +750,8 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	ret = xmlrpc_build_value(env, "()");
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
+	if (request)
+		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method stop_flow failed: %s", env->fault_string);
@@ -815,16 +822,13 @@ static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 		"num_flows", request->num_flows);
 
 cleanup:
-	if (request) {
-		free(request->r.error);
-		free(request);
-	}
+	if (request)
+		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_status failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method get_status successful");
-	}
 
 	return ret;
 }
@@ -833,10 +837,8 @@ void create_daemon_thread()
 {
 	int flags;
 
-	if (pipe(daemon_pipe) == -1) {
-		fprintf(stderr, "Could not create pipe: %d", errno);
-		exit(1);
-	}
+	if (pipe(daemon_pipe) == -1)
+		crit("could not create pipe");
 
 	if ((flags = fcntl(daemon_pipe[0], F_GETFL, 0)) == -1)
 		flags = 0;
@@ -845,10 +847,8 @@ void create_daemon_thread()
 	pthread_mutex_init(&mutex, NULL);
 
 	int rc = pthread_create(&daemon_thread, NULL, daemon_main, 0);
-	if (rc) {
-		fprintf(stderr, "Could not start thread: %d", errno);
-		exit(1);
-	}
+	if (rc)
+		crit("could not start thread");
 }
 
 /* creates listen socket for the xmlrpc server */
@@ -984,20 +984,14 @@ void set_affinity(int cpu)
 			  progname, getpid(), cpu);
 }
 
+/**
+ * Parse command line options to initialize global options
+ *
+ * @param[in] argc number of command line arguments
+ * @param[in] argv arguments provided by the command line
+ */
 static void parse_cmdline(int argc, char *argv[])
 {
-	/* update progname from argv[0] */
-	if (argc > 0) {
-		/* Strip path */
-		char *tok = strrchr(argv[0], '/');
-		if (tok)
-			tok++;
-		else
-			tok = argv[0];
-		strncpy(progname, tok, sizeof(progname));
-		progname[sizeof(progname) - 1] = 0;
-	}
-
 	/* long options */
 	static const struct option long_opt[] = {
 		{"help", no_argument, 0, 'h'},
@@ -1026,14 +1020,14 @@ static void parse_cmdline(int argc, char *argv[])
 		case 'b':
 			rpc_bind_addr = strdup(optarg);
 			if (sscanf(optarg, "%s", rpc_bind_addr) != 1) {
-				fprintf(stderr, "failed to parse bind address\n");
-				usage_hint();
+				errx("failed to parse bind address");
+				usage(EXIT_FAILURE);
 			}
 			break;
 		case 'c':
 			if (sscanf(optarg, "%i", &cpu) != 1) {
-				fprintf(stderr, "failed to parse CPU number\n");
-				usage_hint();
+				errx("failed to parse CPU number");
+				usage(EXIT_FAILURE);
 			}
 			break;
 		case 'd':
@@ -1041,12 +1035,12 @@ static void parse_cmdline(int argc, char *argv[])
 			increase_debuglevel();
 			break;
 		case 'h':
-			usage();
+			usage(EXIT_SUCCESS);
 			break;
 		case 'p':
 			if (sscanf(optarg, "%u", &port) != 1) {
-				fprintf(stderr, "failed to parse port number\n");
-				usage_hint();
+				errx("failed to parse port number");
+				usage(EXIT_FAILURE);
 			}
 			break;
 #ifdef HAVE_LIBPCAP
@@ -1061,18 +1055,19 @@ static void parse_cmdline(int argc, char *argv[])
 
 		/* unknown option or missing option-argument */
 		case '?':
-			usage_hint();
+			usage(EXIT_FAILURE);
 			break;
 		}
 	}
 
 	/* Do we have remaning command line arguments? */
 	if (optind < argc) {
-		fprintf(stderr, "%s: invalid arguments: ", progname);
+		char *args = NULL;
 		while (optind < argc)
-			fprintf(stderr, "%s ", argv[optind++]);
-		fprintf(stderr, "\n");
-		usage_hint();
+			asprintf_append(&args, "%s ", argv[optind++]);
+		errx("invalid arguments: %s", args);
+		free(args);
+		usage(EXIT_FAILURE);
 	}
 
 	// TODO more sanity checks... (e.g. if port is in valid range)
@@ -1084,11 +1079,8 @@ int main(int argc, char *argv[])
 
 	xmlrpc_env env;
 
-	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-		error(ERR_FATAL, "Could not ignore SIGPIPE: %s",
-				strerror(errno));
-		/* NOTREACHED */
-	}
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		crit("could not ignore SIGPIPE");
 
 	sa.sa_handler = sighandler;
 	sa.sa_flags = 0;
@@ -1097,6 +1089,7 @@ int main(int argc, char *argv[])
 	sigaction (SIGALRM, &sa, NULL);
 	sigaction (SIGCHLD, &sa, NULL);
 
+	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
 	logging_init();
 #ifdef HAVE_LIBPCAP
@@ -1105,9 +1098,8 @@ int main(int argc, char *argv[])
 	if (log_type == LOGTYPE_SYSLOG) {
 		/* Need to call daemon() before creating the thread because
 		 * it internally calls fork() which does not copy threads. */
-		if (daemon(0, 0) == -1) {
-			error(ERR_FATAL, "daemon() failed: %s", strerror(errno));
-		}
+		if (daemon(0, 0) == -1)
+			crit("daemon() failed");
 		logging_log(LOG_NOTICE, "flowgrindd daemonized");
 	}
 
@@ -1120,5 +1112,5 @@ int main(int argc, char *argv[])
 
 	run_rpc_server(&env, port);
 
-	fprintf(stderr, "Control should never reach end of main()\n");
+	critx("control should never reach end of main()");
 }

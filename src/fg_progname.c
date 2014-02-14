@@ -1,12 +1,10 @@
 /**
- * @file fg_pcap.h
- * @brief Packet capture support for the Flowgrind daemon
+ * @file fg_progname.c
+ * @brief Program name management
  */
 
 /*
- * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
- * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
- * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
+ * Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com
  *
  * This file is part of Flowgrind. Flowgrind is free software; you can
  * redistribute it and/or modify it under the terms of the GNU General
@@ -22,29 +20,26 @@
  *
  */
 
-#ifndef _FG_PCAP_H_
-#define _FG_PCAP_H_
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#include <pcap.h>
-#include <pthread.h>
+#include <string.h>
 
-#include "daemon.h"
+#include "fg_progname.h"
+#include "fg_error.h"
 
-void fg_pcap_init();
-void fg_pcap_go(struct _flow *);
-void fg_pcap_cleanup(void* arg);
+const char *progname = NULL;
 
-pthread_mutex_t pcap_mutex;
+void set_progname(const char *argv0)
+{
+	/* Sanity check. POSIX requires the invoking process to pass a non-NULL
+	 * argv[0] */
+	if (argv0 == NULL)
+		errx("a NULL argv[0] was passed through an exec system call");
 
-/* pthread barrier does not exists in Darwin */
-#ifndef __DARWIN__
-pthread_barrier_t pcap_barrier;
-#endif /* __DARWIN__ */
-
-pcap_if_t * alldevs;
-
-#endif /* _FG_PCAP_H_ */
+	/* Strip path */
+	const char *slash = strrchr(argv0, '/');
+	const char *base = (slash != NULL ? slash + 1 : argv0);
+	progname = base;
+}

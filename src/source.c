@@ -54,14 +54,13 @@
 #include <pthread.h>
 #include <float.h>
 
-#include "common.h"
 #include "debug.h"
+#include "fg_error.h"
+#include "fg_math.h"
 #include "fg_pcap.h"
 #include "fg_socket.h"
 #include "fg_time.h"
-#include "fg_math.h"
 #include "log.h"
-#include "daemon.h"
 
 void remove_flow(unsigned int i);
 
@@ -125,8 +124,7 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port, str
 			break;
 		}
 
-		error(ERR_WARNING, "Failed to connect to \"%s:%d\": %s",
-				server_name, port, strerror(errno));
+		warn("failed to connect to '%s:%d' ", server_name, port);
 		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
@@ -139,10 +137,8 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port, str
 
 	if (saptr && lenp) {
 		*saptr = malloc(res->ai_addrlen);
-		if (*saptr == NULL) {
-			error(ERR_FATAL, "malloc(): failed: %s",
-					strerror(errno));
-		}
+		if (*saptr == NULL)
+			crit("malloc(): failed");
 		memcpy(*saptr, res->ai_addr, res->ai_addrlen);
 		*lenp = res->ai_addrlen;
 	}
