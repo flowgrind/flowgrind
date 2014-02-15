@@ -19,3 +19,7 @@ script:
 branches:
   only:
     - next
+
+notifications:
+  email:
+    - alexander.zimmermann@netapp.com
