@@ -12,10 +12,17 @@ before_install:
 
 install:
     - sudo apt-get -qq install libxmlrpc-c3-dev libcurl4-gnutls-dev libpcap-dev libgsl0-dev
+    - sudo apt-get -qq install valgrind
 
 script:
     - autoreconf -i
-    - ./configure && make
+    - ./configure
+    - make
+    
+# Run Tests
+after_success:
+    - ./src/flowgrindd
+    - valgrind --leak-check=full --show-reachable=yes --suppressions=.xmlrcp.supp ./src/flowgrind -T s=1
 
 # Only watch the master and next branch
 branches:
