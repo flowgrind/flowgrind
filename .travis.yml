@@ -1,0 +1,21 @@
+# Travis-CI Build for flowgrind
+# see travis-ci.org for details
+
+language: c
+
+compiler:
+    - gcc
+    - clang
+
+install:
+    - sudo apt-get -qq update
+    - sudo apt-get -qq install libxmlrpc-c3-dev libcurl4-gnutls-dev libpcap-dev libgsl0-dev
+
+script:
+    - autoreconf -i
+    - ./configure && make
+
+# Only watch the next branch
+branches:
+  only:
+    - next
