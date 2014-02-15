@@ -1,6 +1,8 @@
 Flowgrind - TCP traffic generator
 =================================
 
+[![Build Status](https://travis-ci.org/flowgrind/flowgrind.png?branch=master)](https://travis-ci.org/flowgrind/flowgrind)
+
 Flowgrind is an advanced TCP traffic generator for testing and benchmarking **Linux**, **FreeBSD**, and **Mac OS X** TCP/IP stacks. In contrast to similar tools like iperf or netperf it features a distributed architecture, where throughput and other metrics are measured between arbitrary flowgrind server processes.
 
 * Website: [www.flowgrind.net](http://www.flowgrind.net)
