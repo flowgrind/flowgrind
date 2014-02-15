@@ -16,7 +16,7 @@ install:
 
 script:
     - autoreconf -i
-    - ./configure
+    - ./configure --enable-debug
     - make
     
 # Run Tests
