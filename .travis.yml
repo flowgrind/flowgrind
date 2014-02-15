@@ -7,17 +7,20 @@ compiler:
     - gcc
     - clang
 
-install:
+before_install:
     - sudo apt-get -qq update
+
+install:
     - sudo apt-get -qq install libxmlrpc-c3-dev libcurl4-gnutls-dev libpcap-dev libgsl0-dev
 
 script:
     - autoreconf -i
     - ./configure && make
 
-# Only watch the next branch
+# Only watch the master and next branch
 branches:
   only:
+    - master
     - next
 
 notifications:
