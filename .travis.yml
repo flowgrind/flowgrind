@@ -22,7 +22,7 @@ script:
 # Run Tests
 after_success:
     - ./src/flowgrindd
-    - valgrind --leak-check=full --show-reachable=yes --suppressions=.xmlrcp.supp ./src/flowgrind -T s=1
+    - valgrind --leak-check=full --show-reachable=yes --suppressions=.valgrind.supp ./src/flowgrind -T s=1
 
 # Only watch the master and next branch
 branches:
