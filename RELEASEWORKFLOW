@@ -1,20 +1,18 @@
-# source code
+# Source code
 Update configure.ac
-Update NEWS
-Update debian/changelog
+Update NEWS with milestone description from Github
+Update debian/changelog according NEWS
 
 git commit -a -m "prepare flowgrind-X.X.X"
-
 git tag -s -m "tag flowgrind-X.X.X" flowgrind-X.X.X `git rev-parse HEAD`
-
 git push origin flowgrind-X.X.X
 
-dist.sh X.X.X
+./scripts/dist.sh X.X.X
 
-# Launchpad
-create milestone
-add download
-add announcement
+# Github
+Close milestone flowgrind-X.X.X
+Create release from new tag with milestone description as release note
+Add tarball to release
 
 # PPA
 tar xfj flowgrind-*.tar.bz2
