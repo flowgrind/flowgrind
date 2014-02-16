@@ -1,15 +1,3 @@
-Release 0.7.0 (2013-X-X)
-- Output tcp_info kernel variables under FreeBSD
-- Allow to set CPU affinity
-- Set localhost as default flow target/source instead of 127.0.0.1 to obey OS
-  defaults in regards to IPv4 vs IPv6.
-- Preliminary support for mixed (FreeBSD, Linux) flows
-- Closes LP#1212680 reported and fixed by Midori Kato
-- Revised docu (help, manpage etc)
-- Closes LP#1237447
-- Change flowgrind's timer management to achieve a nanosecond precision
-- Add 1-way delay measurements
-
 Release 0.6.1 (2013-7-5)
 - Closes LP#1196940, LP#1196972
   Thanks Lars and Arnd.
