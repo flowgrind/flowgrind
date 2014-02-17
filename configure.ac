@@ -1,6 +1,6 @@
-AC_INIT([Flowgrind],[0.6.1],[https://bugs.launchpad.net/flowgrind],[flowgrind],[https://launchpad.net/flowgrind])
+AC_INIT([Flowgrind],[0.6.1],[https://github.com/flowgrind/flowgrind/issues],[flowgrind],[https://www.flowgrind.net])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror dist-bzip2])
 AC_PREREQ(2.61)
 
 AC_USE_SYSTEM_EXTENSIONS
