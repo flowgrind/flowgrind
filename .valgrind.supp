@@ -1,0 +1,19 @@
+#
+# Suppression patterns for xmlrpc-c
+#
+
+{
+    Ignore leak in xmlrpc_array_new()
+    Memcheck:Leak
+    ...
+    fun:xmlrpc_array_new
+    ...
+}
+
+{
+    Ignore leak in xmlrpc_client_setup_global_const()
+    Memcheck:Leak
+    ...
+    fun:xmlrpc_client_setup_global_const
+    ...
+}
