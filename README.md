@@ -7,7 +7,7 @@ Flowgrind is an advanced TCP traffic generator for testing and benchmarking **Li
 
 * Website: [www.flowgrind.net](http://www.flowgrind.net)
 * Issues: [GitHub Issues](https://github.com/flowgrind/flowgrind/issues)
-* API documentation: [Doxygen](http://flowgrind.github.io/flowgrind)
+* API documentation: [Doxygen](http://www.flowgrind.net/doxygen/index.html)
 
 
 What It Can Do?
