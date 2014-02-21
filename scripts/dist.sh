@@ -46,8 +46,6 @@ fi
 $GIT checkout -- INSTALL
 find . -type d -name ".git" | xargs rm -r
 
-./reformat-code.sh
-
 rm -r autom4te.cache RELEASEWORKFLOW .gitignore .travis.yml
 
 cd ..
