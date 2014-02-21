@@ -1,20 +1,7 @@
-Release 0.7.0 (2013-X-X)
-- Output tcp_info kernel variables under FreeBSD
-- Allow to set CPU affinity
-- Set localhost as default flow target/source instead of 127.0.0.1 to obey OS
-  defaults in regards to IPv4 vs IPv6.
-- Preliminary support for mixed (FreeBSD, Linux) flows
-- Closes LP#1212680 reported and fixed by Midori Kato
-- Revised docu (help, manpage etc)
-- Closes LP#1237447
-- Change flowgrind's timer management to achieve a nanosecond precision
-- Add 1-way delay measurements
-
 Release 0.6.1 (2013-7-5)
-- Closes LP#1196940, LP#1196972
-  Thanks Lars and Arnd.
+- Closes LP#1196940, LP#1196972 (thanks Lars)
 
-Release 0.6.0 (2013-4-24)
+Release 0.6 (2013-4-24)
 - Full IPv6 support (control and test connection)
 
 Release 0.5.9 (2012-11-1)
@@ -45,7 +32,7 @@ Release 0.5.5.1 (2010-12-8)
 - More updates to manpage and -h
 - Fix rare bug which leads to receiver limitation in conjunction with multiple
   differently scheduled flows
-- Fix pmtu/imtu/smss sometimes diplay -1
+- Fix pmtu/imtu/smss sometimes display -1
 
 Release 0.5.5 (2010-12-5)
 - Revised docu (help, manpage etc)
@@ -60,8 +47,7 @@ Release 0.5 (2010-11-15)
 - Remove useless status column (only activated with --enable-debug)
 - Nullify linux kernel state columns in final report, as they
   are not accumulated. (last interval has same information anyways)
-- libpcap support for automatic traffic dumping (for analysis with tcptrace
-  etc)
+- libpcap support for automatic traffic dumping (for analysis with tcptrace etc)
 - libgsl support for advanced stochastic distributions
 - Added sockopts TCP_NODELAY and non-standard MTCP
 - Always print final report
@@ -71,21 +57,21 @@ Release 0.4.1 (2010-8-10)
 - Bugfixes
 - Block count column
 
-Release 0.4 (2010-8-01)
+Release 0.4 (2010-8-1)
 - Traffic generation
 - Symbolic numbers
 - Reworked timer system
 - Reworked rtt calculation
 - Various bugfixes
 
-Release 0.2.1 (2009-08-07)
+Release 0.2.1 (2009-8-7)
 - Fix -Q flow option
 - Use bits/s as default for rate option, correct documentation on defaults
 - Cleanup manpages and integrated usage
 - Add description of output columns to manpage
 - Make libpcap optional dependency, not enabled by default
 
-Release 0.2 (2009-07-17)
+Release 0.2 (2009-7-17)
 - Using new RPC architecture
 - New options syntax
 
