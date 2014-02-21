@@ -7,12 +7,12 @@ GIT=`which git`
 cd $SCRIPTDIR/..
 
 if [ "$GIT" = "" ]; then
-	echo "The 'git' command is not installed."
+    echo "The command 'git' is not installed. Please install git."
 elif [ ! -d .git ]; then
-	echo "This is not a git release."
+    echo "This is not a git release."
 else
-	VERSION=$($GIT describe --always --abbrev=6)
-	VLINE="#define GITVERSION \"$VERSION\""
+    VERSION=$($GIT describe --always --abbrev=6)
+    VLINE="#define GITVERSION \"$VERSION\""
 fi
 
 echo "$VLINE" | cmp -s - gitversion.h || echo "$VLINE" > gitversion.h
