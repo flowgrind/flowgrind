@@ -7,7 +7,7 @@ EAPI="2"
 inherit eutils
 
 DESCRIPTION="network performance measurement tool"
-HOMEPAGE="https://launchpad.net/flowgrind"
+HOMEPAGE="http://www.flowgrind.net"
 if [[ ${PV} == "9999" ]] ; then
 	inherit git-2 autotools
 	EGIT_REPO_URI="git://github.com/${PN}/${PN}.git 
@@ -16,7 +16,7 @@ if [[ ${PV} == "9999" ]] ; then
 	SLOT="git"
 	KEYWORDS=""
 else
-	SRC_URI="https://launchpad.net/${PN}/trunk/${P}/+download/${P}.tar.bz2"
+	SRC_URI="https://github.com/${PN}/${PN}/releases/download/${P}/${P}.tar.bz2"
 	SLOT="0"
 	KEYWORDS="~amd64 ~x86"
 fi

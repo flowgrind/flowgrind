@@ -6,79 +6,79 @@ flowgrind (0.6.1) unstable; urgency=low
  -- Christian Samsel <christian.samsel@rwth-aachen.de>  Fri, 05 Jul 2013 15:31:26 +0200
 
 
-flowgrind (0.6.0) unstable; urgency=low
+flowgrind (0.6) unstable; urgency=low
 
-  Release: 0.6.0 (2013-4-24):
-  * Full IPv6 Support 
+  Release: 0.6 (2013-4-24):
+  * Full IPv6 support (control and test connection)
 
- -- Christian Samsel <christian.samsel@rwth-aachen.de>  Wed, 24 Apr 2013 10:45:05 +0200 
+ -- Christian Samsel <christian.samsel@rwth-aachen.de>  Wed, 24 Apr 2013 10:45:05 +0200
 
 
 flowgrind (0.5.9) unstable; urgency=low
 
   Release: 0.5.9 (2013-1-11):
-  * support for pluggable congestion control modules in FreeBSD 9
-  * minor compile and bugs fixes (thanks flameeyes)
+  * Support for pluggable congestion control modules in FreeBSD 9
+  * Minor compile and bugs fixes (thanks flameeyes)
 
  -- Christian Samsel <christian.samsel@rwth-aachen.de>  Fri, 11 Jan 2013 11:27:45 +0100
 
 flowgrind (0.5.8) unstable; urgency=low
 
   Release: 0.5.8 (2012-3-3):
-  * ipv6 works for test connections (not for control)
+  * IPv6 works for test connections (not for control)
   * FreeBSD Support
-  * autoconf fixes to improve portability
-  * small bug and coding style fixes
+  * Autoconf fixes to improve portability
+  * Small bug and coding style fixes
 
  -- Christian Samsel <christian.samsel@rwth-aachen.de>  Sun, 04 Mar 2012 10:36:23 +0100
 
 flowgrind (0.5.7) unstable; urgency=low
 
   Release: 0.5.7 (2011-4-27):
-  * fix crash with newer xml-rpc version
-  * output random seed in final report
-  * indicate that random seed is actually a flow and not a global option
-  * fix random seed handling with parallel flows
-  * fix parameter parsing for uniform distribution
+  * Fix crash with newer xml-rpc version
+  * Output random seed in final report
+  * Indicate that random seed is actually a flow and not a global option
+  * Fix random seed handling with parallel flows
+  * Fix parameter parsing for uniform distribution
 
  -- Christian Samsel <christian.samsel@rwth-aachen.de>  Thu, 28 Apr 2011 14:50:19 +0200
 
 flowgrind (0.5.5.1) unstable; urgency=low
 
   Release 0.5.5.1 (2010-12-8):
-  * more updates to manpage and -h.
-  * fix rare bug which leads to receiver limitation in conjunction with 
+  * More updates to manpage and -h
+  * Fix rare bug which leads to receiver limitation in conjunction with
     multiple differently scheduled flows
-  * fix pmtu/imtu/smss sometimes diplay -1
+  * Fix pmtu/imtu/smss sometimes display -1
 
  -- Arnd Hannemann <arnd@arndnet.de>  Thu, 09 Dec 2010 10:31:33 -0500
 
 flowgrind (0.5.5) unstable; urgency=low
 
   Release 0.5.5 (2010-12-5):
-  * revised docu (help, manpage etc).
-  * add transac column, disable blockcount by default.
-  * reworked timing for throughput calculation.
-  * reworked final report line.
-  * minor output improvements.
-  * dropped useless complete interval report line.
+  * Revised docu (help, manpage etc)
+  * Add transac column, disable blockcount by default
+  * Reworked timing for throughput calculation
+  * Reworked final report line
+  * Minor output improvements
+  * Dropped useless complete interval report line
 
  -- Arnd Hannemann <arnd@arndnet.de>  Thu, 09 Dec 2010 10:31:33 -0500
 
 flowgrind (0.5) unstable; urgency=low
 
-  * Bump version.
+  * Bump version
 
  -- Arnd Hannemann <arnd@arndnet.de>  Thu, 04 Nov 2010 11:35:59 +0100
 
 flowgrind (0.3) unstable; urgency=low
 
-  * bump
+  * Bump
 
  -- Christian Samsel <christian.samsel@rwth-aachen.de>  Fri, 19 Mar 2010 13:41:19 +0100
 
 flowgrind (0.2) unstable; urgency=low
 
-  * Initial release 
+  * Initial release
 
  -- Tim Kosse <tim.kosse@gmx.de>  Mon, 06 Jul 2009 11:21:28 +0200
