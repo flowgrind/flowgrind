@@ -2607,7 +2607,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 #ifdef DEBUG
 		{"debug", no_argument, 0, 'd'},
 #endif /* DEBUG */
+#ifdef HAVE_LIBPCAP
 		{"dump-prefix", required_argument, 0, 'e'},
+#endif /* HAVE_LIBPCAP */
 		{"report-interval", required_argument, 0, 'i'},
 		{"log-file", optional_argument, 0, LOG_FILE_OPTION},
 		{"flows", required_argument, 0, 'n'},
@@ -2664,11 +2666,11 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'd':
 			increase_debuglevel();
 			break;
-		case 'e':
 #ifdef HAVE_LIBPCAP
+		case 'e':
 			copt.dump_prefix = optarg;
-#endif /* HAVE_LIBPCAP */
 			break;
+#endif /* HAVE_LIBPCAP */
 		case 'i':
 			rc = sscanf(optarg, "%lf", &copt.reporting_interval);
 			if (rc != 1 || copt.reporting_interval <= 0) {
