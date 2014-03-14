@@ -137,7 +137,7 @@ fi
 AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: yes]] )])
 AS_IF([ test "x$enable_pcap" != "xno"], [
         AC_CHECK_HEADER(pcap.h,
-                AC_CHECK_LIB([pcap], pcap_open_live, [AC_DEFINE(HAVE_LIBPCAP, 1, [Define to 1 if you have the pcap library (-lpcap).])],
+                AC_CHECK_LIB([pcap], pcap_open_live, [HAVE_LIBPCAP=1 AC_DEFINE(HAVE_LIBPCAP, 1, [Define to 1 if you have the pcap library (-lpcap).])],
                 AC_MSG_NOTICE([*** Could not find libpcap: will compile without optional traffic dump feature. ***]),[-lpcap]),
                 AC_MSG_NOTICE([*** Header file pcap.h not found: will compile without optional traffic dump. ***]))
 
@@ -155,6 +155,7 @@ AS_IF([ test "x$enable_pcap" != "xno"], [
         AC_SUBST(PCAP_LDADD)
     fi
 ])
+AM_CONDITIONAL([USE_LIBPCAP], [test "x$enable_pcap" != "xno" -a "$HAVE_LIBPCAP" -eq 1])
 
 AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[default: yes]] )])
 AS_IF([ test "x$enable_gsl" != "xno"], [
