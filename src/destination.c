@@ -52,12 +52,15 @@
 
 #include "common.h"
 #include "debug.h"
-#include "fg_pcap.h"
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "fg_math.h"
 #include "log.h"
 #include "daemon.h"
+
+#ifdef HAVE_LIBPCAP
+#include "fg_pcap.h"
+#endif /* HAVE_LIBPCAP */
 
 void remove_flow(unsigned int i);
 
