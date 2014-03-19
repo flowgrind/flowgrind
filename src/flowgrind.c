@@ -235,7 +235,7 @@ static void usage(short status)
 #endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
 		"  -e, --dump-prefix=PRE\n"
-		"                 prepend prefix PRE to dump filename (default: \"%2$s\")\n"
+		"                 prepend prefix PRE to dump filename (default: \"%3$s\")\n"
 #endif /* HAVE_LIBPCAP */
 		"  -i, --report-interval=#.#\n"
 		"                 reporting interval, in seconds (default: 0.05s)\n"
@@ -259,7 +259,7 @@ static void usage(short status)
 		"  instance -W s=8192,d=4096 sets the advertised window to 8192 at the source\n"
 		"  and 4096 at the destination.\n\n"
 		"  -A x           use minimal response size needed for RTT calculation\n"
-		"                 (same as -G s=p,C,%3$d)\n"
+		"                 (same as -G s=p,C,%2$d)\n"
 		"  -B x=#         set requested sending buffer, in bytes\n"
 		"  -C x           stop flow if it is experiencing local congestion\n"
 		"  -D x=DSCP      DSCP value for TOS byte\n"
@@ -306,7 +306,12 @@ static void usage(short status)
 		"  -W x=#         set requested receiver buffer (advertised window), in bytes\n"
 		"  -Y x=#.#       set initial delay before the host starts to send, in seconds\n"
 /*		"  -Z x=#.#       set amount of data to be send, in bytes (instead of -t)\n"*/,
-		progname, copt.dump_prefix, MIN_BLOCK_SIZE);
+		progname,
+		MIN_BLOCK_SIZE
+#ifdef HAVE_LIBPCAP
+		, copt.dump_prefix
+#endif /* HAVE_LIBPCAP */
+        );
 	exit(EXIT_SUCCESS);
 }
 
@@ -2602,7 +2607,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 #ifdef DEBUG
 		{"debug", no_argument, 0, 'd'},
 #endif /* DEBUG */
+#ifdef HAVE_LIBPCAP
 		{"dump-prefix", required_argument, 0, 'e'},
+#endif /* HAVE_LIBPCAP */
 		{"report-interval", required_argument, 0, 'i'},
 		{"log-file", optional_argument, 0, LOG_FILE_OPTION},
 		{"flows", required_argument, 0, 'n'},
@@ -2659,9 +2666,11 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'd':
 			increase_debuglevel();
 			break;
+#ifdef HAVE_LIBPCAP
 		case 'e':
 			copt.dump_prefix = optarg;
 			break;
+#endif /* HAVE_LIBPCAP */
 		case 'i':
 			rc = sscanf(optarg, "%lf", &copt.reporting_interval);
 			if (rc != 1 || copt.reporting_interval <= 0) {

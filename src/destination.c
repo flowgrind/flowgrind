@@ -52,7 +52,11 @@
 
 #include "common.h"
 #include "debug.h"
+
+#ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
+#endif /* HAVE_LIBPCAP */
+
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "fg_math.h"
