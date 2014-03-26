@@ -136,8 +136,7 @@ starts with 0, so \fB\-F\fR 1 refers to the second flow
 .TP
 \fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR),(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR),\fI#1\fR,[\fI#2\fR]
 activate stochastic traffic generation and set parameters according to the used
-distribution. For additional information see 'flowgrind
-\fB\-\-help\fR=\fItraffic\fR'
+distribution. For additional information see section 'Traffic Generation Option'
 .TP
 \fB\-H\fR \fIx\fR=\fIHOST\fR[/\fICONTROL\fR[:\fIPORT\fR]]
 test from/to HOST. Optional argument is the address and port for the CONTROL
@@ -162,8 +161,8 @@ dump traffic using libpcap
 shutdown() each socket direction after test flow
 .TP
 \fB\-O\fR \fIx\fR=\fIOPT\fR
-set socket option OPT on test socket. For additional information see 'flowgrind
-\fB\-\-help\fR=\fIsocket\fR'
+set socket option OPT on test socket. For additional information see
+section 'Socket Options'
 .TP
 \fB\-P\fR \fIx\fR
 do not iterate through select() to continue sending in case block size did not
@@ -193,57 +192,95 @@ set requested receiver buffer (advertised window), in bytes
 \fB\-Y \fIx\fR=\fI#\fR.\fI#\fR
 set initial delay before the host starts to send, in seconds
 
-.SS Traffic Generation Options
 
-.BR "-G x=[q|p|g],[C|U|E|N|L|P|W],#1,(#2)"
+.SH "OTHER OPTIONS"
 
-Activate stochastic traffic generation and set parameters
-for the chosen distribution.
-
-use distribution for the following flow parameter:
-
-.BR q
-request size (in bytes)
-
-.BR p
-response size (in bytes)
-
-.BR g
-request interpacket gap (in s)
-
-possible distributions:
-
-.BR C
-constant (param 1: value, param 2: not used)
-
-.BR U
-uniform (param 1: min, param 2: max)
-
-.BR E
-exponential (param 1: lamba - lifetime, param 2: not used)
-
-.BR N
-normal (param 1: mu \- mean value, param 2: sigma_square \- variance)
-
-.BR P
-pareto (param 1: k \- shape, x_min \- scale)
-
-.BR W
-weibull (param 1: lambda \- scale, param 2: k \- shape)
-
-.BR L
-lognormal (param 1: zeta \- mean value, param 2: sigma \- std dev)
-
+.SS Traffic Generation Option
+Flowgrind supports stochastic traffic generation, which allows to conduct
+besides normal bulk also advanced rate\-limited and request\-response data
+transfers.
+.PP
+The stochastic traffic generation option \fB\-G\fR takes the flow endpoint as
+argument, denoted by 'x' in the option syntax. 'x' needs to be replaced with
+either 's' for the source endpoint, 'd' for the destination endpoint or 'b' for
+both endpoints. However, please note that bidirectional traffic generation can
+lead to unexpected results. To specify different values for each endpoints,
+separate them by comma.
+.HP
+\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR),(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR),\fI#1\fR,[\fI#2\fR]
+.IP
+Flow parameter:
+.in +4n
+.nf
+\fIq\fR = request size (in bytes)
+\fIp\fR = response size (in bytes)
+\fIg\fR = request interpacket gap (in seconds)
+.fi
+.IP
+Distributions:
+.in +4n
+.nf
+\fIC\fR = constant (#1: value, #2: not used)
+\fIU\fR = uniform (#1: min, #2: max)
+\fIE\fR = exponential (#1: lamba \- lifetime, #2: not used)
+\fIN\fR = normal (#1: mu \- mean value, #2: sigma_square \- variance)
+\fIL\fR = lognormal (#1: zeta \- mean, #2: sigma \- std dev)
+\fIP\fR = pareto (#1: k \- shape, #2 x_min \- scale)
+\fIW\fR = weibull (#1: lambda \- scale, #2: k \- shape)
+.fi
+.IP
 advanced distributions like weibull are only available if flowgrind is compiled
 with libgsl support.
+.TP
+\fB\-U \fI#\fR
+specify a cap for the calculated values for request and response sizes, needed
+because the advanced distributed values are unbounded, but we need to know the
+buffersize (it's not needed for constant values or uniform distribution).
+Values outside the bounds are recalculated until a valid result occurs but at
+most 10 times (then the bound value is used)
 
-.BR \-U " #"
-specify a cap for the calculated values for request and
-response sizes, needed because the advanced distributed values are
-unbounded, but we need to know the buffersize (it's not needed for
-constant values or uniform distribution). Values outside the bounds are
-recalculated until a valid result occurs but at most 10 times (then
-the bound value is used).
+.SS Socket Options
+Flowgrind allows to set the following standard and non-standard socket options.
+.PP
+All socket options take the flow endpoint as argument, denoted by 'x' in the
+option syntax. 'x' needs to be replaced with either 's' for the source
+endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To
+specify different values for each endpoints, separate them by comma. Moreover,
+it is possible to repeatedly pass the same endpoint in order to specify
+multiple socket options
+.PP
+.B Standard socket options
+.TP
+\fB\-O\fR \fIx\fR=TCP_CONGESTION=\fIALG\fR
+set congestion control algorithm ALG on test socket
+.TP
+\fB\-O\fR \fIx\fR=TCP_CORK
+set TCP_CORK on test socket
+.TP
+\fB\-O\fR \fIx\fR=TCP_NODELAY
+disable nagle algorithm on test socket
+.TP
+\fB\-O\fR \fIx\fR=SO_DEBUG
+set SO_DEBUG on test socket
+.TP
+\fB\-O\fR \fIx\fR=IP_MTU_DISCOVER
+set IP_MTU_DISCOVER on test socket if not already enabled by
+system default
+.TP
+\fB\-O\fR \fIx\fR=ROUTE_RECORD
+set ROUTE_RECORD on test socket
+.PP
+.B Non-standard socket options
+.TP
+\fB\-O\fR \fIx\fR=TCP_MTCP
+set TCP_MTCP (15) on test socket
+.TP
+\fB\-O\fR \fIx\fR=TCP_ELCN
+set TCP_ELCN (20) on test socket
+.TP
+\fB\-O\fR \fIx\fR=TCP_LCD
+set TCP_LCD (21) on test socket
+
 
 .SH "EXAMPLES"
 
@@ -295,7 +332,7 @@ use uniform distributed interpacket gap with min 0.005s and and max 10ms
 .B "-U 32000"
 truncate block sizes at 32 kbytes (needed for normal distribution)
 
-.SH "Traffic Generation Scenarios"
+.SS "Traffic Generation Scenarios"
 The following examples demonstrate how Traffic Generation can be used. These
 have been incorporated in different tests for flowgrind and have been proven
 meaningful.  But as Internet Traffic is diverse, there is no guarantee that
