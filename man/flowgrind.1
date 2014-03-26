@@ -35,76 +35,68 @@ sophisticated request/response tests. Flowgrind uses libpcap to automatically
 dump traffic for qualitative analysis.
 
 .SH "OPTIONS"
-.SS General information
+They are two important groups of options: controller options and flow options.
+Like the name suggests, controller options apply globally and potentially
+affect all flows, while flow\-specific options only apply to the subset of
+flows selected using the \fB\-F\fR option.
 
-Two important groups of options are the global options and flow options. Like
-the name suggests, global options apply globally and potentially affect all
-flows. Flow\-specific options only apply to the subset of flows selected using
-the .B \-F
-option.
-
-.SS Miscellaneous
-
-.TP
-.B \-h
-Show help and exit.
-
-.TP
-.B \-h [s|g]
-show additional help for socket options and traffic generation.
-
-.TP
-.B \-v
-Print version information and exit.
+Mandatory arguments to long options are mandatory for short options too.
 
 .SS General options
 
 .TP
-.BR \-c " -begin,-end,-thrpt,-transac,+blocks,-rtt,-iat,-kernel,+status"
-Comma separated list of column groups to display in output. Prefix with either
-+ to show column group, \- to hide column group.
+\fB\-h\fR
+display this help and exit (same as \fB\-\-help\fR)
+.TP
+\fB\-\-help\fR[=\fIWHAT\fR]
+display help and exit. Optional WHAT can either be 'socket' for help on socket
+options or 'traffic' traffic generation help
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+print version information and exit
+
+.SS Controller options
 
 .TP
-.B \-d
-Increase debugging verbosity. Add option multiple times to be even more
-verbose. Only available if compiled with ./configure \-\-enable\-debug set.
-
+\fB\-c\fR, \fB\-\-show\-colon\fR=\fITYPE\fR[,\fITYPE\fR]...
+display intermediated interval report column TYPE in output.  Allowed values
+for TYPE are: 'interval', 'through', 'transac', \&'iat', 'kernel' (all show per
+default), and 'blocks', 'rtt', \&'delay' (optional)
 .TP
-.BR \-e " PREFIX"
-Prepend PREFIX to log and dump filename (default: "flowlog\-").
-
+\fB\-d\fR, \fB\-\-debug\fR
+increase debugging verbosity. Add option multiple times to increase the
+verbosity
 .TP
-.BR \-i " #.#"
-Reporting interval in seconds (default: 0.05s).
-
+\fB\-e\fR, \fB\-\-dump\-prefix\fR=\fIPRE\fR
+prepend prefix PRE to dump filename (default: "flowgrind\-")
 .TP
-.BR \-l " NAME"
-Use log filename NAME instead. If not specified the current time is used for
-the filename.
-
+\fB\-i\fR, \fB\-\-report\-interval=\fI#\fR.\fI#\fR
+reporting interval, in seconds (default: 0.05s)
 .TP
-.BR \-m
-Report throughput in 2**20 bytes/second (MiB/s) (default: 10**6 bit/sec (Mbit/s)).
-
+\fB\-\-log\-file\fR[=\fIFILE\fR]
+write output to logfile FILE (default: flowgrind\-'timestamp'.log)
 .TP
-.BR \-n " #"
-Number of test flows (default: 1).
-
+\fB\-m\fR
+report throughput in 2**20 bytes/s (default: 10**6 bit/s)
 .TP
-.BR \-o
-Overwrite existing log files (default: don't).
-
+\fB\-n\fR, \fB\-\-flows=\fI#\fR
+number of test flows (default: 1)
 .TP
-.BR \-p
-don't print symbolic values (like INT_MAX) instead of numbers (default: off)
-
+\fB\-o\fR
+overwrite existing log files (default: don't)
 .TP
-.BR \-q
-Be quiet, do not log to screen (default: off).
-
+\fB\-p\fR
+don't print symbolic values (like INT_MAX) instead of numbers
 .TP
-.BR \-w
-Write output to logfile (default: off).
+\fB\-q\fR, \fB\-\-quiet\fR
+be quiet, do not log to screen (default: off)
+.TP
+\fB\-s\fR, \fB\-\-tcp\-stack\fR=\fITYPE\f
+don't determine unit of source TCP stacks automatically. Force unit to TYPE,
+where TYPE is 'segment' or 'byte'
+.TP
+\fB\-w\fR
+write output to logfile (same as \fB\-\-log\-file\fR)
 
 .SS Flow options
 
@@ -115,116 +107,94 @@ source endpoint connects to it. For the actual test this makes no difference,
 both endpoints have exactly the same capabilities. Data can be sent in either
 direction and many settings can be configured individually for each endpoint.
 
-Some of these options take the flow endpoint as argument. Is is denoted by 'x'
-in the option syntax. 'x' needs to be replaced with either 's' for the source
+Some of these options take the flow endpoint as argument, denoted by 'x' in the
+option syntax. 'x' needs to be replaced with either 's' for the source
 endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To
-specify different values for both endpoints, separate them by comma.
-
-Example: \-T s=5,d=10
-
-.TP
-.BR \-A " x"
-activate minimal request and response size for RTT calculation. (same as -G p=C,24)
+specify different values for each endpoints, separate them by comma. For
+instance \fB\-W\fR s=8192,d=4096 sets the advertised window to 8192 at the
+source and 4096 at the destination.
 
 .TP
-.BR \-B " x=#"
-Set requested sending buffer in bytes.
-
+\fB\-A \fIx\fR
+use minimal response size needed for RTT calculation
+.br
+(same as \fB\-G\fR s=p,C,40)
 .TP
-.BR \-C " x"
-Stop flow if it is experiencing local congestion.
-
+\fB\-B \fIx\fR=\fI#\fR 
+set requested sending buffer, in bytes
 .TP
-.BR \-D " x=DSCP"
-DSCP value for type\-of\-service IP header byte.
-
+\fB\-C \fIx\fR
+stop flow if it is experiencing local congestion
 .TP
-.BR \-E " x"
-Enumerate bytes in payload (default: don't).
-
+\fB\-D \fIx\fR=\fIDSCP\fR
+DSCP value for type\-of\-service (TOS) IP header byte
 .TP
-.BR \-F " #[,#]*"
-Comma\-separated list of flows.  Flow options following this option apply only
-to the specified flows. Useful in combination with
-.B \-n
-to set specific options for certain flows.
-Numbering starts with 0, so \-F 1 refers to the second flow.
-All flow options before the first \-F apply to all flows.
-
+\fB\-E\fR
+enumerate bytes in payload instead of sending zeros
 .TP
-.BR "-G x=[q|p|g],[C|E|P|N|U],#1,(#2)"
-Activate stochastic traffic generation and set parameters according to the used
-distribution.
-
+\fB\-F\fR \fI#\fR[,\fI#\fR]...
+flow options following this option apply only to the given flow IDs. Useful in
+combination with \fB\-n\fR to set specific options for certain flows. Numbering
+starts with 0, so \fB\-F\fR 1 refers to the second flow
 .TP
-.BR \-H " x=HOST[/RPCADDRESS[:PORT]]"
-Test from/to HOST. Optional argument is the address and port of the RPC server.
-An endpoint that isn't specified is assumed to be 127.0.0.1.
-
+\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR),(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR),\fI#1\fR,[\fI#2\fR]
+activate stochastic traffic generation and set parameters according to the used
+distribution. For additional information see 'flowgrind
+\fB\-\-help\fR=\fItraffic\fR'
 .TP
-.BR \-J " #"
-Use random seed # (default: read /dev/urandom).
-
+\fB\-H\fR \fIx\fR=\fIHOST\fR[/\fICONTROL\fR[:\fIPORT\fR]]
+test from/to HOST. Optional argument is the address and port for the CONTROL
+connection to the same host.  An endpoint that isn't specified is assumed to be
+localhost
 .TP
-.BR \-L
-Call connect() on test socket immediately before starting to send data (late
-connect).  If not specified the test connection is established in the
-preparation phase before the test starts.
-
+\fB\-J \fI#\fR
+use random seed # (default: read \fI/dev/urandom\fR)
 .TP
-.BR \-N
-Call shutdown() after test flow is scheduled to end.
-
+\fB\-I\fR
+enable one\-way delay calculation (no clock synchronization)
 .TP
-.BR \-M " x"
-dump traffic using libpcap.
-
+\fB\-L\fR
+call connect() on test socket immediately before starting to send data (late
+connect). If not specified the test connection is established in the
+preparation phase before the test starts
 .TP
-.BR \-O " x=OPT"
-Set specific socket options on test socket.
-For a list of supported socket options see
-.B \-h s
-option.
-
+\fB\-M\fR \fIx\fR
+dump traffic using libpcap
 .TP
-.BR \-P " x"
-Do not iterate through select() to continue sending in case block size did not
-suffice to fill sending queue (pushy).
-
+\fB\-N\fR
+shutdown() each socket direction after test flow
 .TP
-.BR \-Q
-Summarize only, skip interval reports (quiet).
-
+\fB\-O\fR \fIx\fR=\fIOPT\fR
+set socket option OPT on test socket. For additional information see 'flowgrind
+\fB\-\-help\fR=\fIsocket\fR'
 .TP
-.BR \-R " x=#.#[z|k|M|G][b|B][p|P]\n"
-Rate limiting. Send data at specified rate per second, where:
-.BR
-z = 2**0, k = 2**10, M = 2**20, G = 2**30.
-.BR
-b = bits per second (default), y = bytes per second, B = blocks per second.
-.BR
-p = periodic (default), P = Poisson distributed.
-
+\fB\-P\fR \fIx\fR
+do not iterate through select() to continue sending in case block size did not
+suffice to fill sending queue (pushy)
 .TP
-.BR \-T " x=#.#"
-Set flow duration, in seconds (default: s=10,d=0).
-
+\fB\-Q\fR
+summarize only, no intermediated interval reports are computed (quiet)
 .TP
-.BR \-U #
-Set application buffer size (default: 8192).
-truncates values if used with stochastic traffic generation.
-
+\fB\-R\fR \fIx\fR=\fI#\fR.\fI#\fR(\fIz\fR|\fIk\fR|\fIM\fR|\fIG\fR)(\fIb\fR|\fIB\fR|\fIo\fR)
+send at specified rate per second, where: z = 2**0, k = 2**10, M = 2**20, G =
+2**30 b = bits/s (default), B = bytes/s, o = blocks/s (same as \fB\-G\fR
+s=g,C,#)
 .TP
-.BR \-S " x=#"
-Set block size, same as -G s=q,C,#.
-
+\fB\-S \fIx\fR=\fI#\fR
+set block (message) size, in bytes (same as \fB\-G\fR s=q,C,#)
 .TP
-.BR \-W " x=#"
-Set requested receiver buffer (advertised window) in bytes.
-
+\fB\-T\fR \fIx\fR=\fI#\fR.\fI#\fR
+set flow duration, in seconds (default: s=10,d=0)
 .TP
-.BR \-Y " x=#.#"
-Set initial delay before the host starts to send data.
+\fB\-U \fI#\fR
+set application buffer size, in bytes (default: 8192) truncates values if used
+with stochastic traffic generation
+.TP
+\fB\-W \fIx\fR=\fI#\fR
+set requested receiver buffer (advertised window), in bytes
+.TP
+\fB\-Y \fIx\fR=\fI#\fR.\fI#\fR
+set initial delay before the host starts to send, in seconds
 
 .SS Traffic Generation Options
 
