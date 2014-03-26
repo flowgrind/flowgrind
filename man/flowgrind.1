@@ -1,19 +1,17 @@
-.TH "flowgrind" "26" "March 2013" "" "Flowgrind Manual"
+.TH "flowgrind" "1" "March 2013" "" "Flowgrind Manual"
 
 .SH "NAME"
 flowgrind \- advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X
 
 .SH "SYNOPSIS"
-flowgrind [OPTION]...
+flowgrind [\fIOPTION\fR]...
 
 .SH "DESCRIPTION"
-.B flowgrind
-is an advanced TCP traffic generator for testing and benchmarking Linux,
-FreeBSD, and Mac OS X TCP/IP stacks. In contrast to other performance
-measurement tools it features a distributed architecture, where throughput and
-other metrics are measured between arbitrary flowgrind server processes,
-flowgrind daemon
-.BR flowgrindd "(1)".
+\fBflowgrind\fR is an advanced TCP traffic generator for testing and
+benchmarking Linux, FreeBSD, and Mac OS X TCP/IP stacks. In contrast to other
+performance measurement tools it features a distributed architecture, where
+throughput and other metrics are measured between arbitrary flowgrind server
+processes, flowgrind daemon \fBflowgrindd\fR(1).
 
 Flowgrind measures besides goodput (throughput), the application layer
 interarrival time (IAT) and round-trip time (RTT), blockcount and network
@@ -24,18 +22,15 @@ others the kernel's estimation of the end-to-end RTT, the size of the TCP
 congestion window (CWND) and slow start threshold (SSTHRESH).
 
 Flowgrind has a distributed architecture. It is split into two components: the
-flowgrind daemon
-.B flowgrindd
-and the
-.B flowgrind
-controller. Using the controller, flows
-between any two systems running the flowgrind daemon can be setup (third party
-tests). At regular intervals during the test the controller collects and
-displays the measured results from the daemons. It can run multiple flows at
-once with the same or different settings and individually schedule every one.
-Test and control connection can optionally be diverted to different interfaces.
+flowgrind daemon, \fBflowgrindd\fR(1), and the \fBflowgrind\fR controller.
+Using the controller, flows between any two systems running the flowgrind
+daemon can be setup (third party tests). At regular intervals during the test
+the controller collects and displays the measured results from the daemons. It
+can run multiple flows at once with the same or different settings and
+individually schedule every one. Test and control connection can optionally be
+diverted to different interfaces.
 
-The traffic generation itself is either bulk transfer, rate-limited, or
+The traffic generation itself is either bulk transfer, rate\-limited, or
 sophisticated request/response tests. Flowgrind uses libpcap to automatically
 dump traffic for qualitative analysis.
 
