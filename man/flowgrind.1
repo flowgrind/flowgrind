@@ -280,58 +280,48 @@ set TCP_ELCN (20) on test socket
 \fB\-O\fR \fIx\fR=TCP_LCD
 set TCP_LCD (21) on test socket
 
-
 .SH "EXAMPLES"
-
 .TP
 .B flowgrind
-Testing localhost IPv4 TCP performance with default settings, same as flowgrind
--H b=127.0.0.1 -T s=10,d=0
-
+testing localhost IPv4 TCP performance with default settings, same as flowgrind
+\-H b=127.0.0.1 \-T s=10,d=0. The flowgrind daemon needs to be run on localhost.
 .TP
-.B flowgrind -H b=::1/127.0.0.1
-Testing localhost IPv6 TCP performance with default settings.
-
+.B flowgrind \-H b=::1/127.0.0.1
+same as above, but testing localhost IPv6 TCP performance with default settings
 .TP
 .B flowgrind \-H s=host1,d=host2
-Start bulk TCP transfer with host1 as source and host2 as destination endpoint.
-Both endpoints need to be running the flowgrind daemon. The default flow
-options are used, with a flow of 10 seconds duration with data sent from the
-source to the destination endpoint.
-
+bulk TCP transfer between host1 and host2. Host1 acts as source, host2 as
+destination endpoint. Both endpoints need to be run the flowgrind daemon. The
+default flow options are used, with a flow duration of 10 seconds and a data
+stream from host1 to host2
 .TP
 .B flowgrind \-H s=host1,d=host2 \-T s=0,d=10
-Same as the above but instead with a flow sending data for 10 seconds from the
-destination to the source endpoint.
-
+same as the above but instead with a flow sending data for 10 seconds from
+host2 to host1
 .TP
-.B flowgrind \-n 2 \-F 0 \-H s=192.168.0.1,d=192.168.0.69 \-F 1 \-H
-s=10.0.0.1,d=10.0.0.2 Setup two flows, first flow between 192.168.0.1 and
-192.168.0.69, second flow between 10.0.0.1 to 10.0.0.2
-
+.B flowgrind \-n 2 \-F 0 \-H s=192.168.0.1,d=192.168.0.69 \-F 1 \-H s=10.0.0.1,d=10.0.0.2
+setup two parallel flows, first flow between 192.168.0.1 and 192.168.0.69,
+second flow between 10.0.0.1 to 10.0.0.2
 .TP
 .B flowgrind \-p \-H s=10.0.0.100/192.168.1.100,d=10.0.0.101/192.168.1.101 \-A s
-Setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP
-addresses for configuration. Activate minimal response for RTT calculation and
-show numerical values.
-
+setup one flow between 10.0.0.100 and 10.0.0.101 and use 192.168.1.x IP
+addresses for controll traffic. Activate minimal response for RTT calculation
 .TP
-.B flowgrind -i 0.001 \-T s=1 | egrep ^S | gnuplot \-persist \-e 'plot """\-"""
-using 3:5 with lines title """Throughput"""' Setup one flow over loopback
-device and plot the data of the sender with the help of gnuplot.
-
+.B flowgrind \-i 0.001 \-T s=1 | egrep ^S | gnuplot \-persist \-e 'plot """\-""" using 3:5 with lines title """Throughput"""'
+setup one flow over loopback device and plot the data of the sender with the
+help of gnuplot
 .TP
-.B "flowgrind -G s=q,C,400 -G s=p,N,2000,50 -G s=g,U,0.005,0.01 -U 32000"
-.B "q,C,400"
-use constant request size of 400 bytes
-.B "p,N,2000,50"
-use normal distributed response size with mean 2000 bytes and variance 50
-.B "g,U,0.005,0.01"
-use uniform distributed interpacket gap with min 0.005s and and max 10ms
-.B "-U 32000"
-truncate block sizes at 32 kbytes (needed for normal distribution)
+.B "flowgrind \-G s=q,C,400 \-G s=p,N,2000,50 \-G s=g,U,0.005,0.01 \-U 32000"
+.br
+\-G s=q,C,400: use constant request size of 400 bytes
+.br
+\-G s=p,N,2000,50: use normal distributed response size with mean 2000 bytes and variance 50
+.br
+\-G s=g,U,0.005,0.01: use uniform distributed interpacket gap with min 0.005s and and max 10ms
+.br
+\-U 32000: truncate block sizes at 32 kbytes (needed for normal distribution)
 
-.SS "Traffic Generation Scenarios"
+.SH "TRAFFIC SCENARIOS"
 The following examples demonstrate how Traffic Generation can be used. These
 have been incorporated in different tests for flowgrind and have been proven
 meaningful.  But as Internet Traffic is diverse, there is no guarantee that
