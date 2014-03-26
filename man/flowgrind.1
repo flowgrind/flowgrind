@@ -192,13 +192,10 @@ set requested receiver buffer (advertised window), in bytes
 \fB\-Y \fIx\fR=\fI#\fR.\fI#\fR
 set initial delay before the host starts to send, in seconds
 
-
-.SH "OTHER OPTIONS"
-
-.SS Traffic Generation Option
-Flowgrind supports stochastic traffic generation, which allows to conduct
-besides normal bulk also advanced rate\-limited and request\-response data
-transfers.
+.SH "TRAFFIC GENERATION OPTION"
+Via option \fB\-G\fR flowgrind supports stochastic traffic generation, which
+allows to conduct besides normal bulk also advanced rate\-limited and
+request\-response data transfers.
 .PP
 The stochastic traffic generation option \fB\-G\fR takes the flow endpoint as
 argument, denoted by 'x' in the option syntax. 'x' needs to be replaced with
@@ -239,8 +236,9 @@ buffersize (it's not needed for constant values or uniform distribution).
 Values outside the bounds are recalculated until a valid result occurs but at
 most 10 times (then the bound value is used)
 
-.SS Socket Options
-Flowgrind allows to set the following standard and non-standard socket options.
+.SH "SOCKET OPTION"
+Flowgrind allows to set the following standard and non-standard socket options
+via option \fB\-O\fR.
 .PP
 All socket options take the flow endpoint as argument, denoted by 'x' in the
 option syntax. 'x' needs to be replaced with either 's' for the source
@@ -248,8 +246,8 @@ endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To
 specify different values for each endpoints, separate them by comma. Moreover,
 it is possible to repeatedly pass the same endpoint in order to specify
 multiple socket options
-.PP
-.B Standard socket options
+
+.SS Standard socket options
 .TP
 \fB\-O\fR \fIx\fR=TCP_CONGESTION=\fIALG\fR
 set congestion control algorithm ALG on test socket
@@ -270,7 +268,8 @@ system default
 \fB\-O\fR \fIx\fR=ROUTE_RECORD
 set ROUTE_RECORD on test socket
 .PP
-.B Non-standard socket options
+
+.SS Non-standard socket options
 .TP
 \fB\-O\fR \fIx\fR=TCP_MTCP
 set TCP_MTCP (15) on test socket
