@@ -2,7 +2,7 @@
 .SH "NAME"
 flowgrind \- network performance measurement tool
 .SH "SYNOPSIS"
-.br 
+.br
 flowgrind [general options] [flow options]
 .SH "DESCRIPTION"
 .B flowgrind
@@ -16,7 +16,7 @@ Flowgrind performs extensive TCP tests. On Linux and FreeBSD systems flowgrind c
 
 Each test connection is called a flow and
 .B flowgrindd
-has to be running on every host that supped to be a flow endpoint. The 
+has to be running on every host that supped to be a flow endpoint. The
 .B flowgrind
 controller only sets up the flows as well as gathers and prints the results. The controller does however not actually participate in the test. However, mixing 32bit and 64bit systems can potentially lead to unexpected results and is therefore not recommended.
 
@@ -29,61 +29,61 @@ option.
 
 .SS Miscellaneous
 
-.TP 
+.TP
 .B \-h
 Show help and exit.
 
 .TP
 .B \-h [s|g]
-show additional help for socket options and traffic generation. 
+show additional help for socket options and traffic generation.
 
-.TP 
+.TP
 .B \-v
 Print version information and exit.
 
 .SS General options
 
-.TP 
+.TP
 .BR \-c " -begin,-end,-thrpt,-transac,+blocks,-rtt,-iat,-kernel,+status"
 Comma separated list of column groups to display in output. Prefix with either + to show column group, \- to hide column group.
 
-.TP 
+.TP
 .B \-d
 Increase debugging verbosity. Add option multiple times to be even more verbose. Only available if compiled with ./configure \-\-enable\-debug set.
 
-.TP 
+.TP
 .BR \-e " PREFIX"
 Prepend PREFIX to log and dump filename (default: "flowlog\-").
 
-.TP 
+.TP
 .BR \-i " #.#"
 Reporting interval in seconds (default: 0.05s).
 
-.TP 
+.TP
 .BR \-l " NAME"
 Use log filename NAME instead. If not specified the current time is used for the filename.
 
-.TP 
+.TP
 .BR \-m
 Report throughput in 2**20 bytes/second (MiB/s) (default: 10**6 bit/sec (Mbit/s)).
 
-.TP 
+.TP
 .BR \-n " #"
 Number of test flows (default: 1).
 
-.TP 
+.TP
 .BR \-o
 Overwrite existing log files (default: don't).
 
-.TP 
+.TP
 .BR \-p
-don't print symbolic values (like INT_MAX) instead of numbers (default: off) 
+don't print symbolic values (like INT_MAX) instead of numbers (default: off)
 
-.TP 
+.TP
 .BR \-q
 Be quiet, do not log to screen (default: off).
 
-.TP 
+.TP
 .BR \-w
 Write output to logfile (default: off).
 
@@ -99,23 +99,23 @@ Example: \-T s=5,d=10
 .BR \-A " x"
 activate minimal request and response size for RTT calculation. (same as -G p=C,24)
 
-.TP 
+.TP
 .BR \-B " x=#"
 Set requested sending buffer in bytes.
 
-.TP 
+.TP
 .BR \-C " x"
 Stop flow if it is experiencing local congestion.
 
-.TP 
+.TP
 .BR \-D " x=DSCP"
 DSCP value for type\-of\-service IP header byte.
 
-.TP 
+.TP
 .BR \-E " x"
 Enumerate bytes in payload (default: don't).
 
-.TP 
+.TP
 .BR \-F " #[,#]*"
 Comma\-separated list of flows.
 Flow options following this option apply only to the specified flows. Useful in combination with
@@ -124,11 +124,11 @@ to set specific options for certain flows.
 Numbering starts with 0, so \-F 1 refers to the second flow.
 All flow options before the first \-F apply to all flows.
 
-.TP 
+.TP
 .BR "-G x=[q|p|g],[C|E|P|N|U],#1,(#2)"
 Activate stochastic traffic generation and set parameters according to the used distribution.
 
-.TP 
+.TP
 .BR \-H " x=HOST[/RPCADDRESS[:PORT]]"
 Test from/to HOST. Optional argument is the address and port of the RPC server.
 An endpoint that isn't specified is assumed to be 127.0.0.1.
@@ -137,12 +137,12 @@ An endpoint that isn't specified is assumed to be 127.0.0.1.
 .BR \-J " #"
 Use random seed # (default: read /dev/urandom).
 
-.TP 
+.TP
 .BR \-L
 Call connect() on test socket immediately before starting to send data (late connect).
 If not specified the test connection is established in the preparation phase before the test starts.
 
-.TP 
+.TP
 .BR \-N
 Call shutdown() after test flow is scheduled to end.
 
@@ -150,36 +150,36 @@ Call shutdown() after test flow is scheduled to end.
 .BR \-M " x"
 dump traffic using libpcap.
 
-.TP 
+.TP
 .BR \-O " x=OPT"
 Set specific socket options on test socket.
 For a list of supported socket options see
 .B \-h s
 option.
 
-.TP 
+.TP
 .BR \-P " x"
 Do not iterate through select() to continue sending in case block size did not suffice to fill sending queue (pushy).
 
-.TP 
+.TP
 .BR \-Q
 Summarize only, skip interval reports (quiet).
 
-.TP 
+.TP
 .BR \-R " x=#.#[z|k|M|G][b|B][p|P]\n"
 Rate limiting. Send data at specified rate per second, where:
-.BR 
+.BR
 z = 2**0, k = 2**10, M = 2**20, G = 2**30.
-.BR 
+.BR
 b = bits per second (default), y = bytes per second, B = blocks per second.
-.BR 
+.BR
 p = periodic (default), P = Poisson distributed.
 
-.TP 
+.TP
 .BR \-T " x=#.#"
 Set flow duration, in seconds (default: s=10,d=0).
 
-.TP 
+.TP
 .BR \-U #
 Set application buffer size (default: 8192).
 truncates values if used with stochastic traffic generation.
@@ -188,11 +188,11 @@ truncates values if used with stochastic traffic generation.
 .BR \-S " x=#"
 Set block size, same as -G s=q,C,#.
 
-.TP 
+.TP
 .BR \-W " x=#"
 Set requested receiver buffer (advertised window) in bytes.
 
-.TP 
+.TP
 .BR \-Y " x=#.#"
 Set initial delay before the host starts to send data.
 
@@ -213,7 +213,7 @@ response size (in bytes)
 
 .BR g
 request interpacket gap (in s)
-               
+
 possible distributions:
 
 .BR C
@@ -240,12 +240,12 @@ lognormal (param 1: zeta \- mean value, param 2: sigma \- std dev)
 advanced distributions like weibull are only available if flowgrind is compiled
 with libgsl support.
 
-.BR \-U " #" 
+.BR \-U " #"
 specify a cap for the calculated values for request and
-response sizes, needed because the advanced distributed values are 
-unbounded, but we need to know the buffersize (it's not needed for 
-constant values or uniform distribution). Values outside the bounds are 
-recalculated until a valid result occurs but at most 10 times (then 
+response sizes, needed because the advanced distributed values are
+unbounded, but we need to know the buffersize (it's not needed for
+constant values or uniform distribution). Values outside the bounds are
+recalculated until a valid result occurs but at most 10 times (then
 the bound value is used).
 
 .SH "EXAMPLES"
@@ -258,15 +258,15 @@ Testing localhost IPv4 TCP performance with default settings, same as flowgrind 
 .B flowgrind -H b=::1/127.0.0.1
 Testing localhost IPv6 TCP performance with default settings.
 
-.TP 
+.TP
 .B flowgrind \-H s=host1,d=host2
 Start bulk TCP transfer with host1 as source and host2 as destination endpoint. Both endpoints need to be running the flowgrind daemon. The default flow options are used, with a flow of 10 seconds duration with data sent from the source to the destination endpoint.
 
-.TP 
+.TP
 .B flowgrind \-H s=host1,d=host2 \-T s=0,d=10
 Same as the above but instead with a flow sending data for 10 seconds from the destination to the source endpoint.
 
-.TP 
+.TP
 .B flowgrind \-n 2 \-F 0 \-H s=192.168.0.1,d=192.168.0.69 \-F 1 \-H s=10.0.0.1,d=10.0.0.2
 Setup two flows, first flow between 192.168.0.1 and 192.168.0.69, second flow between 10.0.0.1 to 10.0.0.2
 
@@ -338,25 +338,25 @@ This scenario emulates a video stream transfer with a bitrate of 800 kbit/s.
 .TP
 .B "flowgrind -G s=q,C,800 -G s=g,N,0.008,0.001"
 .TP
-Use normal distributed interpacket gap with mean 0.008 and a small variance (0.001). In conjuction with request size 800 bytes a average bitrate of approx 800 kbit/s is achieved. The variance is added to emulate a variable bitrate like it's used in todays video codecs. 
+Use normal distributed interpacket gap with mean 0.008 and a small variance (0.001). In conjuction with request size 800 bytes a average bitrate of approx 800 kbit/s is achieved. The variance is added to emulate a variable bitrate like it's used in todays video codecs.
 .TP
 For this scenario the IAT (lower is better) and minimal throughput (higher is better) are interesting metrics.
 
 .SH "OUTPUT COLUMNS"
-.TP 
+.TP
 .B #
 The endpoint, either S for source or D for destination.
 
-.TP 
+.TP
 .B ID
 The numerical flow identifier.
 
-.TP 
+.TP
 .BR begin " and " end
 The boundaries of the measuring interval in seconds. The time shown is the elapsed time since receiving the RPC message to start the test from the daemons point of view.
 
 .SS Application layer metrics
-.TP 
+.TP
 .B through
 The transmitting goodput of the flow endpoint during this measurement interval, measured in Mbit/s (default) or MB/s (-m).
 
@@ -368,28 +368,28 @@ The number of successfully received response blocks per second (we call it netwo
 .B requ/resp
 The number of request and response block sent during this measurement interval (column disabled by default)
 
-.TP 
+.TP
 .BR IAT " and " RTT
 The 1\-way and 2\-way block (application layer) delays respectively block IAT and block RTT. For both delays the minimum and maximum encountered values in that interval are displayed in addition to the arithmetic mean. If no block acknowledgement arrived during that report interval, inf is displayed (for example when no responses are send, if in doubt try -A s)
 
 .SS Kernel metrics (TCP_INFO)
-.TP 
+.TP
 .B cwnd (tcpi_cwnd)
 Size of TCP congestion window in number of segments (Linux) or bytes (FreeBSD). All TCP specific metrics are obtained from the kernel through the TCP_INFO socket option at the end of every reporting interval.
 
-.TP 
+.TP
 .B ssth (tcpi_snd_sshtresh)
 The slowstart threshold of the sender in number of segments (Linux) or bytes (FreeBSD).
 
-.TP 
+.TP
 .BR "uack (tcpi_unacked) " "and" " sack (tcpi_sacked)"
 Statistics about the number of unacknowledged and selectively acknowledged segments. (Linux only)
 
-.TP 
+.TP
 .B lost (tcpi_lost)
 Number of segments assumed lost at the end of the reporting interval. (Linux only)
 
-.TP 
+.TP
 .B retr (tcpi_retrans)
 Number of unacknowledged retransmitted segments. (Linux only)
 
@@ -423,59 +423,59 @@ Internal state of congestion control state machine as implemented in the Linux k
 
 .RS 8
 
-.TP 
+.TP
 .B Open
 is the normal state. It indicates that there are no issues with the connection.
 
-.TP 
+.TP
 .B Disorder
 is similar to Open but is entered upon receiving duplicate ACKs or selective acknowledgements as special attention might be needed in the near future.
 
-.TP 
+.TP
 .B CWR
 is entered when the size of the congestion window got lowered due to receiving an ICMP Source Quench message or a notification from Explicit Congestion Notification (ECN).
 
-.TP 
+.TP
 .B Recovery
 indicates that the congestion window got lowered and a segment is fast\-retransmitted.
 
-.TP 
+.TP
 .B Loss
 is entered if the RTO expires. Again the size of the congestion window got lowered in this state.
 .RE
 
-.TP 
+.TP
 .BR smss " and " pmtu
 Sender maximum segment size and path maximum transmission unit in bytes.
 
 .SS Internal flowgrind state (only enabled in debug builds)
-.TP 
+.TP
 .B status
 The state of the flow inside flowgrind for diagnostic purposes. It is a tuple of two values, the first for sending and the second for receiving. Ideally the states of both the source and destination endpoints of a flow should be symmetrical but since they are not synchronized they may not change at the same time. The possible values are:
 
 .RS 8
 
-.TP 
+.TP
 .B c
 Direction completed sending/receiving.
 
-.TP 
+.TP
 .B d
 Waiting for initial delay.
 
-.TP 
+.TP
 .B f
 Fault state.
 
-.TP 
+.TP
 .B l
 Active state, nothing yet transmitted or received.
 
-.TP 
+.TP
 .B n
 Normal activity, some data got transmitted or received.
 
-.TP 
+.TP
 .B o
 Flow has zero duration in that direction, no data is going to be exchanged.
 .RE
