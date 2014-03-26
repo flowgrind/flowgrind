@@ -12,7 +12,7 @@ benchmarking Linux, FreeBSD, and Mac OS X TCP/IP stacks. In contrast to other
 performance measurement tools it features a distributed architecture, where
 throughput and other metrics are measured between arbitrary flowgrind server
 processes, flowgrind daemon \fBflowgrindd\fR(1).
-
+.PP
 Flowgrind measures besides goodput (throughput), the application layer
 interarrival time (IAT) and round-trip time (RTT), blockcount and network
 transactions/s. Unlike most cross-platform testing tools, flowgrind collects
@@ -20,7 +20,7 @@ and reports the TCP metrics returned by the TCP_INFO socket option, which are
 usually internal to the TCP/IP stack. On Linux and FreeBSD this includes among
 others the kernel's estimation of the end-to-end RTT, the size of the TCP
 congestion window (CWND) and slow start threshold (SSTHRESH).
-
+.PP
 Flowgrind has a distributed architecture. It is split into two components: the
 flowgrind daemon, \fBflowgrindd\fR(1), and the \fBflowgrind\fR controller.
 Using the controller, flows between any two systems running the flowgrind
@@ -29,7 +29,7 @@ the controller collects and displays the measured results from the daemons. It
 can run multiple flows at once with the same or different settings and
 individually schedule every one. Test and control connection can optionally be
 diverted to different interfaces.
-
+.PP
 The traffic generation itself is either bulk transfer, rate\-limited, or
 sophisticated request/response tests. Flowgrind uses libpcap to automatically
 dump traffic for qualitative analysis.
@@ -39,11 +39,10 @@ They are two important groups of options: controller options and flow options.
 Like the name suggests, controller options apply globally and potentially
 affect all flows, while flow\-specific options only apply to the subset of
 flows selected using the \fB\-F\fR option.
-
+.PP
 Mandatory arguments to long options are mandatory for short options too.
 
 .SS General options
-
 .TP
 \fB\-h\fR
 display this help and exit (same as \fB\-\-help\fR)
@@ -56,7 +55,6 @@ options or 'traffic' traffic generation help
 print version information and exit
 
 .SS Controller options
-
 .TP
 \fB\-c\fR, \fB\-\-show\-colon\fR=\fITYPE\fR[,\fITYPE\fR]...
 display intermediated interval report column TYPE in output.  Allowed values
@@ -99,14 +97,13 @@ where TYPE is 'segment' or 'byte'
 write output to logfile (same as \fB\-\-log\-file\fR)
 
 .SS Flow options
-
 All flows have two endpoints, a source and a destination. The distinction
 between source and destination endpoints only affects connection establishment.
 When starting a flow the destination endpoint listens on a socket and the
 source endpoint connects to it. For the actual test this makes no difference,
 both endpoints have exactly the same capabilities. Data can be sent in either
 direction and many settings can be configured individually for each endpoint.
-
+.PP
 Some of these options take the flow endpoint as argument, denoted by 'x' in the
 option syntax. 'x' needs to be replaced with either 's' for the source
 endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To
@@ -120,7 +117,7 @@ use minimal response size needed for RTT calculation
 .br
 (same as \fB\-G\fR s=p,C,40)
 .TP
-\fB\-B \fIx\fR=\fI#\fR 
+\fB\-B \fIx\fR=\fI#\fR
 set requested sending buffer, in bytes
 .TP
 \fB\-C \fIx\fR
