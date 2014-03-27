@@ -1,55 +1,56 @@
-.TH "flowgrindd" "9" "August 2013" "" "Flowgrind Manual"
+.TH "flowgrindd" "1" "March 2014" "" "Flowgrind Manual"
+
 .SH "NAME"
-flowgrindd \- network performance measurement tool daemon
+flowgrindd \- advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X
+
 .SH "SYNOPSIS"
-flowgrindd
-.B \-p#|-b addr|\-h|\-v|\-d|\-w DIR/
-.br 
-flowgrindd [options]
+flowgrindd [\fIOPTION\fR]...
 
 .SH "DESCRIPTION"
-.B flowgrindd
-is the daemon for the flowgrind distributed network performance measurement tool. Using the
-.B flowgrind
-controller, tests can be setup between hosts running
-.BR flowgrindd ","
-the flowgrind daemon.
-
-Flowgrind performs extensive TCP tests. On systems running Linux or FreeBSD flowgrindd collects and reports the TCP metrics returned by the TCP_INFO socket option, such as the size of the congestion window or the RTT.
-
-The flowgrind daemon needs to be running on every host that is supposed to be endpoint of a flow.
+\fBflowgrindd\fR is the daemon for the advanced TCP traffic generator
+\fBflowgrind\fR(1). Using the \fBflowgrind\fR(1) controller, distributed
+network performance measurement tests can be set up between an arbitrary number
+of hosts running \fBflowgrindd\fR, the flowgrind daemon.
 
 .SH "OPTIONS"
-.TP 
-.B \-h
-Show help and exit.
-
-.TP 
-.BR \-p " #"
-Port the XML\-RPC server should listen on.
-
-.TP 
-.BR \-b " addr"
-Address the XML\-RPC server should listen on. An easy way to enable support for IPv6 control-connections
-is to specify the IPv6 wildcard address "::".
-
+Mandatory arguments to long options are mandatory for short options too.
 .TP
-.BR \-c " #"
-Bound daemon to specific CPU. First CPU is 0.
-
-.TP 
-.B \-v
-Show version and exit.
-
+\fB\-b \fIADDR\fR
+XML\-RPC server bind address. An easy way to enable support for IPv6
+control\-connections is to specify the IPv6 wildcard address "::"
 .TP
-.B \-w " DIR/"
-Specify target directory for dump files. Compiling flowgrind with libpcap support is required. Remember, dumps are save on the machine where the daemon runs and not local.
+\fB\-c \fI#\fR
+bound daemon to specific CPU. First CPU is 0
+.TP
+\fB\-d\fR
+don't fork into background, increase debugging verbosity. Add option multiple
+times to increase the verbosity
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+display this help and exit
+.TP
+\fB\-p \fI#\fR
+XML\-RPC server port
+.TP
+\fB\-w \fIDIR\fR
+target directory for dump files. Requires compiling flowgrind with libpcap
+support. The daemon must be run as root
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+print version information and exit
 
-.TP 
-.B \-d
-Do not daemonize, increase debug verbosity. Add multiple times to increase debug verbosity further.
+.SH "AUTHORS"
+Flowgrind was original started by Daniel Schaffrath. The distributed
+measurement architecture and advanced traffic generation were later on added by
+Tim Kosse and Christian Samsel. Currently, flowgrind is developed and
+maintained Arnd Hannemann and Alexander Zimmermann.
+
+.SH "BUGS"
+.PP
+The development and maintenance of flowgrind is primarily done via github
+<\fBhttps://github.com/flowgrind/flowgrind\fR>. Please report bugs via the
+issue webpage <\fBhttps://github.com/flowgrind/flowgrind/issues\fR>.
 
 .SH "SEE ALSO"
-flowgrind(1),
-flowgrind\-stop(1)
-
+\fBflowgrind\fR(1),
+\fBflowgrind\-stop\fR(1)
