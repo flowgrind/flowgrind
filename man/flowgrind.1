@@ -207,26 +207,44 @@ separate them by comma.
 \fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR),(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR),\fI#1\fR,[\fI#2\fR]
 .IP
 Flow parameter:
-.in +4n
-.nf
-\fIq\fR = request size (in bytes)
-\fIp\fR = response size (in bytes)
-\fIg\fR = request interpacket gap (in seconds)
-.fi
+.RS 12
+.TP
+.I q
+request size (in bytes)
+.TP
+.I p
+response size (in bytes)
+.TP
+.I g
+request interpacket gap (in seconds)
+.RE
 .IP
 Distributions:
-.in +4n
-.nf
-\fIC\fR = constant (#1: value, #2: not used)
-\fIU\fR = uniform (#1: min, #2: max)
-\fIE\fR = exponential (#1: lamba \- lifetime, #2: not used)
-\fIN\fR = normal (#1: mu \- mean value, #2: sigma_square \- variance)
-\fIL\fR = lognormal (#1: zeta \- mean, #2: sigma \- std dev)
-\fIP\fR = pareto (#1: k \- shape, #2 x_min \- scale)
-\fIW\fR = weibull (#1: lambda \- scale, #2: k \- shape)
-.fi
+.RS 12
+.TP
+.I C
+constant (\fI#1\fR: value, \fI#2\fR: not used)
+.TP
+.I U
+uniform (\fI#1\fR: min, \fI#2\fR: max)
+.TP
+.I E
+exponential (\fI#1\fR: lamba \- lifetime, \fI#2\fR: not used)
+.TP
+.I N
+normal (\fI#1\fR: mu \- mean value, \fI#2\fR: sigma_square \- variance)
+.TP
+.I L
+lognormal (\fI#1\fR: zeta \- mean, \fI#2\fR: sigma \- std dev)
+.TP
+.I P
+pareto (\fI#1\fR: k \- shape, \fI#2\fR: x_min \- scale)
+.TP
+.I W
+weibull (\fI#1\fR: lambda \- scale, \fI#2\fR: k \- shape)
+.RE
 .IP
-advanced distributions like weibull are only available if flowgrind is compiled
+Advanced distributions like weibull are only available if flowgrind is compiled
 with libgsl support.
 .TP
 \fB\-U \fI#\fR
