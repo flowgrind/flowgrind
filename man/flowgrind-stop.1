@@ -1,32 +1,41 @@
-.TH flowgrind 1 "November 2010" "" "Flowgrind Manual"
+.TH flowgrind 1 "March 2014" "" "Flowgrind Manual"
 
 .SH NAME
-flowgrind-stop \- helper tool for the flowgrind network performance measurement tool daemon.
+flowgrind-stop \- helper tool for the advanced TCP traffic generator flowgrind
+
 .SH SYNOPSIS
-flowgrind-stop
-.B -h|-v
-.br
-flowgrind-stop HOST[:PORT] [...]
+flowgrind-stop [\fIOPTION\fR]... [\fIADDRESS\fR]...
 
 .SH DESCRIPTION
-.B flowgrind-stop
-is a helper tool for the flowgrind distributed network performance measurement tool. Using
-.B flowgrind-stop
-any
-.B flowgrindd
-daemon can be instructed to terminate all active flows.
-This can be used to stop all tests in case the controller lost connection with the daemons.
+\fBflowgrind-stop\fR is a helper tool for the advanced TCP traffic generator
+\fbflowgrind\fR(1). Using \fBflowgrind-stop\fR any \fBflowgrindd\fR(1) daemon
+can be instructed to terminate all active flows. This can be used to stop all
+tests in case the controller lost connection with the daemons.
 
 .SH OPTIONS
-
+Mandatory arguments to long options are mandatory for short options too.
 .TP
-.B -h
-Show help and exit.
-
+\fB\-h\fR, \fB\-\-help\fR
+display this help and exit
 .TP
-.B -v
-Show version and exit.
+\fB\-v\fR, \fB\-\-version\fR
+print version information and exit
 
-.SH SEE ALSO
-flowgrind(1),
-flowgrindd(1)
+.SH EXAMPLE
+flowgrind\-stop localhost 127.2.3.4:5999 example.com
+
+.SH "AUTHORS"
+Flowgrind was original started by Daniel Schaffrath. The distributed
+measurement architecture and advanced traffic generation were later on added by
+Tim Kosse and Christian Samsel. Currently, flowgrind is developed and
+maintained Arnd Hannemann and Alexander Zimmermann.
+
+.SH "BUGS"
+.PP
+The development and maintenance of flowgrind is primarily done via github
+<\fBhttps://github.com/flowgrind/flowgrind\fR>. Please report bugs via the
+issue webpage <\fBhttps://github.com/flowgrind/flowgrind/issues\fR>.
+
+.SH "SEE ALSO"
+\fBflowgrind\fR(1),
+\fBflowgrindd\fR(1)

@@ -221,7 +221,7 @@ static void usage(short status)
 
 		"Controller options:\n"
 		"  -c, --show-colon=TYPE[,TYPE]...\n"
-		"                 display intermediated interval report column COL in output.\n"
+		"                 display intermediated interval report column TYPE in output.\n"
 		"                 Allowed values for TYPE are: 'interval', 'through', 'transac',\n"
 		"                 'iat', 'kernel' (all show per default), and 'blocks', 'rtt',\n"
 #ifdef DEBUG
@@ -286,7 +286,7 @@ static void usage(short status)
 		"                 send data (late connect). If not specified the test connection\n"
 		"                 is established in the preparation phase before the test starts\n"
 #ifdef HAVE_LIBPCAP
-		"  -M x           dump traffic using libpcap\n"
+		"  -M x           dump traffic using libpcap. flowgrindd must be run as root\n"
 #endif /* HAVE_LIBPCAP */
 		"  -N             shutdown() each socket direction after test flow\n"
 		"  -O x=OPT       set socket option OPT on test socket. For additional information\n"
