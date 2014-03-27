@@ -104,17 +104,18 @@ static void usage(short status)
 
 		"Mandatory arguments to long options are mandatory for short options too.\n"
 		"  -b ADDR        XML-RPC server bind address\n"
-		"  -c #           bound daemon to specific CPU\n"
+		"  -c #           bound daemon to specific CPU. First CPU is 0\n"
 #ifdef DEBUG
 		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
 		"                 increase the verbosity (no daemon, log to stderr)\n"
 #else
-		"  -d             don't fork into background\n"
+		"  -d             don't fork into background,increase debugging verbosity.\n"
+		"                 Add option multiple times to increase the verbosity\n"
 #endif /* DEBUG */
 		"  -h, --help     display this help and exit\n"
 		"  -p #           XML-RPC server port\n"
 #ifdef HAVE_LIBPCAP
-		"  -w DIR         target directory for dumps\n"
+		"  -w DIR         target directory for dump files. The daemon must be run as root\n"
 #endif /* HAVE_LIBPCAP */
 		"  -v, --version  print version information and exit\n",
 		progname);
