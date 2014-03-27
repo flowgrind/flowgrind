@@ -1,4 +1,4 @@
-.TH "flowgrind" "1" "March 2013" "" "Flowgrind Manual"
+.TH "flowgrind" "1" "March 2014" "" "Flowgrind Manual"
 
 .SH "NAME"
 flowgrind \- advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X
@@ -155,7 +155,7 @@ connect). If not specified the test connection is established in the
 preparation phase before the test starts
 .TP
 \fB\-M\fR \fIx\fR
-dump traffic using libpcap
+dump traffic using libpcap. \fBflowgrindd\fR(1) must be run as root
 .TP
 \fB\-N\fR
 shutdown() each socket direction after test flow
@@ -245,7 +245,7 @@ option syntax. 'x' needs to be replaced with either 's' for the source
 endpoint, 'd' for the destination endpoint or 'b' for both endpoints. To
 specify different values for each endpoints, separate them by comma. Moreover,
 it is possible to repeatedly pass the same endpoint in order to specify
-multiple socket options
+multiple socket options.
 
 .SS Standard socket options
 .TP
@@ -284,7 +284,7 @@ set TCP_LCD (21) on test socket
 .TP
 .B flowgrind
 testing localhost IPv4 TCP performance with default settings, same as flowgrind
-\-H b=127.0.0.1 \-T s=10,d=0. The flowgrind daemon needs to be run on localhost.
+\-H b=127.0.0.1 \-T s=10,d=0. The flowgrind daemon needs to be run on localhost
 .TP
 .B flowgrind \-H b=::1/127.0.0.1
 same as above, but testing localhost IPv6 TCP performance with default settings
@@ -380,37 +380,37 @@ better) are interesting metrics.
 .SS Flow/endpoint identifiers
 .TP
 .B #
-the flow endpoint, either 'S' for source or 'D' for destination
+flow endpoint, either 'S' for source or 'D' for destination
 .TP
 .B ID
-the numerical flow identifier
+numerical flow identifier
 .TP
 .BR begin " and " end
-the boundaries of the measurement interval in seconds. The time shown is the
+boundaries of the measurement interval in seconds. The time shown is the
 elapsed time since receiving the RPC message to start the test from the daemons
 point of view
 
 .SS Application layer metrics
 .TP
 .B through
-the transmitting goodput of the flow endpoint during this measurement interval,
+transmitting goodput of the flow endpoint during this measurement interval,
 measured in Mbit/s (default) or MB/s (\fB\-m\fR)
 .TP
 .B transac
-the number of successfully received response blocks per second (we call it
+number of successfully received response blocks per second (we call it
 network transactions/s)
 .TP
 .B requ/resp
-The number of request and response block sent during this measurement interval
+number of request and response block sent during this measurement interval
 (column disabled by default)
 .TP
 .B IAT
-The block inter-arrival time (IAT). Together with the minimum and maximum the
+block inter-arrival time (IAT). Together with the minimum and maximum the
 arithmetic mean for that specific measurement interval is displayed. If no
 block is received during report interval, 'inf' is displayed.
 .TP
 .BR DLY " and " RTT
-The 1\-way and 2\-way block delay respectively the block latency and the block
+1\-way and 2\-way block delay respectively the block latency and the block
 round-trip time (RTT). For both delays the minimum and maximum encountered
 values in that measurement interval are displayed together with the arithmetic
 mean. If no block, respectively block acknowledgment is arrived during that
@@ -502,7 +502,7 @@ two values, the first for sending and the second for receiving. Ideally the
 states of both the source and destination endpoints of a flow should be
 symmetrical but since they are not synchronized they may not change at the same
 time. The possible values are:
-.RS 8
+.RS 7
 .TP
 .B c
 Direction completed sending/receiving
