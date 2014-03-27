@@ -376,167 +376,151 @@ For this scenario the IAT (lower is better) and minimal throughput (higher is
 better) are interesting metrics.
 
 .SH "OUTPUT COLUMNS"
+
+.SS Flow/endpoint identifiers
 .TP
 .B #
-The endpoint, either S for source or D for destination.
-
+the flow endpoint, either 'S' for source or 'D' for destination
 .TP
 .B ID
-The numerical flow identifier.
-
+the numerical flow identifier
 .TP
 .BR begin " and " end
-The boundaries of the measuring interval in seconds. The time shown is the
+the boundaries of the measurement interval in seconds. The time shown is the
 elapsed time since receiving the RPC message to start the test from the daemons
-point of view.
+point of view
 
 .SS Application layer metrics
 .TP
 .B through
-The transmitting goodput of the flow endpoint during this measurement interval,
-measured in Mbit/s (default) or MB/s (-m).
-
+the transmitting goodput of the flow endpoint during this measurement interval,
+measured in Mbit/s (default) or MB/s (\fB\-m\fR)
 .TP
 .B transac
-The number of successfully received response blocks per second (we call it
-network transactions/s).
-
+the number of successfully received response blocks per second (we call it
+network transactions/s)
 .TP
 .B requ/resp
 The number of request and response block sent during this measurement interval
 (column disabled by default)
-
 .TP
-.BR IAT " and " RTT
-The 1\-way and 2\-way block (application layer) delays respectively block IAT
-and block RTT. For both delays the minimum and maximum encountered values in
-that interval are displayed in addition to the arithmetic mean. If no block
-acknowledgement arrived during that report interval, inf is displayed (for
-example when no responses are send, if in doubt try -A s)
+.B IAT
+The block inter-arrival time (IAT). Together with the minimum and maximum the
+arithmetic mean for that specific measurement interval is displayed. If no
+block is received during report interval, 'inf' is displayed.
+.TP
+.BR DLY " and " RTT
+The 1\-way and 2\-way block delay respectively the block latency and the block
+round-trip time (RTT). For both delays the minimum and maximum encountered
+values in that measurement interval are displayed together with the arithmetic
+mean. If no block, respectively block acknowledgment is arrived during that
+report interval, 'inf' is displayed. Both, the 1\-way and 2\-way block delay
+are disabled by default (see option \fB\-I\fR and \fB\-A\fR).
 
 .SS Kernel metrics (TCP_INFO)
+All following TCP specific metrics are obtained from the kernel through the
+TCP_INFO socket option at the \fIend\fR of every report interval. The
+sampling rate can be changed via option \fB\-i\fR.
 .TP
-.B cwnd (tcpi_cwnd)
-Size of TCP congestion window in number of segments (Linux) or bytes (FreeBSD).
-All TCP specific metrics are obtained from the kernel through the TCP_INFO
-socket option at the end of every reporting interval.
-
+.BR cwnd " (tcpi_cwnd)"
+size of TCP congestion window (CWND) in number of segments (Linux) or bytes
+(FreeBSD)
 .TP
-.B ssth (tcpi_snd_sshtresh)
-The slowstart threshold of the sender in number of segments (Linux) or bytes
-(FreeBSD).
-
+.BR ssth " (tcpi_snd_sshtresh)"
+size of the slow-start threshold in number of segments (Linux) or bytes (FreeBSD)
 .TP
-.BR "uack (tcpi_unacked) " "and" " sack (tcpi_sacked)"
-Statistics about the number of unacknowledged and selectively acknowledged
-segments. (Linux only)
-
+.BR uack " (tcpi_unacked)"
+number of currently unacknowledged segments, i.e., number of segemnts in flight
+(FlightSize) (Linux only)
 .TP
-.B lost (tcpi_lost)
-Number of segments assumed lost at the end of the reporting interval. (Linux
-only)
-
+.BR sack " (tcpi_sacked)"
+number of selectively acknowledged segments (Linux only)
 .TP
-.B retr (tcpi_retrans)
-Number of unacknowledged retransmitted segments. (Linux only)
-
+.BR lost " (tcpi_lost)"
+number of segments assumed lost (Linux only)
 .TP
-.B tret (tcpi_retransmits)
-Number of retransmissions of the same segment due a retransmission timeout.
-(Linux only)
-
+.BR retr " (tcpi_retrans)"
+number of unacknowledged retransmitted segments (Linux only)
 .TP
-.B fack (tcpi_fackets)
-Number of segments between SND.UNA and the highest selectively acknowledged
-sequence number. (Linux only)
-
+.BR tret " (tcpi_retransmits)"
+number of retransmissions triggert by a retransmission timeout (RTO) (Linux only)
 .TP
-.B reor (tcpi_reordering)
-Segment reordering metric. The Linux kernel can detect and cope with reordering
-without loss of performance if the distance a segment gets displaced does not
-exceed the reordering metric. (Linux only)
-
+.BR fack " (tcpi_fackets)"
+number of segments between SND.UNA and the highest selectively acknowledged
+sequence number (SND.FACK) (Linux only)
 .TP
-.BR "rtt (tcpi_rtt) " "and" " rttvar (tcpi_rttvar)"
-TCP round\-trip time and its variance given in ms.
-
+.BR reor " (tcpi_reordering)"
+segment reordering metric. The Linux kernel can detect and cope with reordering
+without sigificat loss of performance if the distance a segment gets displaced
+does not exceed the reordering metric (Linux only)
 .TP
-.B rto (tcpi_rto)
-The retransmission timeout given in ms.
-
+\fBrtt\fR (tcpi_rtt) and \fBrttvar\fR (tcpi_rttvar)
+TCP round\-trip time and its variance given in ms
 .TP
-.B bkof (tcpi_backoff)
-Number of backoffs. (Linux only)
-
+.BR rto " (tcpi_rto)"
+the retransmission timeout given in ms
 .TP
-.B ca state (tcpi_ca_state)
-Internal state of congestion control state machine as implemented in the Linux
-kernel. Can be one of open, disorder, cwr, recovery or loss. (Linux only)
-
-.RS 8
-
+.BR bkof " (tcpi_backoff)"
+number of RTO backoffs (Linux only)
+.TP
+.BR "ca state" " (tcpi_ca_state)"
+internal state of the TCP congestion control state machine as implemented in the
+Linux kernel. Can be one of \fIopen\fR, \fIdisorder\fR, \fIcwr\fR,
+\fIrecovery\fR or \fIloss\fR (Linux only)
+.RS 7
 .TP
 .B Open
-is the normal state. It indicates that there are no issues with the connection.
-
+is the normal state. It indicates that no duplicate acknowledgment (ACK) is
+received and no segment is considered lost
 .TP
 .B Disorder
-is similar to Open but is entered upon receiving duplicate ACKs or selective
-acknowledgements as special attention might be needed in the near future.
-
+is entered upon the reception of the first consecutive duplicate ACK or selective
+acknowledgment (SACK)
 .TP
 .B CWR
-is entered when the size of the congestion window got lowered due to receiving
-an ICMP Source Quench message or a notification from Explicit Congestion
-Notification (ECN).
-
+is entered when a notification from Explicit Congestion Notification (ECN) is
+received
 .TP
 .B Recovery
-indicates that the congestion window got lowered and a segment is fast\-retransmitted.
-
+is entered when three duplicate ACKs or a equivalent number of SACKs are
+received. In this state congestion control and loss recovery procedures like
+Fast Retransmit and Fast Recovery (RFC 5861) are executed
 .TP
 .B Loss
-is entered if the RTO expires. Again the size of the congestion window got
-lowered in this state.  .RE
-
+is entered if the RTO expires. Again congestion control and loss recovery
+procedures are executed
+.RE
 .TP
 .BR smss " and " pmtu
-Sender maximum segment size and path maximum transmission unit in bytes.
+sender maximum segment size and path maximum transmission unit in bytes
 
 .SS Internal flowgrind state (only enabled in debug builds)
 .TP
 .B status
-The state of the flow inside flowgrind for diagnostic purposes. It is a tuple
-of two values, the first for sending and the second for receiving. Ideally the
+state of the flow inside flowgrind for diagnostic purposes. It is a tuple of
+two values, the first for sending and the second for receiving. Ideally the
 states of both the source and destination endpoints of a flow should be
 symmetrical but since they are not synchronized they may not change at the same
 time. The possible values are:
-
 .RS 8
-
 .TP
 .B c
-Direction completed sending/receiving.
-
+Direction completed sending/receiving
 .TP
 .B d
-Waiting for initial delay.
-
+Waiting for initial delay
 .TP
 .B f
-Fault state.
-
+Fault state
 .TP
 .B l
-Active state, nothing yet transmitted or received.
-
+Active state, nothing yet transmitted or received
 .TP
 .B n
-Normal activity, some data got transmitted or received.
-
+Normal activity, some data got transmitted or received
 .TP
 .B o
-Flow has zero duration in that direction, no data is going to be exchanged.
+Flow has zero duration in that direction, no data is going to be exchanged
 .RE
 
 .SH "PLOTTING DATA"
