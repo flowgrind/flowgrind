@@ -67,18 +67,16 @@ flowgrind (0.5.5) unstable; urgency=low
 
 flowgrind (0.5) unstable; urgency=low
 
-  * Bump version
+  Release 0.5 (2010-11-4)
+  * Removed obsolete fasttime and TSCI2 support
+  * Remove useless status column (only activated with --enable-debug)
+  * Nullify linux kernel state columns in final report, as they
+    are not accumulated. (last interval has same information anyways)
+  * libpcap support for automatic traffic dumping (for analysis with tcptrace
+    etc)
+  * libgsl support for advanced stochastic distributions
+  * Added sockopts TCP_NODELAY and non-standard MTCP
+  * Always print final report
+  * Bugfixes (oh-rly?)
 
  -- Arnd Hannemann <arnd@arndnet.de>  Thu, 04 Nov 2010 11:35:59 +0100
-
-flowgrind (0.3) unstable; urgency=low
-
-  * Bump
-
- -- Christian Samsel <christian.samsel@rwth-aachen.de>  Fri, 19 Mar 2010 13:41:19 +0100
-
-flowgrind (0.2) unstable; urgency=low
-
-  * Initial release
-
- -- Tim Kosse <tim.kosse@gmx.de>  Mon, 06 Jul 2009 11:21:28 +0200

@@ -4,7 +4,7 @@ Release 0.6.1 (2013-7-5)
 Release 0.6 (2013-4-24)
 - Full IPv6 support (control and test connection)
 
-Release 0.5.9 (2012-11-1)
+Release 0.5.9 (2012-1-11)
 - Support for pluggable congestion control modules in FreeBSD 9
 - Minor compile and bugs fixes (thanks flameeyes)
 
@@ -42,7 +42,7 @@ Release 0.5.5 (2010-12-5)
 - Minor output improvements
 - Dropped useless complete interval report line
 
-Release 0.5 (2010-11-15)
+Release 0.5 (2010-11-4)
 - Removed obsolete fasttime and TSCI2 support
 - Remove useless status column (only activated with --enable-debug)
 - Nullify linux kernel state columns in final report, as they
