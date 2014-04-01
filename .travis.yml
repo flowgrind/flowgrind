@@ -23,7 +23,7 @@ script:
     - autoreconf -i
     - ./configure --enable-debug
     - make
-    
+
 # Run Tests
 after_success:
     - ./src/flowgrindd
@@ -34,6 +34,7 @@ branches:
   only:
     - master
     - next
+    - coverity_scan
 
 notifications:
   email:
@@ -47,5 +48,5 @@ addons:
       description: "Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X"
     notification_email: developer@flowgrind.net
     build_command_prepend: autoreconf -i && ./configure --enable-debug
-    build_command: make 
+    build_command: make
     branch_pattern: coverity_scan
