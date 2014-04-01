@@ -1,6 +1,11 @@
 # Travis-CI Build for flowgrind
 # see travis-ci.org for details
 
+env:
+  global:
+   # COVERITY_SCAN_TOKEN
+    - secure: "VCugWaS9AjV7fCdXN28DNFspLYJjgphp4sP1785a0bA68hYggbPRjTQl2k3QNRpSMEJyAqjW4kSvDm5d8ndkpmSIQnBOemb+XapNTZEdzf2VRjlnqSqyXGmgNFqCQq+nkzXNeyObnuV6zyvvsBDbmqNceta0BPaV2IJZ4KEFlQw="
+
 language: c
 
 compiler:
@@ -24,7 +29,7 @@ after_success:
     - ./src/flowgrindd
     - valgrind --leak-check=full --show-reachable=yes --suppressions=.valgrind.supp ./src/flowgrind -T s=1
 
-# Only watch the master and next branch
+# Only watch master and next branch
 branches:
   only:
     - master
@@ -33,3 +38,14 @@ branches:
 notifications:
   email:
     - developer@flowgrind.net
+
+addons:
+  # Coverity Scan
+  coverity_scan:
+    project:
+      name: "flowgrind/flowgrind"
+      description: "Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X"
+    notification_email: developer@flowgrind.net
+    build_command_prepend: autoreconf -i && ./configure --enable-debug
+    build_command: make 
+    branch_pattern: coverity_scan
