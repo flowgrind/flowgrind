@@ -4,7 +4,7 @@
 env:
   global:
    # COVERITY_SCAN_TOKEN
-    - secure: "VCugWaS9AjV7fCdXN28DNFspLYJjgphp4sP1785a0bA68hYggbPRjTQl2k3QNRpSMEJyAqjW4kSvDm5d8ndkpmSIQnBOemb+XapNTZEdzf2VRjlnqSqyXGmgNFqCQq+nkzXNeyObnuV6zyvvsBDbmqNceta0BPaV2IJZ4KEFlQw="
+    - secure: "By4m1AbnnXIL0ytlYCZRN0r3WdQ2gpVU02nJBtjNuhj6o+rK02kwziDfqCdJjB/UDMW4aCKcPprw+xQrb2j3mujOQOXhLOxeKndIQ/zyeizQ4WqGc9TSS/zLbksu5UaiUL8I+SmVe5KIphk28ca7H6AKQe0TUlEbEnHsM4SAAH4="
 
 language: c
 
