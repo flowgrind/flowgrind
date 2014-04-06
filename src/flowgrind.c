@@ -269,9 +269,9 @@ static void usage(short status)
 		"                 for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"                 to the second flow\n"
 #ifdef HAVE_LIBGSL
-		"  -G x=(q|p|g),(C|U|E|N|L|P|W),#1,[#2]\n"
+		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
 #else
-		"  -G x=(q|p|g),(C|U),#1,[#2]\n"
+		"  -G x=(q|p|g):(C|U):#1:[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"                 activate stochastic traffic generation and set parameters\n"
 		"                 according to the used distribution. For additional information \n"
@@ -2031,174 +2031,105 @@ static struct _daemon * get_daemon_by_url(const char* server_url,
 	return &unique_servers[num_unique_servers++];
 }
 
-static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
+static void parse_trafgen_option(char *arg, int flow_id, int endpoint_id)
 {
 	int rc;
-	char * section;
-	char * arg;
 
-	for (section = strtok(params, ":"); section; section = strtok(NULL, ":")) {
-		double param1 = 0, param2 = 0, unused;
-		char endpointchar, typechar, distchar;
-		enum distributions distr = CONSTANT;
-		int j = 0;
-		int k = 0;
+	double param1 = 0, param2 = 0, unused;
+	char typechar, distchar;
+	enum distributions distr = CONSTANT;
 
-		endpointchar = section[0];
-		if (section[1] == '=')
-			arg = section + 2;
-		else
-			arg = section + 1;
-
-		switch (endpointchar) {
-		case 's':
-			j = 0;
-			k = 1;
-			break;
-
-		case 'd':
-			j = 1;
-			k = 2;
-			break;
-
-		case 'b':
-			j = 0;
-			k = 2;
-			break;
-
-		default:
-			errx("syntax error in traffic generation option: %c is "
-			     "not a valid endpoint", endpointchar);
-			usage(EXIT_FAILURE);
-		}
-
-		rc = sscanf(arg, "%c,%c,%lf,%lf,%lf", &typechar, &distchar, &param1, &param2, &unused);
-		if (rc != 3 && rc != 4) {
-			errx("malformed traffic generation parameters");
-			usage(EXIT_FAILURE);
-		}
-
-		switch (distchar) {
-		case 'N':
-			distr = NORMAL;
-			if (!param1 || !param2) {
-				errx("normal distribution needs two non-zero "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'W':
-			distr = WEIBULL;
-			if (!param1 || !param2) {
-				errx("weibull distribution needs two non-zero "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'U':
-			distr = UNIFORM;
-			if  (param1 <= 0 || param2 <= 0 || (param1 > param2)) {
-				errx("uniform distribution needs two positive "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'E':
-			distr = EXPONENTIAL;
-			if (param1 <= 0) {
-				errx("exponential value needs one positive "
-				     "paramters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'P':
-			distr = PARETO;
-			if (!param1 || !param2) {
-				errx("pareto distribution needs two non-zero "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'L':
-			distr = LOGNORMAL;
-			if (!param1 || !param2) {
-				errx("lognormal distribution needs two "
-				     "non-zero parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'C':
-			distr = CONSTANT;
-			if (param1 <= 0) {
-				errx("constant value needs one positive "
-				     "paramters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		default:
-			errx("syntax error in traffic generation option: %c "
-			     "is not a distribution", distchar);
-			usage(EXIT_FAILURE);
-		}
-
-		if (current_flow_ids[0] == -1) {
-			for (int id = 0; id < MAX_FLOWS; id++) {
-				for (int i = j; i < k; i++) {
-					switch (typechar) {
-					case 'p':
-						cflow[id].settings[i].response_trafgen_options.distribution = distr;
-						cflow[id].settings[i].response_trafgen_options.param_one = param1;
-						cflow[id].settings[i].response_trafgen_options.param_two = param2;
-						break;
-					case 'q':
-						cflow[id].settings[i].request_trafgen_options.distribution = distr;
-						cflow[id].settings[i].request_trafgen_options.param_one = param1;
-						cflow[id].settings[i].request_trafgen_options.param_two = param2;
-						break;
-					case 'g':
-						cflow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
-						cflow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
-						cflow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
-						break;
-					}
-					/* sanity check for max block size */
-					for (int i = 0; i < 2; i++) {
-						if (distr == CONSTANT && cflow[id].settings[i].maximum_block_size < param1)
-							cflow[id].settings[i].maximum_block_size = param1;
-						if (distr == UNIFORM && cflow[id].settings[i].maximum_block_size < param2)
-							cflow[id].settings[i].maximum_block_size = param2;
-					}
-				}
-			}
-		} else {
-			for (int i = j; i < k; i++) {
-				switch (typechar) {
-				case 'p':
-					cflow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
-					cflow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
-					cflow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
-					break;
-				case 'q':
-					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
-					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
-					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
-					break;
-				case 'g':
-					cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.distribution = distr;
-					cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_one = param1;
-					cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_two = param2;
-					break;
-				}
-			}
-			/* sanity check for max block size */
-			for (int i = 0; i < 2; i++) {
-				if (distr == CONSTANT && cflow[id].settings[i].maximum_block_size < param1)
-					cflow[id].settings[i].maximum_block_size = param1;
-				if (distr == UNIFORM && cflow[id].settings[i].maximum_block_size < param2)
-					cflow[id].settings[i].maximum_block_size = param2;
-			}
-		}
+	rc = sscanf(arg, "%c:%c:%lf:%lf:%lf", &typechar, &distchar, &param1, &param2, &unused);
+	if (rc != 3 && rc != 4) {
+		errx("malformed traffic generation parameters");
+		usage(EXIT_FAILURE);
 	}
+
+	switch (distchar) {
+	case 'N':
+		distr = NORMAL;
+		if (!param1 || !param2) {
+			errx("normal distribution needs two non-zero "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'W':
+		distr = WEIBULL;
+		if (!param1 || !param2) {
+			errx("weibull distribution needs two non-zero "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'U':
+		distr = UNIFORM;
+		if  (param1 <= 0 || param2 <= 0 || (param1 > param2)) {
+			errx("uniform distribution needs two positive "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'E':
+		distr = EXPONENTIAL;
+		if (param1 <= 0) {
+			errx("exponential value needs one positive "
+			     "paramters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'P':
+		distr = PARETO;
+		if (!param1 || !param2) {
+			errx("pareto distribution needs two non-zero "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'L':
+		distr = LOGNORMAL;
+		if (!param1 || !param2) {
+			errx("lognormal distribution needs two "
+			     "non-zero parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'C':
+		distr = CONSTANT;
+		if (param1 <= 0) {
+			errx("constant value needs one positive "
+			     "paramters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	default:
+		errx("syntax error in traffic generation option: %c "
+		     "is not a distribution", distchar);
+		usage(EXIT_FAILURE);
+	}
+
+	switch (typechar) {
+	case 'p':
+		cflow[flow_id].settings[endpoint_id].response_trafgen_options.distribution = distr;
+		cflow[flow_id].settings[endpoint_id].response_trafgen_options.param_one = param1;
+		cflow[flow_id].settings[endpoint_id].response_trafgen_options.param_two = param2;
+		break;
+	case 'q':
+		cflow[flow_id].settings[endpoint_id].request_trafgen_options.distribution = distr;
+		cflow[flow_id].settings[endpoint_id].request_trafgen_options.param_one = param1;
+		cflow[flow_id].settings[endpoint_id].request_trafgen_options.param_two = param2;
+		break;
+	case 'g':
+		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.distribution = distr;
+		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.param_one = param1;
+		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.param_two = param2;
+		break;
+	}
+	/* sanity check for max block size */
+	if (distr == CONSTANT && cflow[flow_id].settings[endpoint_id].maximum_block_size < param1)
+		cflow[flow_id].settings[endpoint_id].maximum_block_size = param1;
+	if (distr == UNIFORM && cflow[flow_id].settings[endpoint_id].maximum_block_size < param2)
+		cflow[flow_id].settings[endpoint_id].maximum_block_size = param2;
 }
 
 /* Parse flow specific options given on the cmdline */
@@ -2242,6 +2173,8 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 		break;
 
 	/* flow options w/ endpoint identifier */
+	case 'G':
+		parse_trafgen_option(arg, flow_id, endpoint_id);
 	case 'A':
 		SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
 		settings->response_trafgen_options.distribution = CONSTANT;
@@ -2525,6 +2458,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 	char unit = 0, type = 0, distribution = 0;
 	int optint = 0;
 	double optdouble = 0.0;
+	char* token;		/* tokenization of flow options for endpoints */
+	int i;
 
 	/* long options */
 	static const struct option long_opt[] = {
@@ -2552,12 +2487,14 @@ static void parse_cmdline(int argc, char *argv[]) {
 		"A:B:CD:EF:G:H:IJ:LNM:O:P:QR:S:T:U:W:Y:";
 #endif /* DEBUG */
 
+	for (id = 0; id < MAX_FLOWS; id++)
+		current_flow_ids[id] = id;
+
 	/* variables from getopt() */
 	extern char *optarg;	/* option argument */
 	extern int optind;      /* index of the next element */
 	int longindex = 0;	/* index of the long option */
 	int ch = 0;             /* getopt_long() return value */
-	char* token;		/* tokenization of flow options for endpoints */
 
 	/* parse command line */
 	while ((ch = getopt_long(argc, argv, short_opt, long_opt,
@@ -2652,9 +2589,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 		/* flow options w/o endpoint identifier */
 
-		/* FIXME If more than one number is given, the option is not
-		 * correct handled, e.g. -F 1,2,3 */
 		case 'F':
+			id = 0;
 			tok = strtok(optarg, ",");
 			while (tok) {
 				rc = sscanf(tok, "%d", &optint);
@@ -2663,14 +2599,16 @@ static void parse_cmdline(int argc, char *argv[]) {
 					usage(EXIT_FAILURE);
 				}
 				if (optint == -1) {
-					id = 0;
+					/* all flows */
+					for (id = 0; id < MAX_FLOWS; id++)
+						current_flow_ids[id] = id;
 					break;
+				} else {
+					current_flow_ids[id++] = optint;
+					ASSIGN_MAX(max_flow_specifier, optint);
+					tok = strtok(NULL, ",");
 				}
-				current_flow_ids[id++] = optint;
-				ASSIGN_MAX(max_flow_specifier, optint);
-				tok = strtok(NULL, ",");
 			}
-			current_flow_ids[id] = -1;
 			break;
 		case 'E':
 		case 'I':
@@ -2678,12 +2616,11 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'L':
 		case 'N':
 		case 'Q':
-			parse_flow_option(ch, optarg, current_flow_ids[id-1], 0);
+			for (i = 0; i < id; i++)
+				parse_flow_option(ch, optarg, current_flow_ids[i], 0);
 
 		/* flow options w/ endpoint identifier */
 		case 'G':
-			parse_trafgen_option(optarg, current_flow_ids, id-1);
-			break;
 		case 'A':
 		case 'B':
 		case 'C':
@@ -2702,6 +2639,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 			for (token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
 		
 				char type;
+				int endpoint;
 				char* temp;
 				type = token[0];
 
@@ -2710,13 +2648,16 @@ static void parse_cmdline(int argc, char *argv[]) {
 				else
 					temp = token + 1;
 				if (type == 's' || type == 'b')
-					parse_flow_option(ch, temp, current_flow_ids[id-1], SOURCE);	
+					endpoint = SOURCE;	
 				if (type == 'd' || type == 'b')
-					parse_flow_option(ch, temp, current_flow_ids[id-1], DESTINATION);			
+					endpoint = DESTINATION;			
 				if (type != 's' && type != 'd' && type != 'b')  {
 					errx("Invalid enpoint specifier in Option -%c", ch);
 					usage(EXIT_FAILURE);
 				}
+
+				for (i = 0; i < id; i++)			
+					parse_flow_option(ch, temp, current_flow_ids[i], endpoint);
 			}
 			break;
 
