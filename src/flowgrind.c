@@ -2463,17 +2463,6 @@ static void parse_cmdline(int argc, char *argv[]) {
 	int optint = 0;
 	double optdouble = 0.0;
 
-	#define ASSIGN_BI_FLOW_SETTING(PROPERTY_NAME, PROPERTY_VALUE, id) \
-		if (current_flow_ids[0] == -1) { \
-			for (int i = 0; i < MAX_FLOWS; i++) { \
-				cflow[i].PROPERTY_NAME = \
-				(PROPERTY_VALUE); \
-			} \
-		} else { \
-			cflow[current_flow_ids[id]].PROPERTY_NAME = \
-			(PROPERTY_VALUE); \
-		}
-
 	/* long options */
 	static const struct option long_opt[] = {
 		{"help", optional_argument, 0, HELP_OPTION},
