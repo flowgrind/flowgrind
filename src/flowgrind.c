@@ -269,9 +269,9 @@ static void usage(short status)
 		"                 for certain flows. Numbering starts with 0, so -F 1 refers\n"
 		"                 to the second flow\n"
 #ifdef HAVE_LIBGSL
-		"  -G x=(q|p|g),(C|U|E|N|L|P|W),#1,[#2]\n"
+		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
 #else
-		"  -G x=(q|p|g),(C|U),#1,[#2]\n"
+		"  -G x=(q|p|g):(C|U):#1:[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"                 activate stochastic traffic generation and set parameters\n"
 		"                 according to the used distribution. For additional information \n"
@@ -406,9 +406,9 @@ static void usage_trafgenopt(void)
 
 		"Stochastic traffic generation:\n"
 #ifdef HAVE_LIBGSL
-		"  -G x=(q|p|g),(C|U|E|N|L|P|W),#1,[#2]\n"
+		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
 #else
-		"  -G x=(q|p|g),(C|U),#1,[#2]\n"
+		"  -G x=(q|p|g):(C|U):#1:[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"               Flow parameter:\n"
 		"                 q = request size (in bytes)\n"
@@ -2077,7 +2077,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 			usage(EXIT_FAILURE);
 		}
 
-		rc = sscanf(arg, "%c,%c,%lf,%lf,%lf", &typechar, &distchar, &param1, &param2, &unused);
+		rc = sscanf(arg, "%c:%c:%lf:%lf:%lf", &typechar, &distchar, &param1, &param2, &unused);
 		if (rc != 3 && rc != 4) {
 			errx("malformed traffic generation parameters");
 			usage(EXIT_FAILURE);
