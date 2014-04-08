@@ -2036,174 +2036,105 @@ static struct _daemon * get_daemon_by_url(const char* server_url,
 	return &unique_servers[num_unique_servers++];
 }
 
-static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
+static void parse_trafgen_option(char *arg, int flow_id, int endpoint_id)
 {
 	int rc;
-	char * section;
-	char * arg;
 
-	for (section = strtok(params, ":"); section; section = strtok(NULL, ":")) {
-		double param1 = 0, param2 = 0, unused;
-		char endpointchar, typechar, distchar;
-		enum distributions distr = CONSTANT;
-		int j = 0;
-		int k = 0;
+	double param1 = 0, param2 = 0, unused;
+	char typechar, distchar;
+	enum distributions distr = CONSTANT;
 
-		endpointchar = section[0];
-		if (section[1] == '=')
-			arg = section + 2;
-		else
-			arg = section + 1;
-
-		switch (endpointchar) {
-		case 's':
-			j = 0;
-			k = 1;
-			break;
-
-		case 'd':
-			j = 1;
-			k = 2;
-			break;
-
-		case 'b':
-			j = 0;
-			k = 2;
-			break;
-
-		default:
-			errx("syntax error in traffic generation option: %c is "
-			     "not a valid endpoint", endpointchar);
-			usage(EXIT_FAILURE);
-		}
-
-		rc = sscanf(arg, "%c:%c:%lf:%lf:%lf", &typechar, &distchar, &param1, &param2, &unused);
-		if (rc != 3 && rc != 4) {
-			errx("malformed traffic generation parameters");
-			usage(EXIT_FAILURE);
-		}
-
-		switch (distchar) {
-		case 'N':
-			distr = NORMAL;
-			if (!param1 || !param2) {
-				errx("normal distribution needs two non-zero "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'W':
-			distr = WEIBULL;
-			if (!param1 || !param2) {
-				errx("weibull distribution needs two non-zero "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'U':
-			distr = UNIFORM;
-			if  (param1 <= 0 || param2 <= 0 || (param1 > param2)) {
-				errx("uniform distribution needs two positive "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'E':
-			distr = EXPONENTIAL;
-			if (param1 <= 0) {
-				errx("exponential value needs one positive "
-				     "paramters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'P':
-			distr = PARETO;
-			if (!param1 || !param2) {
-				errx("pareto distribution needs two non-zero "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'L':
-			distr = LOGNORMAL;
-			if (!param1 || !param2) {
-				errx("lognormal distribution needs two "
-				     "non-zero parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'C':
-			distr = CONSTANT;
-			if (param1 <= 0) {
-				errx("constant value needs one positive "
-				     "paramters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		default:
-			errx("syntax error in traffic generation option: %c "
-			     "is not a distribution", distchar);
-			usage(EXIT_FAILURE);
-		}
-
-		if (current_flow_ids[0] == -1) {
-			for (int id = 0; id < MAX_FLOWS; id++) {
-				for (int i = j; i < k; i++) {
-					switch (typechar) {
-					case 'p':
-						cflow[id].settings[i].response_trafgen_options.distribution = distr;
-						cflow[id].settings[i].response_trafgen_options.param_one = param1;
-						cflow[id].settings[i].response_trafgen_options.param_two = param2;
-						break;
-					case 'q':
-						cflow[id].settings[i].request_trafgen_options.distribution = distr;
-						cflow[id].settings[i].request_trafgen_options.param_one = param1;
-						cflow[id].settings[i].request_trafgen_options.param_two = param2;
-						break;
-					case 'g':
-						cflow[id].settings[i].interpacket_gap_trafgen_options.distribution = distr;
-						cflow[id].settings[i].interpacket_gap_trafgen_options.param_one = param1;
-						cflow[id].settings[i].interpacket_gap_trafgen_options.param_two = param2;
-						break;
-					}
-					/* sanity check for max block size */
-					for (int i = 0; i < 2; i++) {
-						if (distr == CONSTANT && cflow[id].settings[i].maximum_block_size < param1)
-							cflow[id].settings[i].maximum_block_size = param1;
-						if (distr == UNIFORM && cflow[id].settings[i].maximum_block_size < param2)
-							cflow[id].settings[i].maximum_block_size = param2;
-					}
-				}
-			}
-		} else {
-			for (int i = j; i < k; i++) {
-				switch (typechar) {
-				case 'p':
-					cflow[current_flow_ids[id]].settings[i].response_trafgen_options.distribution = distr;
-					cflow[current_flow_ids[id]].settings[i].response_trafgen_options.param_one = param1;
-					cflow[current_flow_ids[id]].settings[i].response_trafgen_options.param_two = param2;
-					break;
-				case 'q':
-					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.distribution = distr;
-					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.param_one = param1;
-					cflow[current_flow_ids[id]].settings[i].request_trafgen_options.param_two = param2;
-					break;
-				case 'g':
-					cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.distribution = distr;
-					cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_one = param1;
-					cflow[current_flow_ids[id]].settings[i].interpacket_gap_trafgen_options.param_two = param2;
-					break;
-				}
-			}
-			/* sanity check for max block size */
-			for (int i = 0; i < 2; i++) {
-				if (distr == CONSTANT && cflow[id].settings[i].maximum_block_size < param1)
-					cflow[id].settings[i].maximum_block_size = param1;
-				if (distr == UNIFORM && cflow[id].settings[i].maximum_block_size < param2)
-					cflow[id].settings[i].maximum_block_size = param2;
-			}
-		}
+	rc = sscanf(arg, "%c:%c:%lf:%lf:%lf", &typechar, &distchar, &param1, &param2, &unused);
+	if (rc != 3 && rc != 4) {
+		errx("malformed traffic generation parameters");
+		usage(EXIT_FAILURE);
 	}
+
+	switch (distchar) {
+	case 'N':
+		distr = NORMAL;
+		if (!param1 || !param2) {
+			errx("normal distribution needs two non-zero "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'W':
+		distr = WEIBULL;
+		if (!param1 || !param2) {
+			errx("weibull distribution needs two non-zero "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'U':
+		distr = UNIFORM;
+		if  (param1 <= 0 || param2 <= 0 || (param1 > param2)) {
+			errx("uniform distribution needs two positive "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'E':
+		distr = EXPONENTIAL;
+		if (param1 <= 0) {
+			errx("exponential value needs one positive "
+			     "paramters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'P':
+		distr = PARETO;
+		if (!param1 || !param2) {
+			errx("pareto distribution needs two non-zero "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'L':
+		distr = LOGNORMAL;
+		if (!param1 || !param2) {
+			errx("lognormal distribution needs two "
+			     "non-zero parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'C':
+		distr = CONSTANT;
+		if (param1 <= 0) {
+			errx("constant value needs one positive "
+			     "paramters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	default:
+		errx("syntax error in traffic generation option: %c "
+		     "is not a distribution", distchar);
+		usage(EXIT_FAILURE);
+	}
+
+	switch (typechar) {
+	case 'p':
+		cflow[flow_id].settings[endpoint_id].response_trafgen_options.distribution = distr;
+		cflow[flow_id].settings[endpoint_id].response_trafgen_options.param_one = param1;
+		cflow[flow_id].settings[endpoint_id].response_trafgen_options.param_two = param2;
+		break;
+	case 'q':
+		cflow[flow_id].settings[endpoint_id].request_trafgen_options.distribution = distr;
+		cflow[flow_id].settings[endpoint_id].request_trafgen_options.param_one = param1;
+		cflow[flow_id].settings[endpoint_id].request_trafgen_options.param_two = param2;
+		break;
+	case 'g':
+		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.distribution = distr;
+		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.param_one = param1;
+		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.param_two = param2;
+		break;
+	}
+	/* sanity check for max block size */
+	if (distr == CONSTANT && cflow[flow_id].settings[endpoint_id].maximum_block_size < param1)
+		cflow[flow_id].settings[endpoint_id].maximum_block_size = param1;
+	if (distr == UNIFORM && cflow[flow_id].settings[endpoint_id].maximum_block_size < param2)
+		cflow[flow_id].settings[endpoint_id].maximum_block_size = param2;
 }
 
 /* Parse flow specific options given on the cmdline */
@@ -2246,6 +2177,8 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 		cflow[flow_id].summarize_only = 1;
 		break;
 	/* flow options w/ endpoint identifier */
+	case 'G':
+		parse_trafgen_option(arg, flow_id, endpoint_id);
 	case 'A':
 		SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
 		settings->response_trafgen_options.distribution = CONSTANT;
@@ -2701,8 +2634,6 @@ static void parse_cmdline(int argc, char *argv[]) {
 			parse_flow_option(ch, optarg, current_flow_ids[id-1], 0);
 		/* flow options w/ endpoint identifier */
 		case 'G':
-			parse_trafgen_option(optarg, current_flow_ids, id-1);
-			break;
 		case 'A':
 		case 'B':
 		case 'C':
