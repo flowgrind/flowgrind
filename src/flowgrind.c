@@ -2220,6 +2220,32 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 	struct _flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
 
 	switch (ch) {
+	/* flow options w/o endpoint identifier */
+	case 'E':
+		cflow[flow_id].byte_counting = 1;
+		break;
+	case 'I':
+		SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
+		break;
+	case 'J':
+		rc = sscanf(arg, "%u", &optunsigned);
+		if (rc != 1) {
+			errx("random seed must be a valid unsigned "
+			     "integer");
+			usage(EXIT_FAILURE);
+		}
+		cflow[flow_id].random_seed = optunsigned;
+		break;
+	case 'L':
+		cflow[flow_id].late_connect = 1;
+		break;
+	case 'N':
+		cflow[flow_id].shutdown = 1;
+		break;
+	case 'Q':
+		cflow[flow_id].summarize_only = 1;
+		break;
+	/* flow options w/ endpoint identifier */
 	case 'A':
 		SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
 		settings->response_trafgen_options.distribution = CONSTANT;
@@ -2645,9 +2671,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 			break;
 
 		/* flow options w/o endpoint identifier */
-		case 'E':
-			ASSIGN_BI_FLOW_SETTING(byte_counting, 1, id-1);
-			break;
+
 		/* FIXME If more than one number is given, the option is not
 		 * correct handled, e.g. -F 1,2,3 */
 		case 'F':
@@ -2668,28 +2692,13 @@ static void parse_cmdline(int argc, char *argv[]) {
 			}
 			current_flow_ids[id] = -1;
 			break;
+		case 'E':
 		case 'I':
-			SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
-			break;
 		case 'J':
-			rc = sscanf(optarg, "%u", &optint);
-			if (rc != 1) {
-				errx("random seed must be a valid unsigned "
-				     "integer");
-				usage(EXIT_FAILURE);
-			}
-			ASSIGN_BI_FLOW_SETTING(random_seed, optint, id-1);
-			break;
 		case 'L':
-			ASSIGN_BI_FLOW_SETTING(late_connect, 1, id-1);
-			break;
 		case 'N':
-			ASSIGN_BI_FLOW_SETTING(shutdown, 1, id-1);
-			break;
 		case 'Q':
-			ASSIGN_BI_FLOW_SETTING(summarize_only, 1, id-1);
-			break;
-
+			parse_flow_option(ch, optarg, current_flow_ids[id-1], 0);
 		/* flow options w/ endpoint identifier */
 		case 'G':
 			parse_trafgen_option(optarg, current_flow_ids, id-1);
