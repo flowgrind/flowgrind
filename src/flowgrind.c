@@ -2207,7 +2207,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 }
 
 /* Parse flow specific options given on the cmdline */
-static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int id) {
+static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int id, int endpoint_id) {
 	char* token;
 	char* arg;
 	char type;
@@ -2792,9 +2792,30 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'U':
 		case 'W':
 		case 'Y':
-			parse_flow_option(ch, optarg, current_flow_ids, id-1);
-			break;
+			/* pre-parse flow option for endpoints */
+			for (char *token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
+		
+				char type;
+				int endpoint;
+				char* temp;
+				type = token[0];
 
+				if (token[1] == '=')
+					temp = token + 2;
+				else
+					temp = token + 1;
+				if (type == 's' || type == 'b')
+					endpoint = SOURCE;	
+				if (type == 'd' || type == 'b')
+					endpoint = DESTINATION;			
+				if (type != 's' && type != 'd' && type != 'b')  {
+					errx("Invalid enpoint specifier in Option -%c", ch);
+					usage(EXIT_FAILURE);
+				}
+
+				parse_flow_option(ch, temp, current_flow_ids, id-1, endpoint);
+			}
+			break;
 		/* unknown option or missing option-argument */
 		case '?':
 			usage(EXIT_FAILURE);
