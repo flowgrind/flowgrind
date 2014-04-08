@@ -2456,7 +2456,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 	int rc = 0;
 	int id = 0;
 	char *tok = NULL;
-	int current_flow_ids[MAX_FLOWS] =  {-1};
+	int current_flow_ids[MAX_FLOWS];
 	int max_flow_specifier = 0;
 	unsigned max_flow_rate = 0;
 	char unit = 0, type = 0, distribution = 0;
@@ -2503,6 +2503,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 #endif /* HAVE_LIBPCAP */
 		"i:mn:opqs:w"
 		"A:B:CD:EF:G:H:IJ:LNM:O:P:QR:S:T:U:W:Y:";
+
+	for (id = 0; id < MAX_FLOWS; id++)
+		current_flow_ids[id] = id;
 
 	/* variables from getopt() */
 	extern char *optarg;	/* option argument */
@@ -2608,6 +2611,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		/* FIXME If more than one number is given, the option is not
 		 * correct handled, e.g. -F 1,2,3 */
 		case 'F':
+			id = 0;
 			tok = strtok(optarg, ",");
 			while (tok) {
 				rc = sscanf(tok, "%d", &optint);
@@ -2616,14 +2620,16 @@ static void parse_cmdline(int argc, char *argv[]) {
 					usage(EXIT_FAILURE);
 				}
 				if (optint == -1) {
-					id = 0;
+					/* all flows */
+					for (id = 0; id < MAX_FLOWS; id++)
+						current_flow_ids[id] = id;
 					break;
+				} else {
+					current_flow_ids[id++] = optint;
+					ASSIGN_MAX(max_flow_specifier, optint);
+					tok = strtok(NULL, ",");
 				}
-				current_flow_ids[id++] = optint;
-				ASSIGN_MAX(max_flow_specifier, optint);
-				tok = strtok(NULL, ",");
 			}
-			current_flow_ids[id] = -1;
 			break;
 		case 'E':
 		case 'I':
@@ -2631,7 +2637,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'L':
 		case 'N':
 		case 'Q':
-			parse_flow_option(ch, optarg, current_flow_ids[id-1], 0);
+			for (int i = 0; i < id; i++)
+				parse_flow_option(ch, optarg, current_flow_ids[i], 0);
 		/* flow options w/ endpoint identifier */
 		case 'G':
 		case 'A':
@@ -2669,7 +2676,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 					usage(EXIT_FAILURE);
 				}
 
-				parse_flow_option(ch, temp, current_flow_ids[id-1], endpoint);
+				for (int i = 0; i < id; i++)			
+					parse_flow_option(ch, temp, current_flow_ids[i], endpoint);
 			}
 			break;
 		/* unknown option or missing option-argument */
