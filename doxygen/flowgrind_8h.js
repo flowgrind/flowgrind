@@ -4,12 +4,9 @@ var flowgrind_8h =
     [ "_column", "struct__column.html", "struct__column" ],
     [ "_column_header", "struct__column__header.html", "struct__column__header" ],
     [ "_column_state", "struct__column__state.html", "struct__column__state" ],
+    [ "_controller_options", "struct__controller__options.html", "struct__controller__options" ],
     [ "_daemon", "struct__daemon.html", "struct__daemon" ],
     [ "_flow_endpoint", "struct__flow__endpoint.html", "struct__flow__endpoint" ],
-    [ "_general_options", "struct__general__options.html", "struct__general__options" ],
-    [ "HIDE_COLUMNS", "flowgrind_8h.html#ad8a872bb72b88f06d295a92638dbcd46", null ],
-    [ "SET_COLUMN_UNIT", "flowgrind_8h.html#a9c1e5776e7375f5adbbc3c81ad87137a", null ],
-    [ "SHOW_COLUMNS", "flowgrind_8h.html#a92bfb4d1198155d1a930f491dbd269fd", null ],
     [ "SYSCTL_CC_AVAILABLE", "flowgrind_8h.html#ace6ded21d82120b66d4ed437baa01ede", null ],
     [ "column_id", "flowgrind_8h.html#a012a3bb7e27a2d842441b4fbf4a71c3c", [
       [ "COL_FLOW_ID", "flowgrind_8h.html#a012a3bb7e27a2d842441b4fbf4a71c3ca6f1cbca0fff2cba7fb3acc0d2048bc8c", null ],
@@ -46,6 +43,10 @@ var flowgrind_8h =
       [ "COL_PMTU", "flowgrind_8h.html#a012a3bb7e27a2d842441b4fbf4a71c3ca39eb14589131d982f4bf0153056177c1", null ],
       [ "COL_STATUS", "flowgrind_8h.html#a012a3bb7e27a2d842441b4fbf4a71c3ca85244502984894018fb1192930410997", null ]
     ] ],
+    [ "long_opt_only", "flowgrind_8h.html#a2d29beb503cd27927990a55971956322", [
+      [ "HELP_OPTION", "flowgrind_8h.html#a2d29beb503cd27927990a55971956322a026276ebc78eca67db6fbe1d7c044a7a", null ],
+      [ "LOG_FILE_OPTION", "flowgrind_8h.html#a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d", null ]
+    ] ],
     [ "protocol", "flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cd", [
       [ "PROTO_TCP", "flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cda44547a13166ee3f0220fb3c4fc60e544", null ],
       [ "PROTO_UDP", "flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cda2b277c40c006345a264777529561bf93", null ]
@@ -53,13 +54,5 @@ var flowgrind_8h =
     [ "tcp_stack", "flowgrind_8h.html#a815b8430f22a24a11d25db029a90baf7", [
       [ "SEGMENT_BASED", "flowgrind_8h.html#a815b8430f22a24a11d25db029a90baf7a53d1a4e523649d1fef35bf094481ace5", null ],
       [ "BYTE_BASED", "flowgrind_8h.html#a815b8430f22a24a11d25db029a90baf7ae1efd06e499b623082a3e6480ab14b20", null ]
-    ] ],
-    [ "init_general_options", "flowgrind_8h.html#a9026a66b9ba936c8b0ea07726fffee5b", null ],
-    [ "parse_visible_option", "flowgrind_8h.html#a012e7ecc90494208efdf4cde7a6c3e2d", null ],
-    [ "set_column_unit", "flowgrind_8h.html#a1e65ee41678dad66509c1e4dfb3abc44", null ],
-    [ "set_column_visibility", "flowgrind_8h.html#a411d5e167e610998ea25b3fa9e287813", null ],
-    [ "usage", "flowgrind_8h.html#ac961d4576c98082811befa485f96caf7", null ],
-    [ "usage_hint", "flowgrind_8h.html#a2f8f8a0110b3b2fc9141102fa217e290", null ],
-    [ "usage_sockopt", "flowgrind_8h.html#a1ea49c8c97960d6b71d7011f36ea4e1c", null ],
-    [ "usage_trafgenopt", "flowgrind_8h.html#acd28d55d29b625c6344ba5a82113b82e", null ]
+    ] ]
 ];
