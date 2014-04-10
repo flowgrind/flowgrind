@@ -1,3 +1,22 @@
+flowgrind (0.7) unstable; urgency=medium
+
+  Release: 0.7 (2014-04-10)
+  * Output tcp_info kernel variables under FreeBSD
+  * Remove ADT code (was broken anyways)
+  * Display OS information in summary line
+  * Allow to set CPU affinity
+  * Set localhost as default flow target/source instead of 127.0.0.1
+  * Preliminary support for mixed (FreeBSD, Linux) flows
+  * Change timer management to achieve a nanosecond resolution
+  * Closes LP#1212680, LP#1218761 reported and fixed by Midori Kato
+  * Revised docu (help, manpage etc)
+  * Closes LP#1237447
+  * Add 1-way delay measurements
+  * Update usage (-h)
+  * A lot of other small fixes
+
+ -- Arnd Hannemann <arnd.hannemann@credativ.de>  Thu, 10 Apr 2014 13:18:07 +0200
+
 flowgrind (0.6.1) unstable; urgency=low
 
   Release: 0.6.1 (2013-7-5):
