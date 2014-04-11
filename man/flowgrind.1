@@ -134,7 +134,7 @@ flow options following this option apply only to the given flow IDs. Useful in
 combination with \fB\-n\fR to set specific options for certain flows. Numbering
 starts with 0, so \fB\-F\fR 1 refers to the second flow
 .TP
-\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR),(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR),\fI#1\fR,[\fI#2\fR]
+\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR):(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR):\fI#1\fR:[\fI#2\fR]
 activate stochastic traffic generation and set parameters according to the used
 distribution. For additional information see section 'Traffic Generation Option'
 .TP
@@ -204,7 +204,7 @@ both endpoints. However, please note that bidirectional traffic generation can
 lead to unexpected results. To specify different values for each endpoints,
 separate them by comma.
 .HP
-\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR),(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR),\fI#1\fR,[\fI#2\fR]
+\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR):(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR):\fI#1\fR:[\fI#2\fR]
 .IP
 Flow parameter:
 .RS 12
