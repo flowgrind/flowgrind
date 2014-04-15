@@ -18,7 +18,7 @@
 	function downloadcb(response) {
 		var meta = response.meta;
 		var data = response.data;
-		document.getElementById('download_count').innerHTML="Total downloads: " + data.download_count;
+		document.getElementById('download_count').innerHTML=data.download_count;
 	}
 	var script = document.createElement('script');
 	script.src = 'https://api.github.com/repos/flowgrind/flowgrind/releases/assets/111917?callback=downloadcb';
@@ -146,11 +146,12 @@
 
         <aside id="sidebar">
             <a href="https://github.com/flowgrind/flowgrind/releases/download/flowgrind-0.7/flowgrind-0.7.tar.bz2" class="button">
-                <small>Download release</small>Version 0.7<small id="download_count">Total downloads:</small>
+                <small>Download release</small>Version 0.7
             </a>
             <a href="https://github.com/flowgrind/flowgrind/releases/download/flowgrind-0.7/flowgrind-0.7.tar.bz2.asc" class="button">
                 <small>Download signature</small>.asc file
             </a>
+			<p>Release downloads: <span id="download_count"></span></p>
 
             <p class="repo-owner"><a href="https://github.com/flowgrind/flowgrind"></a> is maintained by
                 <a href="https://github.com/flowgrind">flowgrind</a>.
