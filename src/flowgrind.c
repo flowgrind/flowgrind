@@ -2289,222 +2289,222 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 				strcpy(cflow[current_flow_ids[id]].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 		}
 
-		switch (ch) {
-		case 'A':
-			SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
-			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
-			ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
-			break;
-		case 'B':
-			rc = sscanf(arg, "%u", &optunsigned);
-			if (rc != 1) {
-				errx("send buffer size must be a positive "
-				     "integer (in bytes)");
-				usage(EXIT_FAILURE);
-			}
-			ASSIGN_UNI_FLOW_SETTING(requested_send_buffer_size, optunsigned)
-			break;
-		case 'C':
-			ASSIGN_UNI_FLOW_SETTING(flow_control, 1)
-			break;
-		case 'D':
-			rc = sscanf(arg, "%x", &optunsigned);
-			if (rc != 1 || (optunsigned & ~0x3f)) {
-				errx("malformed differentiated service code "
-				     "point");
-				usage(EXIT_FAILURE);
-			}
-			ASSIGN_UNI_FLOW_SETTING(dscp, optunsigned);
-			break;
-		case 'H':
-			{
-				/*      two addresses:
-					- test address where the actual test connection goes to
-					- RPC address, where this program connects to
-
-					Unspecified RPC address falls back to test address
-				 */
-				char url[1000];
-				int port = DEFAULT_LISTEN_PORT;
-				int extra_rpc = 0;
-				int is_ipv6 = 0;
-				char *sepptr, *rpc_address = 0;
-
-				/* RPC address */
-				sepptr = strchr(arg, '/');
-				if (sepptr) {
-					*sepptr = '\0';
-					rpc_address = sepptr + 1;
-					extra_rpc = 1;
-				}
-				else
-					rpc_address = arg;
-
-				/* IPv6 Address? */
-				if (strchr(arg, ':')) {
-					if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
-						errx("invalid IPv6 address "
-						     "'%s' for test connection", arg);
-						usage(EXIT_FAILURE);
-					}
-					if (!extra_rpc)
-						is_ipv6 = 1;
-				}
-
-				if (extra_rpc) {
-					/* Now it's getting tricky... */
-					/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
-					if ((sepptr = strchr(rpc_address, ']'))) {
-					    is_ipv6 = 1;
-						*sepptr = '\0';
-						if (rpc_address[0] == '[')
-							rpc_address++;
-						sepptr++;
-					    if (sepptr != '\0' && *sepptr == ':')
-							sepptr++;
-						port = atoi(sepptr);
-					} else if ((sepptr = strchr(rpc_address, ':'))) {
-						/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
-						if (strchr(sepptr+1, ':')) {
-							is_ipv6 = 1;
-						} else {
-						/* 3rd case: IPv4 or name with port 1.2.3.4:5999*/
-							*sepptr = '\0';
-							sepptr++;
-							if ((*sepptr != '\0') && (*sepptr == ':'))
-									sepptr++;
-							port = atoi(sepptr);
-						}
-					}
-					if (is_ipv6 && (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)) {
-						errx("invalid IPv6 address "
-						     "'%s' for RPC connection", arg);
-						usage(EXIT_FAILURE);
-					}
-					if (port < 1 || port > 65535) {
-						errx("invalid port for RPC connection");
-						usage(EXIT_FAILURE);
-					}
-				} /* end of extra rpc address parsing */
-
-				if (!*arg) {
-					errx("no test host given in argument");
-					usage(EXIT_FAILURE);
-				}
-				if (is_ipv6)
-					sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
-				else
-					sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
-
-				daemon = get_daemon_by_url(url, rpc_address, port);
-				ASSIGN_ENDPOINT_SETTING(daemon, daemon);
-				ASSIGN_ENDPOINT_SETTING_STR(test_address, arg);
-			}
-			break;
-		case 'M':
-			ASSIGN_UNI_FLOW_SETTING(traffic_dump, 1)
-			break;
-		case 'O':
-			if (!*arg) {
-				errx("-O requires a value for each given "
-				     "endpoint");
-				usage(EXIT_FAILURE);
-			}
-
-			if (!strcmp(arg, "TCP_CORK")) {
-				ASSIGN_UNI_FLOW_SETTING(cork, 1);
-			} else if (!strcmp(arg, "TCP_ELCN")) {
-				ASSIGN_UNI_FLOW_SETTING(elcn, 1);
-			} else if (!strcmp(arg, "TCP_LCD")) {
-				ASSIGN_UNI_FLOW_SETTING(lcd, 1);
-			} else if (!strcmp(arg, "TCP_MTCP")) {
-				ASSIGN_UNI_FLOW_SETTING(mtcp, 1);
-			} else if (!strcmp(arg, "TCP_NODELAY")) {
-				ASSIGN_UNI_FLOW_SETTING(nonagle, 1);
-			} else if (!strcmp(arg, "ROUTE_RECORD")) {
-				ASSIGN_UNI_FLOW_SETTING(route_record, 1);
-			/* keep TCP_CONG_MODULE for backward compatibility */
-			} else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
-				if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
-					errx("too large string for "
-					     "TCP_CONG_MODULE value");
-					usage(EXIT_FAILURE);
-				}
-				ASSIGN_UNI_FLOW_SETTING_STR(cc_alg, arg + 16);
-			} else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
-				if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
-					errx("too large string for "
-					     "TCP_CONGESTION value");
-					usage(EXIT_FAILURE);
-				}
-				ASSIGN_UNI_FLOW_SETTING_STR(cc_alg, arg + 15);
-			} else if (!strcmp(arg, "SO_DEBUG")) {
-				ASSIGN_UNI_FLOW_SETTING(so_debug, 1);
-			} else if (!strcmp(arg, "IP_MTU_DISCOVER")) {
-				ASSIGN_UNI_FLOW_SETTING(ipmtudiscover, 1);
-			} else {
-				errx("unknown socket option or socket option "
-				     "not implemented for endpoint");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'P':
-			ASSIGN_UNI_FLOW_SETTING(pushy, 1)
-			break;
-		case 'R':
-			if (!*arg) {
-				errx("-R requires a value for each given "
-				     "endpoint");
-				usage(EXIT_FAILURE);
-			}
-			ASSIGN_UNI_FLOW_SETTING(write_rate_str, arg)
-			break;
-		case 'S':
-			rc = sscanf(arg, "%u", &optunsigned);
-			ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.distribution, CONSTANT);
-			ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.param_one, optunsigned);
-			for (int id = 0; id < MAX_FLOWS; id++) {
-				for (int i = 0; i < 2; i++) {
-					if ((signed)optunsigned > cflow[id].settings[i].maximum_block_size)
-						cflow[id].settings[i].maximum_block_size = (signed)optunsigned;
-				}
-			}
-			break;
-		case 'T':
-			rc = sscanf(arg, "%lf", &optdouble);
-			if (rc != 1) {
-				errx("malformed flow duration");
-				usage(EXIT_FAILURE);
-			}
-			ASSIGN_UNI_FLOW_SETTING(duration[WRITE], optdouble)
-			break;
-		case 'U':
-			rc = sscanf(arg, "%d", &optunsigned);
-			if (rc != 1) {
-				errx("block size must be a positive integer");
-				usage(EXIT_FAILURE);
-			}
-			ASSIGN_UNI_FLOW_SETTING(maximum_block_size, optunsigned);
-			break;
-		case 'W':
-			rc = sscanf(arg, "%u", &optunsigned);
-			if (rc != 1) {
-				errx("receive buffer size (advertised window) "
-				     "must be a positive integer (in bytes)");
-				usage(EXIT_FAILURE);
-			}
-			ASSIGN_UNI_FLOW_SETTING(requested_read_buffer_size, optunsigned)
-			break;
-		case 'Y':
-			rc = sscanf(arg, "%lf", &optdouble);
-			if (rc != 1 || optdouble < 0) {
-				errx("delay must be a non-negativ number (in "
-				     "seconds)");
-				usage(EXIT_FAILURE);
-			}
-			ASSIGN_UNI_FLOW_SETTING(delay[WRITE], optdouble)
-			break;
+	switch (ch) {
+	case 'A':
+		SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
+		ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
+		ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
+		break;
+	case 'B':
+		rc = sscanf(arg, "%u", &optunsigned);
+		if (rc != 1) {
+			errx("send buffer size must be a positive "
+			     "integer (in bytes)");
+			usage(EXIT_FAILURE);
 		}
+		ASSIGN_UNI_FLOW_SETTING(requested_send_buffer_size, optunsigned)
+		break;
+	case 'C':
+		ASSIGN_UNI_FLOW_SETTING(flow_control, 1)
+		break;
+	case 'D':
+		rc = sscanf(arg, "%x", &optunsigned);
+		if (rc != 1 || (optunsigned & ~0x3f)) {
+			errx("malformed differentiated service code "
+			     "point");
+			usage(EXIT_FAILURE);
+		}
+		ASSIGN_UNI_FLOW_SETTING(dscp, optunsigned);
+		break;
+	case 'H':
+		{
+			/*      two addresses:
+				- test address where the actual test connection goes to
+				- RPC address, where this program connects to
+
+				Unspecified RPC address falls back to test address
+			 */
+			char url[1000];
+			int port = DEFAULT_LISTEN_PORT;
+			int extra_rpc = 0;
+			int is_ipv6 = 0;
+			char *sepptr, *rpc_address = 0;
+
+			/* RPC address */
+			sepptr = strchr(arg, '/');
+			if (sepptr) {
+				*sepptr = '\0';
+				rpc_address = sepptr + 1;
+				extra_rpc = 1;
+			}
+			else
+				rpc_address = arg;
+
+			/* IPv6 Address? */
+			if (strchr(arg, ':')) {
+				if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
+					errx("invalid IPv6 address "
+					     "'%s' for test connection", arg);
+					usage(EXIT_FAILURE);
+				}
+				if (!extra_rpc)
+					is_ipv6 = 1;
+			}
+
+			if (extra_rpc) {
+				/* Now it's getting tricky... */
+				/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
+				if ((sepptr = strchr(rpc_address, ']'))) {
+				    is_ipv6 = 1;
+					*sepptr = '\0';
+					if (rpc_address[0] == '[')
+						rpc_address++;
+					sepptr++;
+				    if (sepptr != '\0' && *sepptr == ':')
+						sepptr++;
+					port = atoi(sepptr);
+				} else if ((sepptr = strchr(rpc_address, ':'))) {
+					/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
+					if (strchr(sepptr+1, ':')) {
+						is_ipv6 = 1;
+					} else {
+					/* 3rd case: IPv4 or name with port 1.2.3.4:5999*/
+						*sepptr = '\0';
+						sepptr++;
+						if ((*sepptr != '\0') && (*sepptr == ':'))
+								sepptr++;
+						port = atoi(sepptr);
+					}
+				}
+				if (is_ipv6 && (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)) {
+					errx("invalid IPv6 address "
+					     "'%s' for RPC connection", arg);
+					usage(EXIT_FAILURE);
+				}
+				if (port < 1 || port > 65535) {
+					errx("invalid port for RPC connection");
+					usage(EXIT_FAILURE);
+				}
+			} /* end of extra rpc address parsing */
+
+			if (!*arg) {
+				errx("no test host given in argument");
+				usage(EXIT_FAILURE);
+			}
+			if (is_ipv6)
+				sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
+			else
+				sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
+
+			daemon = get_daemon_by_url(url, rpc_address, port);
+			ASSIGN_ENDPOINT_SETTING(daemon, daemon);
+			ASSIGN_ENDPOINT_SETTING_STR(test_address, arg);
+		}
+		break;
+	case 'M':
+		ASSIGN_UNI_FLOW_SETTING(traffic_dump, 1)
+		break;
+	case 'O':
+		if (!*arg) {
+			errx("-O requires a value for each given "
+			     "endpoint");
+			usage(EXIT_FAILURE);
+		}
+
+		if (!strcmp(arg, "TCP_CORK")) {
+			ASSIGN_UNI_FLOW_SETTING(cork, 1);
+		} else if (!strcmp(arg, "TCP_ELCN")) {
+			ASSIGN_UNI_FLOW_SETTING(elcn, 1);
+		} else if (!strcmp(arg, "TCP_LCD")) {
+			ASSIGN_UNI_FLOW_SETTING(lcd, 1);
+		} else if (!strcmp(arg, "TCP_MTCP")) {
+			ASSIGN_UNI_FLOW_SETTING(mtcp, 1);
+		} else if (!strcmp(arg, "TCP_NODELAY")) {
+			ASSIGN_UNI_FLOW_SETTING(nonagle, 1);
+		} else if (!strcmp(arg, "ROUTE_RECORD")) {
+			ASSIGN_UNI_FLOW_SETTING(route_record, 1);
+		/* keep TCP_CONG_MODULE for backward compatibility */
+		} else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
+			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
+				errx("too large string for "
+				     "TCP_CONG_MODULE value");
+				usage(EXIT_FAILURE);
+			}
+			ASSIGN_UNI_FLOW_SETTING_STR(cc_alg, arg + 16);
+		} else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
+			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
+				errx("too large string for "
+				     "TCP_CONGESTION value");
+				usage(EXIT_FAILURE);
+			}
+			ASSIGN_UNI_FLOW_SETTING_STR(cc_alg, arg + 15);
+		} else if (!strcmp(arg, "SO_DEBUG")) {
+			ASSIGN_UNI_FLOW_SETTING(so_debug, 1);
+		} else if (!strcmp(arg, "IP_MTU_DISCOVER")) {
+			ASSIGN_UNI_FLOW_SETTING(ipmtudiscover, 1);
+		} else {
+			errx("unknown socket option or socket option "
+			     "not implemented for endpoint");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'P':
+		ASSIGN_UNI_FLOW_SETTING(pushy, 1)
+		break;
+	case 'R':
+		if (!*arg) {
+			errx("-R requires a value for each given "
+			     "endpoint");
+			usage(EXIT_FAILURE);
+		}
+		ASSIGN_UNI_FLOW_SETTING(write_rate_str, arg)
+		break;
+	case 'S':
+		rc = sscanf(arg, "%u", &optunsigned);
+		ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.distribution, CONSTANT);
+		ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.param_one, optunsigned);
+		for (int id = 0; id < MAX_FLOWS; id++) {
+			for (int i = 0; i < 2; i++) {
+				if ((signed)optunsigned > cflow[id].settings[i].maximum_block_size)
+					cflow[id].settings[i].maximum_block_size = (signed)optunsigned;
+			}
+		}
+		break;
+	case 'T':
+		rc = sscanf(arg, "%lf", &optdouble);
+		if (rc != 1) {
+			errx("malformed flow duration");
+			usage(EXIT_FAILURE);
+		}
+		ASSIGN_UNI_FLOW_SETTING(duration[WRITE], optdouble)
+		break;
+	case 'U':
+		rc = sscanf(arg, "%d", &optunsigned);
+		if (rc != 1) {
+			errx("block size must be a positive integer");
+			usage(EXIT_FAILURE);
+		}
+		ASSIGN_UNI_FLOW_SETTING(maximum_block_size, optunsigned);
+		break;
+	case 'W':
+		rc = sscanf(arg, "%u", &optunsigned);
+		if (rc != 1) {
+			errx("receive buffer size (advertised window) "
+			     "must be a positive integer (in bytes)");
+			usage(EXIT_FAILURE);
+		}
+		ASSIGN_UNI_FLOW_SETTING(requested_read_buffer_size, optunsigned)
+		break;
+	case 'Y':
+		rc = sscanf(arg, "%lf", &optdouble);
+		if (rc != 1 || optdouble < 0) {
+			errx("delay must be a non-negativ number (in "
+			     "seconds)");
+			usage(EXIT_FAILURE);
+		}
+		ASSIGN_UNI_FLOW_SETTING(delay[WRITE], optdouble)
+		break;
+	}
 }
 
 /**
