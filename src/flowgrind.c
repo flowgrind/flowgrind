@@ -2210,10 +2210,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 }
 
 /* Parse flow specific options given on the cmdline */
-static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int id) {
-	char* token;
-	char* arg;
-	char type;
+static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id, char type) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
@@ -2290,19 +2287,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 				strcpy(cflow[current_flow_ids[id]].settings[SOURCE].PROPERTY_NAME, (PROPERTY_VALUE)); \
 			if (type != 's') \
 				strcpy(cflow[current_flow_ids[id]].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
-		}
-
-	for (token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
-		type = token[0];
-		if (token[1] == '=')
-			arg = token + 2;
-		else
-			arg = token + 1;
-
-		if (type != 's' && type != 'd' && type != 'b') {
-			errx("syntax error in flow option: %c is not a valid "
-			   "endpoint", type);
-			usage(EXIT_FAILURE);
 		}
 
 		switch (ch) {
@@ -2521,7 +2505,6 @@ static void parse_flow_option(int ch, char* optarg, int current_flow_ids[], int 
 			ASSIGN_UNI_FLOW_SETTING(delay[WRITE], optdouble)
 			break;
 		}
-	}
 }
 
 /**
@@ -2795,7 +2778,26 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'U':
 		case 'W':
 		case 'Y':
-			parse_flow_option(ch, optarg, current_flow_ids, id-1);
+			/* pre-parse flow option for endpoints */
+			for (char *token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
+		
+				char type = token[0];
+				char* arg;
+
+				if (token[1] == '=')
+					arg = token + 2;
+				else
+					arg = token + 1;
+
+				if (type != 's' && type != 'd' && type != 'b')  {
+					errx("Invalid enpoint specifier in Option -%c", ch);
+					usage(EXIT_FAILURE);
+				}
+				if (type == 's' || type == 'b')
+					parse_flow_option(ch, arg, current_flow_ids, id-1, 's');	
+				if (type == 'd' || type == 'b')
+					parse_flow_option(ch, arg, current_flow_ids, id-1, 'd');			
+			}
 			break;
 
 		/* unknown option or missing option-argument */
