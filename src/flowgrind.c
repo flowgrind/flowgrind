@@ -2210,7 +2210,7 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id)
 }
 
 /* Parse flow specific options given on the cmdline */
-static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id, char type) {
+static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id, int endpoint_id) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
@@ -2289,11 +2289,14 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 				strcpy(cflow[current_flow_ids[id]].settings[DESTINATION].PROPERTY_NAME, (PROPERTY_VALUE)); \
 		}
 
+	struct _flow_endpoint* endpoint = &cflow[current_flow_ids[id]].endpoint[endpoint_id];
+	struct _flow_settings* settings = &cflow[current_flow_ids[id]].settings[endpoint_id];
+
 	switch (ch) {
 	case 'A':
 		SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
-		ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.distribution, CONSTANT);
-		ASSIGN_UNI_FLOW_SETTING(response_trafgen_options.param_one, MIN_BLOCK_SIZE);
+		settings->response_trafgen_options.distribution = CONSTANT;
+		settings->response_trafgen_options.param_one = MIN_BLOCK_SIZE;
 		break;
 	case 'B':
 		rc = sscanf(arg, "%u", &optunsigned);
@@ -2302,10 +2305,10 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 			     "integer (in bytes)");
 			usage(EXIT_FAILURE);
 		}
-		ASSIGN_UNI_FLOW_SETTING(requested_send_buffer_size, optunsigned)
+		settings->requested_send_buffer_size = optunsigned;
 		break;
 	case 'C':
-		ASSIGN_UNI_FLOW_SETTING(flow_control, 1)
+		settings->flow_control= 1;
 		break;
 	case 'D':
 		rc = sscanf(arg, "%x", &optunsigned);
@@ -2314,7 +2317,7 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 			     "point");
 			usage(EXIT_FAILURE);
 		}
-		ASSIGN_UNI_FLOW_SETTING(dscp, optunsigned);
+		settings->dscp = optunsigned;
 		break;
 	case 'H':
 		{
@@ -2397,12 +2400,12 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 				sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
 
 			daemon = get_daemon_by_url(url, rpc_address, port);
-			ASSIGN_ENDPOINT_SETTING(daemon, daemon);
-			ASSIGN_ENDPOINT_SETTING_STR(test_address, arg);
+			endpoint->daemon = daemon;
+			strcpy(endpoint->test_address, arg);
 		}
 		break;
 	case 'M':
-		ASSIGN_UNI_FLOW_SETTING(traffic_dump, 1)
+		settings->traffic_dump = 1;
 		break;
 	case 'O':
 		if (!*arg) {
@@ -2412,17 +2415,17 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 		}
 
 		if (!strcmp(arg, "TCP_CORK")) {
-			ASSIGN_UNI_FLOW_SETTING(cork, 1);
+			settings->cork = 1;
 		} else if (!strcmp(arg, "TCP_ELCN")) {
-			ASSIGN_UNI_FLOW_SETTING(elcn, 1);
+			settings->elcn = 1;
 		} else if (!strcmp(arg, "TCP_LCD")) {
-			ASSIGN_UNI_FLOW_SETTING(lcd, 1);
+			settings->lcd = 1;
 		} else if (!strcmp(arg, "TCP_MTCP")) {
-			ASSIGN_UNI_FLOW_SETTING(mtcp, 1);
+			settings->mtcp = 1;
 		} else if (!strcmp(arg, "TCP_NODELAY")) {
-			ASSIGN_UNI_FLOW_SETTING(nonagle, 1);
+			settings->nonagle = 1;
 		} else if (!strcmp(arg, "ROUTE_RECORD")) {
-			ASSIGN_UNI_FLOW_SETTING(route_record, 1);
+			settings->route_record = 1;
 		/* keep TCP_CONG_MODULE for backward compatibility */
 		} else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
 			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
@@ -2430,18 +2433,18 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 				     "TCP_CONG_MODULE value");
 				usage(EXIT_FAILURE);
 			}
-			ASSIGN_UNI_FLOW_SETTING_STR(cc_alg, arg + 16);
+			strcpy(settings->cc_alg, arg + 16);
 		} else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
 			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
 				errx("too large string for "
 				     "TCP_CONGESTION value");
 				usage(EXIT_FAILURE);
 			}
-			ASSIGN_UNI_FLOW_SETTING_STR(cc_alg, arg + 15);
+			strcpy(settings->cc_alg, arg + 15);
 		} else if (!strcmp(arg, "SO_DEBUG")) {
-			ASSIGN_UNI_FLOW_SETTING(so_debug, 1);
+			settings->so_debug = 1;
 		} else if (!strcmp(arg, "IP_MTU_DISCOVER")) {
-			ASSIGN_UNI_FLOW_SETTING(ipmtudiscover, 1);
+			settings->ipmtudiscover = 1;
 		} else {
 			errx("unknown socket option or socket option "
 			     "not implemented for endpoint");
@@ -2449,7 +2452,7 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 		}
 		break;
 	case 'P':
-		ASSIGN_UNI_FLOW_SETTING(pushy, 1)
+		settings->pushy = 1;
 		break;
 	case 'R':
 		if (!*arg) {
@@ -2457,12 +2460,12 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 			     "endpoint");
 			usage(EXIT_FAILURE);
 		}
-		ASSIGN_UNI_FLOW_SETTING(write_rate_str, arg)
+		strcpy(settings->write_rate_str, arg);
 		break;
 	case 'S':
 		rc = sscanf(arg, "%u", &optunsigned);
-		ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.distribution, CONSTANT);
-		ASSIGN_UNI_FLOW_SETTING(request_trafgen_options.param_one, optunsigned);
+		settings->request_trafgen_options.distribution = CONSTANT;
+		settings->request_trafgen_options.param_one = optunsigned;
 		for (int id = 0; id < MAX_FLOWS; id++) {
 			for (int i = 0; i < 2; i++) {
 				if ((signed)optunsigned > cflow[id].settings[i].maximum_block_size)
@@ -2476,7 +2479,7 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 			errx("malformed flow duration");
 			usage(EXIT_FAILURE);
 		}
-		ASSIGN_UNI_FLOW_SETTING(duration[WRITE], optdouble)
+		settings->duration[WRITE] = optdouble;
 		break;
 	case 'U':
 		rc = sscanf(arg, "%d", &optunsigned);
@@ -2484,7 +2487,7 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 			errx("block size must be a positive integer");
 			usage(EXIT_FAILURE);
 		}
-		ASSIGN_UNI_FLOW_SETTING(maximum_block_size, optunsigned);
+		settings->maximum_block_size = optunsigned;
 		break;
 	case 'W':
 		rc = sscanf(arg, "%u", &optunsigned);
@@ -2493,7 +2496,7 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 			     "must be a positive integer (in bytes)");
 			usage(EXIT_FAILURE);
 		}
-		ASSIGN_UNI_FLOW_SETTING(requested_read_buffer_size, optunsigned)
+		settings->requested_read_buffer_size = optunsigned;
 		break;
 	case 'Y':
 		rc = sscanf(arg, "%lf", &optdouble);
@@ -2502,7 +2505,7 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 			     "seconds)");
 			usage(EXIT_FAILURE);
 		}
-		ASSIGN_UNI_FLOW_SETTING(delay[WRITE], optdouble)
+		settings->delay[WRITE] = optdouble;
 		break;
 	}
 }
@@ -2794,9 +2797,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 					usage(EXIT_FAILURE);
 				}
 				if (type == 's' || type == 'b')
-					parse_flow_option(ch, arg, current_flow_ids, id-1, 's');	
+					parse_flow_option(ch, arg, current_flow_ids, id-1, SOURCE);	
 				if (type == 'd' || type == 'b')
-					parse_flow_option(ch, arg, current_flow_ids, id-1, 'd');			
+					parse_flow_option(ch, arg, current_flow_ids, id-1, DESTINATION);			
 			}
 			break;
 
