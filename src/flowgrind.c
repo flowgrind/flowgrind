@@ -2039,7 +2039,7 @@ static struct _daemon * get_daemon_by_url(const char* server_url,
 	return &unique_servers[num_unique_servers++];
 }
 
-static void parse_trafgen_option(char *params, int current_flow_ids[], int id, int endpoint_id)
+static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
 {
 	int rc;
 	double param1 = 0, param2 = 0, unused;
@@ -2117,32 +2117,32 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id, i
 
 	switch (typechar) {
 	case 'p':
-		cflow[current_flow_ids[id]].settings[endpoint_id].response_trafgen_options.distribution = distr;
-		cflow[current_flow_ids[id]].settings[endpoint_id].response_trafgen_options.param_one = param1;
-		cflow[current_flow_ids[id]].settings[endpoint_id].response_trafgen_options.param_two = param2;
+		cflow[flow_id].settings[endpoint_id].response_trafgen_options.distribution = distr;
+		cflow[flow_id].settings[endpoint_id].response_trafgen_options.param_one = param1;
+		cflow[flow_id].settings[endpoint_id].response_trafgen_options.param_two = param2;
 		break;
 	case 'q':
-		cflow[current_flow_ids[id]].settings[endpoint_id].request_trafgen_options.distribution = distr;
-		cflow[current_flow_ids[id]].settings[endpoint_id].request_trafgen_options.param_one = param1;
-		cflow[current_flow_ids[id]].settings[endpoint_id].request_trafgen_options.param_two = param2;
+		cflow[flow_id].settings[endpoint_id].request_trafgen_options.distribution = distr;
+		cflow[flow_id].settings[endpoint_id].request_trafgen_options.param_one = param1;
+		cflow[flow_id].settings[endpoint_id].request_trafgen_options.param_two = param2;
 		break;
 	case 'g':
-		cflow[current_flow_ids[id]].settings[endpoint_id].interpacket_gap_trafgen_options.distribution = distr;
-		cflow[current_flow_ids[id]].settings[endpoint_id].interpacket_gap_trafgen_options.param_one = param1;
-		cflow[current_flow_ids[id]].settings[endpoint_id].interpacket_gap_trafgen_options.param_two = param2;
+		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.distribution = distr;
+		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.param_one = param1;
+		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.param_two = param2;
 		break;
 	}
 	/* sanity check for max block size */
 	for (int i = 0; i < 2; i++) {
-		if (distr == CONSTANT && cflow[id].settings[i].maximum_block_size < param1)
-			cflow[id].settings[i].maximum_block_size = param1;
-		if (distr == UNIFORM && cflow[id].settings[i].maximum_block_size < param2)
-			cflow[id].settings[i].maximum_block_size = param2;
+		if (distr == CONSTANT && cflow[flow_id].settings[i].maximum_block_size < param1)
+			cflow[flow_id].settings[i].maximum_block_size = param1;
+		if (distr == UNIFORM && cflow[flow_id].settings[i].maximum_block_size < param2)
+			cflow[flow_id].settings[i].maximum_block_size = param2;
 	}
 }
 
 /* Parse flow specific options given on the cmdline */
-static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id, int endpoint_id) {
+static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
@@ -2151,12 +2151,12 @@ static void parse_flow_option(int ch, char* arg, int current_flow_ids[], int id,
 	source_in6.sin6_family = AF_INET6;
 	struct _daemon* daemon;
 
-	struct _flow_endpoint* endpoint = &cflow[current_flow_ids[id]].endpoint[endpoint_id];
-	struct _flow_settings* settings = &cflow[current_flow_ids[id]].settings[endpoint_id];
+	struct _flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
+	struct _flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
 
 	switch (ch) {
 	case 'G':
-		parse_trafgen_option(arg, current_flow_ids, id-1, endpoint_id);
+		parse_trafgen_option(arg, flow_id, endpoint_id);
 		break;
 	case 'A':
 		SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
@@ -2660,9 +2660,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 					usage(EXIT_FAILURE);
 				}
 				if (type == 's' || type == 'b')
-					parse_flow_option(ch, arg, current_flow_ids, id-1, SOURCE);	
+					parse_flow_option(ch, arg, current_flow_ids[id-1], SOURCE);	
 				if (type == 'd' || type == 'b')
-					parse_flow_option(ch, arg, current_flow_ids, id-1, DESTINATION);			
+					parse_flow_option(ch, arg, current_flow_ids[id-1], DESTINATION);			
 			}
 			break;
 
