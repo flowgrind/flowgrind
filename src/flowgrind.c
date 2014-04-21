@@ -2459,9 +2459,9 @@ static void parse_colon_option(char *optarg)
 
 static void parse_cmdline(int argc, char *argv[]) {
 	int rc = 0;
-	int id = 0;
+	int cur_num_flows = 0;
 	char *tok = NULL;
-	int current_flow_ids[MAX_FLOWS] =  {-1};
+	int current_flow_ids[MAX_FLOWS];
 	int max_flow_specifier = 0;
 	unsigned max_flow_rate = 0;
 	char unit = 0, type = 0, distribution = 0;
@@ -2497,6 +2497,11 @@ static void parse_cmdline(int argc, char *argv[]) {
 #endif /* HAVE_LIBPCAP */
 		"i:mn:opqs:w"
 		"A:B:CD:EF:G:H:IJ:LNM:O:P:QR:S:T:U:W:Y:";
+
+	/* if no option -F is given, configure all flows*/
+	for (int i = 0; i < MAX_FLOWS; i++)
+		current_flow_ids[i] = i;
+	cur_num_flows = MAX_FLOWS;
 
 	/* variables from getopt() */
 	extern char *optarg;	/* option argument */
@@ -2598,10 +2603,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 			break;
 
 		/* flow options w/o endpoint identifier */
-
-		/* FIXME If more than one number is given, the option is not
-		 * correct handled, e.g. -F 1,2,3 */
 		case 'F':
+			cur_num_flows = 0;
 			tok = strtok(optarg, ",");
 			while (tok) {
 				rc = sscanf(tok, "%d", &optint);
@@ -2610,14 +2613,17 @@ static void parse_cmdline(int argc, char *argv[]) {
 					usage(EXIT_FAILURE);
 				}
 				if (optint == -1) {
-					id = 0;
+					/* all flows */
+					for (int i = 0; i < MAX_FLOWS; i++)
+						current_flow_ids[i] = i;
+					cur_num_flows = MAX_FLOWS;
 					break;
+				} else {
+					current_flow_ids[cur_num_flows++] = optint;
+					ASSIGN_MAX(max_flow_specifier, optint);
+					tok = strtok(NULL, ",");
 				}
-				current_flow_ids[id++] = optint;
-				ASSIGN_MAX(max_flow_specifier, optint);
-				tok = strtok(NULL, ",");
 			}
-			current_flow_ids[id] = -1;
 			break;
 		case 'E':
 		case 'I':
@@ -2625,7 +2631,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'L':
 		case 'N':
 		case 'Q':
-			parse_flow_option(ch, optarg, current_flow_ids[id-1], 0);
+			for (int i = 0; i < cur_num_flows; i++)
+				parse_flow_option(ch, optarg, current_flow_ids[i], 0);
 			break;
 
 		/* flow options w/ endpoint identifier */
@@ -2659,10 +2666,13 @@ static void parse_cmdline(int argc, char *argv[]) {
 					errx("Invalid enpoint specifier in Option -%c", ch);
 					usage(EXIT_FAILURE);
 				}
-				if (type == 's' || type == 'b')
-					parse_flow_option(ch, arg, current_flow_ids[id-1], SOURCE);	
-				if (type == 'd' || type == 'b')
-					parse_flow_option(ch, arg, current_flow_ids[id-1], DESTINATION);			
+
+				for (int i = 0; i < cur_num_flows; i++) {
+					if (type == 's' || type == 'b')
+						parse_flow_option(ch, arg, current_flow_ids[i], SOURCE);	
+					if (type == 'd' || type == 'b')
+						parse_flow_option(ch, arg, current_flow_ids[i], DESTINATION);	
+				}
 			}
 			break;
 
@@ -2718,7 +2728,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		warnx("must not specify option for non-existing flow");
 		sanity_err = true;
 	}
-	for (id = 0; id < copt.num_flows; id++) {
+	for (int id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
 		    cflow[id].late_connect &&
