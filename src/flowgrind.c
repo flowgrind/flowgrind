@@ -2046,99 +2046,99 @@ static void parse_trafgen_option(char *params, int current_flow_ids[], int id, i
 	char typechar, distchar;
 	enum distributions distr = CONSTANT;
 
-		rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar, &param1, &param2, &unused);
-		if (rc != 3 && rc != 4) {
-			errx("malformed traffic generation parameters");
+	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar, &param1, &param2, &unused);
+	if (rc != 3 && rc != 4) {
+		errx("malformed traffic generation parameters");
+		usage(EXIT_FAILURE);
+	}
+
+	switch (distchar) {
+	case 'N':
+		distr = NORMAL;
+		if (!param1 || !param2) {
+			errx("normal distribution needs two non-zero "
+			     "parameters");
 			usage(EXIT_FAILURE);
 		}
-
-		switch (distchar) {
-		case 'N':
-			distr = NORMAL;
-			if (!param1 || !param2) {
-				errx("normal distribution needs two non-zero "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'W':
-			distr = WEIBULL;
-			if (!param1 || !param2) {
-				errx("weibull distribution needs two non-zero "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'U':
-			distr = UNIFORM;
-			if  (param1 <= 0 || param2 <= 0 || (param1 > param2)) {
-				errx("uniform distribution needs two positive "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'E':
-			distr = EXPONENTIAL;
-			if (param1 <= 0) {
-				errx("exponential value needs one positive "
-				     "paramters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'P':
-			distr = PARETO;
-			if (!param1 || !param2) {
-				errx("pareto distribution needs two non-zero "
-				     "parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'L':
-			distr = LOGNORMAL;
-			if (!param1 || !param2) {
-				errx("lognormal distribution needs two "
-				     "non-zero parameters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'C':
-			distr = CONSTANT;
-			if (param1 <= 0) {
-				errx("constant value needs one positive "
-				     "paramters");
-				usage(EXIT_FAILURE);
-			}
-			break;
-		default:
-			errx("syntax error in traffic generation option: %c "
-			     "is not a distribution", distchar);
+		break;
+	case 'W':
+		distr = WEIBULL;
+		if (!param1 || !param2) {
+			errx("weibull distribution needs two non-zero "
+			     "parameters");
 			usage(EXIT_FAILURE);
 		}
+		break;
+	case 'U':
+		distr = UNIFORM;
+		if  (param1 <= 0 || param2 <= 0 || (param1 > param2)) {
+			errx("uniform distribution needs two positive "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'E':
+		distr = EXPONENTIAL;
+		if (param1 <= 0) {
+			errx("exponential value needs one positive "
+			     "paramters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'P':
+		distr = PARETO;
+		if (!param1 || !param2) {
+			errx("pareto distribution needs two non-zero "
+			     "parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'L':
+		distr = LOGNORMAL;
+		if (!param1 || !param2) {
+			errx("lognormal distribution needs two "
+			     "non-zero parameters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'C':
+		distr = CONSTANT;
+		if (param1 <= 0) {
+			errx("constant value needs one positive "
+			     "paramters");
+			usage(EXIT_FAILURE);
+		}
+		break;
+	default:
+		errx("syntax error in traffic generation option: %c "
+		     "is not a distribution", distchar);
+		usage(EXIT_FAILURE);
+	}
 
-				switch (typechar) {
-				case 'p':
-					cflow[current_flow_ids[id]].settings[endpoint_id].response_trafgen_options.distribution = distr;
-					cflow[current_flow_ids[id]].settings[endpoint_id].response_trafgen_options.param_one = param1;
-					cflow[current_flow_ids[id]].settings[endpoint_id].response_trafgen_options.param_two = param2;
-					break;
-				case 'q':
-					cflow[current_flow_ids[id]].settings[endpoint_id].request_trafgen_options.distribution = distr;
-					cflow[current_flow_ids[id]].settings[endpoint_id].request_trafgen_options.param_one = param1;
-					cflow[current_flow_ids[id]].settings[endpoint_id].request_trafgen_options.param_two = param2;
-					break;
-				case 'g':
-					cflow[current_flow_ids[id]].settings[endpoint_id].interpacket_gap_trafgen_options.distribution = distr;
-					cflow[current_flow_ids[id]].settings[endpoint_id].interpacket_gap_trafgen_options.param_one = param1;
-					cflow[current_flow_ids[id]].settings[endpoint_id].interpacket_gap_trafgen_options.param_two = param2;
-					break;
-				}
-			/* sanity check for max block size */
-			for (int i = 0; i < 2; i++) {
-				if (distr == CONSTANT && cflow[id].settings[i].maximum_block_size < param1)
-					cflow[id].settings[i].maximum_block_size = param1;
-				if (distr == UNIFORM && cflow[id].settings[i].maximum_block_size < param2)
-					cflow[id].settings[i].maximum_block_size = param2;
-			}
+	switch (typechar) {
+	case 'p':
+		cflow[current_flow_ids[id]].settings[endpoint_id].response_trafgen_options.distribution = distr;
+		cflow[current_flow_ids[id]].settings[endpoint_id].response_trafgen_options.param_one = param1;
+		cflow[current_flow_ids[id]].settings[endpoint_id].response_trafgen_options.param_two = param2;
+		break;
+	case 'q':
+		cflow[current_flow_ids[id]].settings[endpoint_id].request_trafgen_options.distribution = distr;
+		cflow[current_flow_ids[id]].settings[endpoint_id].request_trafgen_options.param_one = param1;
+		cflow[current_flow_ids[id]].settings[endpoint_id].request_trafgen_options.param_two = param2;
+		break;
+	case 'g':
+		cflow[current_flow_ids[id]].settings[endpoint_id].interpacket_gap_trafgen_options.distribution = distr;
+		cflow[current_flow_ids[id]].settings[endpoint_id].interpacket_gap_trafgen_options.param_one = param1;
+		cflow[current_flow_ids[id]].settings[endpoint_id].interpacket_gap_trafgen_options.param_two = param2;
+		break;
+	}
+	/* sanity check for max block size */
+	for (int i = 0; i < 2; i++) {
+		if (distr == CONSTANT && cflow[id].settings[i].maximum_block_size < param1)
+			cflow[id].settings[i].maximum_block_size = param1;
+		if (distr == UNIFORM && cflow[id].settings[i].maximum_block_size < param2)
+			cflow[id].settings[i].maximum_block_size = param2;
+	}
 }
 
 /* Parse flow specific options given on the cmdline */
