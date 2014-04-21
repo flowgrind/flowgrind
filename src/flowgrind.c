@@ -2499,8 +2499,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 		"A:B:CD:EF:G:H:IJ:LNM:O:P:QR:S:T:U:W:Y:";
 
 	/* if no option -F is given, configure all flows*/
-	for (int i = 0; i < MAX_FLOWS; i++)
-		current_flow_ids[i] = i;
+	for (id = 0; id < MAX_FLOWS; id++)
+		current_flow_ids[id] = id;
 
 	/* variables from getopt() */
 	extern char *optarg;	/* option argument */
@@ -2613,8 +2613,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 				}
 				if (optint == -1) {
 					/* all flows */
-					for (int i = 0; i < MAX_FLOWS; i++)
-						current_flow_ids[i] = i;
+					for (id = 0; id < MAX_FLOWS; id++)
+						current_flow_ids[id] = id;
 					break;
 				} else {
 					current_flow_ids[id++] = optint;
