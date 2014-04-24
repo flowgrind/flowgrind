@@ -62,6 +62,7 @@
 #endif /* HAVE_LIBPCAP */
 
 #include "debug.h"
+#include "fg_stdlib.h"
 #include "fg_socket.h"
 
 #ifndef SOL_TCP

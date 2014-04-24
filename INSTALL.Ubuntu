@@ -5,8 +5,7 @@ Ubuntu 13.04  (Raring Ringtail)
 
 PPA VERSION Installation
 ------------------------
-
-Add UMIC-Mesh.net Repository:
+Add flowgrind repository:
   sudo add-apt-repository ppa:umic-mesh/flowgrind
 
 Update Package List:
