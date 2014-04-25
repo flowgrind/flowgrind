@@ -269,8 +269,8 @@ static void usage(short status)
 		"  -E             enumerate bytes in payload instead of sending zeros\n"
 		"  -F #[,#]...    flow options following this option apply only to the given flow \n"
 		"                 IDs. Useful in combination with -n to set specific options\n"
-		"                 for certain flows. Numbering starts with 1, so -F 1 refers\n"
-		"                 to the first flow\n"
+		"                 for certain flows. Numbering starts with 0, so -F 1 refers\n"
+		"                 to the second flow\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
 #else
@@ -2612,15 +2612,15 @@ static void parse_cmdline(int argc, char *argv[]) {
 					errx("malformed flow specifier");
 					usage(EXIT_FAILURE);
 				}
-				if (optint < 1) {
+				if (optint == -1) {
 					/* all flows */
 					for (int i = 0; i < MAX_FLOWS; i++)
 						current_flow_ids[i] = i;
 					cur_num_flows = MAX_FLOWS;
 					break;
 				} else {
-					current_flow_ids[cur_num_flows++] = optint-1;
-					ASSIGN_MAX(max_flow_specifier, optint-1);
+					current_flow_ids[cur_num_flows++] = optint;
+					ASSIGN_MAX(max_flow_specifier, optint);
 					tok = strtok(NULL, ",");
 				}
 			}

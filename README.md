@@ -44,7 +44,7 @@ Instructions to run a test
 
 Assume we have 4 machines, host0, host1, host2 and host3 and flowgrind has been installed on all of them. We want to measure flows from host1 to host2 and from host1 to host3 in parallel, controlled from host0. First, we start `flowgrindd` on host1 to host3. On host0 we execute:
 
-	# flowgrind -n 2 -F 1 -H s=host1,d=host2 -F 2 -H s=host1,d=host3
+	# flowgrind -n 2 -F 0 -H s=host1,d=host2 -F 1 -H s=host1,d=host3
 
 In order to not influence the test connection with control traffic, flowgrind allows to setup the RPC control connection over a different interface. A typical scenario would be to test a WiFi connection and run the control traffic over a wired connection.
 
