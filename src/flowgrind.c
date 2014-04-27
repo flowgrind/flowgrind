@@ -270,7 +270,7 @@ static void usage(short status)
 		"  -F #[,#]...    flow options following this option apply only to the given flow \n"
 		"                 IDs. Useful in combination with -n to set specific options\n"
 		"                 for certain flows. Numbering starts with 1, so -F 1 refers\n"
-		"                 to the first flow\n"
+		"                 to the first flow. -F 0 specifies all flows.\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
 #else
