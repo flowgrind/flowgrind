@@ -2463,10 +2463,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 	char *tok = NULL;
 	int current_flow_ids[MAX_FLOWS];
 	int max_flow_specifier = 0;
-	unsigned max_flow_rate = 0;
-	char unit = 0, type = 0, distribution = 0;
 	int optint = 0;
-	double optdouble = 0.0;
 
 	/* long options */
 	static const struct option long_opt[] = {
@@ -2726,7 +2723,29 @@ static void parse_cmdline(int argc, char *argv[]) {
 	}
 #endif
 
-	/* Sanity checking flow options */
+	for (int id = 0; id < copt.num_flows; id++) {
+		cflow[id].settings[SOURCE].duration[READ] = cflow[id].settings[DESTINATION].duration[WRITE];
+		cflow[id].settings[DESTINATION].duration[READ] = cflow[id].settings[SOURCE].duration[WRITE];
+		cflow[id].settings[SOURCE].delay[READ] = cflow[id].settings[DESTINATION].delay[WRITE];
+		cflow[id].settings[DESTINATION].delay[READ] = cflow[id].settings[SOURCE].delay[WRITE];
+
+		for (unsigned i = 0; i < 2; i++) {
+			/* Default to localhost, if no endpoints were set for a flow */
+			if (!cflow[id].endpoint[i].daemon) {
+				cflow[id].endpoint[i].daemon = get_daemon_by_url(
+					"http://localhost:5999/RPC2", "localhost", DEFAULT_LISTEN_PORT);
+			}
+		}
+	}
+
+}
+
+/**
+ * Sanity checking flow options
+ */
+static void sanity_check(void) {
+
+	unsigned max_flow_rate = 0;
 	bool sanity_err = false;
 
 	for (int id = 0; id < copt.num_flows; id++) {
@@ -2756,20 +2775,16 @@ static void parse_cmdline(int argc, char *argv[]) {
 			sanity_err = true;
 		}
 
-		cflow[id].settings[SOURCE].duration[READ] = cflow[id].settings[DESTINATION].duration[WRITE];
-		cflow[id].settings[DESTINATION].duration[READ] = cflow[id].settings[SOURCE].duration[WRITE];
-		cflow[id].settings[SOURCE].delay[READ] = cflow[id].settings[DESTINATION].delay[WRITE];
-		cflow[id].settings[DESTINATION].delay[READ] = cflow[id].settings[SOURCE].delay[WRITE];
-
 		/* TODO Move the following stuff out of the sanity checks into
 		 * a new function 'parse_rate_option' */
 
 		for (unsigned i = 0; i < 2; i++) {
 
 			if (cflow[id].settings[i].write_rate_str) {
-				unit = type = distribution = 0;
+				char unit = 0, type = 0;
+				double optdouble = 0.0;
 				/* last %c for catching wrong input... this is not nice. */
-				rc = sscanf(cflow[id].settings[i].write_rate_str, "%lf%c%c%c",
+				int rc = sscanf(cflow[id].settings[i].write_rate_str, "%lf%c%c%c",
 						&optdouble, &unit, &type, &unit);
 				if (rc < 1 || rc > 4) {
 					warnx("malformed rate for flow %u", id);
@@ -2847,11 +2862,6 @@ static void parse_cmdline(int argc, char *argv[]) {
 				      "rate.", id);
 				sanity_err = true;
 			}
-			/* Default to localhost, if no endpoints were set for a flow */
-			if (!cflow[id].endpoint[i].daemon) {
-				cflow[id].endpoint[i].daemon = get_daemon_by_url(
-					"http://localhost:5999/RPC2", "localhost", DEFAULT_LISTEN_PORT);
-			}
 		}
 	}
 
@@ -2882,6 +2892,7 @@ int main(int argc, char *argv[])
 	init_controller_options();
 	init_flow_options();
 	parse_cmdline(argc, argv);
+	sanity_check();
 	open_logfile();
 	prepare_xmlrpc_client(&rpc_client);
 
