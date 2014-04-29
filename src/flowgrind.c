@@ -2351,7 +2351,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 			     "endpoint");
 			usage(EXIT_FAILURE);
 		}
-		strcpy(settings->write_rate_str, arg);
+		settings->write_rate_str = strdup(arg);
 		break;
 	case 'S':
 		rc = sscanf(arg, "%u", &optunsigned);
