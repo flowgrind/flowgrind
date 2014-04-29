@@ -270,7 +270,7 @@ static void usage(short status)
 		"  -F #[,#]...    flow options following this option apply only to the given flow \n"
 		"                 IDs. Useful in combination with -n to set specific options\n"
 		"                 for certain flows. Numbering starts with 1, so -F 1 refers\n"
-		"                 to the first flow\n"
+		"                 to the first flow. -F 0 specifies all flows.\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
 #else
@@ -2141,15 +2141,100 @@ static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
 	}
 }
 
+static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
+
+	/*      two addresses:
+		- test address where the actual test connection goes to
+		- RPC address, where this program connects to
+
+		Unspecified RPC address falls back to test address
+	 */
+	struct sockaddr_in6 source_in6;
+	source_in6.sin6_family = AF_INET6;
+	struct _daemon* daemon;
+	char url[1000];
+	int port = DEFAULT_LISTEN_PORT;
+	int extra_rpc = 0;
+	int is_ipv6 = 0;
+	char *sepptr, *rpc_address = 0;
+
+	/* RPC address */
+	sepptr = strchr(arg, '/');
+	if (sepptr) {
+		*sepptr = '\0';
+		rpc_address = sepptr + 1;
+		extra_rpc = 1;
+	}
+	else
+		rpc_address = arg;
+
+	/* IPv6 Address? */
+	if (strchr(arg, ':')) {
+		if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
+			errx("invalid IPv6 address "
+			     "'%s' for test connection", arg);
+			usage(EXIT_FAILURE);
+		}
+		if (!extra_rpc)
+			is_ipv6 = 1;
+	}
+
+	if (extra_rpc) {
+		/* Now it's getting tricky... */
+		/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
+		if ((sepptr = strchr(rpc_address, ']'))) {
+		    is_ipv6 = 1;
+			*sepptr = '\0';
+			if (rpc_address[0] == '[')
+				rpc_address++;
+			sepptr++;
+		    if (sepptr != '\0' && *sepptr == ':')
+				sepptr++;
+			port = atoi(sepptr);
+		} else if ((sepptr = strchr(rpc_address, ':'))) {
+			/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
+			if (strchr(sepptr+1, ':')) {
+				is_ipv6 = 1;
+			} else {
+			/* 3rd case: IPv4 or name with port 1.2.3.4:5999*/
+				*sepptr = '\0';
+				sepptr++;
+				if ((*sepptr != '\0') && (*sepptr == ':'))
+						sepptr++;
+				port = atoi(sepptr);
+			}
+		}
+		if (is_ipv6 && (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)) {
+			errx("invalid IPv6 address "
+			     "'%s' for RPC connection", arg);
+			usage(EXIT_FAILURE);
+		}
+		if (port < 1 || port > 65535) {
+			errx("invalid port for RPC connection");
+			usage(EXIT_FAILURE);
+		}
+	} /* end of extra rpc address parsing */
+
+	if (!*arg) {
+		errx("no test host given in argument");
+		usage(EXIT_FAILURE);
+	}
+	if (is_ipv6)
+		sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
+	else
+		sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
+
+	daemon = get_daemon_by_url(url, rpc_address, port);
+	endpoint->daemon = daemon;
+	strcpy(endpoint->test_address, arg);
+
+}
+
 /* Parse flow specific options given on the cmdline */
 static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
-	/* only for validity check of addresses */
-	struct sockaddr_in6 source_in6;
-	source_in6.sin6_family = AF_INET6;
-	struct _daemon* daemon;
 
 	struct _flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
 	struct _flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
@@ -2211,89 +2296,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 		settings->dscp = optunsigned;
 		break;
 	case 'H':
-		{
-			/*      two addresses:
-				- test address where the actual test connection goes to
-				- RPC address, where this program connects to
-
-				Unspecified RPC address falls back to test address
-			 */
-			char url[1000];
-			int port = DEFAULT_LISTEN_PORT;
-			int extra_rpc = 0;
-			int is_ipv6 = 0;
-			char *sepptr, *rpc_address = 0;
-
-			/* RPC address */
-			sepptr = strchr(arg, '/');
-			if (sepptr) {
-				*sepptr = '\0';
-				rpc_address = sepptr + 1;
-				extra_rpc = 1;
-			}
-			else
-				rpc_address = arg;
-
-			/* IPv6 Address? */
-			if (strchr(arg, ':')) {
-				if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
-					errx("invalid IPv6 address "
-					     "'%s' for test connection", arg);
-					usage(EXIT_FAILURE);
-				}
-				if (!extra_rpc)
-					is_ipv6 = 1;
-			}
-
-			if (extra_rpc) {
-				/* Now it's getting tricky... */
-				/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
-				if ((sepptr = strchr(rpc_address, ']'))) {
-				    is_ipv6 = 1;
-					*sepptr = '\0';
-					if (rpc_address[0] == '[')
-						rpc_address++;
-					sepptr++;
-				    if (sepptr != '\0' && *sepptr == ':')
-						sepptr++;
-					port = atoi(sepptr);
-				} else if ((sepptr = strchr(rpc_address, ':'))) {
-					/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
-					if (strchr(sepptr+1, ':')) {
-						is_ipv6 = 1;
-					} else {
-					/* 3rd case: IPv4 or name with port 1.2.3.4:5999*/
-						*sepptr = '\0';
-						sepptr++;
-						if ((*sepptr != '\0') && (*sepptr == ':'))
-								sepptr++;
-						port = atoi(sepptr);
-					}
-				}
-				if (is_ipv6 && (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)) {
-					errx("invalid IPv6 address "
-					     "'%s' for RPC connection", arg);
-					usage(EXIT_FAILURE);
-				}
-				if (port < 1 || port > 65535) {
-					errx("invalid port for RPC connection");
-					usage(EXIT_FAILURE);
-				}
-			} /* end of extra rpc address parsing */
-
-			if (!*arg) {
-				errx("no test host given in argument");
-				usage(EXIT_FAILURE);
-			}
-			if (is_ipv6)
-				sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
-			else
-				sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
-
-			daemon = get_daemon_by_url(url, rpc_address, port);
-			endpoint->daemon = daemon;
-			strcpy(endpoint->test_address, arg);
-		}
+		parse_host_option(arg, endpoint);
 		break;
 	case 'M':
 		settings->traffic_dump = 1;
@@ -2351,7 +2354,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 			     "endpoint");
 			usage(EXIT_FAILURE);
 		}
-		strcpy(settings->write_rate_str, arg);
+		settings->write_rate_str = strdup(arg);
 		break;
 	case 'S':
 		rc = sscanf(arg, "%u", &optunsigned);
@@ -2463,10 +2466,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 	char *tok = NULL;
 	int current_flow_ids[MAX_FLOWS];
 	int max_flow_specifier = 0;
-	unsigned max_flow_rate = 0;
-	char unit = 0, type = 0, distribution = 0;
 	int optint = 0;
-	double optdouble = 0.0;
 
 	/* long options */
 	static const struct option long_opt[] = {
@@ -2683,6 +2683,11 @@ static void parse_cmdline(int argc, char *argv[]) {
 		}
 	}
 
+	if (copt.num_flows <= max_flow_specifier) {
+		errx("must not specify option for non-existing flow");
+		usage(EXIT_FAILURE);
+	}	
+
 	/* Do we have remaning command line arguments? */
 	if (optind < argc) {
 		char *args = NULL;
@@ -2721,13 +2726,96 @@ static void parse_cmdline(int argc, char *argv[]) {
 	}
 #endif
 
-	/* Sanity checking flow options */
-	bool sanity_err = false;
+}
 
-	if (copt.num_flows <= max_flow_specifier) {
-		warnx("must not specify option for non-existing flow");
+static bool parse_rate_option(int flow_id, int endpoint_id) {
+
+	bool sanity_err = false;
+	char unit = 0, type = 0;
+	double optdouble = 0.0;
+	/* last %c for catching wrong input... this is not nice. */
+	int rc = sscanf(cflow[flow_id].settings[endpoint_id].write_rate_str, "%lf%c%c%c",
+			&optdouble, &unit, &type, &unit);
+	if (rc < 1 || rc > 4) {
+		warnx("malformed rate for flow %u", flow_id);
 		sanity_err = true;
 	}
+
+	if (optdouble == 0.0) {
+		cflow[flow_id].settings[endpoint_id].write_rate_str = NULL;
+		return false;
+	}
+
+	switch (unit) {
+	case 0:
+	case 'z':
+		break;
+
+	case 'k':
+		optdouble *= 1<<10;
+		break;
+
+	case 'M':
+		optdouble *= 1<<20;
+		break;
+
+	case 'G':
+		optdouble *= 1<<30;
+		break;
+
+	default:
+		warnx("illegal unit specifier in rate "
+		      "of flow %u", flow_id);
+		sanity_err = true;
+	}
+
+	switch (type) {
+	case 0:
+	case 'b':
+		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size * 8;
+		if (optdouble < 1) {
+			warnx("client block size for "
+			      "flow %u is too big for "
+			      "specified rate", flow_id);
+			sanity_err = true;
+		}
+		break;
+
+	case 'B':
+		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size;
+		if (optdouble < 1) {
+			warnx("client block size for "
+			      "flow %u is too big for "
+			      "specified rate", flow_id);
+			sanity_err = true;
+		}
+		break;
+
+	case 'o':
+		break;
+
+	default:
+		warnx("illegal type specifier (either "
+		      "block or byte) for flow %u", flow_id);
+		sanity_err = true;
+	}
+
+	if (optdouble > 5e5)
+		warnx("rate of flow %d too high", flow_id);
+
+	cflow[flow_id].settings[endpoint_id].write_rate = optdouble;
+
+	return sanity_err;
+
+}
+
+/**
+ * Sanity checking flow options
+ */
+static void sanity_check(void) {
+
+	bool sanity_err = false;
+
 	for (int id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
@@ -2765,82 +2853,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 		for (unsigned i = 0; i < 2; i++) {
 
-			if (cflow[id].settings[i].write_rate_str) {
-				unit = type = distribution = 0;
-				/* last %c for catching wrong input... this is not nice. */
-				rc = sscanf(cflow[id].settings[i].write_rate_str, "%lf%c%c%c",
-						&optdouble, &unit, &type, &unit);
-				if (rc < 1 || rc > 4) {
-					warnx("malformed rate for flow %u", id);
-					sanity_err = true;
-				}
+			if (cflow[id].settings[i].write_rate_str)
+				sanity_err |= parse_rate_option( id, i);
 
-				if (optdouble == 0.0) {
-					cflow[id].settings[i].write_rate_str = NULL;
-					continue;
-				}
-
-				switch (unit) {
-				case 0:
-				case 'z':
-					break;
-
-				case 'k':
-					optdouble *= 1<<10;
-					break;
-
-				case 'M':
-					optdouble *= 1<<20;
-					break;
-
-				case 'G':
-					optdouble *= 1<<30;
-					break;
-
-				default:
-					warnx("illegal unit specifier in rate "
-					      "of flow %u", id);
-					sanity_err = true;
-				}
-
-				switch (type) {
-				case 0:
-				case 'b':
-					optdouble /= cflow[id].settings[SOURCE].maximum_block_size * 8;
-					if (optdouble < 1) {
-						warnx("client block size for "
-						      "flow %u is too big for "
-						      "specified rate", id);
-						sanity_err = true;
-					}
-					break;
-
-				case 'B':
-					optdouble /= cflow[id].settings[SOURCE].maximum_block_size;
-					if (optdouble < 1) {
-						warnx("client block size for "
-						      "flow %u is too big for "
-						      "specified rate", id);
-						sanity_err = true;
-					}
-					break;
-
-				case 'o':
-					break;
-
-				default:
-					warnx("illegal type specifier (either "
-					      "block or byte) for flow %u", id);
-					sanity_err = true;
-				}
-
-				if (optdouble > 5e5)
-					warnx("rate of flow %d too high", id);
-				if (optdouble > max_flow_rate)
-					max_flow_rate = optdouble;
-				cflow[id].settings[i].write_rate = optdouble;
-
-			}
 			if (cflow[id].settings[i].flow_control && !cflow[id].settings[i].write_rate_str) {
 				warnx("flow %d has flow control enabled but no "
 				      "rate.", id);
@@ -2862,6 +2877,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 #endif /* DEBUG */
 	}
 	DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
+
 }
 
 int main(int argc, char *argv[])
@@ -2881,6 +2897,7 @@ int main(int argc, char *argv[])
 	init_controller_options();
 	init_flow_options();
 	parse_cmdline(argc, argv);
+	sanity_check();
 	open_logfile();
 	prepare_xmlrpc_client(&rpc_client);
 
