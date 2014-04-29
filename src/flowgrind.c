@@ -2141,15 +2141,100 @@ static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
 	}
 }
 
+static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
+
+	/*      two addresses:
+		- test address where the actual test connection goes to
+		- RPC address, where this program connects to
+
+		Unspecified RPC address falls back to test address
+	 */
+	struct sockaddr_in6 source_in6;
+	source_in6.sin6_family = AF_INET6;
+	struct _daemon* daemon;
+	char url[1000];
+	int port = DEFAULT_LISTEN_PORT;
+	int extra_rpc = 0;
+	int is_ipv6 = 0;
+	char *sepptr, *rpc_address = 0;
+
+	/* RPC address */
+	sepptr = strchr(arg, '/');
+	if (sepptr) {
+		*sepptr = '\0';
+		rpc_address = sepptr + 1;
+		extra_rpc = 1;
+	}
+	else
+		rpc_address = arg;
+
+	/* IPv6 Address? */
+	if (strchr(arg, ':')) {
+		if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
+			errx("invalid IPv6 address "
+			     "'%s' for test connection", arg);
+			usage(EXIT_FAILURE);
+		}
+		if (!extra_rpc)
+			is_ipv6 = 1;
+	}
+
+	if (extra_rpc) {
+		/* Now it's getting tricky... */
+		/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
+		if ((sepptr = strchr(rpc_address, ']'))) {
+		    is_ipv6 = 1;
+			*sepptr = '\0';
+			if (rpc_address[0] == '[')
+				rpc_address++;
+			sepptr++;
+		    if (sepptr != '\0' && *sepptr == ':')
+				sepptr++;
+			port = atoi(sepptr);
+		} else if ((sepptr = strchr(rpc_address, ':'))) {
+			/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
+			if (strchr(sepptr+1, ':')) {
+				is_ipv6 = 1;
+			} else {
+			/* 3rd case: IPv4 or name with port 1.2.3.4:5999*/
+				*sepptr = '\0';
+				sepptr++;
+				if ((*sepptr != '\0') && (*sepptr == ':'))
+						sepptr++;
+				port = atoi(sepptr);
+			}
+		}
+		if (is_ipv6 && (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)) {
+			errx("invalid IPv6 address "
+			     "'%s' for RPC connection", arg);
+			usage(EXIT_FAILURE);
+		}
+		if (port < 1 || port > 65535) {
+			errx("invalid port for RPC connection");
+			usage(EXIT_FAILURE);
+		}
+	} /* end of extra rpc address parsing */
+
+	if (!*arg) {
+		errx("no test host given in argument");
+		usage(EXIT_FAILURE);
+	}
+	if (is_ipv6)
+		sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
+	else
+		sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
+
+	daemon = get_daemon_by_url(url, rpc_address, port);
+	endpoint->daemon = daemon;
+	strcpy(endpoint->test_address, arg);
+
+}
+
 /* Parse flow specific options given on the cmdline */
 static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
-	/* only for validity check of addresses */
-	struct sockaddr_in6 source_in6;
-	source_in6.sin6_family = AF_INET6;
-	struct _daemon* daemon;
 
 	struct _flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
 	struct _flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
@@ -2211,89 +2296,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 		settings->dscp = optunsigned;
 		break;
 	case 'H':
-		{
-			/*      two addresses:
-				- test address where the actual test connection goes to
-				- RPC address, where this program connects to
-
-				Unspecified RPC address falls back to test address
-			 */
-			char url[1000];
-			int port = DEFAULT_LISTEN_PORT;
-			int extra_rpc = 0;
-			int is_ipv6 = 0;
-			char *sepptr, *rpc_address = 0;
-
-			/* RPC address */
-			sepptr = strchr(arg, '/');
-			if (sepptr) {
-				*sepptr = '\0';
-				rpc_address = sepptr + 1;
-				extra_rpc = 1;
-			}
-			else
-				rpc_address = arg;
-
-			/* IPv6 Address? */
-			if (strchr(arg, ':')) {
-				if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
-					errx("invalid IPv6 address "
-					     "'%s' for test connection", arg);
-					usage(EXIT_FAILURE);
-				}
-				if (!extra_rpc)
-					is_ipv6 = 1;
-			}
-
-			if (extra_rpc) {
-				/* Now it's getting tricky... */
-				/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
-				if ((sepptr = strchr(rpc_address, ']'))) {
-				    is_ipv6 = 1;
-					*sepptr = '\0';
-					if (rpc_address[0] == '[')
-						rpc_address++;
-					sepptr++;
-				    if (sepptr != '\0' && *sepptr == ':')
-						sepptr++;
-					port = atoi(sepptr);
-				} else if ((sepptr = strchr(rpc_address, ':'))) {
-					/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
-					if (strchr(sepptr+1, ':')) {
-						is_ipv6 = 1;
-					} else {
-					/* 3rd case: IPv4 or name with port 1.2.3.4:5999*/
-						*sepptr = '\0';
-						sepptr++;
-						if ((*sepptr != '\0') && (*sepptr == ':'))
-								sepptr++;
-						port = atoi(sepptr);
-					}
-				}
-				if (is_ipv6 && (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)) {
-					errx("invalid IPv6 address "
-					     "'%s' for RPC connection", arg);
-					usage(EXIT_FAILURE);
-				}
-				if (port < 1 || port > 65535) {
-					errx("invalid port for RPC connection");
-					usage(EXIT_FAILURE);
-				}
-			} /* end of extra rpc address parsing */
-
-			if (!*arg) {
-				errx("no test host given in argument");
-				usage(EXIT_FAILURE);
-			}
-			if (is_ipv6)
-				sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
-			else
-				sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
-
-			daemon = get_daemon_by_url(url, rpc_address, port);
-			endpoint->daemon = daemon;
-			strcpy(endpoint->test_address, arg);
-		}
+		parse_host_option(arg, endpoint);
 		break;
 	case 'M':
 		settings->traffic_dump = 1;
