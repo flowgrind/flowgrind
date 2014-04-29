@@ -2683,6 +2683,11 @@ static void parse_cmdline(int argc, char *argv[]) {
 		}
 	}
 
+	if (copt.num_flows <= max_flow_specifier) {
+		errx("must not specify option for non-existing flow");
+		usage(EXIT_FAILURE);
+	}	
+
 	/* Do we have remaning command line arguments? */
 	if (optind < argc) {
 		char *args = NULL;
@@ -2724,10 +2729,6 @@ static void parse_cmdline(int argc, char *argv[]) {
 	/* Sanity checking flow options */
 	bool sanity_err = false;
 
-	if (copt.num_flows <= max_flow_specifier) {
-		warnx("must not specify option for non-existing flow");
-		sanity_err = true;
-	}
 	for (int id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
