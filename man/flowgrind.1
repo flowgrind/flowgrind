@@ -132,7 +132,8 @@ enumerate bytes in payload instead of sending zeros
 \fB\-F\fR \fI#\fR[,\fI#\fR]...
 flow options following this option apply only to the given flow IDs. Useful in
 combination with \fB\-n\fR to set specific options for certain flows. Numbering
-starts with 1, so \fB\-F\fR 1 refers to the first flow
+starts with 0, so \fB\-F\fR 1 refers to the second flow. With -1 all flow can
+be refered
 .TP
 \fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR):(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR):\fI#1\fR:[\fI#2\fR]
 activate stochastic traffic generation and set parameters according to the used
@@ -317,7 +318,7 @@ stream from host1 to host2
 same as the above but instead with a flow sending data for 10 seconds from
 host2 to host1
 .TP
-.B flowgrind \-n 2 \-F 1 \-H s=192.168.0.1,d=192.168.0.69 \-F 2 \-H s=10.0.0.1,d=10.0.0.2
+.B flowgrind \-n 2 \-F 0 \-H s=192.168.0.1,d=192.168.0.69 \-F 1 \-H s=10.0.0.1,d=10.0.0.2
 setup two parallel flows, first flow between 192.168.0.1 and 192.168.0.69,
 second flow between 10.0.0.1 to 10.0.0.2
 .TP
