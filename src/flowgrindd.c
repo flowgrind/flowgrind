@@ -42,6 +42,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <getopt.h>
+#include <sys/stat.h>
 
 /* CPU affinity */
 #ifdef __LINUX__
@@ -984,6 +985,48 @@ void set_affinity(int cpu)
 			  progname, getpid(), cpu);
 }
 
+#ifdef HAVE_LIBPCAP
+int process_dump_dir() {
+	if (!dump_dir) {
+		dump_dir = getcwd(NULL, 0);
+	}
+
+	struct stat dirstats;
+
+	if (stat(dump_dir, &dirstats) == -1) {
+		DEBUG_MSG(LOG_WARNING, "Unable to stat %s: %s", dump_dir, strerror(errno));
+		return 0;
+	}
+
+	if (!S_ISDIR(dirstats.st_mode)) {
+		DEBUG_MSG(LOG_ERR, "Provided path %s is not a directory", dump_dir);
+		return 0;
+	}
+
+	if (access(dump_dir, W_OK | X_OK) == -1) {
+		DEBUG_MSG(LOG_ERR, "Insufficent permissions to access %s: %s", dump_dir, strerror(errno));
+		return 0;
+	}
+
+	// ensure path contains terminating slash
+	if (dump_dir[strlen(dump_dir) - 1] != '/') {
+		// length of dump_dir + slash + terminating null
+		const size_t new_length = strlen(dump_dir) + 2;
+		char *new_str = (char*)realloc(dump_dir, new_length);
+
+		if (!new_str) {
+			DEBUG_MSG(LOG_ERR, "Failed to reallocate memory!");
+			return 0;
+		}
+
+		dump_dir = new_str;
+		strncat(dump_dir, "/", new_length);
+	}
+
+	return 1;
+}
+#endif
+
 /**
  * Parse command line options to initialize global options
  *
@@ -1045,7 +1088,7 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 #ifdef HAVE_LIBPCAP
 		case 'w':
-			dump_dir = optarg;
+			dump_dir = strdup(optarg);
 			break;
 #endif /* HAVE_LIBPCAP */
 		case 'v':
@@ -1069,6 +1112,12 @@ static void parse_cmdline(int argc, char *argv[])
 		free(args);
 		usage(EXIT_FAILURE);
 	}
+
+#ifdef HAVE_LIBPCAP
+    if (!process_dump_dir()) {
+        errx("dump directory %s invalid or insufficient permissions", dump_dir);
+    }
+#endif /* HAVE_LIBPCAP */
 
 	// TODO more sanity checks... (e.g. if port is in valid range)
 }
