@@ -33,7 +33,8 @@ flowgrindd_SOURCES = src/common.h src/daemon.h src/daemon.c src/debug.c \
 					 src/fg_socket.h src/fg_string.h src/fg_string.c \
 					 src/fg_time.c src/flowgrindd.c src/log.h src/log.c \
 					 src/source.h src/source.c src/trafgen.h src/trafgen.c \
-                     src/fg_argparser.h src/fg_argparser.c
+					 src/fg_argparser.h src/fg_argparser.c src/fg_list.h \
+					 src/fg_list.c
 flowgrindd_LDADD = $(LIBS) $(XMLRPC_C_SERVER_LDADD) $(GSL_LDADD)
 flowgrindd_CFLAGS = $(AM_CFLAGS) $(XMLRPC_C_SERVER_CFLAGS) $(GSL_CFLAGS)
 
