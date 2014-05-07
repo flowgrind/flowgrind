@@ -2141,6 +2141,87 @@ static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
 	}
 }
 
+/**
+ * Parse the write rate string
+ *
+ * @param[in] arg rate string in form #.#(z|k|M|G)(b|B|o)
+ * @param[in] flow_id id of the flow for which flow to parse
+ * @param[in] endpoint_id endpoint to parse for
+ */
+static void parse_rate_option(char *arg, int flow_id, int endpoint_id) {
+	char unit = 0, type = 0;
+	double optdouble = 0.0;
+	/* last %c for catching wrong input... this is not nice. */
+	int rc = sscanf(arg, "%lf%c%c%c",
+			&optdouble, &unit, &type, &unit);
+	if (rc < 1 || rc > 4) {
+		errx("malformed rate for flow %u", flow_id);
+		usage(EXIT_FAILURE);
+	}
+
+	if (optdouble == 0.0) {
+		cflow[flow_id].settings[endpoint_id].write_rate_str = NULL;
+		usage(EXIT_FAILURE);
+	}
+
+	switch (unit) {
+	case 0:
+	case 'z':
+		break;
+
+	case 'k':
+		optdouble *= 1<<10;
+		break;
+
+	case 'M':
+		optdouble *= 1<<20;
+		break;
+
+	case 'G':
+		optdouble *= 1<<30;
+		break;
+
+	default:
+		errx("illegal unit specifier in rate of flow %u", flow_id);
+		usage(EXIT_FAILURE);
+	}
+
+	switch (type) {
+	case 0:
+	case 'b':
+		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size * 8;
+		if (optdouble < 1) {
+			errx("client block size for flow %u is too big for "
+			      "specified rate", flow_id);
+			usage(EXIT_FAILURE);
+		}
+		break;
+
+	case 'B':
+		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size;
+		if (optdouble < 1) {
+			errx("client block size for flow %u is too big for "
+			      "specified rate", flow_id);
+			usage(EXIT_FAILURE);
+		}
+		break;
+
+	case 'o':
+		break;
+
+	default:
+		errx("illegal type specifier (either block or byte) for "
+			"flow %u", flow_id);
+		usage(EXIT_FAILURE);
+	}
+
+	if (optdouble > 5e5)
+		warnx("rate of flow %d too high", flow_id);
+
+	cflow[flow_id].settings[endpoint_id].write_rate_str = strdup(arg);
+	cflow[flow_id].settings[endpoint_id].write_rate = optdouble;
+}
+
 /* Parse flow specific options given on the cmdline */
 static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 	int rc = 0;
@@ -2351,7 +2432,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 			     "endpoint");
 			usage(EXIT_FAILURE);
 		}
-		settings->write_rate_str = strdup(arg);
+		parse_rate_option(arg, flow_id, endpoint_id);
 		break;
 	case 'S':
 		rc = sscanf(arg, "%u", &optunsigned);
@@ -2745,7 +2826,6 @@ static void parse_cmdline(int argc, char *argv[]) {
  */
 static void sanity_check(void) {
 
-	unsigned max_flow_rate = 0;
 	bool sanity_err = false;
 
 	for (int id = 0; id < copt.num_flows; id++) {
@@ -2775,88 +2855,7 @@ static void sanity_check(void) {
 			sanity_err = true;
 		}
 
-		/* TODO Move the following stuff out of the sanity checks into
-		 * a new function 'parse_rate_option' */
-
 		for (unsigned i = 0; i < 2; i++) {
-
-			if (cflow[id].settings[i].write_rate_str) {
-				char unit = 0, type = 0;
-				double optdouble = 0.0;
-				/* last %c for catching wrong input... this is not nice. */
-				int rc = sscanf(cflow[id].settings[i].write_rate_str, "%lf%c%c%c",
-						&optdouble, &unit, &type, &unit);
-				if (rc < 1 || rc > 4) {
-					warnx("malformed rate for flow %u", id);
-					sanity_err = true;
-				}
-
-				if (optdouble == 0.0) {
-					cflow[id].settings[i].write_rate_str = NULL;
-					continue;
-				}
-
-				switch (unit) {
-				case 0:
-				case 'z':
-					break;
-
-				case 'k':
-					optdouble *= 1<<10;
-					break;
-
-				case 'M':
-					optdouble *= 1<<20;
-					break;
-
-				case 'G':
-					optdouble *= 1<<30;
-					break;
-
-				default:
-					warnx("illegal unit specifier in rate "
-					      "of flow %u", id);
-					sanity_err = true;
-				}
-
-				switch (type) {
-				case 0:
-				case 'b':
-					optdouble /= cflow[id].settings[SOURCE].maximum_block_size * 8;
-					if (optdouble < 1) {
-						warnx("client block size for "
-						      "flow %u is too big for "
-						      "specified rate", id);
-						sanity_err = true;
-					}
-					break;
-
-				case 'B':
-					optdouble /= cflow[id].settings[SOURCE].maximum_block_size;
-					if (optdouble < 1) {
-						warnx("client block size for "
-						      "flow %u is too big for "
-						      "specified rate", id);
-						sanity_err = true;
-					}
-					break;
-
-				case 'o':
-					break;
-
-				default:
-					warnx("illegal type specifier (either "
-					      "block or byte) for flow %u", id);
-					sanity_err = true;
-				}
-
-				if (optdouble > 5e5)
-					warnx("rate of flow %d too high", id);
-				if (optdouble > max_flow_rate)
-					max_flow_rate = optdouble;
-				cflow[id].settings[i].write_rate = optdouble;
-
-			}
 			if (cflow[id].settings[i].flow_control && !cflow[id].settings[i].write_rate_str) {
 				warnx("flow %d has flow control enabled but no "
 				      "rate.", id);
