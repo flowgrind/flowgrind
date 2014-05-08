@@ -2231,8 +2231,8 @@ static bool parse_rate_option(int flow_id, int endpoint_id) {
  * - RPC address, where this program connects to
  *  Unspecified RPC address falls back to test address
  *
- * @param[in] flow_id id of the flow for which flow to parse
- * @param[in] endpoint_id endpoint to parse for
+ * @param[in] arg string to parse
+ * @param[in] endpoint the endpoint to write the adresses to
  */
 static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
 	struct sockaddr_in6 source_in6;
