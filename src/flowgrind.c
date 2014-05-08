@@ -2332,8 +2332,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 	case 'J':
 		rc = sscanf(arg, "%u", &optunsigned);
 		if (rc != 1) {
-			errx("random seed must be a valid unsigned "
-			     "integer");
+			errx("random seed must be a valid unsigned integer");
 			usage(EXIT_FAILURE);
 		}
 		cflow[flow_id].random_seed = optunsigned;
@@ -2371,8 +2370,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 	case 'D':
 		rc = sscanf(arg, "%x", &optunsigned);
 		if (rc != 1 || (optunsigned & ~0x3f)) {
-			errx("malformed differentiated service code "
-			     "point");
+			errx("malformed differentiated service code point");
 			usage(EXIT_FAILURE);
 		}
 		settings->dscp = optunsigned;
@@ -2385,8 +2383,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 		break;
 	case 'O':
 		if (!*arg) {
-			errx("-O requires a value for each given "
-			     "endpoint");
+			errx("-O requires a value for each given endpoint");
 			usage(EXIT_FAILURE);
 		}
 
@@ -2405,15 +2402,13 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 		/* keep TCP_CONG_MODULE for backward compatibility */
 		} else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
 			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
-				errx("too large string for "
-				     "TCP_CONG_MODULE value");
+				errx("too large string for TCP_CONG_MODULE value");
 				usage(EXIT_FAILURE);
 			}
 			strcpy(settings->cc_alg, arg + 16);
 		} else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
 			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
-				errx("too large string for "
-				     "TCP_CONGESTION value");
+				errx("too large string for TCP_CONGESTION value");
 				usage(EXIT_FAILURE);
 			}
 			strcpy(settings->cc_alg, arg + 15);
@@ -2432,8 +2427,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 		break;
 	case 'R':
 		if (!*arg) {
-			errx("-R requires a value for each given "
-			     "endpoint");
+			errx("-R requires a value for each given endpoint");
 			usage(EXIT_FAILURE);
 		}
 		parse_rate_option(arg, flow_id, endpoint_id);
@@ -2477,8 +2471,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 	case 'Y':
 		rc = sscanf(arg, "%lf", &optdouble);
 		if (rc != 1 || optdouble < 0) {
-			errx("delay must be a non-negativ number (in "
-			     "seconds)");
+			errx("delay must be a non-negativ number (in seconds)");
 			usage(EXIT_FAILURE);
 		}
 		settings->delay[WRITE] = optdouble;
