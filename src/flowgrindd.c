@@ -45,7 +45,6 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include <getopt.h>
 
 /* CPU affinity */
 #ifdef __LINUX__
@@ -71,6 +70,7 @@
 #include "fg_time.h"
 #include "fg_stdlib.h"
 #include "debug.h"
+#include "fg_argparser.h"
 
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
@@ -997,40 +997,47 @@ void set_affinity(int cpu)
  */
 static void parse_cmdline(int argc, char *argv[])
 {
-	/* long options */
-	static const struct option long_opt[] = {
-		{"help", no_argument, 0, 'h'},
-		{"version", no_argument, 0, 'v'},
+	const struct ap_Option options[] = {
+		{'b', 0, ap_yes},
+		{'c', 0, ap_yes},
 #ifdef DEBUG
-		{"debug", no_argument, 0, 'd'},
-#endif /* DEBUG */
-		{NULL, 0, NULL, 0}
+		{'d', "debug", ap_no},
+#endif
+		{'h', "help", ap_no},
+		{'o', 0, ap_yes},
+		{'p', 0, ap_yes},
+		{'v', "version", ap_no},
+#ifdef HAVE_LIBPCAP
+		{'w', 0, ap_yes},
+#endif
+		{0, 0, ap_no} 
 	};
 
-	/* short options */
-#ifdef HAVE_LIBPCAP
-	static const char *short_opt = "b:c:dhp:w:v";
-#else
-	static const char *short_opt = "b:c:dhp:v";
-#endif /* HAVE_LIBPCAP */
+	struct Arg_parser parser;
 
-	/* variables from getopt() */
-	extern char *optarg;    /* the option argument */
-	extern int optind;	/* index of the next element */
-	int ch = 0;		/* getopt_long() return value */
+	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0) || ap_error(&parser)) { 
+		errx("While parsing commandline: %s", ap_error(&parser));
+		usage(EXIT_FAILURE); 
+	}
 
 	/* parse command line */
-	while ((ch = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
-		switch (ch) {
+	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
+		const int code = ap_code(&parser, argind);
+		char *arg = ap_argument(&parser, argind);
+
+		switch (code) {
+		case 0:
+			errx("invalid argument: %s", arg);
+			usage(EXIT_FAILURE);
 		case 'b':
-			rpc_bind_addr = strdup(optarg);
-			if (sscanf(optarg, "%s", rpc_bind_addr) != 1) {
+			rpc_bind_addr = strdup(arg);
+			if (sscanf(arg, "%s", rpc_bind_addr) != 1) {
 				errx("failed to parse bind address");
 				usage(EXIT_FAILURE);
 			}
 			break;
 		case 'c':
-			if (sscanf(optarg, "%i", &cpu) != 1) {
+			if (sscanf(arg, "%i", &cpu) != 1) {
 				errx("failed to parse CPU number");
 				usage(EXIT_FAILURE);
 			}
@@ -1043,36 +1050,26 @@ static void parse_cmdline(int argc, char *argv[])
 			usage(EXIT_SUCCESS);
 			break;
 		case 'p':
-			if (sscanf(optarg, "%u", &port) != 1) {
+			if (sscanf(arg, "%u", &port) != 1) {
 				errx("failed to parse port number");
 				usage(EXIT_FAILURE);
 			}
 			break;
 #ifdef HAVE_LIBPCAP
 		case 'w':
-			dump_dir = optarg;
+			dump_dir = arg;
 			break;
 #endif /* HAVE_LIBPCAP */
 		case 'v':
 			fprintf(stderr, "%s version: %s\n", progname,
 				FLOWGRIND_VERSION);
 			exit(EXIT_SUCCESS);
-
-		/* unknown option or missing option-argument */
-		case '?':
+			break;
+		default:
+			errx("unknown option: %s", arg);
 			usage(EXIT_FAILURE);
 			break;
 		}
-	}
-
-	/* Do we have remaning command line arguments? */
-	if (optind < argc) {
-		char *args = NULL;
-		while (optind < argc)
-			asprintf_append(&args, "%s ", argv[optind++]);
-		errx("invalid arguments: %s", args);
-		free(args);
-		usage(EXIT_FAILURE);
 	}
 
 	// TODO more sanity checks... (e.g. if port is in valid range)
