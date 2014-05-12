@@ -6,7 +6,7 @@ noinst_HEADERS = common.h debug.h
 
 flowgrind_SOURCES = common.h debug.c fg_error.h fg_error.c fg_progname.h fg_progname.c \
 					fg_socket.h fg_socket.c fg_string.h fg_string.c fg_stdlib.h fg_time.h \
-					fg_time.c flowgrind.h flowgrind.c
+					fg_time.c flowgrind.h flowgrind.c fg_argparser.h fg_argparser.c
 flowgrind_LDADD = $(LIBS) $(CURL_LDADD) $(XMLRPC_C_CLIENT_LDADD) $(GSL_LDADD)
 flowgrind_CFLAGS = $(AM_CFLAGS) $(CURL_CFLAGS) $(XMLRPC_C_CLIENT_CFLAGS) $(GSL_CFLAGS)
 
