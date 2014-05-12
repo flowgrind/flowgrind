@@ -25,6 +25,6 @@ if USE_LIBPCAP
     flowgrindd_CFLAGS += $(PCAP_CFLAGS)
 endif
 
-flowgrind_stop_SOURCES = fg_error.h fg_error.c fg_progname.h fg_progname.c flowgrind_stop.c
+flowgrind_stop_SOURCES = fg_error.h fg_error.c fg_progname.h fg_progname.c flowgrind_stop.c carg_parser.h carg_parser.c
 flowgrind_stop_LDADD = $(LIBS) $(CURL_LDADD) $(XMLRPC_C_CLIENT_LDADD)
 flowgrind_stop_CFLAGS = $(AM_CFLAGS) $(CURL_FLAGS) $(XMLRPC_C_CLIENT_CFLAGS)

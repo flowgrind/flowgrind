@@ -33,7 +33,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
 
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
@@ -42,6 +41,7 @@
 #include "common.h"
 #include "fg_error.h"
 #include "fg_progname.h"
+#include "carg_parser.h"
 
 /* External global variables */
 extern const char *progname;
@@ -136,20 +136,23 @@ int main(int argc, char *argv[])
 	/* update progname from argv[0] */
 	set_progname(argv[0]);
 
-	/* long options */
-	static const struct option long_opt[] = {
-		{"help", no_argument, 0, 'h'},
-		{"version", no_argument, 0, 'v'},
-		{NULL, 0, NULL, 0}
+	const struct ap_Option options[] = {
+		{'h', "help", ap_no},
+		{ 'v', "version", ap_no},
+		{   0, 0, ap_no} 
 	};
+	struct Arg_parser parser;
 
-	/* short options */
-	static const char *short_opt = "hv";
-
+	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0) || ap_error(&parser)) { 
+		errx("Error parsing commandline: %s", ap_error(&parser));
+		usage(EXIT_FAILURE); 
+	}
 	/* parse command line */
-	int ch;
-	while ((ch = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
-		switch (ch) {
+	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
+		const int code = ap_code(&parser, argind);
+		if (!code) break;
+
+		switch (code) {
 		case 'h':
 			usage(EXIT_SUCCESS);
 			break;
@@ -157,9 +160,9 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "%s version: %s\n", progname,
 				FLOWGRIND_VERSION);
 			exit(EXIT_SUCCESS);
-
-		/* unknown option or missing option-argument */
-		case '?':
+			break;
+		default:
+			errx("unknown option: %s", ap_argument(&parser, argind));
 			usage(EXIT_FAILURE);
 			break;
 		}
@@ -169,8 +172,9 @@ int main(int argc, char *argv[])
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
-	for (int i = optind; i < argc; i++)
-		stop_flows(argv[i]);
+	for (int argind = 0; argind < ap_arguments(&parser); argind++)
+		/* if non-option, it is an adress*/
+		if (!ap_code(&parser, argind)) stop_flows(ap_argument(&parser, argind));
 
 	xmlrpc_env_clean(&rpc_env);
 	xmlrpc_client_teardown_global_const();
