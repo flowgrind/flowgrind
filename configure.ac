@@ -55,7 +55,6 @@ AC_TYPE_UNSIGNED_LONG_LONG_INT
 
 AC_CHECK_FUNCS([ \
     bzero \
-    getopt_long \
     memset \
     pselect \
     socket \
@@ -75,7 +74,6 @@ AC_CHECK_HEADERS([ \
     fcntl.h \
     fenv.h \
     float.h \
-    getopt.h \
     limits.h \
     math.h \
     netdb.h \
