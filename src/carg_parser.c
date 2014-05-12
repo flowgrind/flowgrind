@@ -27,6 +27,7 @@
 */
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "carg_parser.h"
 
@@ -40,9 +41,10 @@ static void *ap_resize_buffer(void *buf, const int min_size)
 	return buf;
 }
 
-static char push_back_record(struct Arg_parser *const ap,
-			     const int code, const char *const argument)
+static char push_back_record(struct Arg_parser *const ap, const struct ap_Option *const option,
+				 bool long_opt, const char *const argument)
 {
+	int code = option->code;
 	const int len = strlen(argument);
 	struct ap_Record *p;
 	void *tmp = ap_resize_buffer(ap->data,
@@ -58,6 +60,19 @@ static char push_back_record(struct Arg_parser *const ap,
 		return 0;
 	p->argument = (char *)tmp;
 	strncpy(p->argument, argument, len + 1);
+
+	if (long_opt) {
+		p->opt_string = malloc(strlen(option->name) + 3);
+		p->opt_string[0] = '-';
+		p->opt_string[1] = '-';
+		strncpy(p->opt_string + 2, option->name, strlen(option->name) + 1);
+	} else {
+		p->opt_string = malloc(3);
+		p->opt_string[0] = '-';
+		p->opt_string[1] = code;
+		p->opt_string[2] = 0;
+	}
+
 	++ap->data_size;
 	return 1;
 }
@@ -77,8 +92,10 @@ static char add_error(struct Arg_parser *const ap, const char *const msg)
 static void free_data(struct Arg_parser *const ap)
 {
 	int i;
-	for (i = 0; i < ap->data_size; ++i)
+	for (i = 0; i < ap->data_size; ++i) {
 		free(ap->data[i].argument);
+		free(ap->data[i].opt_string);
+	}
 	if (ap->data) {
 		free(ap->data);
 		ap->data = 0;
@@ -141,7 +158,7 @@ static char parse_long_option(struct Arg_parser *const ap,
 			add_error(ap, "' requires an argument");
 			return 1;
 		}
-		return push_back_record(ap, options[index].code, &opt[len + 3]);
+		return push_back_record(ap, &options[index], true, &opt[len + 3]);
 	}
 
 	if (options[index].has_arg == ap_yes) {
@@ -152,10 +169,10 @@ static char parse_long_option(struct Arg_parser *const ap,
 			return 1;
 		}
 		++*argindp;
-		return push_back_record(ap, options[index].code, arg);
+		return push_back_record(ap, &options[index], true, arg);
 	}
 
-	return push_back_record(ap, options[index].code, "");
+	return push_back_record(ap, &options[index], true, "");
 }
 
 static char parse_short_option(struct Arg_parser *const ap,
@@ -191,7 +208,7 @@ static char parse_short_option(struct Arg_parser *const ap,
 		}
 
 		if (options[index].has_arg != ap_no && cind > 0 && opt[cind]) {
-			if (!push_back_record(ap, code, &opt[cind]))
+			if (!push_back_record(ap, &options[index], false, &opt[cind]))
 				return 0;
 			++*argindp;
 			cind = 0;
@@ -203,9 +220,9 @@ static char parse_short_option(struct Arg_parser *const ap,
 			}
 			++*argindp;
 			cind = 0;
-			if (!push_back_record(ap, code, arg))
+			if (!push_back_record(ap, &options[index], false, arg))
 				return 0;
-		} else if (!push_back_record(ap, code, ""))
+		} else if (!push_back_record(ap, &options[index], false, ""))
 			return 0;
 	}
 	return 1;
@@ -215,6 +232,7 @@ char ap_init(struct Arg_parser *const ap,
 	     const int argc, const char *const argv[],
 	     const struct ap_Option options[], const char in_order)
 {
+	const struct ap_Option non_option = {0, 0, ap_no};
 	const char **non_options = 0;	/* skipped non-options */
 	int non_options_size = 0;	/* number of skipped non-options */
 	int argind = 1;		/* index in argv */
@@ -257,7 +275,7 @@ char ap_init(struct Arg_parser *const ap,
 					return 0;
 				non_options = (const char **)tmp;
 				non_options[non_options_size++] = argv[argind++];
-			} else if (!push_back_record(ap, 0, argv[argind++]))
+			} else if (!push_back_record(ap, &non_option, false, argv[argind++]))
 				return 0;
 		}
 	}
@@ -265,10 +283,10 @@ char ap_init(struct Arg_parser *const ap,
 		free_data(ap);
 	else {
 		for (i = 0; i < non_options_size; ++i)
-			if (!push_back_record(ap, 0, non_options[i]))
+			if (!push_back_record(ap, &non_option, false, non_options[i]))
 				return 0;
 		while (argind < argc)
-			if (!push_back_record(ap, 0, argv[argind++]))
+			if (!push_back_record(ap, &non_option, false, argv[argind++]))
 				return 0;
 	}
 	if (non_options)
@@ -308,6 +326,14 @@ const char *ap_argument(const struct Arg_parser *const ap, const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].argument;
+	else
+		return "";
+}
+
+const char *ap_opt_string(const struct Arg_parser *const ap, const int i)
+{
+	if (i >= 0 && i < ap_arguments(ap)) 
+		return ap->data[i].opt_string;
 	else
 		return "";
 }
