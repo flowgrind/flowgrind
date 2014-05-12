@@ -63,6 +63,7 @@ struct ap_Option {
 
 struct ap_Record {
 	int code;
+	char *opt_string;	/* the observed opt string (maybe the long or the short version) */
 	char *argument;
 };
 
@@ -89,5 +90,8 @@ int ap_arguments(const struct Arg_parser *const ap);
 int ap_code(const struct Arg_parser *const ap, const int i);
 
 const char *ap_argument(const struct Arg_parser *const ap, const int i);
+
+/* return the observed option string */
+const char *ap_opt_string(const struct Arg_parser *const ap, const int i);
 
 #endif
