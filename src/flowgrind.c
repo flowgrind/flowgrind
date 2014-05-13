@@ -2287,7 +2287,7 @@ static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
 				port = atoi(sepptr);
 			}
 		}
-		if (is_ipv6 && (inet_pton(AF_INET6, arg, 
+		if (is_ipv6 && (inet_pton(AF_INET6, arg,
 			(char*)&source_in6.sin6_addr) <= 0)) {
 			errx("invalid IPv6 address '%s' for RPC connection", arg);
 			usage(EXIT_FAILURE);
@@ -2728,7 +2728,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'Y':
 			/* pre-parse flow option for endpoints */
 			for (char *token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
-		
+
 				char type = token[0];
 				char* arg;
 
@@ -2744,9 +2744,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option(ch, arg, current_flow_ids[i], SOURCE);	
+						parse_flow_option(ch, arg, current_flow_ids[i], SOURCE);
 					if (type == 'd' || type == 'b')
-						parse_flow_option(ch, arg, current_flow_ids[i], DESTINATION);	
+						parse_flow_option(ch, arg, current_flow_ids[i], DESTINATION);
 				}
 			}
 			break;
@@ -2761,7 +2761,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 	if (copt.num_flows <= max_flow_specifier) {
 		errx("must not specify option for non-existing flow");
 		usage(EXIT_FAILURE);
-	}	
+	}
 
 	/* Do we have remaning command line arguments? */
 	if (optind < argc) {
