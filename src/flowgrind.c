@@ -300,7 +300,7 @@ static void usage(short status)
 		"                 computed (quiet)\n"
 		"  -R x=#.#(z|k|M|G)(b|B|o)\n"
 		"                 send at specified rate per second, where: z = 2**0, k = 2**10,\n"
-		"                 M = 2**20, G = 2**30 b = bits/s (default), B = bytes/s,\n"
+		"                 M = 2**20, G = 2**30, and b = bits/s (default), B = bytes/s,\n"
 		"                 o = blocks/s (same as -G s=g,C,#)\n"
 		"  -S x=#         set block (message) size, in bytes (same as -G s=q,C,#)\n"
 		"  -T x=#.#       set flow duration, in seconds (default: s=10,d=0)\n"
