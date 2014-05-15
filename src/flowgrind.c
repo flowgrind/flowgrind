@@ -300,7 +300,7 @@ static void usage(short status)
 		"                 computed (quiet)\n"
 		"  -R x=#.#(z|k|M|G)(b|B|o)\n"
 		"                 send at specified rate per second, where: z = 2**0, k = 2**10,\n"
-		"                 M = 2**20, G = 2**30 b = bits/s (default), B = bytes/s,\n"
+		"                 M = 2**20, G = 2**30, and b = bits/s (default), B = bytes/s,\n"
 		"                 o = blocks/s (same as -G s=g,C,#)\n"
 		"  -S x=#         set block (message) size, in bytes (same as -G s=q,C,#)\n"
 		"  -T x=#.#       set flow duration, in seconds (default: s=10,d=0)\n"
@@ -2142,9 +2142,9 @@ static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
 }
 
 /**
- * Parse the write rate string
+ * Parse argument for option -R, which specifies the rate the endpoint will send
  *
- * @param[in] arg rate string in form #.#(z|k|M|G)(b|B|o)
+ * @param[in] arg argument for option -R in form of #.#(z|k|M|G)(b|B|o)
  * @param[in] flow_id id of the flow for which flow to parse
  * @param[in] endpoint_id endpoint to parse for
  */
@@ -2223,12 +2223,12 @@ static void parse_rate_option(char *arg, int flow_id, int endpoint_id) {
 }
 
 /**
- * Parse the Host option.
+ * Parse argument for option -H, which specifies the endpoints of a flow
  *
- * @param[in] arg host string
- * 		two addresses:
- * 		- test address where the actual test connection goes to
- * 		- RPC address, where this program connects to
+ * @param[in] arg argument for option -H in form of HOST[/CONTROL[:PORT]]
+ *		    - HOST: test address where the actual test connection goes to
+ *		    - CONTROL: RPC address, where this program connects to
+ *		    - PORT: port for the control connection
  * @param[in] endpoint flow-endpoint to write to
  */
 static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
@@ -2279,7 +2279,7 @@ static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
 			if (strchr(sepptr+1, ':')) {
 				is_ipv6 = true;
 			} else {
-			/* 3rd case: IPv4 or name with port 1.2.3.4:5999*/
+			/* 3rd case: IPv4 or name with port 1.2.3.4:5999 */
 				*sepptr = '\0';
 				sepptr++;
 				if ((*sepptr != '\0') && (*sepptr == ':'))
@@ -2287,7 +2287,7 @@ static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
 				port = atoi(sepptr);
 			}
 		}
-		if (is_ipv6 && (inet_pton(AF_INET6, arg, 
+		if (is_ipv6 && (inet_pton(AF_INET6, arg,
 			(char*)&source_in6.sin6_addr) <= 0)) {
 			errx("invalid IPv6 address '%s' for RPC connection", arg);
 			usage(EXIT_FAILURE);
@@ -2296,7 +2296,7 @@ static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
 			errx("invalid port for RPC connection");
 			usage(EXIT_FAILURE);
 		}
-	} /* end of extra rpc address parsing */
+	}
 
 	if (!*arg) {
 		errx("no test host given in argument");
@@ -2480,12 +2480,12 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 }
 
 /**
- * Parse argument for option -c to hide/show intermediated interval report
- * columns
+ * Parse argument for option -c, which hides/shows intermediated interval
+ * report columns
  *
- * @param[in] optarg argument for option -c
+ * @param[in] arg argument for option -c
  */
-static void parse_colon_option(char *optarg)
+static void parse_colon_option(char *arg)
 {
 	/* To make it easy (independed of default values), hide all colons */
 	HIDE_COLUMNS(COL_BEGIN, COL_END, COL_THROUGH, COL_TRANSAC,
@@ -2501,7 +2501,7 @@ static void parse_colon_option(char *optarg)
 #endif /* DEBUG */
 
 	/* Set colon visibility according option */
-	for (char *token = strtok(optarg, ","); token;
+	for (char *token = strtok(arg, ","); token;
 	     token = strtok(NULL, ",")) {
 		if (!strcmp(token, "interval")) {
 			SHOW_COLUMNS(COL_BEGIN, COL_END);
@@ -2728,7 +2728,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'Y':
 			/* pre-parse flow option for endpoints */
 			for (char *token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
-		
+
 				char type = token[0];
 				char* arg;
 
@@ -2744,9 +2744,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option(ch, arg, current_flow_ids[i], SOURCE);	
+						parse_flow_option(ch, arg, current_flow_ids[i], SOURCE);
 					if (type == 'd' || type == 'b')
-						parse_flow_option(ch, arg, current_flow_ids[i], DESTINATION);	
+						parse_flow_option(ch, arg, current_flow_ids[i], DESTINATION);
 				}
 			}
 			break;
@@ -2761,7 +2761,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 	if (copt.num_flows <= max_flow_specifier) {
 		errx("must not specify option for non-existing flow");
 		usage(EXIT_FAILURE);
-	}	
+	}
 
 	/* Do we have remaning command line arguments? */
 	if (optind < argc) {
