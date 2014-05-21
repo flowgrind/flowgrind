@@ -2189,21 +2189,10 @@ static void parse_rate_option(char *arg, int flow_id, int endpoint_id) {
 	switch (type) {
 	case 0:
 	case 'b':
-		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size * 8;
-		if (optdouble < 1) {
-			errx("client block size for flow %u is too big for "
-			      "specified rate", flow_id);
-			usage(EXIT_FAILURE);
-		}
+		optdouble /=  8;
 		break;
 
 	case 'B':
-		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size;
-		if (optdouble < 1) {
-			errx("client block size for flow %u is too big for "
-			      "specified rate", flow_id);
-			usage(EXIT_FAILURE);
-		}
 		break;
 
 	case 'o':
@@ -2215,7 +2204,7 @@ static void parse_rate_option(char *arg, int flow_id, int endpoint_id) {
 		usage(EXIT_FAILURE);
 	}
 
-	if (optdouble > 5e5)
+	if (optdouble > 5e9)
 		warnx("rate of flow %d too high", flow_id);
 
 	cflow[flow_id].settings[endpoint_id].write_rate_str = strdup(arg);
