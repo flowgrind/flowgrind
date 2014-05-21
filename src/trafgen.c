@@ -161,7 +161,7 @@ double next_interpacket_gap(struct _flow *flow) {
 
 	double gap = 0.0;
 	if (flow->settings.write_rate)
-		gap = (double)1.0/flow->settings.write_rate;
+		gap = ((double)flow->settings.maximum_block_size)/flow->settings.write_rate;
 	else
 		gap = calculate(flow,
 				flow->settings.interpacket_gap_trafgen_options.distribution,
