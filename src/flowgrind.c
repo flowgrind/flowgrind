@@ -2521,46 +2521,82 @@ static void parse_cmdline(int argc, char *argv[]) {
 	int optint = 0;
 
 	const struct ap_Option options[] = {
+		/** display column of argument type in output */
 		{'c', "show-colon", ap_yes},
 #ifdef DEBUG
+		/** debug */
 		{'d', "debug", ap_no},
 #endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
+		/** prepend argument to dump filename */
 		{'e', "dump-prefix", ap_yes},
 #endif /* HAVE_LIBPCAP */
 		{'h', 0, ap_no},
 		{HELP_OPTION, "help", ap_maybe},
+		/** reporting interval in seconds */
 		{'i', "report-interval", ap_yes},
+		/** log file output */
 		{LOG_FILE_OPTION, "log-file", ap_maybe},
+		/** report throughput in 2**20 bytes/s (default: 10**6 bit/s) */
 		{'m', 0, ap_no},
+		/** total number of flows */
 		{'n', "flows", ap_yes},
+		/** overwrite existing log files */
 		{'o', 0, ap_no},
+		/** don't print symbolic values (like INT_MAX) instead of numbers */
 		{'p', 0, ap_no},
+		/** no logging to screen */
 		{'q', "quiet", ap_no},
+		/** explicitely specify unit of source TCP-stack (segment or byte) */
 		{'s', "tcp-stack", ap_yes},
+		/** program version */
 		{'v', "version", ap_no},
+		/** write output to logfile (same as --log-file) */ 
 		{'w', 0, ap_no},
+		/** use minimal response size needed for RTT calculation */
 		{'A', 0, ap_yes},
+		/**  set requested sending buffer, in bytes */
 		{'B', 0, ap_yes},
+		/** stop flow if it is experiencing local congestion */
 		{'C', 0, ap_no},
+		/** DSCP value for TOS byte */
 		{'D', 0, ap_yes},
+		/**  enumerate bytes in payload instead of sending zeros */
 		{'E', 0, ap_no},
+		/** flow options after this option apply only to the given flow IDs (comma separated)*/
 		{'F', 0, ap_yes},
+		/**  activate stochastic traffic generation */
 		{'G', 0, ap_yes},
+		/** sets address for test and control connection */
 		{'H', 0, ap_yes},
+		/** enable one-way delay calculation (no clock synchronization) */
 		{'I', 0, ap_no},
+		/** random seed */
 		{'J', 0, ap_yes},
+		/** late connect (connects only immediately before sending) */
 		{'L', 0, ap_no},
+		/** dump traffic using libpcap */
 		{'M', 0, ap_yes},
+		/** shutdown() each socket direction after test flow */
 		{'N', 0, ap_no},
+		/** set socket option on test socket. */
 		{'O', 0, ap_yes},
+		/** do not iterate through select() to continue sending in case 
+			block size did not suffice to fill sending queue (pushy) */
 		{'P', 0, ap_yes},
+		/** summarize only (quiet) */
 		{'Q', 0, ap_no},
+		/** send at specified rate per second */
 		{'R', 0, ap_yes},
+		/** set block (message) size */
 		{'S', 0, ap_yes},
+		/** set flow duration in seconds */
 		{'T', 0, ap_yes},
+		/** set application buffer size in bytes */
 		{'U', 0, ap_yes},
+		/** set requested receiver buffer in bytes */
 		{'W', 0, ap_yes},
+		/**  set initial delay before the host starts to send in seconds */
 		{'Y', 0, ap_yes},
 		{0, 0, ap_no} 
 	};
