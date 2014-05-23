@@ -2287,8 +2287,15 @@ static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) 
 	free(rpc_address);
 }
 
-/* Parse flow specific options given on the cmdline */
-static void parse_flow_option(int ch, const char *arg, int flow_id, int endpoint_id) {
+/**
+ * Parse flow options with endpoint
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the cmdline option
+ * @param[in] flow_id id of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
+ */
+static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, int endpoint_id) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
@@ -2296,32 +2303,7 @@ static void parse_flow_option(int ch, const char *arg, int flow_id, int endpoint
 	struct _flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
 	struct _flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
 
-	switch (ch) {
-	/* flow options w/o endpoint identifier */
-	case 'E':
-		cflow[flow_id].byte_counting = 1;
-		break;
-	case 'I':
-		SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
-		break;
-	case 'J':
-		rc = sscanf(arg, "%u", &optunsigned);
-		if (rc != 1) {
-			errx("random seed must be a valid unsigned integer");
-			usage(EXIT_FAILURE);
-		}
-		cflow[flow_id].random_seed = optunsigned;
-		break;
-	case 'L':
-		cflow[flow_id].late_connect = 1;
-		break;
-	case 'N':
-		cflow[flow_id].shutdown = 1;
-		break;
-	case 'Q':
-		cflow[flow_id].summarize_only = 1;
-		break;
-	/* flow options w/ endpoint identifier */
+	switch (code) {
 	case 'G':
 		parse_trafgen_option(arg, flow_id, endpoint_id);
 		break;
@@ -2455,8 +2437,47 @@ static void parse_flow_option(int ch, const char *arg, int flow_id, int endpoint
 }
 
 /**
- * Parse argument for option -c, which hides/shows intermediated interval
- * report columns
+ * Parse flow options without endpoint
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the cmdline option
+ * @param[in] flow_id id of flow to apply option to
+ */
+static void parse_flow_option(int code, const char* arg, int flow_id) {
+	int rc = 0;
+	unsigned optunsigned = 0;
+
+	switch (code) {
+	/* flow options w/o endpoint identifier */
+	case 'E':
+		cflow[flow_id].byte_counting = 1;
+		break;
+	case 'I':
+		SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
+		break;
+	case 'J':
+		rc = sscanf(arg, "%u", &optunsigned);
+		if (rc != 1) {
+			errx("random seed must be a valid unsigned integer");
+			usage(EXIT_FAILURE);
+		}
+		cflow[flow_id].random_seed = optunsigned;
+		break;
+	case 'L':
+		cflow[flow_id].late_connect = 1;
+		break;
+	case 'N':
+		cflow[flow_id].shutdown = 1;
+		break;
+	case 'Q':
+		cflow[flow_id].summarize_only = 1;
+		break;
+	}
+}
+
+/**
+ * Parse argument for option -c to hide/show intermediated interval report
+ * columns
  *
  * @param[in] arg argument for option -c
  */
@@ -2718,7 +2739,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 			break;
 		case OPT_FLOW:
 			for (int i = 0; i < cur_num_flows; i++)
-				parse_flow_option(code, arg, current_flow_ids[i], 0);
+				parse_flow_option(code, arg, current_flow_ids[i]);
 			break;
 		case OPT_FLOW_ENDPOINT:
 			/* pre-parse flow option for endpoints */
@@ -2740,9 +2761,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option(code, arg, current_flow_ids[i], SOURCE);
+						parse_flow_option_endpoint(code, arg, current_flow_ids[i], SOURCE);	
 					if (type == 'd' || type == 'b')
-						parse_flow_option(code, arg, current_flow_ids[i], DESTINATION);
+						parse_flow_option_endpoint(code, arg, current_flow_ids[i], DESTINATION);	
 				}
 			}
 			break;
