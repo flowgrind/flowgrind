@@ -2522,82 +2522,82 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 	const struct ap_Option options[] = {
 		/** display column of argument type in output */
-		{'c', "show-colon", ap_yes},
+		{'c', "show-colon", ap_yes, OPT_CONTROLLER},
 #ifdef DEBUG
 		/** debug */
-		{'d', "debug", ap_no},
+		{'d', "debug", ap_no, OPT_CONTROLLER},
 #endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
 		/** prepend argument to dump filename */
-		{'e', "dump-prefix", ap_yes},
+		{'e', "dump-prefix", ap_yes, OPT_CONTROLLER},
 #endif /* HAVE_LIBPCAP */
-		{'h', 0, ap_no},
-		{HELP_OPTION, "help", ap_maybe},
+		{'h', 0, ap_no, OPT_CONTROLLER},
+		{HELP_OPTION, "help", ap_maybe, OPT_CONTROLLER},
 		/** reporting interval in seconds */
-		{'i', "report-interval", ap_yes},
+		{'i', "report-interval", ap_yes, OPT_CONTROLLER},
 		/** log file output */
-		{LOG_FILE_OPTION, "log-file", ap_maybe},
+		{LOG_FILE_OPTION, "log-file", ap_maybe, OPT_CONTROLLER},
 		/** report throughput in 2**20 bytes/s (default: 10**6 bit/s) */
-		{'m', 0, ap_no},
+		{'m', 0, ap_no, OPT_CONTROLLER},
 		/** total number of flows */
-		{'n', "flows", ap_yes},
+		{'n', "flows", ap_yes, OPT_CONTROLLER},
 		/** overwrite existing log files */
-		{'o', 0, ap_no},
+		{'o', 0, ap_no, OPT_CONTROLLER},
 		/** don't print symbolic values (like INT_MAX) instead of numbers */
-		{'p', 0, ap_no},
+		{'p', 0, ap_no, OPT_CONTROLLER},
 		/** no logging to screen */
-		{'q', "quiet", ap_no},
+		{'q', "quiet", ap_no, OPT_CONTROLLER},
 		/** explicitely specify unit of source TCP-stack (segment or byte) */
-		{'s', "tcp-stack", ap_yes},
+		{'s', "tcp-stack", ap_yes, OPT_CONTROLLER},
 		/** program version */
-		{'v', "version", ap_no},
+		{'v', "version", ap_no, OPT_CONTROLLER},
 		/** write output to logfile (same as --log-file) */ 
-		{'w', 0, ap_no},
+		{'w', 0, ap_no, OPT_CONTROLLER},
 		/** use minimal response size needed for RTT calculation */
-		{'A', 0, ap_yes},
+		{'A', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/**  set requested sending buffer, in bytes */
-		{'B', 0, ap_yes},
+		{'B', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** stop flow if it is experiencing local congestion */
-		{'C', 0, ap_no},
+		{'C', 0, ap_no, OPT_FLOW_ENDPOINT},
 		/** DSCP value for TOS byte */
-		{'D', 0, ap_yes},
+		{'D', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/**  enumerate bytes in payload instead of sending zeros */
-		{'E', 0, ap_no},
+		{'E', 0, ap_no, OPT_FLOW},
 		/** flow options after this option apply only to the given flow IDs (comma separated)*/
-		{'F', 0, ap_yes},
+		{'F', 0, ap_yes, OPT_SELECTOR},
 		/**  activate stochastic traffic generation */
-		{'G', 0, ap_yes},
+		{'G', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** sets address for test and control connection */
-		{'H', 0, ap_yes},
+		{'H', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** enable one-way delay calculation (no clock synchronization) */
-		{'I', 0, ap_no},
+		{'I', 0, ap_no, OPT_FLOW},
 		/** random seed */
-		{'J', 0, ap_yes},
+		{'J', 0, ap_yes, OPT_FLOW},
 		/** late connect (connects only immediately before sending) */
-		{'L', 0, ap_no},
+		{'L', 0, ap_no, OPT_FLOW},
 		/** dump traffic using libpcap */
-		{'M', 0, ap_yes},
+		{'M', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** shutdown() each socket direction after test flow */
-		{'N', 0, ap_no},
+		{'N', 0, ap_no, OPT_FLOW},
 		/** set socket option on test socket. */
-		{'O', 0, ap_yes},
+		{'O', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** do not iterate through select() to continue sending in case 
 			block size did not suffice to fill sending queue (pushy) */
-		{'P', 0, ap_yes},
+		{'P', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** summarize only (quiet) */
-		{'Q', 0, ap_no},
+		{'Q', 0, ap_no, OPT_FLOW},
 		/** send at specified rate per second */
-		{'R', 0, ap_yes},
+		{'R', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** set block (message) size */
-		{'S', 0, ap_yes},
+		{'S', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** set flow duration in seconds */
-		{'T', 0, ap_yes},
+		{'T', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** set application buffer size in bytes */
-		{'U', 0, ap_yes},
+		{'U', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/** set requested receiver buffer in bytes */
-		{'W', 0, ap_yes},
+		{'W', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		/**  set initial delay before the host starts to send in seconds */
-		{'Y', 0, ap_yes},
+		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{0, 0, ap_no} 
 	};
 
