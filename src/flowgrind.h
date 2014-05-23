@@ -127,6 +127,18 @@ enum column_id {
 #endif /* DEBUG */
 };
 
+/** Option types in flowgrind controller */
+enum opt_types {
+	/** General controller options */
+	OPT_CONTROLLER,
+	/** Selects a subset of flows to apply options to (-F) */
+	OPT_SELECTOR,	
+	/** Flow option without endpoint string */
+	OPT_FLOW,
+	/** Flow option with endpoint string */	
+	OPT_FLOW_ENDPOINT,
+};
+
 /** For long options with no equivalent short option, use a pseudo short option */
 enum long_opt_only {
 	/** Pseudo short option for option --help */
