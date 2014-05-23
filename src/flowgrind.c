@@ -2512,6 +2512,109 @@ static void parse_colon_option(char *arg)
 	}
 }
 
+/**
+ * Parse general controller options given on the cmdline
+ *
+ * @param[code] option code
+ * @param[arg] option argument
+ */
+static void parse_general_option(int code, char* arg, char* opt_string) {
+
+	int rc;
+
+	switch (code) {
+	case 0:
+		errx("invalid argument: %s", arg);
+		usage(EXIT_FAILURE);
+	/* general options */
+	case 'h':
+		usage(EXIT_SUCCESS);
+		break;
+	case HELP_OPTION:
+		if (!arg || !strlen(arg)) {
+			usage(EXIT_SUCCESS);
+		} else if (!strcmp(arg, "socket")) {
+			usage_sockopt();
+		} else if (!strcmp(arg, "traffic")) {
+			usage_trafgenopt();
+		} else {
+			errx("invalid argument '%s' for '%s'", arg, opt_string);
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'v':
+		fprintf(stderr, "%s version: %s\n", progname,
+			FLOWGRIND_VERSION);
+		exit(EXIT_SUCCESS);
+
+	/* controller options */
+	case 'c':
+		parse_colon_option(arg);
+		break;
+	case 'd':
+		increase_debuglevel();
+		break;
+	#ifdef HAVE_LIBPCAP
+	case 'e':
+		copt.dump_prefix = arg;
+		break;
+	#endif /* HAVE_LIBPCAP */
+	case 'i':
+		rc = sscanf(arg, "%lf", &copt.reporting_interval);
+		if (rc != 1 || copt.reporting_interval <= 0) {
+			errx("%s: reporting interval must be a "
+			     "positive number (in seconds)", progname);
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case LOG_FILE_OPTION:
+		copt.log_to_file = true;
+		if (arg)
+			log_filename = strdup(arg);
+		break;
+	case 'm':
+		copt.mbyte = true;
+		column_info[COL_THROUGH].header.unit = " [MB/s]";
+		break;
+	case 'n':
+		rc = sscanf(arg, "%hd", &copt.num_flows);
+		if (rc != 1 || copt.num_flows > MAX_FLOWS) {
+			errx("number of test flows must be within "
+			     "[1..%d]", MAX_FLOWS);
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'o':
+		copt.clobber = true;
+		break;
+	case 'p':
+		copt.symbolic = false;
+		break;
+	case 'q':
+		copt.log_to_stdout = false;
+		break;
+	case 's':
+		if (!strcmp(arg, "segment")) {
+			copt.force_unit = SEGMENT_BASED;
+		} else if (!strcmp(arg, "byte")) {
+			copt.force_unit = BYTE_BASED;
+		} else {
+			errx("invalid argument '%s' for option '%s'", 
+				arg, opt_string);
+			usage(EXIT_FAILURE);
+		}
+	case 'w':
+		copt.log_to_file = true;
+		break;
+	/* unknown option or missing option-argument */
+	default:
+		errx("uncaught option: %s", arg);
+		usage(EXIT_FAILURE);
+		break;
+	}
+	
+}
+
 static void parse_cmdline(int argc, char *argv[]) {
 	int rc = 0;
 	int cur_num_flows = 0;
@@ -2618,95 +2721,15 @@ static void parse_cmdline(int argc, char *argv[]) {
 	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
 		const int code = ap_code(&parser, argind);
 		char *arg = ap_argument(&parser, argind);
-
-		switch (code) {
-		case 0:
-			errx("invalid argument: %s", arg);
-			usage(EXIT_FAILURE);
-		/* general options */
-		case 'h':
-			usage(EXIT_SUCCESS);
+		char *opt_string = ap_opt_string(&parser, argind);
+		int tag = ap_option(&parser, argind)->tag;
+		
+		/* distinguish option types by tag first */
+		switch (tag) {
+		case OPT_CONTROLLER:
+			parse_general_option(code, arg, opt_string);
 			break;
-		case HELP_OPTION:
-			if (!arg || !strlen(arg)) {
-				usage(EXIT_SUCCESS);
-			} else if (!strcmp(arg, "socket")) {
-				usage_sockopt();
-			} else if (!strcmp(arg, "traffic")) {
-				usage_trafgenopt();
-			} else {
-				errx("invalid argument '%s' for '%s'", arg,
-				     ap_opt_string(&parser, argind));
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'v':
-			fprintf(stderr, "%s version: %s\n", progname,
-				FLOWGRIND_VERSION);
-			exit(EXIT_SUCCESS);
-
-		/* controller options */
-		case 'c':
-			parse_colon_option(arg);
-			break;
-		case 'd':
-			increase_debuglevel();
-			break;
-#ifdef HAVE_LIBPCAP
-		case 'e':
-			copt.dump_prefix = arg;
-			break;
-#endif /* HAVE_LIBPCAP */
-		case 'i':
-			rc = sscanf(arg, "%lf", &copt.reporting_interval);
-			if (rc != 1 || copt.reporting_interval <= 0) {
-				errx("%s: reporting interval must be a "
-				     "positive number (in seconds)", progname);
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case LOG_FILE_OPTION:
-			copt.log_to_file = true;
-			if (arg)
-				log_filename = strdup(arg);
-			break;
-		case 'm':
-			copt.mbyte = true;
-			column_info[COL_THROUGH].header.unit = " [MB/s]";
-			break;
-		case 'n':
-			rc = sscanf(arg, "%hd", &copt.num_flows);
-			if (rc != 1 || copt.num_flows > MAX_FLOWS) {
-				errx("number of test flows must be within "
-				     "[1..%d]", MAX_FLOWS);
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'o':
-			copt.clobber = true;
-			break;
-		case 'p':
-			copt.symbolic = false;
-			break;
-		case 'q':
-			copt.log_to_stdout = false;
-			break;
-		case 's':
-			if (!strcmp(arg, "segment")) {
-				copt.force_unit = SEGMENT_BASED;
-			} else if (!strcmp(arg, "byte")) {
-				copt.force_unit = BYTE_BASED;
-			} else {
-				errx("invalid argument '%s' for option '%s'", 
-					arg, ap_opt_string(&parser, argind));
-				usage(EXIT_FAILURE);
-			}
-		case 'w':
-			copt.log_to_file = true;
-			break;
-
-		/* flow options w/o endpoint identifier */
-		case 'F':
+		case OPT_SELECTOR:
 			cur_num_flows = 0;
 			tok = strtok(arg, ",");
 			while (tok) {
@@ -2728,32 +2751,11 @@ static void parse_cmdline(int argc, char *argv[]) {
 				}
 			}
 			break;
-		case 'E':
-		case 'I':
-		case 'J':
-		case 'L':
-		case 'N':
-		case 'Q':
+		case OPT_FLOW:
 			for (int i = 0; i < cur_num_flows; i++)
 				parse_flow_option(code, arg, current_flow_ids[i], 0);
 			break;
-
-		/* flow options w/ endpoint identifier */
-		case 'G':
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'H':
-		case 'O':
-		case 'M':
-		case 'P':
-		case 'R':
-		case 'S':
-		case 'T':
-		case 'U':
-		case 'W':
-		case 'Y':
+		case OPT_FLOW_ENDPOINT:
 			/* pre-parse flow option for endpoints */
 			for (char *token = strtok(arg, ","); token; token = strtok(NULL, ",")) {
 
@@ -2778,10 +2780,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 				}
 			}
 			break;
-
-		/* unknown option or missing option-argument */
 		default:
-			errx("uncaught option: %s", arg);
+			errx("uncaught option tag!");
 			usage(EXIT_FAILURE);
 			break;
 		}
