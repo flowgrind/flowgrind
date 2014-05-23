@@ -137,9 +137,9 @@ int main(int argc, char *argv[])
 	set_progname(argv[0]);
 
 	const struct ap_Option options[] = {
-		{'h', "help", ap_no},
-		{'v', "version", ap_no},
-		{0, 0, ap_no}
+		{'h', "help", ap_no, 0},
+		{'v', "version", ap_no, 0},
+		{0, 0, ap_no, 0}
 	};
 	struct Arg_parser parser;
 

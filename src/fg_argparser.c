@@ -58,7 +58,7 @@ static char push_back_record(struct Arg_parser *const ap, const struct ap_Option
 		return 0;
 	ap->data = (struct ap_Record *)tmp;
 	p = &(ap->data[ap->data_size]);
-	p->code = option->code;
+	p->option = option;
 	p->argument = 0;
 	tmp = ap_resize_buffer(p->argument, len + 1);
 	if (!tmp)
@@ -233,7 +233,7 @@ char ap_init(struct Arg_parser *const ap,
 	     const int argc, const char *const argv[],
 	     const struct ap_Option options[], const char in_order)
 {
-	const struct ap_Option non_option = {0, 0, ap_no};
+	const struct ap_Option non_option = {0, 0, ap_no, 0};
 	const char **non_options = 0;	/* skipped non-options */
 	int non_options_size = 0;	/* number of skipped non-options */
 	int argind = 1;		/* index in argv */
@@ -318,7 +318,7 @@ int ap_arguments(const struct Arg_parser *const ap)
 int ap_code(const struct Arg_parser *const ap, const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
-		return ap->data[i].code;
+		return ap->data[i].option->code;
 	else
 		return 0;
 }
@@ -337,4 +337,12 @@ const char *ap_opt_string(const struct Arg_parser *const ap, const int i)
 		return ap->data[i].opt_string;
 	else
 		return "";
+}
+
+const struct ap_Option *ap_option(const struct Arg_parser *const ap, const int i)
+{
+	if (i >= 0 && i < ap_arguments(ap))
+		return ap->data[i].option;
+	else
+		return 0;
 }

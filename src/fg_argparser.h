@@ -59,10 +59,11 @@ struct ap_Option {
 	int code;		/* Short option letter or code ( code != 0 ) */
 	const char *name;	/* Long option name (maybe null) */
 	enum ap_Has_arg has_arg;
+	int tag;		/* user tag */
 };
 
 struct ap_Record {
-	int code;
+	const struct ap_Option *option;	/* backpointer to option */
 	char *opt_string;	/* the observed opt string (maybe the long or the short version) */
 	char *argument;
 };
@@ -90,6 +91,8 @@ int ap_arguments(const struct Arg_parser *const ap);
 int ap_code(const struct Arg_parser *const ap, const int i);
 
 const char *ap_argument(const struct Arg_parser *const ap, const int i);
+
+const struct ap_Option *ap_option(const struct Arg_parser *const ap, const int i);
 
 /* return the observed option string */
 const char *ap_opt_string(const struct Arg_parser *const ap, const int i);
