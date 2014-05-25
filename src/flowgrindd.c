@@ -961,7 +961,7 @@ void set_affinity(int cpu)
 #elif __FreeBSD__
 	typedef cpuset_t fg_cpuset;
 #endif /* __LINUX__ */
-	int rc;
+	int rc = 0;
 	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);   /* number of cores */
 	fg_cpuset cpuset;			    /* define cpu_set bit mask */
 

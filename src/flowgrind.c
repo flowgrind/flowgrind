@@ -1022,7 +1022,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 		if (sigint_caught)
 			return;
 
-		DEBUG_MSG(LOG_ERR, "starting flow on server %d", j);
+		DEBUG_MSG(LOG_ERR, "starting flow on server %u", j);
 		xmlrpc_client_call2f(&rpc_env, rpc_client,
 				     unique_servers[j].server_url,
 				     "start_flows", &resultP, "({s:i})",
@@ -1274,7 +1274,7 @@ static void close_flows(void)
 	xmlrpc_client *client;
 
 	for (unsigned int id = 0; id < copt.num_flows; id++) {
-		DEBUG_MSG(LOG_WARNING, "closing flow %d.", id);
+		DEBUG_MSG(LOG_WARNING, "closing flow %u.", id);
 
 		if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
 			continue;
@@ -1311,7 +1311,7 @@ static void close_flows(void)
 			active_flows--;
 
 		xmlrpc_client_destroy(client);
-		DEBUG_MSG(LOG_WARNING, "closed flow %d.", id);
+		DEBUG_MSG(LOG_WARNING, "closed flow %u.", id);
 	}
 }
 
@@ -1884,7 +1884,7 @@ static void report_final(void)
 
 			if (cflow[id].final_report[endpoint]) {
 
-				CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
+				CATC("sbuf = %d/%d, rbuf = %d/%d (real/req)",
 					cflow[id].endpoint[endpoint].send_buffer_size_real,
 					cflow[id].settings[endpoint].requested_send_buffer_size,
 					cflow[id].endpoint[endpoint].receive_buffer_size_real,
@@ -2452,7 +2452,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 		settings->duration[WRITE] = optdouble;
 		break;
 	case 'U':
-		rc = sscanf(arg, "%d", &optunsigned);
+		rc = sscanf(arg, "%u", &optunsigned);
 		if (rc != 1) {
 			errx("block size must be a positive integer");
 			usage(EXIT_FAILURE);
@@ -2640,7 +2640,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 			column_info[COL_THROUGH].header.unit = " [MB/s]";
 			break;
 		case 'n':
-			rc = sscanf(optarg, "%hd", &copt.num_flows);
+			rc = sscanf(optarg, "%hu", &copt.num_flows);
 			if (rc != 1 || copt.num_flows > MAX_FLOWS) {
 				errx("number of test flows must be within "
 				     "[1..%d]", MAX_FLOWS);
