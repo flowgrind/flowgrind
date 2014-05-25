@@ -1140,6 +1140,7 @@ int main(int argc, char *argv[])
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
 	logging_init();
+	fg_list_init(&flows);
 #ifdef HAVE_LIBPCAP
 	fg_pcap_init();
 #endif /* HAVE_LIBPCAP */
