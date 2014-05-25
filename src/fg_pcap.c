@@ -325,7 +325,7 @@ void fg_pcap_go(struct _flow *flow)
 #endif /* __DARWIN__ */
 	if (rc)
 		logging_log(LOG_WARNING, "Could not start pcap thread: %s",
-			    strerror(errno) );
+			    strerror(rc) );
 	return;
 }
 
