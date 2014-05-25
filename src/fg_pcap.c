@@ -83,7 +83,7 @@ void fg_pcap_init()
 		DEBUG_MSG(LOG_ERR, "pcap: found pcapable device (%s)", devdes);
 	}
 #endif /* DEBUG*/
-	pthread_mutex_init(&pcap_mutex, NULL);
+
 #ifndef __DARWIN__
 	pthread_barrier_init(&pcap_barrier, NULL, 2);
 #endif /* __DARWIN__ */
@@ -97,7 +97,6 @@ void fg_pcap_cleanup(void* arg)
 	if (!dumping)
 		return;
 	DEBUG_MSG(LOG_DEBUG, "fg_pcap_cleanup() called for flow %d", flow->id);
-	pthread_mutex_lock(&pcap_mutex);
 	if (flow->pcap_dumper)
 		pcap_dump_close((pcap_dumper_t *)flow->pcap_dumper);
 	flow->pcap_dumper = NULL;
@@ -105,7 +104,6 @@ void fg_pcap_cleanup(void* arg)
 	if (flow->pcap_handle)
 		pcap_close((pcap_t *)flow->pcap_handle);
 	flow->pcap_handle = NULL;
-	pthread_mutex_unlock(&pcap_mutex);
 	dumping = 0;
 }
 
@@ -138,7 +136,6 @@ static void* fg_pcap_work(void* arg)
 	DEBUG_MSG(LOG_DEBUG, "fg_pcap_thread() called for flow %d", flow->id);
 
 	/* make sure all resources are released when finished */
-	pthread_detach(pthread_self());
 	pthread_cleanup_push(fg_pcap_cleanup, (void*) flow);
 
 	if (getsockname(flow->fd, (struct sockaddr *)&sa, &sl) == -1) {
@@ -290,9 +287,10 @@ static void* fg_pcap_work(void* arg)
 			 * if we should cancel */
 			pthread_testcancel();
 	}
-	pthread_cleanup_pop(1);
 
 remove:
+	pthread_cleanup_pop(1);
+
 #ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
 #endif /* __DARWIN__ */
