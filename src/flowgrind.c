@@ -298,10 +298,9 @@ static void usage(short status)
 		"                 block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q             summarize only, no intermediated interval reports are\n"
 		"                 computed (quiet)\n"
-		"  -R x=#.#(z|k|M|G)(b|B|o)\n"
+		"  -R x=#.#(z|k|M|G)(b|B)\n"
 		"                 send at specified rate per second, where: z = 2**0, k = 2**10,\n"
-		"                 M = 2**20, G = 2**30, and b = bits/s (default), B = bytes/s,\n"
-		"                 o = blocks/s (same as -G s=g,C,#)\n"
+		"                 M = 2**20, G = 2**30, and b = bits/s (default), B = bytes/s\n"
 		"  -S x=#         set block (message) size, in bytes (same as -G s=q,C,#)\n"
 		"  -T x=#.#       set flow duration, in seconds (default: s=10,d=0)\n"
 		"  -U #           set application buffer size, in bytes (default: 8192)\n"
@@ -2186,36 +2185,14 @@ static void parse_rate_option(char *arg, int flow_id, int endpoint_id) {
 		usage(EXIT_FAILURE);
 	}
 
-	switch (type) {
-	case 0:
-	case 'b':
-		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size * 8;
-		if (optdouble < 1) {
-			errx("client block size for flow %u is too big for "
-			      "specified rate", flow_id);
-			usage(EXIT_FAILURE);
-		}
-		break;
-
-	case 'B':
-		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size;
-		if (optdouble < 1) {
-			errx("client block size for flow %u is too big for "
-			      "specified rate", flow_id);
-			usage(EXIT_FAILURE);
-		}
-		break;
-
-	case 'o':
-		break;
-
-	default:
-		errx("illegal type specifier (either block or byte) for "
-			"flow %u", flow_id);
+	if (type != 'b' && type != 'B') {
+		errx("illegal type specifier (either 'b' or 'B') for flow %u", flow_id);
 		usage(EXIT_FAILURE);
-	}
+	}	
+	if (type == 'b')
+		optdouble /=  8;
 
-	if (optdouble > 5e5)
+	if (optdouble > 5e9)
 		warnx("rate of flow %d too high", flow_id);
 
 	cflow[flow_id].settings[endpoint_id].write_rate_str = strdup(arg);
@@ -2856,6 +2833,13 @@ static void sanity_check(void) {
 			if (cflow[id].settings[i].flow_control && !cflow[id].settings[i].write_rate_str) {
 				warnx("flow %d has flow control enabled but no "
 				      "rate.", id);
+				sanity_err = true;
+			}
+
+			if (cflow[id].settings[i].write_rate && cflow[id].settings[i].write_rate /
+				cflow[id].settings[i].maximum_block_size < 1) {
+				warnx("client block size for flow %u is too big for "
+				      "specified rate", id);
 				sanity_err = true;
 			}
 		}
