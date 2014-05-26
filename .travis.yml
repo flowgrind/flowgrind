@@ -3,8 +3,15 @@
 
 env:
   global:
-   # COVERITY_SCAN_TOKEN
+    # COVERITY_SCAN_TOKEN
     - secure: "By4m1AbnnXIL0ytlYCZRN0r3WdQ2gpVU02nJBtjNuhj6o+rK02kwziDfqCdJjB/UDMW4aCKcPprw+xQrb2j3mujOQOXhLOxeKndIQ/zyeizQ4WqGc9TSS/zLbksu5UaiUL8I+SmVe5KIphk28ca7H6AKQe0TUlEbEnHsM4SAAH4="
+    # Development packages, EXTRA_PKGS saved for additional builds
+    - CORE_PKGS="libxmlrpc-c3-dev libcurl4-gnutls-dev"
+  matrix:
+    - EXTRA_PKGS="" EXTRA_CONFIG=""
+    - EXTRA_PKGS="" EXTRA_CONFIG="--enable-debug"
+    - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG=""
+    - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
 
 language: c
 
@@ -16,13 +23,11 @@ before_install:
     - sudo apt-get -qq update
 
 install:
-    - sudo apt-get -qq install libxmlrpc-c3-dev libcurl4-gnutls-dev libpcap-dev libgsl0-dev
+    - sudo apt-get -qq install ${CORE_PKGS} ${EXTRA_PKGS}
     - sudo apt-get -qq install valgrind
 
 script:
-    - autoreconf -i
-    - ./configure --enable-debug
-    - make
+    - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then autoreconf -i && ./configure ${EXTRA_CONFIG} && make ; fi
 
 # Run Tests
 after_success:
@@ -37,8 +42,7 @@ branches:
     - coverity_scan
 
 notifications:
-  email:
-    - developer@flowgrind.net
+  email: developer@flowgrind.net
 
 addons:
   # Coverity Scan

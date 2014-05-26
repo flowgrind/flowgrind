@@ -1,24 +1,37 @@
 This package was first debianized by Tim Kosse <tim.kosse@gmx.de> on
 Mon, 06 Jul 2009 11:21:28 +0200.
 
-It was downloaded from https://launchpad.net/flowgrind/+download
+It was downloaded from https://github.com/flowgrind/flowgrind/releases
 
 Upstream Authors:
-
 	Tim Kosse <tim.kosse@gmx.de>
 	Daniel Schaffrath <daniel.schaffrath@mac.com>
 	Christian Samsel <christian.samsel@rwth-aachen.de>
 	Arnd Hannemann <arnd@arndnet.de>
+	Alexander Zimermann <alexander.zimmermann@netapp.com>
 
 Copyright:
-	Copyright (C) 2013 Arnd Hannemann
+	Copyright (C) 2013-2014 Alexander Zimmermann
+	Copyright (C) 2013-2014 Arnd Hannemann
 	Copyright (C) 2010-2013 Christian Samsel
 	Copyright (C) 2009 Tim Kosse
 	Copyright (C) 2007-2008 Daniel Schaffrath
 
 License:
+	Flowgrind is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-	/usr/share/common-licenses/GPL-2
+	Flowgrind is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with Flowgrind. If not, see <http://www.gnu.org/licenses/>.
+
+The GPL is shipped in /usr/share/common-licenses/GPL.
 
 The Debian packaging is copyright 2009, Tim Kosse <tim.kosse@gmx.de> and
-is licensed under the GPL, see `/usr/share/common-licenses/GPL-2'.
+is licensed under the GPL, see `/usr/share/common-licenses/GPL'.

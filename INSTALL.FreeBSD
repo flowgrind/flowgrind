@@ -23,9 +23,6 @@ Extract archive:
   tar xjvf flowgrind-*.tar.bz2
   cd flowgrind-*
 
-Configure sources:
-  CFLAGS=-I/usr/local/include LDFLAGS=-L/usr/local/lib ./configure
-
 Build and installl flowgrind:
   make && make install
 

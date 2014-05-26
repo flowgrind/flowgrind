@@ -132,9 +132,10 @@ enumerate bytes in payload instead of sending zeros
 \fB\-F\fR \fI#\fR[,\fI#\fR]...
 flow options following this option apply only to the given flow IDs. Useful in
 combination with \fB\-n\fR to set specific options for certain flows. Numbering
-starts with 0, so \fB\-F\fR 1 refers to the second flow
+starts with 0, so \fB\-F\fR 1 refers to the second flow. With -1 all flow can
+be refered
 .TP
-\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR),(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR),\fI#1\fR,[\fI#2\fR]
+\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR):(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR):\fI#1\fR:[\fI#2\fR]
 activate stochastic traffic generation and set parameters according to the used
 distribution. For additional information see section 'Traffic Generation Option'
 .TP
@@ -173,7 +174,7 @@ summarize only, no intermediated interval reports are computed (quiet)
 .TP
 \fB\-R\fR \fIx\fR=\fI#\fR.\fI#\fR(\fIz\fR|\fIk\fR|\fIM\fR|\fIG\fR)(\fIb\fR|\fIB\fR|\fIo\fR)
 send at specified rate per second, where: z = 2**0, k = 2**10, M = 2**20, G =
-2**30 b = bits/s (default), B = bytes/s, o = blocks/s (same as \fB\-G\fR
+2**30, and b = bits/s (default), B = bytes/s, o = blocks/s (same as \fB\-G\fR
 s=g,C,#)
 .TP
 \fB\-S \fIx\fR=\fI#\fR
@@ -204,7 +205,7 @@ both endpoints. However, please note that bidirectional traffic generation can
 lead to unexpected results. To specify different values for each endpoints,
 separate them by comma.
 .HP
-\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR),(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR),\fI#1\fR,[\fI#2\fR]
+\fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR):(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR):\fI#1\fR:[\fI#2\fR]
 .IP
 Flow parameter:
 .RS 12

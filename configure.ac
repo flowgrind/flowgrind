@@ -23,6 +23,8 @@ case $host in
     ;;
   *freebsd*)
     AC_DEFINE([__FREEBSD__], [1], [FreeBSD])
+    LDFLAGS="-L/usr/local/lib $LDFLAGS"
+    CFLAGS="-I/usr/local/include $CFLAGS"
     ;;
   *linux*)
     AC_DEFINE([__LINUX__], [1], [Linux])

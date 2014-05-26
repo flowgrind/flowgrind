@@ -8,17 +8,20 @@
  * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
  * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
  *
- * This file is part of Flowgrind. Flowgrind is free software; you can
- * redistribute it and/or modify it under the terms of the GNU General
- * Public License version 2 as published by the Free Software Foundation.
+ * This file is part of Flowgrind.
  *
- * Flowgrind distributed in the hope that it will be useful,
+ * Flowgrind is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Flowgrind is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
+ * along with Flowgrind.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -59,6 +62,7 @@
 #endif /* HAVE_LIBPCAP */
 
 #include "debug.h"
+#include "fg_stdlib.h"
 #include "fg_socket.h"
 
 #ifndef SOL_TCP
