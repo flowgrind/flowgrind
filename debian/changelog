@@ -1,3 +1,13 @@
+flowgrind (0.7.1) unstable; urgency=medium
+
+  Release 0.7.1 (2014-05-27)
+  * Closes issue #80 reported and fixed by Felix Rietig
+  * Change license to GPL3
+  * Fix FreeBSD compilation issues
+  * Closes issue #67 fixed by Felix Rietig
+
+ -- Arnd Hannemann <arnd.hannemann@credativ.de>  Tue, 27 May 2014 09:12:53 +0200
+
 flowgrind (0.7) unstable; urgency=medium
 
   Release: 0.7 (2014-04-10)

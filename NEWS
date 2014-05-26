@@ -1,3 +1,9 @@
+Release 0.7.1 (2014-05-27)
+- Closes issue #80 reported and fixed by Felix Rietig
+- Change license to GPL3
+- Fix FreeBSD compilation issues
+- Closes issue #67 fixed by Felix Rietig
+
 Release 0.7 (2014-04-10)
 - Output tcp_info kernel variables under FreeBSD
 - Remove ADT code (was broken anyways)
