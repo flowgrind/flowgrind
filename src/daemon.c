@@ -105,8 +105,7 @@ struct _report* reports = 0;
 struct _report* reports_last = 0;
 unsigned int pending_reports = 0;
 
-struct _flow flows[MAX_FLOWS];
-unsigned int num_flows = 0;
+LinkedList flows;
 
 char started = 0;
 
@@ -185,20 +184,24 @@ void uninit_flow(struct _flow *flow)
 		rc = pthread_cancel(flow->pcap_thread);
 		if (rc)
 			logging_log(LOG_WARNING, "failed to cancel dump "
-				    "thread: %s", strerror(errno));
-		fg_pcap_cleanup(flow);
+					"thread: %s", strerror(errno));
+
+		//wait for the dump thread to react to the cancellation request
+		rc = pthread_join(flow->pcap_thread, NULL);
+		if (rc)
+			logging_log(LOG_WARNING, "failed to join dump "
+					"thread: %s", strerror(rc));
 	}
 #endif
 	free_all(flow->read_block, flow->write_block, flow->addr, flow->error);
 	free_math_functions(flow);
 }
 
-void remove_flow(unsigned int i)
+void remove_flow(struct _flow * const flow)
 {
-	for (unsigned int j = i; j < num_flows - 1; j++)
-		flows[j] = flows[j + 1];
-	num_flows--;
-	if (!num_flows)
+	fg_list_remove(&flows, flow);
+	free(flow);
+	if (!fg_list_size(&flows))
 		started = 0;
 }
 
@@ -278,8 +281,7 @@ static int prepare_rfds(struct timespec *now, struct _flow *flow, fd_set *rfds)
 
 static int prepare_fds() {
 
-	DEBUG_MSG(LOG_DEBUG, "prepare_fds() called, num_flows: %d", num_flows);
-	unsigned int i = 0;
+	DEBUG_MSG(LOG_DEBUG, "prepare_fds() called, number of flows: %d", fg_list_size(&flows));
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
@@ -291,8 +293,10 @@ static int prepare_fds() {
 	struct timespec now;
 	gettime(&now);
 
-	while (i < num_flows) {
-		struct _flow *flow = &flows[i++];
+	const ListNode * node = fg_list_front(&flows);
+	while (node) {
+		struct _flow *flow = node->data;
+		node = node->next;
 
 		if (started &&
 		    (flow->finished[READ] ||
@@ -316,7 +320,7 @@ static int prepare_fds() {
 				report_flow(flow, INTERVAL);
 			report_flow(flow, FINAL);
 			uninit_flow(flow);
-			remove_flow(--i);
+			remove_flow(flow);
 			continue;
 		}
 
@@ -337,7 +341,7 @@ static int prepare_fds() {
 		}
 	}
 
-	return num_flows;
+	return fg_list_size(&flows);
 }
 
 static void start_flows(struct _request_start_flows *request)
@@ -356,8 +360,10 @@ static void start_flows(struct _request_start_flows *request)
 	UNUSED_ARGUMENT(request);
 #endif
 
-	for (unsigned int i = 0; i < num_flows; i++) {
-		struct _flow *flow = &flows[i];
+	const ListNode * node = fg_list_front(&flows);
+	while (node) {
+		struct _flow *flow = node->data;
+		node = node->next;
 		/* initalize random number generator etc */
 		init_math_functions(flow, flow->settings.random_seed);
 
@@ -395,8 +401,10 @@ static void stop_flow(struct _request_stop_flow *request)
 	if (request->flow_id == -1) {
 		/* Stop all flows */
 
-		for (unsigned int i = 0; i < num_flows; i++) {
-			struct _flow *flow = &flows[i];
+		const ListNode * node = fg_list_front(&flows);
+		while (node) {
+			struct _flow *flow = node->data;
+			node = node->next;
 
 			flow->statistics[FINAL].has_tcp_info =
 				get_tcp_info(flow,
@@ -409,14 +417,16 @@ static void stop_flow(struct _request_stop_flow *request)
 			report_flow(flow, FINAL);
 
 			uninit_flow(flow);
-			remove_flow(i);
+			remove_flow(flow);
 		}
 
 		return;
 	}
 
-	for (unsigned int i = 0; i < num_flows; i++) {
-		struct _flow *flow = &flows[i];
+	const ListNode * node = fg_list_front(&flows);
+	while (node) {
+		struct _flow *flow = node->data;
+		node = node->next;
 
 		if (flow->id != request->flow_id)
 			continue;
@@ -433,7 +443,7 @@ static void stop_flow(struct _request_stop_flow *request)
 		report_flow(flow, FINAL);
 
 		uninit_flow(flow);
-		remove_flow(i);
+		remove_flow(flow);
 		return;
 	}
 
@@ -481,7 +491,7 @@ static void process_requests()
 				struct _request_get_status *r =
 					(struct _request_get_status *)request;
 				r->started = started;
-				r->num_flows = num_flows;
+				r->num_flows = fg_list_size(&flows);
 			}
 			break;
 		default:
@@ -671,8 +681,10 @@ static void timer_check()
 		return;
 
 	gettime(&now);
-	for (unsigned int i = 0; i < num_flows; i++) {
-		struct _flow *flow = &flows[i];
+	const ListNode * node = fg_list_front(&flows);
+	while (node) {
+		struct _flow *flow = node->data;
+		node = node->next;
 
 		DEBUG_MSG(LOG_DEBUG, "processing timer_check() for flow %d",
 			  flow->id);
@@ -701,10 +713,10 @@ static void timer_check()
 
 static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 {
-	unsigned int i = 0;
-	while (i < num_flows) {
-
-		struct _flow *flow = &flows[i];
+	const ListNode * node = fg_list_front(&flows);
+	while (node) {
+		struct _flow *flow = node->data;
+		node = node->next;
 
 		DEBUG_MSG(LOG_DEBUG, "processing pselect() for flow %d",
 			  flow->id);
@@ -754,7 +766,6 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 					goto remove;
 				}
 		}
-		i++;
 		continue;
 remove:
 		if (flow->fd != -1) {
@@ -766,7 +777,7 @@ remove:
 		flow->pmtu = get_pmtu(flow->fd);
 		report_flow(flow, FINAL);
 		uninit_flow(flow);
-		remove_flow(i);
+		remove_flow(flow);
 		DEBUG_MSG(LOG_ERR, "removed flow %d", flow->id);
 	}
 }

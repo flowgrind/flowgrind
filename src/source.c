@@ -161,13 +161,18 @@ int add_flow_source(struct _request_add_flow_source *request)
 #endif /* TCP_CONGESTION */
 	struct _flow *flow;
 
-	if (num_flows >= MAX_FLOWS) {
+	if (fg_list_size(&flows) >= MAX_FLOWS) {
 		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
 		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
 		return -1;
 	}
 
-	flow = &flows[num_flows++];
+	flow = malloc(sizeof(struct _flow));
+	if (!flow) {
+		logging_log(LOG_ALERT, "could not allocate memory for flow");
+		return -1;
+	}
+
 	init_flow(flow, 1);
 
 	flow->settings = request->settings;
@@ -180,7 +185,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");
 		uninit_flow(flow);
-		num_flows--;
 		return -1;
 	}
 	if (flow->settings.byte_counting) {
@@ -199,7 +203,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		logging_log(LOG_ALERT, "Could not create data socket: %s", flow->error);
 		request_error(&request->r, "Could not create data socket: %s", flow->error);
 		uninit_flow(flow);
-		num_flows--;
 		return -1;
 	}
 
@@ -207,7 +210,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		request->r.error = flow->error;
 		flow->error = NULL;
 		uninit_flow(flow);
-		num_flows--;
 		return -1;
 	}
 
@@ -218,7 +220,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		request_error(&request->r, "failed to determine actual congestion control algorithm: %s",
 			strerror(errno));
 		uninit_flow(flow);
-		num_flows--;
 		return -1;
 	}
 #endif /* TCP_CONGESTION */
@@ -234,6 +235,8 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 
 	request->flow_id = flow->id;
+
+	fg_list_push_back(&flows, flow);
 
 	return 0;
 }
