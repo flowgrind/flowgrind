@@ -2859,6 +2859,7 @@ static void sanity_check(void) {
 				sanity_err = true;
 			}
 		}
+		DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
 	}
 
 	if (sanity_err) {
@@ -2868,7 +2869,6 @@ static void sanity_check(void) {
 		usage(EXIT_FAILURE);
 #endif /* DEBUG */
 	}
-	DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
 }
 
 int main(int argc, char *argv[])
