@@ -155,29 +155,29 @@ Functions</h2></td></tr>
 <p>Helper function for DEBUG_MSG macro. </p>
 <dl class="section return"><dt>Returns</dt><dd>string with the current time in seconds and nanoseconds since the Epoch together with the delta in time since the last and first function call </dd></dl>
 
-<p>Definition at line <a class="el" href="debug_8c_source.html#l00052">52</a> of file <a class="el" href="debug_8c_source.html">debug.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;{</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <span class="keyword">struct </span>timespec now = {.tv_sec = 0, .tv_nsec = 0};</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keyword">static</span> <span class="keyword">struct </span>timespec first = {.tv_sec = 0, .tv_nsec = 0};</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <span class="keyword">static</span> <span class="keyword">struct </span>timespec last = {.tv_sec = 0, .tv_nsec = 0};</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="keyword">static</span> <span class="keywordtype">char</span> buf[80];</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <a class="code" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a>(&amp;now);</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordflow">if</span> (!first.tv_sec &amp;&amp; !first.tv_nsec)</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                last = first = now;</div>
+<p>Definition at line <a class="el" href="debug_8c_source.html#l00055">55</a> of file <a class="el" href="debug_8c_source.html">debug.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;{</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="keyword">struct </span>timespec now = {.tv_sec = 0, .tv_nsec = 0};</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <span class="keyword">static</span> <span class="keyword">struct </span>timespec first = {.tv_sec = 0, .tv_nsec = 0};</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <span class="keyword">static</span> <span class="keyword">struct </span>timespec last = {.tv_sec = 0, .tv_nsec = 0};</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <span class="keyword">static</span> <span class="keywordtype">char</span> buf[80];</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <a class="code" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a>(&amp;now);</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <a class="code" href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a>(&amp;now, buf, <span class="keyword">sizeof</span>(buf));</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        snprintf(buf+strlen(buf), <span class="keyword">sizeof</span>(buf)-strlen(buf),</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                 <span class="stringliteral">&quot; [+%8.6lf] (%8.6lf)&quot;</span>,</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                 <a class="code" href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a>(&amp;last, &amp;now), <a class="code" href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a>(&amp;first, &amp;now));</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        last = now;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordflow">return</span> buf;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;}</div>
-<div class="ttc" id="fg__time_8c_html_ac2b9db9a31fa442023443d234787ef78"><div class="ttname"><a href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a></div><div class="ttdeci">int gettime(struct timespec *tp)</div><div class="ttdoc">Returns wall-clock time with nanosecond precision. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00112">fg_time.c:112</a></div></div>
-<div class="ttc" id="fg__time_8c_html_a1ce08f00b1930420282aa6422ce66f24"><div class="ttname"><a href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a></div><div class="ttdeci">double time_diff(const struct timespec *tp1, const struct timespec *tp2)</div><div class="ttdoc">Returns the time difference between two the specific points in time tp1 and tp2. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00064">fg_time.c:64</a></div></div>
-<div class="ttc" id="fg__time_8c_html_af56063ee3eea9ace1754c19ba3b5d206"><div class="ttname"><a href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a></div><div class="ttdeci">const char * ctimespec_r(const struct timespec *tp, char *buf, size_t size)</div><div class="ttdoc">Converts timespec struct tp into a null-terminated string and stores the string in a user-supplied bu...</div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00037">fg_time.c:37</a></div></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordflow">if</span> (!first.tv_sec &amp;&amp; !first.tv_nsec)</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                last = first = now;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <a class="code" href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a>(&amp;now, buf, <span class="keyword">sizeof</span>(buf));</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        snprintf(buf+strlen(buf), <span class="keyword">sizeof</span>(buf)-strlen(buf),</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                 <span class="stringliteral">&quot; [+%8.6lf] (%8.6lf)&quot;</span>,</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                 <a class="code" href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a>(&amp;last, &amp;now), <a class="code" href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a>(&amp;first, &amp;now));</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        last = now;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <span class="keywordflow">return</span> buf;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;}</div>
+<div class="ttc" id="fg__time_8c_html_ac2b9db9a31fa442023443d234787ef78"><div class="ttname"><a href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a></div><div class="ttdeci">int gettime(struct timespec *tp)</div><div class="ttdoc">Returns wall-clock time with nanosecond precision. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00115">fg_time.c:115</a></div></div>
+<div class="ttc" id="fg__time_8c_html_a1ce08f00b1930420282aa6422ce66f24"><div class="ttname"><a href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a></div><div class="ttdeci">double time_diff(const struct timespec *tp1, const struct timespec *tp2)</div><div class="ttdoc">Returns the time difference between two the specific points in time tp1 and tp2. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00067">fg_time.c:67</a></div></div>
+<div class="ttc" id="fg__time_8c_html_af56063ee3eea9ace1754c19ba3b5d206"><div class="ttname"><a href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a></div><div class="ttdeci">const char * ctimespec_r(const struct timespec *tp, char *buf, size_t size)</div><div class="ttdoc">Converts timespec struct tp into a null-terminated string and stores the string in a user-supplied bu...</div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00040">fg_time.c:40</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -205,12 +205,12 @@ Functions</h2></td></tr>
 
 <p>Decrease debug level. </p>
 
-<p>Definition at line <a class="el" href="debug_8c_source.html#l00040">40</a> of file <a class="el" href="debug_8c_source.html">debug.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;{</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>--;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        printf(<span class="stringliteral">&quot;DEBUG_LEVEL=%d&quot;</span>, <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>);</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;}</div>
-<div class="ttc" id="debug_8h_html_aaa02d25ef5eac3392189e2fae80a6fad"><div class="ttname"><a href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a></div><div class="ttdeci">unsigned int debug_level</div><div class="ttdoc">Global debug level for flowgrind controller and daemon. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00060">debug.h:60</a></div></div>
+<p>Definition at line <a class="el" href="debug_8c_source.html#l00043">43</a> of file <a class="el" href="debug_8c_source.html">debug.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;{</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>--;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        printf(<span class="stringliteral">&quot;DEBUG_LEVEL=%d&quot;</span>, <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>);</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;}</div>
+<div class="ttc" id="debug_8h_html_aaa02d25ef5eac3392189e2fae80a6fad"><div class="ttname"><a href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a></div><div class="ttdeci">unsigned int debug_level</div><div class="ttdoc">Global debug level for flowgrind controller and daemon. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00063">debug.h:63</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -238,12 +238,12 @@ Functions</h2></td></tr>
 
 <p>Decrease debug level. </p>
 
-<p>Definition at line <a class="el" href="debug_8c_source.html#l00046">46</a> of file <a class="el" href="debug_8c_source.html">debug.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;{</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>++;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        printf(<span class="stringliteral">&quot;DEBUG_LEVEL=%d\n&quot;</span>, <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>);</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;}</div>
-<div class="ttc" id="debug_8h_html_aaa02d25ef5eac3392189e2fae80a6fad"><div class="ttname"><a href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a></div><div class="ttdeci">unsigned int debug_level</div><div class="ttdoc">Global debug level for flowgrind controller and daemon. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00060">debug.h:60</a></div></div>
+<p>Definition at line <a class="el" href="debug_8c_source.html#l00049">49</a> of file <a class="el" href="debug_8c_source.html">debug.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;{</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>++;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        printf(<span class="stringliteral">&quot;DEBUG_LEVEL=%d\n&quot;</span>, <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;}</div>
+<div class="ttc" id="debug_8h_html_aaa02d25ef5eac3392189e2fae80a6fad"><div class="ttname"><a href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a></div><div class="ttdeci">unsigned int debug_level</div><div class="ttdoc">Global debug level for flowgrind controller and daemon. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00063">debug.h:63</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -253,7 +253,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="debug_8c.html">debug.c</a></li>
-    <li class="footer">Generated on Thu Apr 10 2014 14:28:23 for Flowgrind by
+    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

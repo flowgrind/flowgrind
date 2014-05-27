@@ -111,52 +111,55 @@ $(document).ready(function(){initNavTree('fg__string_8h_source.html','');});
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">/*</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * Copyright (C) 2014 Alexander Zimmermann &lt;alexander.zimmermann@netapp.com&gt;</span></div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> * This file is part of Flowgrind. Flowgrind is free software; you can</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> * redistribute it and/or modify it under the terms of the GNU General</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * Public License version 2 as published by the Free Software Foundation.</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * Flowgrind distributed in the hope that it will be useful,</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * but WITHOUT ANY WARRANTY; without even the implied warranty of</span></div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span></div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> * GNU General Public License for more details.</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment"> * You should have received a copy of the GNU General Public License</span></div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment"> * along with this program; if not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> * This file is part of Flowgrind.</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment"> * Flowgrind is free software: you can redistribute it and/or modify</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"> * it under the terms of the GNU General Public License as published by</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"> * the Free Software Foundation, either version 3 of the License, or</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"> * (at your option) any later version.</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"> * Flowgrind is distributed in the hope that it will be useful,</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> * but WITHOUT ANY WARRANTY; without even the implied warranty of</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment"> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment"> * GNU General Public License for more details.</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment"> *</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#ifndef _FG_STRING_H_</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define _FG_STRING_H_</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#ifdef HAVE_CONFIG_H</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &quot;config.h&quot;</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* HAVE_CONFIG_H */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keywordtype">char</span> *<a class="code" href="fg__string_8h.html#aad540414ac01751458ed700f68461a99">strdup_append</a>(<span class="keywordtype">char</span> *s, <span class="keyword">const</span> <span class="keywordtype">char</span> *a);</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keywordtype">char</span> *<a class="code" href="fg__string_8h.html#a871747a8e3ba933f2f755b31c725626a">strndup_append</a>(<span class="keywordtype">char</span> *s, <span class="keyword">const</span> <span class="keywordtype">char</span> *a, <span class="keywordtype">size_t</span> n);</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="keywordtype">size_t</span> <a class="code" href="fg__string_8h.html#a0ea8f59bca8748830b651a502e0a5442">fmtlen</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> *fmt, va_list ap);</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="keywordtype">int</span> <a class="code" href="fg__string_8h.html#aaf55c7b2a6bd9c0194220f49a528bfb9">asprintf_append</a>(<span class="keywordtype">char</span> **resultp, <span class="keyword">const</span> <span class="keywordtype">char</span> *fmt, ...)</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        __attribute__((format(printf, 2, 3)));</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keywordtype">int</span> <a class="code" href="fg__string_8h.html#ad94919b5e57d2e5f1273066904727494">vasprintf_append</a>(<span class="keywordtype">char</span> **resultp, const <span class="keywordtype">char</span> *fmt, va_list ap)</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        __attribute__((format(printf, 2, 0)));</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _FG_STRING_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment"> * You should have received a copy of the GNU General Public License</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="comment"> * along with Flowgrind.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="comment"> *</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#ifndef _FG_STRING_H_</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define _FG_STRING_H_</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#ifdef HAVE_CONFIG_H</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &quot;config.h&quot;</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* HAVE_CONFIG_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keywordtype">char</span> *<a class="code" href="fg__string_8h.html#aad540414ac01751458ed700f68461a99">strdup_append</a>(<span class="keywordtype">char</span> *s, <span class="keyword">const</span> <span class="keywordtype">char</span> *a);</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keywordtype">char</span> *<a class="code" href="fg__string_8h.html#a871747a8e3ba933f2f755b31c725626a">strndup_append</a>(<span class="keywordtype">char</span> *s, <span class="keyword">const</span> <span class="keywordtype">char</span> *a, <span class="keywordtype">size_t</span> n);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keywordtype">size_t</span> <a class="code" href="fg__string_8h.html#a0ea8f59bca8748830b651a502e0a5442">fmtlen</a>(<span class="keywordtype">char</span> <span class="keyword">const</span> *fmt, va_list ap);</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keywordtype">int</span> <a class="code" href="fg__string_8h.html#aaf55c7b2a6bd9c0194220f49a528bfb9">asprintf_append</a>(<span class="keywordtype">char</span> **resultp, <span class="keyword">const</span> <span class="keywordtype">char</span> *fmt, ...)</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        __attribute__((format(printf, 2, 3)));</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keywordtype">int</span> <a class="code" href="fg__string_8h.html#ad94919b5e57d2e5f1273066904727494">vasprintf_append</a>(<span class="keywordtype">char</span> **resultp, const <span class="keywordtype">char</span> *fmt, va_list ap)</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        __attribute__((format(printf, 2, 0)));</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _FG_STRING_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="fg__string_8h_html_ad94919b5e57d2e5f1273066904727494"><div class="ttname"><a href="fg__string_8h.html#ad94919b5e57d2e5f1273066904727494">vasprintf_append</a></div><div class="ttdeci">int int vasprintf_append(char **resultp, const char *fmt, va_list ap) __attribute__((format(printf</div><div class="ttdoc">Realloc resultp to append the formatted result of fmt and ap and return a pointer to it via the first...</div></div>
 <div class="ttc" id="fg__string_8h_html_aaf55c7b2a6bd9c0194220f49a528bfb9"><div class="ttname"><a href="fg__string_8h.html#aaf55c7b2a6bd9c0194220f49a528bfb9">asprintf_append</a></div><div class="ttdeci">int asprintf_append(char **resultp, const char *fmt,...) __attribute__((format(printf</div><div class="ttdoc">Realloc resultp to append the formatted result of fmt and return a pointer to it via the first argume...</div></div>
-<div class="ttc" id="fg__string_8h_html_aad540414ac01751458ed700f68461a99"><div class="ttname"><a href="fg__string_8h.html#aad540414ac01751458ed700f68461a99">strdup_append</a></div><div class="ttdeci">char * strdup_append(char *s, const char *a)</div><div class="ttdoc">Append the duplication of string a to the given string s. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00073">fg_string.c:73</a></div></div>
-<div class="ttc" id="fg__string_8h_html_a871747a8e3ba933f2f755b31c725626a"><div class="ttname"><a href="fg__string_8h.html#a871747a8e3ba933f2f755b31c725626a">strndup_append</a></div><div class="ttdeci">char * strndup_append(char *s, const char *a, size_t n)</div><div class="ttdoc">Append at most n characters of the duplication of string to the given string s. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00084">fg_string.c:84</a></div></div>
-<div class="ttc" id="fg__string_8h_html_a0ea8f59bca8748830b651a502e0a5442"><div class="ttname"><a href="fg__string_8h.html#a0ea8f59bca8748830b651a502e0a5442">fmtlen</a></div><div class="ttdeci">size_t fmtlen(char const *fmt, va_list ap)</div><div class="ttdoc">Determine the number of characters that would be generated by a printf with format string fmt and arg...</div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00058">fg_string.c:58</a></div></div>
+<div class="ttc" id="fg__string_8h_html_aad540414ac01751458ed700f68461a99"><div class="ttname"><a href="fg__string_8h.html#aad540414ac01751458ed700f68461a99">strdup_append</a></div><div class="ttdeci">char * strdup_append(char *s, const char *a)</div><div class="ttdoc">Append the duplication of string a to the given string s. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00076">fg_string.c:76</a></div></div>
+<div class="ttc" id="fg__string_8h_html_a871747a8e3ba933f2f755b31c725626a"><div class="ttname"><a href="fg__string_8h.html#a871747a8e3ba933f2f755b31c725626a">strndup_append</a></div><div class="ttdeci">char * strndup_append(char *s, const char *a, size_t n)</div><div class="ttdoc">Append at most n characters of the duplication of string to the given string s. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00087">fg_string.c:87</a></div></div>
+<div class="ttc" id="fg__string_8h_html_a0ea8f59bca8748830b651a502e0a5442"><div class="ttname"><a href="fg__string_8h.html#a0ea8f59bca8748830b651a502e0a5442">fmtlen</a></div><div class="ttdeci">size_t fmtlen(char const *fmt, va_list ap)</div><div class="ttdoc">Determine the number of characters that would be generated by a printf with format string fmt and arg...</div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00061">fg_string.c:61</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="fg__string_8h.html">fg_string.h</a></li>
-    <li class="footer">Generated on Thu Apr 10 2014 14:28:22 for Flowgrind by
+    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

@@ -8,6 +8,5 @@ var searchData=
   ['unused_5fargument',['UNUSED_ARGUMENT',['../fg__stdlib_8h.html#a239dd5192fcd165ce89d2c6d08e34993',1,'fg_stdlib.h']]],
   ['usage',['usage',['../flowgrind_8c.html#ad9ab9a7c63fccb3c2ea0b23ef3d8fb26',1,'usage(short status) __attribute__((noreturn)):&#160;flowgrind.c'],['../flowgrind__stop_8c.html#a364e947e69c37ddcd14324ab72fb4539',1,'usage(short status):&#160;flowgrind_stop.c'],['../flowgrindd_8c.html#a364e947e69c37ddcd14324ab72fb4539',1,'usage(short status):&#160;flowgrindd.c']]],
   ['usage_5fsockopt',['usage_sockopt',['../flowgrind_8c.html#a37bdbd1ccb03c4080b4221de7954ea02',1,'flowgrind.c']]],
-  ['usage_5ftrafgenopt',['usage_trafgenopt',['../flowgrind_8c.html#a10ef1a813bfc81e2f3f28827ca551728',1,'flowgrind.c']]],
-  ['used',['used',['../struct__stack.html#ad390d7a19751e15934c4e734ce47fdbb',1,'_stack']]]
+  ['usage_5ftrafgenopt',['usage_trafgenopt',['../flowgrind_8c.html#a10ef1a813bfc81e2f3f28827ca551728',1,'flowgrind.c']]]
 ];

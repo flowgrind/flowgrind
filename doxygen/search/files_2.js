@@ -10,8 +10,6 @@ var searchData=
   ['fg_5fprogname_2eh',['fg_progname.h',['../fg__progname_8h.html',1,'']]],
   ['fg_5fsocket_2ec',['fg_socket.c',['../fg__socket_8c.html',1,'']]],
   ['fg_5fsocket_2eh',['fg_socket.h',['../fg__socket_8h.html',1,'']]],
-  ['fg_5fstack_2ec',['fg_stack.c',['../fg__stack_8c.html',1,'']]],
-  ['fg_5fstack_2eh',['fg_stack.h',['../fg__stack_8h.html',1,'']]],
   ['fg_5fstdlib_2eh',['fg_stdlib.h',['../fg__stdlib_8h.html',1,'']]],
   ['fg_5fstring_2ec',['fg_string.c',['../fg__string_8c.html',1,'']]],
   ['fg_5fstring_2eh',['fg_string.h',['../fg__string_8h.html',1,'']]],

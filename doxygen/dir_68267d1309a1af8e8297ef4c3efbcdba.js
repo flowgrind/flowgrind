@@ -17,8 +17,6 @@ var dir_68267d1309a1af8e8297ef4c3efbcdba =
     [ "fg_progname.h", "fg__progname_8h.html", "fg__progname_8h" ],
     [ "fg_socket.c", "fg__socket_8c.html", "fg__socket_8c" ],
     [ "fg_socket.h", "fg__socket_8h.html", "fg__socket_8h" ],
-    [ "fg_stack.c", "fg__stack_8c.html", "fg__stack_8c" ],
-    [ "fg_stack.h", "fg__stack_8h.html", "fg__stack_8h" ],
     [ "fg_stdlib.h", "fg__stdlib_8h.html", "fg__stdlib_8h" ],
     [ "fg_string.c", "fg__string_8c.html", "fg__string_8c" ],
     [ "fg_string.h", "fg__string_8h.html", "fg__string_8h" ],

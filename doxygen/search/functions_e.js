@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['sanity_5fcheck',['sanity_check',['../flowgrind_8c.html#aecf3d6e643400d9a2fd67ac89048072c',1,'flowgrind.c']]],
   ['scale_5fthruput',['scale_thruput',['../flowgrind_8c.html#a11ffa4876606c94c8e70f13e6cc5d390',1,'flowgrind.c']]],
   ['send_5fresponse',['send_response',['../daemon_8c.html#a373fc4da5ccdc81ed2c687d1bc17964d',1,'daemon.c']]],
   ['set_5faffinity',['set_affinity',['../flowgrindd_8c.html#a046e5e27bb52c2b103905f4358c4239e',1,'flowgrindd.c']]],
@@ -25,11 +26,6 @@ var searchData=
   ['set_5fwindow_5fsize_5fdirected',['set_window_size_directed',['../fg__socket_8c.html#a317084d802890587e7c1e568d039d59c',1,'set_window_size_directed(int fd, int window, int direction):&#160;fg_socket.c'],['../fg__socket_8h.html#ac9cf65ebda17c856128881910007624a',1,'set_window_size_directed(int, int, int):&#160;fg_socket.c']]],
   ['sighandler',['sighandler',['../flowgrind_8c.html#a2be1284fe65357755b6161a039fb59e4',1,'sighandler(int sig):&#160;flowgrind.c'],['../flowgrindd_8c.html#a2be1284fe65357755b6161a039fb59e4',1,'sighandler(int sig):&#160;flowgrindd.c']]],
   ['sockaddr_5fcompare',['sockaddr_compare',['../fg__socket_8c.html#a11b1f7b2ab834edc2f2d8101d106e719',1,'sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b):&#160;fg_socket.c'],['../fg__socket_8h.html#a11b1f7b2ab834edc2f2d8101d106e719',1,'sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b):&#160;fg_socket.c']]],
-  ['stack_5fdestroy',['stack_destroy',['../fg__stack_8c.html#a6d9e7b927a84b5a8f5d80ef366c0a061',1,'stack_destroy(struct _stack *s):&#160;fg_stack.c'],['../fg__stack_8h.html#a6d9e7b927a84b5a8f5d80ef366c0a061',1,'stack_destroy(struct _stack *s):&#160;fg_stack.c']]],
-  ['stack_5fempty',['stack_empty',['../fg__stack_8c.html#afcbf01082fe07cfb1a6fc0185bdc1564',1,'stack_empty(const struct _stack *s):&#160;fg_stack.c'],['../fg__stack_8h.html#a930f69ce21434e95f8d6c3973f5de85f',1,'stack_empty(const struct _stack *s) __attribute__((pure)):&#160;fg_stack.c']]],
-  ['stack_5finit',['stack_init',['../fg__stack_8c.html#a2e3743bdb34c29e2cb09eb422eeb6e9e',1,'stack_init(struct _stack *s, size_t element_size):&#160;fg_stack.c'],['../fg__stack_8h.html#a2e3743bdb34c29e2cb09eb422eeb6e9e',1,'stack_init(struct _stack *s, size_t element_size):&#160;fg_stack.c']]],
-  ['stack_5fpop',['stack_pop',['../fg__stack_8c.html#ae99e9331142613cbf76bd6e91ac812b0',1,'stack_pop(struct _stack *s, void *elem):&#160;fg_stack.c'],['../fg__stack_8h.html#ae99e9331142613cbf76bd6e91ac812b0',1,'stack_pop(struct _stack *s, void *elem):&#160;fg_stack.c']]],
-  ['stack_5fpush',['stack_push',['../fg__stack_8c.html#a5d7d627a9ef89345d522aab497a7e309',1,'stack_push(struct _stack *s, const void *elem):&#160;fg_stack.c'],['../fg__stack_8h.html#a5d7d627a9ef89345d522aab497a7e309',1,'stack_push(struct _stack *s, const void *elem):&#160;fg_stack.c']]],
   ['start_5fflows',['start_flows',['../daemon_8c.html#ab302595774612de509e76f318e39cb95',1,'start_flows(struct _request_start_flows *request):&#160;daemon.c'],['../flowgrindd_8c.html#aa474434b5dc6f7e1a4ca9af98382c37f',1,'start_flows(xmlrpc_env *const env, xmlrpc_value *const param_array, void *const user_data):&#160;flowgrindd.c']]],
   ['stop_5fflow',['stop_flow',['../daemon_8c.html#a3b70865876ef8b29ce72262fd3d3aa59',1,'daemon.c']]],
   ['stop_5fflows',['stop_flows',['../flowgrind__stop_8c.html#a13f5c71eadb2d8bcdb9180001d77c9f5',1,'flowgrind_stop.c']]],

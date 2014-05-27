@@ -217,20 +217,20 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>number of number of characters </dd></dl>
 
-<p>Definition at line <a class="el" href="fg__string_8c_source.html#l00058">58</a> of file <a class="el" href="fg__string_8c_source.html">fg_string.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;{</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        va_list ap2;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordtype">char</span> c;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="comment">/* If the output of vsnprintf is truncated, its return value is the</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment">         * number of characters which would have been written to the string</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">         * if enough space had been available */</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        va_copy(ap2, ap);</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <span class="keywordtype">size_t</span> length = vsnprintf(&amp;c, 1, fmt, ap2);</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        va_end(ap2);</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordflow">return</span> length;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;}</div>
+<p>Definition at line <a class="el" href="fg__string_8c_source.html#l00061">61</a> of file <a class="el" href="fg__string_8c_source.html">fg_string.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;{</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        va_list ap2;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordtype">char</span> c;</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="comment">/* If the output of vsnprintf is truncated, its return value is the</span></div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment">         * number of characters which would have been written to the string</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="comment">         * if enough space had been available */</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        va_copy(ap2, ap);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordtype">size_t</span> length = vsnprintf(&amp;c, 1, fmt, ap2);</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        va_end(ap2);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <span class="keywordflow">return</span> length;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;}</div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -268,18 +268,18 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>concatenated strings, NULL on error </dd></dl>
 
-<p>Definition at line <a class="el" href="fg__string_8c_source.html#l00073">73</a> of file <a class="el" href="fg__string_8c_source.html">fg_string.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;{</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!s))</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                <span class="keywordflow">return</span> strdup(a);</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!a))</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                <span class="keywordflow">return</span> s;</div>
+<p>Definition at line <a class="el" href="fg__string_8c_source.html#l00076">76</a> of file <a class="el" href="fg__string_8c_source.html">fg_string.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;{</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!s))</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                <span class="keywordflow">return</span> strdup(a);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a>(s, strlen(s), a, strlen(a));</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;}</div>
-<div class="ttc" id="fg__string_8c_html_ad32db34b532f25c1826d5d7d51f09d70"><div class="ttname"><a href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a></div><div class="ttdeci">static char * strlendup_append(char *s, size_t slen, const char *a, size_t alen)</div><div class="ttdoc">Append the duplication of string a of length alen to the given string s at point slen. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00044">fg_string.c:44</a></div></div>
-<div class="ttc" id="fg__stdlib_8h_html_ac6c45889010c1bd68631771b64f18101"><div class="ttname"><a href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a></div><div class="ttdeci">#define unlikely(x)</div><div class="ttdoc">These macros gain us a few percent of speed. </div><div class="ttdef"><b>Definition:</b> <a href="fg__stdlib_8h_source.html#l00032">fg_stdlib.h:32</a></div></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!a))</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                <span class="keywordflow">return</span> s;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a>(s, strlen(s), a, strlen(a));</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;}</div>
+<div class="ttc" id="fg__string_8c_html_ad32db34b532f25c1826d5d7d51f09d70"><div class="ttname"><a href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a></div><div class="ttdeci">static char * strlendup_append(char *s, size_t slen, const char *a, size_t alen)</div><div class="ttdoc">Append the duplication of string a of length alen to the given string s at point slen. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00047">fg_string.c:47</a></div></div>
+<div class="ttc" id="fg__stdlib_8h_html_ac6c45889010c1bd68631771b64f18101"><div class="ttname"><a href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a></div><div class="ttdeci">#define unlikely(x)</div><div class="ttdoc">These macros gain us a few percent of speed. </div><div class="ttdef"><b>Definition:</b> <a href="fg__stdlib_8h_source.html#l00035">fg_stdlib.h:35</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -324,18 +324,18 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>concatenated strings, NULL on error </dd></dl>
 
-<p>Definition at line <a class="el" href="fg__string_8c_source.html#l00084">84</a> of file <a class="el" href="fg__string_8c_source.html">fg_string.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;{</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!s))</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                <span class="keywordflow">return</span> strdup(a);</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!a))</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                <span class="keywordflow">return</span> s;</div>
+<p>Definition at line <a class="el" href="fg__string_8c_source.html#l00087">87</a> of file <a class="el" href="fg__string_8c_source.html">fg_string.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;{</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!s))</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                <span class="keywordflow">return</span> strdup(a);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a>(s, strlen(s), a, strnlen(a, n));</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;}</div>
-<div class="ttc" id="fg__string_8c_html_ad32db34b532f25c1826d5d7d51f09d70"><div class="ttname"><a href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a></div><div class="ttdeci">static char * strlendup_append(char *s, size_t slen, const char *a, size_t alen)</div><div class="ttdoc">Append the duplication of string a of length alen to the given string s at point slen. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00044">fg_string.c:44</a></div></div>
-<div class="ttc" id="fg__stdlib_8h_html_ac6c45889010c1bd68631771b64f18101"><div class="ttname"><a href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a></div><div class="ttdeci">#define unlikely(x)</div><div class="ttdoc">These macros gain us a few percent of speed. </div><div class="ttdef"><b>Definition:</b> <a href="fg__stdlib_8h_source.html#l00032">fg_stdlib.h:32</a></div></div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!a))</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                <span class="keywordflow">return</span> s;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a>(s, strlen(s), a, strnlen(a, n));</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;}</div>
+<div class="ttc" id="fg__string_8c_html_ad32db34b532f25c1826d5d7d51f09d70"><div class="ttname"><a href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a></div><div class="ttdeci">static char * strlendup_append(char *s, size_t slen, const char *a, size_t alen)</div><div class="ttdoc">Append the duplication of string a of length alen to the given string s at point slen. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00047">fg_string.c:47</a></div></div>
+<div class="ttc" id="fg__stdlib_8h_html_ac6c45889010c1bd68631771b64f18101"><div class="ttname"><a href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a></div><div class="ttdeci">#define unlikely(x)</div><div class="ttdoc">These macros gain us a few percent of speed. </div><div class="ttdef"><b>Definition:</b> <a href="fg__stdlib_8h_source.html#l00035">fg_stdlib.h:35</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -389,7 +389,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="fg__string_8h.html">fg_string.h</a></li>
-    <li class="footer">Generated on Thu Apr 10 2014 14:28:23 for Flowgrind by
+    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

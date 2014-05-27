@@ -165,22 +165,22 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="log_8c_source.html#l00055">55</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;{</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="keywordflow">switch</span> (<a class="code" href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a>) {</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a>:</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;                closelog();</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a>:</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        }</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        free(<a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a>);</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;}</div>
-<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00039">log.h:39</a></div></div>
-<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00038">log.h:38</a></div></div>
-<div class="ttc" id="log_8c_html_ad1e2a6d9014a2af70dfa80ce7b69d4b0"><div class="ttname"><a href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a></div><div class="ttdeci">int log_type</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00037">log.c:37</a></div></div>
-<div class="ttc" id="log_8c_html_aac4b6db4d74bdd3ccf06adfb8a1a35be"><div class="ttname"><a href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a></div><div class="ttdeci">char * logstr</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00036">log.c:36</a></div></div>
+<p>Definition at line <a class="el" href="log_8c_source.html#l00058">58</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;{</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <span class="keywordflow">switch</span> (<a class="code" href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a>) {</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a>:</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                closelog();</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a>:</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        }</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        free(<a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a>);</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;}</div>
+<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00042">log.h:42</a></div></div>
+<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00041">log.h:41</a></div></div>
+<div class="ttc" id="log_8c_html_ad1e2a6d9014a2af70dfa80ce7b69d4b0"><div class="ttname"><a href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a></div><div class="ttdeci">int log_type</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00040">log.c:40</a></div></div>
+<div class="ttc" id="log_8c_html_aac4b6db4d74bdd3ccf06adfb8a1a35be"><div class="ttname"><a href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a></div><div class="ttdeci">char * logstr</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00039">log.c:39</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -198,27 +198,27 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="log_8c_source.html#l00039">39</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;{</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        <a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a> = malloc(<a class="code" href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a>);</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a> == NULL)</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;                <a class="code" href="fg__error_8h.html#abcfc1fb29ee2f39829ae11ab456ab040">critx</a>(<span class="stringliteral">&quot;unable to allocate memory for logging string&quot;</span>);</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        <span class="keywordflow">switch</span> (<a class="code" href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a>) {</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a>:</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                openlog(<span class="stringliteral">&quot;flowgrind_daemon&quot;</span>, LOG_NDELAY | LOG_CONS |</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                        LOG_PID, LOG_DAEMON);</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a>:</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        }</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;}</div>
-<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00039">log.h:39</a></div></div>
-<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00038">log.h:38</a></div></div>
-<div class="ttc" id="log_8c_html_ad1e2a6d9014a2af70dfa80ce7b69d4b0"><div class="ttname"><a href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a></div><div class="ttdeci">int log_type</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00037">log.c:37</a></div></div>
-<div class="ttc" id="fg__error_8h_html_abcfc1fb29ee2f39829ae11ab456ab040"><div class="ttname"><a href="fg__error_8h.html#abcfc1fb29ee2f39829ae11ab456ab040">critx</a></div><div class="ttdeci">#define critx(...)</div><div class="ttdoc">To report an critical error w/o a system error message. </div><div class="ttdef"><b>Definition:</b> <a href="fg__error_8h_source.html#l00037">fg_error.h:37</a></div></div>
-<div class="ttc" id="log_8c_html_aac4b6db4d74bdd3ccf06adfb8a1a35be"><div class="ttname"><a href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a></div><div class="ttdeci">char * logstr</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00036">log.c:36</a></div></div>
-<div class="ttc" id="log_8h_html_a5dbeadfc2202fd682d37b97d706d7ac9"><div class="ttname"><a href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a></div><div class="ttdeci">#define LOGGING_MAXLEN</div><div class="ttdoc">Maximum length of logging string. </div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00033">log.h:33</a></div></div>
+<p>Definition at line <a class="el" href="log_8c_source.html#l00042">42</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;{</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a> = malloc(<a class="code" href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a>);</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a> == NULL)</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;                <a class="code" href="fg__error_8h.html#abcfc1fb29ee2f39829ae11ab456ab040">critx</a>(<span class="stringliteral">&quot;unable to allocate memory for logging string&quot;</span>);</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keywordflow">switch</span> (<a class="code" href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a>) {</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a>:</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                openlog(<span class="stringliteral">&quot;flowgrind_daemon&quot;</span>, LOG_NDELAY | LOG_CONS |</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                        LOG_PID, LOG_DAEMON);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a>:</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        }</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;}</div>
+<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00042">log.h:42</a></div></div>
+<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00041">log.h:41</a></div></div>
+<div class="ttc" id="log_8c_html_ad1e2a6d9014a2af70dfa80ce7b69d4b0"><div class="ttname"><a href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a></div><div class="ttdeci">int log_type</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00040">log.c:40</a></div></div>
+<div class="ttc" id="fg__error_8h_html_abcfc1fb29ee2f39829ae11ab456ab040"><div class="ttname"><a href="fg__error_8h.html#abcfc1fb29ee2f39829ae11ab456ab040">critx</a></div><div class="ttdeci">#define critx(...)</div><div class="ttdoc">To report an critical error w/o a system error message. </div><div class="ttdef"><b>Definition:</b> <a href="fg__error_8h_source.html#l00040">fg_error.h:40</a></div></div>
+<div class="ttc" id="log_8c_html_aac4b6db4d74bdd3ccf06adfb8a1a35be"><div class="ttname"><a href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a></div><div class="ttdeci">char * logstr</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00039">log.c:39</a></div></div>
+<div class="ttc" id="log_8h_html_a5dbeadfc2202fd682d37b97d706d7ac9"><div class="ttname"><a href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a></div><div class="ttdeci">#define LOGGING_MAXLEN</div><div class="ttdoc">Maximum length of logging string. </div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00036">log.h:36</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -252,23 +252,23 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="log_8c_source.html#l00068">68</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;{</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordtype">int</span> n;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        va_list ap;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        memset(<a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a>, 0, <a class="code" href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a>);</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        va_start(ap, fmt);</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        n = vsnprintf(<a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a>, <a class="code" href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a>, fmt, ap);</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        va_end(ap);</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        <span class="keywordflow">if</span> (n &gt; -1 &amp;&amp; n &lt; <a class="code" href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a>)</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                <a class="code" href="log_8c.html#a25b944869946ec9cc779773235b83c02">logging_log_string</a>(priority, <a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a>);</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;}</div>
-<div class="ttc" id="log_8c_html_a25b944869946ec9cc779773235b83c02"><div class="ttname"><a href="log_8c.html#a25b944869946ec9cc779773235b83c02">logging_log_string</a></div><div class="ttdeci">void logging_log_string(int priority, const char *s)</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00083">log.c:83</a></div></div>
-<div class="ttc" id="log_8c_html_aac4b6db4d74bdd3ccf06adfb8a1a35be"><div class="ttname"><a href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a></div><div class="ttdeci">char * logstr</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00036">log.c:36</a></div></div>
-<div class="ttc" id="log_8h_html_a5dbeadfc2202fd682d37b97d706d7ac9"><div class="ttname"><a href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a></div><div class="ttdeci">#define LOGGING_MAXLEN</div><div class="ttdoc">Maximum length of logging string. </div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00033">log.h:33</a></div></div>
+<p>Definition at line <a class="el" href="log_8c_source.html#l00071">71</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;{</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <span class="keywordtype">int</span> n;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        va_list ap;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        memset(<a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a>, 0, <a class="code" href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a>);</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        va_start(ap, fmt);</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        n = vsnprintf(<a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a>, <a class="code" href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a>, fmt, ap);</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        va_end(ap);</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <span class="keywordflow">if</span> (n &gt; -1 &amp;&amp; n &lt; <a class="code" href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a>)</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                <a class="code" href="log_8c.html#a25b944869946ec9cc779773235b83c02">logging_log_string</a>(priority, <a class="code" href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a>);</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;}</div>
+<div class="ttc" id="log_8c_html_a25b944869946ec9cc779773235b83c02"><div class="ttname"><a href="log_8c.html#a25b944869946ec9cc779773235b83c02">logging_log_string</a></div><div class="ttdeci">void logging_log_string(int priority, const char *s)</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00086">log.c:86</a></div></div>
+<div class="ttc" id="log_8c_html_aac4b6db4d74bdd3ccf06adfb8a1a35be"><div class="ttname"><a href="log_8c.html#aac4b6db4d74bdd3ccf06adfb8a1a35be">logstr</a></div><div class="ttdeci">char * logstr</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00039">log.c:39</a></div></div>
+<div class="ttc" id="log_8h_html_a5dbeadfc2202fd682d37b97d706d7ac9"><div class="ttname"><a href="log_8h.html#a5dbeadfc2202fd682d37b97d706d7ac9">LOGGING_MAXLEN</a></div><div class="ttdeci">#define LOGGING_MAXLEN</div><div class="ttdoc">Maximum length of logging string. </div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00036">log.h:36</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -296,22 +296,22 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="log_8c_source.html#l00083">83</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;{</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <span class="keywordflow">switch</span> (<a class="code" href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a>) {</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a>:</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                syslog(priority, <span class="stringliteral">&quot;%s&quot;</span>, s);</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a>:</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                fprintf(stderr, <span class="stringliteral">&quot;%s %s\n&quot;</span>, <a class="code" href="log_8c.html#afd96c40ac127b5806c483afb8ea6869e">logging_time</a>(), s);</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                fflush(stderr);</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        }</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;}</div>
-<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00039">log.h:39</a></div></div>
-<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00038">log.h:38</a></div></div>
-<div class="ttc" id="log_8c_html_ad1e2a6d9014a2af70dfa80ce7b69d4b0"><div class="ttname"><a href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a></div><div class="ttdeci">int log_type</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00037">log.c:37</a></div></div>
-<div class="ttc" id="log_8c_html_afd96c40ac127b5806c483afb8ea6869e"><div class="ttname"><a href="log_8c.html#afd96c40ac127b5806c483afb8ea6869e">logging_time</a></div><div class="ttdeci">char * logging_time(void)</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00096">log.c:96</a></div></div>
+<p>Definition at line <a class="el" href="log_8c_source.html#l00086">86</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;{</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <span class="keywordflow">switch</span> (<a class="code" href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a>) {</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a>:</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                syslog(priority, <span class="stringliteral">&quot;%s&quot;</span>, s);</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keywordflow">case</span> <a class="code" href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a>:</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                fprintf(stderr, <span class="stringliteral">&quot;%s %s\n&quot;</span>, <a class="code" href="log_8c.html#afd96c40ac127b5806c483afb8ea6869e">logging_time</a>(), s);</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                fflush(stderr);</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        }</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;}</div>
+<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55bad504f6d46f5b96bbaa2e570e4efdf1bf">LOGTYPE_STDERR</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00042">log.h:42</a></div></div>
+<div class="ttc" id="log_8h_html_a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f"><div class="ttname"><a href="log_8h.html#a06fc87d81c62e9abb8790b6e5713c55baffe678f5d32a5ad00d20d138627aa22f">LOGTYPE_SYSLOG</a></div><div class="ttdef"><b>Definition:</b> <a href="log_8h_source.html#l00041">log.h:41</a></div></div>
+<div class="ttc" id="log_8c_html_ad1e2a6d9014a2af70dfa80ce7b69d4b0"><div class="ttname"><a href="log_8c.html#ad1e2a6d9014a2af70dfa80ce7b69d4b0">log_type</a></div><div class="ttdeci">int log_type</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00040">log.c:40</a></div></div>
+<div class="ttc" id="log_8c_html_afd96c40ac127b5806c483afb8ea6869e"><div class="ttname"><a href="log_8c.html#afd96c40ac127b5806c483afb8ea6869e">logging_time</a></div><div class="ttdeci">char * logging_time(void)</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00099">log.c:99</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -329,19 +329,19 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="log_8c_source.html#l00096">96</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;{</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        time_t tp;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        <span class="keyword">struct </span>tm *loc = NULL;</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        tp = time(NULL);</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        loc = localtime(&amp;tp);</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        memset(&amp;<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>, 0, <span class="keyword">sizeof</span>(<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>));</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        strftime(&amp;<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>[0], <span class="keyword">sizeof</span>(<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>), <span class="stringliteral">&quot;%Y/%m/%d %H:%M:%S&quot;</span>, loc);</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        <span class="keywordflow">return</span> &amp;<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>[0];</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;}</div>
-<div class="ttc" id="log_8c_html_a6a7850c68c475636977a271001d00fa8"><div class="ttname"><a href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a></div><div class="ttdeci">char timestr[20]</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00035">log.c:35</a></div></div>
+<p>Definition at line <a class="el" href="log_8c_source.html#l00099">99</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;{</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        time_t tp;</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        <span class="keyword">struct </span>tm *loc = NULL;</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        tp = time(NULL);</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        loc = localtime(&amp;tp);</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        memset(&amp;<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>, 0, <span class="keyword">sizeof</span>(<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>));</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        strftime(&amp;<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>[0], <span class="keyword">sizeof</span>(<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>), <span class="stringliteral">&quot;%Y/%m/%d %H:%M:%S&quot;</span>, loc);</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        <span class="keywordflow">return</span> &amp;<a class="code" href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a>[0];</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;}</div>
+<div class="ttc" id="log_8c_html_a6a7850c68c475636977a271001d00fa8"><div class="ttname"><a href="log_8c.html#a6a7850c68c475636977a271001d00fa8">timestr</a></div><div class="ttdeci">char timestr[20]</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00038">log.c:38</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -356,7 +356,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="log_8c_source.html#l00037">37</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
+<p>Definition at line <a class="el" href="log_8c_source.html#l00040">40</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
 
 </div>
 </div>
@@ -370,7 +370,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="log_8c_source.html#l00036">36</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
+<p>Definition at line <a class="el" href="log_8c_source.html#l00039">39</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
 
 </div>
 </div>
@@ -384,7 +384,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="log_8c_source.html#l00035">35</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
+<p>Definition at line <a class="el" href="log_8c_source.html#l00038">38</a> of file <a class="el" href="log_8c_source.html">log.c</a>.</p>
 
 </div>
 </div>
@@ -394,7 +394,7 @@ Variables</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="log_8c.html">log.c</a></li>
-    <li class="footer">Generated on Thu Apr 10 2014 14:28:23 for Flowgrind by
+    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

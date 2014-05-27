@@ -19,6 +19,5 @@ var annotated =
     [ "_request_get_status", "struct__request__get__status.html", "struct__request__get__status" ],
     [ "_request_start_flows", "struct__request__start__flows.html", "struct__request__start__flows" ],
     [ "_request_stop_flow", "struct__request__stop__flow.html", "struct__request__stop__flow" ],
-    [ "_stack", "struct__stack.html", "struct__stack" ],
     [ "_trafgen_options", "struct__trafgen__options.html", "struct__trafgen__options" ]
 ];

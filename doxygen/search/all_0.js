@@ -21,7 +21,6 @@ var searchData=
   ['_5frequest_5fget_5fstatus',['_request_get_status',['../struct__request__get__status.html',1,'']]],
   ['_5frequest_5fstart_5fflows',['_request_start_flows',['../struct__request__start__flows.html',1,'']]],
   ['_5frequest_5fstop_5fflow',['_request_stop_flow',['../struct__request__stop__flow.html',1,'']]],
-  ['_5fstack',['_stack',['../struct__stack.html',1,'']]],
   ['_5fstatistics',['_statistics',['../struct__flow_1_1__statistics.html',1,'_flow']]],
   ['_5ftrafgen_5foptions',['_trafgen_options',['../struct__trafgen__options.html',1,'']]]
 ];

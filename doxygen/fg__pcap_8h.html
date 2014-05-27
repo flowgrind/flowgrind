@@ -155,31 +155,31 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="fg__pcap_8c_source.html#l00093">93</a> of file <a class="el" href="fg__pcap_8c_source.html">fg_pcap.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;{</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keyword">struct </span><a class="code" href="struct__flow.html">_flow</a> * flow;</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        flow = (<span class="keyword">struct </span><a class="code" href="struct__flow.html">_flow</a> *) arg;</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a>)</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;fg_pcap_cleanup() called for flow %d&quot;</span>, flow-&gt;<a class="code" href="struct__flow.html#a5bd613a42a49e2f6aedc2a546b2a8e3e">id</a>);</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        pthread_mutex_lock(&amp;<a class="code" href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a>);</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a79309ae72dcd9c9ceb725562ed3c7acb">pcap_dumper</a>)</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                pcap_dump_close((pcap_dumper_t *)flow-&gt;<a class="code" href="struct__flow.html#a79309ae72dcd9c9ceb725562ed3c7acb">pcap_dumper</a>);</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        flow-&gt;<a class="code" href="struct__flow.html#a79309ae72dcd9c9ceb725562ed3c7acb">pcap_dumper</a> = NULL;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a5463fba28413d74df08dd800826a5e99">pcap_handle</a>)</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;                pcap_close((pcap_t *)flow-&gt;<a class="code" href="struct__flow.html#a5463fba28413d74df08dd800826a5e99">pcap_handle</a>);</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        flow-&gt;<a class="code" href="struct__flow.html#a5463fba28413d74df08dd800826a5e99">pcap_handle</a> = NULL;</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        pthread_mutex_unlock(&amp;<a class="code" href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a>);</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        <a class="code" href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a> = 0;</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;}</div>
-<div class="ttc" id="struct__flow_html_a5bd613a42a49e2f6aedc2a546b2a8e3e"><div class="ttname"><a href="struct__flow.html#a5bd613a42a49e2f6aedc2a546b2a8e3e">_flow::id</a></div><div class="ttdeci">int id</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00063">daemon.h:63</a></div></div>
-<div class="ttc" id="daemon_8c_html_ad745a31cb94e4f283fd2236ec2b29cf5"><div class="ttname"><a href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a></div><div class="ttdeci">char dumping</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00111">daemon.c:111</a></div></div>
-<div class="ttc" id="fg__pcap_8h_html_a22a42ba5def2fa1b526920d396eaee89"><div class="ttname"><a href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a></div><div class="ttdeci">pthread_mutex_t pcap_mutex</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8h_source.html#l00041">fg_pcap.h:41</a></div></div>
-<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00052">debug.h:52</a></div></div>
-<div class="ttc" id="struct__flow_html_a79309ae72dcd9c9ceb725562ed3c7acb"><div class="ttname"><a href="struct__flow.html#a79309ae72dcd9c9ceb725562ed3c7acb">_flow::pcap_dumper</a></div><div class="ttdeci">struct pcap_dumper_t * pcap_dumper</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00154">daemon.h:154</a></div></div>
-<div class="ttc" id="struct__flow_html_a5463fba28413d74df08dd800826a5e99"><div class="ttname"><a href="struct__flow.html#a5463fba28413d74df08dd800826a5e99">_flow::pcap_handle</a></div><div class="ttdeci">struct pcap_t * pcap_handle</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00153">daemon.h:153</a></div></div>
-<div class="ttc" id="struct__flow_html"><div class="ttname"><a href="struct__flow.html">_flow</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00061">daemon.h:61</a></div></div>
+<p>Definition at line <a class="el" href="fg__pcap_8c_source.html#l00096">96</a> of file <a class="el" href="fg__pcap_8c_source.html">fg_pcap.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;{</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <span class="keyword">struct </span><a class="code" href="struct__flow.html">_flow</a> * flow;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        flow = (<span class="keyword">struct </span><a class="code" href="struct__flow.html">_flow</a> *) arg;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <span class="keywordflow">if</span> (!<a class="code" href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a>)</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;fg_pcap_cleanup() called for flow %d&quot;</span>, flow-&gt;<a class="code" href="struct__flow.html#a5bd613a42a49e2f6aedc2a546b2a8e3e">id</a>);</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        pthread_mutex_lock(&amp;<a class="code" href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a>);</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a79309ae72dcd9c9ceb725562ed3c7acb">pcap_dumper</a>)</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                pcap_dump_close((pcap_dumper_t *)flow-&gt;<a class="code" href="struct__flow.html#a79309ae72dcd9c9ceb725562ed3c7acb">pcap_dumper</a>);</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        flow-&gt;<a class="code" href="struct__flow.html#a79309ae72dcd9c9ceb725562ed3c7acb">pcap_dumper</a> = NULL;</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a5463fba28413d74df08dd800826a5e99">pcap_handle</a>)</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                pcap_close((pcap_t *)flow-&gt;<a class="code" href="struct__flow.html#a5463fba28413d74df08dd800826a5e99">pcap_handle</a>);</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        flow-&gt;<a class="code" href="struct__flow.html#a5463fba28413d74df08dd800826a5e99">pcap_handle</a> = NULL;</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        pthread_mutex_unlock(&amp;<a class="code" href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a>);</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <a class="code" href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a> = 0;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;}</div>
+<div class="ttc" id="struct__flow_html_a5bd613a42a49e2f6aedc2a546b2a8e3e"><div class="ttname"><a href="struct__flow.html#a5bd613a42a49e2f6aedc2a546b2a8e3e">_flow::id</a></div><div class="ttdeci">int id</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00069">daemon.h:69</a></div></div>
+<div class="ttc" id="daemon_8c_html_ad745a31cb94e4f283fd2236ec2b29cf5"><div class="ttname"><a href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a></div><div class="ttdeci">char dumping</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00114">daemon.c:114</a></div></div>
+<div class="ttc" id="fg__pcap_8h_html_a22a42ba5def2fa1b526920d396eaee89"><div class="ttname"><a href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a></div><div class="ttdeci">pthread_mutex_t pcap_mutex</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8h_source.html#l00044">fg_pcap.h:44</a></div></div>
+<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00055">debug.h:55</a></div></div>
+<div class="ttc" id="struct__flow_html_a79309ae72dcd9c9ceb725562ed3c7acb"><div class="ttname"><a href="struct__flow.html#a79309ae72dcd9c9ceb725562ed3c7acb">_flow::pcap_dumper</a></div><div class="ttdeci">struct pcap_dumper_t * pcap_dumper</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00160">daemon.h:160</a></div></div>
+<div class="ttc" id="struct__flow_html_a5463fba28413d74df08dd800826a5e99"><div class="ttname"><a href="struct__flow.html#a5463fba28413d74df08dd800826a5e99">_flow::pcap_handle</a></div><div class="ttdeci">struct pcap_t * pcap_handle</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00159">daemon.h:159</a></div></div>
+<div class="ttc" id="struct__flow_html"><div class="ttname"><a href="struct__flow.html">_flow</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00067">daemon.h:67</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -197,35 +197,35 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="fg__pcap_8c_source.html#l00303">303</a> of file <a class="el" href="fg__pcap_8c_source.html">fg_pcap.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;{</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        <span class="keywordtype">int</span> rc;</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        <span class="keywordflow">if</span> (!flow-&gt;settings.traffic_dump)</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;                <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a>) {</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;                <a class="code" href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a>(LOG_WARNING, <span class="stringliteral">&quot;pcap: dumping already in progress &quot;</span></div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;                            <span class="stringliteral">&quot;on this host&quot;</span>);</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;                <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        }</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;called fg_pcap_go() for flow %d&quot;</span>, flow-&gt;id);</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        <a class="code" href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a> = 1;</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        rc = pthread_create(&amp;flow-&gt;pcap_thread, NULL, <a class="code" href="fg__pcap_8c.html#a4b814f478e130f9f64e7861b669b3594">fg_pcap_work</a>,</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                            (<span class="keywordtype">void</span>*)flow);</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        <span class="comment">/* barrier: dump thread is ready (or aborted) */</span></div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;<span class="preprocessor">#ifndef __DARWIN__</span></div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;<span class="preprocessor"></span>        pthread_barrier_wait(&amp;pcap_barrier);</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __DARWIN__ */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">if</span> (rc)</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;                <a class="code" href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a>(LOG_WARNING, <span class="stringliteral">&quot;Could not start pcap thread: %s&quot;</span>,</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;                            strerror(errno) );</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;        <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;}</div>
-<div class="ttc" id="log_8c_html_a1679640db3b997df954ac21235004f08"><div class="ttname"><a href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a></div><div class="ttdeci">void logging_log(int priority, const char *fmt,...)</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00068">log.c:68</a></div></div>
-<div class="ttc" id="daemon_8c_html_ad745a31cb94e4f283fd2236ec2b29cf5"><div class="ttname"><a href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a></div><div class="ttdeci">char dumping</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00111">daemon.c:111</a></div></div>
-<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00052">debug.h:52</a></div></div>
-<div class="ttc" id="fg__pcap_8c_html_a4b814f478e130f9f64e7861b669b3594"><div class="ttname"><a href="fg__pcap_8c.html#a4b814f478e130f9f64e7861b669b3594">fg_pcap_work</a></div><div class="ttdeci">static void * fg_pcap_work(void *arg)</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00112">fg_pcap.c:112</a></div></div>
+<p>Definition at line <a class="el" href="fg__pcap_8c_source.html#l00306">306</a> of file <a class="el" href="fg__pcap_8c_source.html">fg_pcap.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;{</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;        <span class="keywordtype">int</span> rc;</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        <span class="keywordflow">if</span> (!flow-&gt;settings.traffic_dump)</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;                <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a>) {</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;                <a class="code" href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a>(LOG_WARNING, <span class="stringliteral">&quot;pcap: dumping already in progress &quot;</span></div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;                            <span class="stringliteral">&quot;on this host&quot;</span>);</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;                <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        }</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;called fg_pcap_go() for flow %d&quot;</span>, flow-&gt;id);</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        <a class="code" href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a> = 1;</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;        rc = pthread_create(&amp;flow-&gt;pcap_thread, NULL, <a class="code" href="fg__pcap_8c.html#a4b814f478e130f9f64e7861b669b3594">fg_pcap_work</a>,</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                            (<span class="keywordtype">void</span>*)flow);</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;        <span class="comment">/* barrier: dump thread is ready (or aborted) */</span></div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="preprocessor">#ifndef __DARWIN__</span></div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;<span class="preprocessor"></span>        pthread_barrier_wait(&amp;pcap_barrier);</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __DARWIN__ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">if</span> (rc)</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;                <a class="code" href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a>(LOG_WARNING, <span class="stringliteral">&quot;Could not start pcap thread: %s&quot;</span>,</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                            strerror(errno) );</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;}</div>
+<div class="ttc" id="log_8c_html_a1679640db3b997df954ac21235004f08"><div class="ttname"><a href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a></div><div class="ttdeci">void logging_log(int priority, const char *fmt,...)</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00071">log.c:71</a></div></div>
+<div class="ttc" id="daemon_8c_html_ad745a31cb94e4f283fd2236ec2b29cf5"><div class="ttname"><a href="daemon_8c.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a></div><div class="ttdeci">char dumping</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00114">daemon.c:114</a></div></div>
+<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00055">debug.h:55</a></div></div>
+<div class="ttc" id="fg__pcap_8c_html_a4b814f478e130f9f64e7861b669b3594"><div class="ttname"><a href="fg__pcap_8c.html#a4b814f478e130f9f64e7861b669b3594">fg_pcap_work</a></div><div class="ttdeci">static void * fg_pcap_work(void *arg)</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00115">fg_pcap.c:115</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -242,48 +242,48 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="fg__pcap_8c_source.html#l00057">57</a> of file <a class="el" href="fg__pcap_8c_source.html">fg_pcap.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;{</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment">/* initalize *alldevs for later use */</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">#ifdef DEBUG</span></div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor"></span>        pcap_if_t *d;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <span class="keywordtype">char</span> devdes[200];</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* DEBUG */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">if</span> (pcap_findalldevs(&amp;<a class="code" href="fg__pcap_8h.html#a2be2f5d8859972dbfd0a842bf7946e61">alldevs</a>, <a class="code" href="fg__pcap_8c.html#a41891cad090df07cd9360f1d8a9f1396">errbuf</a>) == -1) {</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                <a class="code" href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a>(LOG_WARNING,<span class="stringliteral">&quot;Error in pcap_findalldevs: %s\n&quot;</span>,</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                            <a class="code" href="fg__pcap_8c.html#a41891cad090df07cd9360f1d8a9f1396">errbuf</a>);</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        }</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#ifdef DEBUG</span></div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (d = <a class="code" href="fg__pcap_8h.html#a2be2f5d8859972dbfd0a842bf7946e61">alldevs</a>; d; d = d-&gt;next) {</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                pcap_addr_t *a;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                snprintf(devdes, <span class="keyword">sizeof</span>(devdes), <span class="stringliteral">&quot;%s: &quot;</span>, d-&gt;name);</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                <span class="keywordflow">for</span> (a = d-&gt;addresses; a; a = a-&gt;next) {</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                        <span class="keywordtype">char</span> <a class="code" href="struct__flow.html#aabf2fd921f5211591861966967873ad6">addr</a>[100];</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                        <span class="keywordflow">if</span> (!a-&gt;addr)</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                                <span class="keywordflow">continue</span>;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                        snprintf(addr, <span class="keyword">sizeof</span>(addr), <span class="stringliteral">&quot;a=%s&quot;</span>,</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                                 <a class="code" href="fg__socket_8c.html#aabb5038e27d6e7fedb3033885d851c3e">fg_nameinfo</a>(a-&gt;addr, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sockaddr)));</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                        strncat(devdes, addr, <span class="keyword">sizeof</span>(devdes) - strlen(devdes) - 1);</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                        <span class="keywordflow">if</span> (a-&gt;next)</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                                strncat(devdes, <span class="stringliteral">&quot;, &quot;</span>, <span class="keyword">sizeof</span>(devdes) - strlen(devdes) - 1);</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                }</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_ERR, <span class="stringliteral">&quot;pcap: found pcapable device (%s)&quot;</span>, devdes);</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        }</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* DEBUG*/</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="preprocessor"></span>        pthread_mutex_init(&amp;<a class="code" href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a>, NULL);</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="preprocessor">#ifndef __DARWIN__</span></div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="preprocessor"></span>        pthread_barrier_init(&amp;pcap_barrier, NULL, 2);</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __DARWIN__ */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;}</div>
-<div class="ttc" id="fg__socket_8c_html_aabb5038e27d6e7fedb3033885d851c3e"><div class="ttname"><a href="fg__socket_8c.html#aabb5038e27d6e7fedb3033885d851c3e">fg_nameinfo</a></div><div class="ttdeci">const char * fg_nameinfo(const struct sockaddr *sa, socklen_t salen)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00374">fg_socket.c:374</a></div></div>
-<div class="ttc" id="log_8c_html_a1679640db3b997df954ac21235004f08"><div class="ttname"><a href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a></div><div class="ttdeci">void logging_log(int priority, const char *fmt,...)</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00068">log.c:68</a></div></div>
-<div class="ttc" id="fg__pcap_8h_html_a2be2f5d8859972dbfd0a842bf7946e61"><div class="ttname"><a href="fg__pcap_8h.html#a2be2f5d8859972dbfd0a842bf7946e61">alldevs</a></div><div class="ttdeci">pcap_if_t * alldevs</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8h_source.html#l00048">fg_pcap.h:48</a></div></div>
-<div class="ttc" id="fg__pcap_8h_html_a22a42ba5def2fa1b526920d396eaee89"><div class="ttname"><a href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a></div><div class="ttdeci">pthread_mutex_t pcap_mutex</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8h_source.html#l00041">fg_pcap.h:41</a></div></div>
-<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00052">debug.h:52</a></div></div>
-<div class="ttc" id="fg__pcap_8c_html_a41891cad090df07cd9360f1d8a9f1396"><div class="ttname"><a href="fg__pcap_8c.html#a41891cad090df07cd9360f1d8a9f1396">errbuf</a></div><div class="ttdeci">static char errbuf[PCAP_ERRBUF_SIZE]</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00055">fg_pcap.c:55</a></div></div>
-<div class="ttc" id="struct__flow_html_aabf2fd921f5211591861966967873ad6"><div class="ttname"><a href="struct__flow.html#aabf2fd921f5211591861966967873ad6">_flow::addr</a></div><div class="ttdeci">struct sockaddr * addr</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00107">daemon.h:107</a></div></div>
+<p>Definition at line <a class="el" href="fg__pcap_8c_source.html#l00060">60</a> of file <a class="el" href="fg__pcap_8c_source.html">fg_pcap.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;{</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="comment">/* initalize *alldevs for later use */</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#ifdef DEBUG</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor"></span>        pcap_if_t *d;</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <span class="keywordtype">char</span> devdes[200];</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* DEBUG */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">if</span> (pcap_findalldevs(&amp;<a class="code" href="fg__pcap_8h.html#a2be2f5d8859972dbfd0a842bf7946e61">alldevs</a>, <a class="code" href="fg__pcap_8c.html#a41891cad090df07cd9360f1d8a9f1396">errbuf</a>) == -1) {</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                <a class="code" href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a>(LOG_WARNING,<span class="stringliteral">&quot;Error in pcap_findalldevs: %s\n&quot;</span>,</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;                            <a class="code" href="fg__pcap_8c.html#a41891cad090df07cd9360f1d8a9f1396">errbuf</a>);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        }</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor">#ifdef DEBUG</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (d = <a class="code" href="fg__pcap_8h.html#a2be2f5d8859972dbfd0a842bf7946e61">alldevs</a>; d; d = d-&gt;next) {</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                pcap_addr_t *a;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;                snprintf(devdes, <span class="keyword">sizeof</span>(devdes), <span class="stringliteral">&quot;%s: &quot;</span>, d-&gt;name);</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                <span class="keywordflow">for</span> (a = d-&gt;addresses; a; a = a-&gt;next) {</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                        <span class="keywordtype">char</span> <a class="code" href="struct__flow.html#aabf2fd921f5211591861966967873ad6">addr</a>[100];</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                        <span class="keywordflow">if</span> (!a-&gt;addr)</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                                <span class="keywordflow">continue</span>;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                        snprintf(addr, <span class="keyword">sizeof</span>(addr), <span class="stringliteral">&quot;a=%s&quot;</span>,</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                                 <a class="code" href="fg__socket_8c.html#aabb5038e27d6e7fedb3033885d851c3e">fg_nameinfo</a>(a-&gt;addr, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sockaddr)));</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                        strncat(devdes, addr, <span class="keyword">sizeof</span>(devdes) - strlen(devdes) - 1);</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                        <span class="keywordflow">if</span> (a-&gt;next)</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;                                strncat(devdes, <span class="stringliteral">&quot;, &quot;</span>, <span class="keyword">sizeof</span>(devdes) - strlen(devdes) - 1);</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                }</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;                <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_ERR, <span class="stringliteral">&quot;pcap: found pcapable device (%s)&quot;</span>, devdes);</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        }</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* DEBUG*/</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="preprocessor"></span>        pthread_mutex_init(&amp;<a class="code" href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a>, NULL);</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="preprocessor">#ifndef __DARWIN__</span></div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor"></span>        pthread_barrier_init(&amp;pcap_barrier, NULL, 2);</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __DARWIN__ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;}</div>
+<div class="ttc" id="fg__socket_8c_html_aabb5038e27d6e7fedb3033885d851c3e"><div class="ttname"><a href="fg__socket_8c.html#aabb5038e27d6e7fedb3033885d851c3e">fg_nameinfo</a></div><div class="ttdeci">const char * fg_nameinfo(const struct sockaddr *sa, socklen_t salen)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00378">fg_socket.c:378</a></div></div>
+<div class="ttc" id="log_8c_html_a1679640db3b997df954ac21235004f08"><div class="ttname"><a href="log_8c.html#a1679640db3b997df954ac21235004f08">logging_log</a></div><div class="ttdeci">void logging_log(int priority, const char *fmt,...)</div><div class="ttdef"><b>Definition:</b> <a href="log_8c_source.html#l00071">log.c:71</a></div></div>
+<div class="ttc" id="fg__pcap_8h_html_a2be2f5d8859972dbfd0a842bf7946e61"><div class="ttname"><a href="fg__pcap_8h.html#a2be2f5d8859972dbfd0a842bf7946e61">alldevs</a></div><div class="ttdeci">pcap_if_t * alldevs</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8h_source.html#l00051">fg_pcap.h:51</a></div></div>
+<div class="ttc" id="fg__pcap_8h_html_a22a42ba5def2fa1b526920d396eaee89"><div class="ttname"><a href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a></div><div class="ttdeci">pthread_mutex_t pcap_mutex</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8h_source.html#l00044">fg_pcap.h:44</a></div></div>
+<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00055">debug.h:55</a></div></div>
+<div class="ttc" id="fg__pcap_8c_html_a41891cad090df07cd9360f1d8a9f1396"><div class="ttname"><a href="fg__pcap_8c.html#a41891cad090df07cd9360f1d8a9f1396">errbuf</a></div><div class="ttdeci">static char errbuf[PCAP_ERRBUF_SIZE]</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00058">fg_pcap.c:58</a></div></div>
+<div class="ttc" id="struct__flow_html_aabf2fd921f5211591861966967873ad6"><div class="ttname"><a href="struct__flow.html#aabf2fd921f5211591861966967873ad6">_flow::addr</a></div><div class="ttdeci">struct sockaddr * addr</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00113">daemon.h:113</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -298,7 +298,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="fg__pcap_8h_source.html#l00048">48</a> of file <a class="el" href="fg__pcap_8h_source.html">fg_pcap.h</a>.</p>
+<p>Definition at line <a class="el" href="fg__pcap_8h_source.html#l00051">51</a> of file <a class="el" href="fg__pcap_8h_source.html">fg_pcap.h</a>.</p>
 
 </div>
 </div>
@@ -312,7 +312,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="fg__pcap_8h_source.html#l00041">41</a> of file <a class="el" href="fg__pcap_8h_source.html">fg_pcap.h</a>.</p>
+<p>Definition at line <a class="el" href="fg__pcap_8h_source.html#l00044">44</a> of file <a class="el" href="fg__pcap_8h_source.html">fg_pcap.h</a>.</p>
 
 </div>
 </div>
@@ -322,7 +322,7 @@ Variables</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="fg__pcap_8h.html">fg_pcap.h</a></li>
-    <li class="footer">Generated on Thu Apr 10 2014 14:28:23 for Flowgrind by
+    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

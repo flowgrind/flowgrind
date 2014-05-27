@@ -159,20 +159,20 @@ Variables</h2></td></tr>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="fg__progname_8c_source.html#l00034">34</a> of file <a class="el" href="fg__progname_8c_source.html">fg_progname.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;{</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;        <span class="comment">/* Sanity check. POSIX requires the invoking process to pass a non-NULL</span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="comment">         * argv[0] */</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;        <span class="keywordflow">if</span> (argv0 == NULL)</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;                <a class="code" href="fg__error_8h.html#aec1f509266a851afd1101186bc956682">errx</a>(<span class="stringliteral">&quot;a NULL argv[0] was passed through an exec system call&quot;</span>);</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        <span class="comment">/* Strip path */</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">char</span> *slash = strrchr(argv0, <span class="charliteral">&#39;/&#39;</span>);</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">char</span> *base = (slash != NULL ? slash + 1 : argv0);</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <a class="code" href="fg__progname_8c.html#ad785d8a8f8ff378aa21eb1fa7a6085df">progname</a> = base;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;}</div>
-<div class="ttc" id="fg__error_8h_html_aec1f509266a851afd1101186bc956682"><div class="ttname"><a href="fg__error_8h.html#aec1f509266a851afd1101186bc956682">errx</a></div><div class="ttdeci">#define errx(...)</div><div class="ttdoc">To report an error w/o a system error message. </div><div class="ttdef"><b>Definition:</b> <a href="fg__error_8h_source.html#l00044">fg_error.h:44</a></div></div>
-<div class="ttc" id="fg__progname_8c_html_ad785d8a8f8ff378aa21eb1fa7a6085df"><div class="ttname"><a href="fg__progname_8c.html#ad785d8a8f8ff378aa21eb1fa7a6085df">progname</a></div><div class="ttdeci">const char * progname</div><div class="ttdoc">String containing name the program is called with. </div><div class="ttdef"><b>Definition:</b> <a href="fg__progname_8c_source.html#l00032">fg_progname.c:32</a></div></div>
+<p>Definition at line <a class="el" href="fg__progname_8c_source.html#l00037">37</a> of file <a class="el" href="fg__progname_8c_source.html">fg_progname.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;{</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;        <span class="comment">/* Sanity check. POSIX requires the invoking process to pass a non-NULL</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="comment">         * argv[0] */</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;        <span class="keywordflow">if</span> (argv0 == NULL)</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                <a class="code" href="fg__error_8h.html#aec1f509266a851afd1101186bc956682">errx</a>(<span class="stringliteral">&quot;a NULL argv[0] was passed through an exec system call&quot;</span>);</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <span class="comment">/* Strip path */</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">char</span> *slash = strrchr(argv0, <span class="charliteral">&#39;/&#39;</span>);</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">char</span> *base = (slash != NULL ? slash + 1 : argv0);</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        <a class="code" href="fg__progname_8c.html#ad785d8a8f8ff378aa21eb1fa7a6085df">progname</a> = base;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;}</div>
+<div class="ttc" id="fg__error_8h_html_aec1f509266a851afd1101186bc956682"><div class="ttname"><a href="fg__error_8h.html#aec1f509266a851afd1101186bc956682">errx</a></div><div class="ttdeci">#define errx(...)</div><div class="ttdoc">To report an error w/o a system error message. </div><div class="ttdef"><b>Definition:</b> <a href="fg__error_8h_source.html#l00047">fg_error.h:47</a></div></div>
+<div class="ttc" id="fg__progname_8c_html_ad785d8a8f8ff378aa21eb1fa7a6085df"><div class="ttname"><a href="fg__progname_8c.html#ad785d8a8f8ff378aa21eb1fa7a6085df">progname</a></div><div class="ttdeci">const char * progname</div><div class="ttdoc">String containing name the program is called with. </div><div class="ttdef"><b>Definition:</b> <a href="fg__progname_8c_source.html#l00035">fg_progname.c:35</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -189,7 +189,7 @@ Variables</h2></td></tr>
 
 <p>String containing name the program is called with. </p>
 
-<p>Definition at line <a class="el" href="fg__progname_8c_source.html#l00032">32</a> of file <a class="el" href="fg__progname_8c_source.html">fg_progname.c</a>.</p>
+<p>Definition at line <a class="el" href="fg__progname_8c_source.html#l00035">35</a> of file <a class="el" href="fg__progname_8c_source.html">fg_progname.c</a>.</p>
 
 </div>
 </div>
@@ -199,7 +199,7 @@ Variables</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="fg__progname_8c.html">fg_progname.c</a></li>
-    <li class="footer">Generated on Thu Apr 10 2014 14:28:23 for Flowgrind by
+    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>
