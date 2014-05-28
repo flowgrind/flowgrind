@@ -853,7 +853,7 @@ void create_daemon_thread()
 
 	int rc = pthread_create(&daemon_thread, NULL, daemon_main, 0);
 	if (rc)
-		crit("could not start thread");
+		critc(rc, "could not start thread");
 }
 
 /* creates listen socket for the xmlrpc server */

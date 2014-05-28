@@ -185,7 +185,7 @@ void uninit_flow(struct _flow *flow)
 		rc = pthread_cancel(flow->pcap_thread);
 		if (rc)
 			logging_log(LOG_WARNING, "failed to cancel dump "
-				    "thread: %s", strerror(errno));
+				    "thread: %s", strerror(rc));
 		fg_pcap_cleanup(flow);
 	}
 #endif
