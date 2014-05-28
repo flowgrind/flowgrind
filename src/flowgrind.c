@@ -53,7 +53,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
-#include <getopt.h>
 
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
@@ -68,6 +67,7 @@
 #include "fg_socket.h"
 #include "fg_string.h"
 #include "debug.h"
+#include "fg_argparser.h"
 
 /** To show intermediated interval report columns */
 #define SHOW_COLUMNS(...)                                                   \
@@ -2520,65 +2520,87 @@ static void parse_cmdline(int argc, char *argv[]) {
 	int max_flow_specifier = 0;
 	int optint = 0;
 
-	/* long options */
-	static const struct option long_opt[] = {
-		{"help", optional_argument, 0, HELP_OPTION},
-		{"version",no_argument, 0, 'v'},
-		{"show-colon", required_argument, 0, 'c'},
+	const struct ap_Option options[] = {
+		{'c', "show-colon", ap_yes},
 #ifdef DEBUG
-		{"debug", no_argument, 0, 'd'},
+		{'d', "debug", ap_no},
 #endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
-		{"dump-prefix", required_argument, 0, 'e'},
+		{'e', "dump-prefix", ap_yes},
 #endif /* HAVE_LIBPCAP */
-		{"report-interval", required_argument, 0, 'i'},
-		{"log-file", optional_argument, 0, LOG_FILE_OPTION},
-		{"flows", required_argument, 0, 'n'},
-		{"quite",no_argument, 0, 'q'},
-		{"tcp-stack", required_argument, 0, 's'},
-		{NULL, 0, NULL, 0}
+		{'h', 0, ap_no},
+		{HELP_OPTION, "help", ap_maybe},
+		{'i', "report-interval", ap_yes},
+		{LOG_FILE_OPTION, "log-file", ap_maybe},
+		{'m', 0, ap_no},
+		{'n', "flows", ap_yes},
+		{'o', 0, ap_no},
+		{'p', 0, ap_no},
+		{'q', "quiet", ap_no},
+		{'s', "tcp-stack", ap_yes},
+		{'v', "version", ap_no},
+		{'w', 0, ap_no},
+		{'A', 0, ap_yes},
+		{'B', 0, ap_yes},
+		{'C', 0, ap_no},
+		{'D', 0, ap_yes},
+		{'E', 0, ap_no},
+		{'F', 0, ap_yes},
+		{'G', 0, ap_yes},
+		{'H', 0, ap_yes},
+		{'I', 0, ap_no},
+		{'J', 0, ap_yes},
+		{'L', 0, ap_no},
+		{'M', 0, ap_yes},
+		{'N', 0, ap_no},
+		{'O', 0, ap_yes},
+		{'P', 0, ap_yes},
+		{'Q', 0, ap_no},
+		{'R', 0, ap_yes},
+		{'S', 0, ap_yes},
+		{'T', 0, ap_yes},
+		{'U', 0, ap_yes},
+		{'W', 0, ap_yes},
+		{'Y', 0, ap_yes},
+		{0, 0, ap_no} 
 	};
 
-	/* short options */
-	static const char *short_opt = "hvc:"
-#ifdef DEBUG
-		"d"
-#endif /* DEBUG */
-#ifdef HAVE_LIBPCAP
-		"e:"
-#endif /* HAVE_LIBPCAP */
-		"i:mn:opqs:w"
-		"A:B:CD:EF:G:H:IJ:LNM:O:P:QR:S:T:U:W:Y:";
+	struct Arg_parser parser;
+	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
+		critx("could not allocate memory for option parser");
+	if (ap_error(&parser)) { 
+		errx(ap_error(&parser));
+		usage(EXIT_FAILURE); 
+	}
 
 	/* if no option -F is given, configure all flows*/
 	for (int i = 0; i < MAX_FLOWS; i++)
 		current_flow_ids[i] = i;
 	cur_num_flows = MAX_FLOWS;
 
-	/* variables from getopt() */
-	extern char *optarg;	/* option argument */
-	extern int optind;      /* index of the next element */
-	int longindex = 0;	/* index of the long option */
-	int ch = 0;             /* getopt_long() return value */
-
 	/* parse command line */
-	while ((ch = getopt_long(argc, argv, short_opt, long_opt,
-				 &longindex)) != -1) {
-		switch (ch) {
+	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
+		const int code = ap_code(&parser, argind);
+		char *arg = ap_argument(&parser, argind);
+
+		switch (code) {
+		case 0:
+			errx("invalid argument: %s", arg);
+			usage(EXIT_FAILURE);
 		/* general options */
 		case 'h':
 			usage(EXIT_SUCCESS);
 			break;
 		case HELP_OPTION:
-			if (!optarg) {
+			if (!arg || !strlen(arg)) {
 				usage(EXIT_SUCCESS);
-			} else if (!strcmp(optarg, "socket")) {
+			} else if (!strcmp(arg, "socket")) {
 				usage_sockopt();
-			} else if (!strcmp(optarg, "traffic")) {
+			} else if (!strcmp(arg, "traffic")) {
 				usage_trafgenopt();
 			} else {
-				errx("invalid argument '%s' for '--%s'",
-				     optarg, long_opt[longindex].name);
+				errx("invalid argument '%s' for '%s'", arg,
+				     ap_opt_string(&parser, argind));
 				usage(EXIT_FAILURE);
 			}
 			break;
@@ -2589,18 +2611,18 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 		/* controller options */
 		case 'c':
-			parse_colon_option(optarg);
+			parse_colon_option(arg);
 			break;
 		case 'd':
 			increase_debuglevel();
 			break;
 #ifdef HAVE_LIBPCAP
 		case 'e':
-			copt.dump_prefix = optarg;
+			copt.dump_prefix = arg;
 			break;
 #endif /* HAVE_LIBPCAP */
 		case 'i':
-			rc = sscanf(optarg, "%lf", &copt.reporting_interval);
+			rc = sscanf(arg, "%lf", &copt.reporting_interval);
 			if (rc != 1 || copt.reporting_interval <= 0) {
 				errx("%s: reporting interval must be a "
 				     "positive number (in seconds)", progname);
@@ -2609,15 +2631,15 @@ static void parse_cmdline(int argc, char *argv[]) {
 			break;
 		case LOG_FILE_OPTION:
 			copt.log_to_file = true;
-			if (optarg)
-				log_filename = strdup(optarg);
+			if (arg)
+				log_filename = strdup(arg);
 			break;
 		case 'm':
 			copt.mbyte = true;
 			column_info[COL_THROUGH].header.unit = " [MB/s]";
 			break;
 		case 'n':
-			rc = sscanf(optarg, "%hu", &copt.num_flows);
+			rc = sscanf(arg, "%hd", &copt.num_flows);
 			if (rc != 1 || copt.num_flows > MAX_FLOWS) {
 				errx("number of test flows must be within "
 				     "[1..%d]", MAX_FLOWS);
@@ -2634,20 +2656,13 @@ static void parse_cmdline(int argc, char *argv[]) {
 			copt.log_to_stdout = false;
 			break;
 		case 's':
-			if (!strcmp(optarg, "segment")) {
+			if (!strcmp(arg, "segment")) {
 				copt.force_unit = SEGMENT_BASED;
-			} else if (!strcmp(optarg, "byte")) {
+			} else if (!strcmp(arg, "byte")) {
 				copt.force_unit = BYTE_BASED;
 			} else {
-				/* TODO Use a more elegant way to distinguish
-				 * between long and short option */
-				if (!longindex)
-					errx("invalid argument '%s' for "
-					     "option '-s'", optarg);
-				else
-					errx("invalid argument '%s' for "
-					     "option '--%s'", optarg,
-					     long_opt[longindex].name);
+				errx("invalid argument '%s' for option '%s'", 
+					arg, ap_opt_string(&parser, argind));
 				usage(EXIT_FAILURE);
 			}
 		case 'w':
@@ -2657,7 +2672,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		/* flow options w/o endpoint identifier */
 		case 'F':
 			cur_num_flows = 0;
-			tok = strtok(optarg, ",");
+			tok = strtok(arg, ",");
 			while (tok) {
 				rc = sscanf(tok, "%d", &optint);
 				if (rc != 1) {
@@ -2684,7 +2699,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'N':
 		case 'Q':
 			for (int i = 0; i < cur_num_flows; i++)
-				parse_flow_option(ch, optarg, current_flow_ids[i], 0);
+				parse_flow_option(code, arg, current_flow_ids[i], 0);
 			break;
 
 		/* flow options w/ endpoint identifier */
@@ -2704,7 +2719,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'W':
 		case 'Y':
 			/* pre-parse flow option for endpoints */
-			for (char *token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
+			for (char *token = strtok(arg, ","); token; token = strtok(NULL, ",")) {
 
 				char type = token[0];
 				char* arg;
@@ -2715,21 +2730,22 @@ static void parse_cmdline(int argc, char *argv[]) {
 					arg = token + 1;
 
 				if (type != 's' && type != 'd' && type != 'b')  {
-					errx("Invalid enpoint specifier in Option -%c", ch);
+					errx("Invalid enpoint specifier in Option %s", ap_opt_string(&parser, argind));
 					usage(EXIT_FAILURE);
 				}
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option(ch, arg, current_flow_ids[i], SOURCE);
+						parse_flow_option(code, arg, current_flow_ids[i], SOURCE);	
 					if (type == 'd' || type == 'b')
-						parse_flow_option(ch, arg, current_flow_ids[i], DESTINATION);
+						parse_flow_option(code, arg, current_flow_ids[i], DESTINATION);	
 				}
 			}
 			break;
 
 		/* unknown option or missing option-argument */
-		case '?':
+		default:
+			errx("uncaught option: %s", arg);
 			usage(EXIT_FAILURE);
 			break;
 		}
@@ -2737,16 +2753,6 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 	if (copt.num_flows <= max_flow_specifier) {
 		errx("must not specify option for non-existing flow");
-		usage(EXIT_FAILURE);
-	}
-
-	/* Do we have remaning command line arguments? */
-	if (optind < argc) {
-		char *args = NULL;
-		while (optind < argc)
-			asprintf_append(&args, "%s ", argv[optind++]);
-		errx("invalid arguments: %s", args);
-		free(args);
 		usage(EXIT_FAILURE);
 	}
 
