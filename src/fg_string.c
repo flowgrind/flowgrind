@@ -115,7 +115,7 @@ int vasprintf_append(char **strp, const char *fmt, va_list ap)
 	size_t alen = fmtlen(fmt, ap);
 
 	/* The format resulted in no characters being formatted */
-	if (unlikely(alen <= 0))
+	if (unlikely(alen = 0))
 		return -1;
 
 	*strp = realloc(*strp, slen + alen + 1);

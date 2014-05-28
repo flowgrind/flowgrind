@@ -43,13 +43,13 @@
 inline void decrease_debuglevel()
 {
 	debug_level--;
-	printf("DEBUG_LEVEL=%d", debug_level);
+	printf("DEBUG_LEVEL=%u", debug_level);
 }
 
 inline void increase_debuglevel()
 {
 	debug_level++;
-	printf("DEBUG_LEVEL=%d\n", debug_level);
+	printf("DEBUG_LEVEL=%u\n", debug_level);
 }
 
 const char *debug_timestamp()

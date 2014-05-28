@@ -853,7 +853,7 @@ void create_daemon_thread()
 
 	int rc = pthread_create(&daemon_thread, NULL, daemon_main, 0);
 	if (rc)
-		crit("could not start thread");
+		critc(rc, "could not start thread");
 }
 
 /* creates listen socket for the xmlrpc server */
@@ -961,7 +961,7 @@ void set_affinity(int cpu)
 #elif __FreeBSD__
 	typedef cpuset_t fg_cpuset;
 #endif /* __LINUX__ */
-	int rc;
+	int rc = 0;
 	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);   /* number of cores */
 	fg_cpuset cpuset;			    /* define cpu_set bit mask */
 

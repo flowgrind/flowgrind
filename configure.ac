@@ -1,4 +1,4 @@
-AC_INIT([Flowgrind],[0.7],[https://github.com/flowgrind/flowgrind/issues],[flowgrind],[https://www.flowgrind.net])
+AC_INIT([Flowgrind],[0.7.1],[https://github.com/flowgrind/flowgrind/issues],[flowgrind],[https://www.flowgrind.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror dist-bzip2])
 AC_PREREQ(2.61)
