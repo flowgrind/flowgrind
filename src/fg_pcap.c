@@ -282,7 +282,7 @@ static void* fg_pcap_work(void* arg)
 #ifdef DEBUG
 		pcap_stats((pcap_t *)flow->pcap_handle, &p_stats);
 #endif /* DEBUG */
-		DEBUG_MSG(LOG_NOTICE, "pcap: finished dumping %u packets for "
+		DEBUG_MSG(LOG_NOTICE, "pcap: finished dumping %d packets for "
 			  "flow %d", rc, flow->id);
 		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets received by filter for "
 			  "flow %d", p_stats.ps_recv, flow->id);
