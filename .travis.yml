@@ -19,6 +19,12 @@ compiler:
     - gcc
     - clang
 
+# Don't use Clang for Coverity Scan.
+matrix:
+  exclude:
+    - compiler: clang
+    - env: COVERITY_SCAN_BRANCH=1
+
 before_install:
     - sudo apt-get -qq update
 
@@ -42,7 +48,8 @@ branches:
     - coverity_scan
 
 notifications:
-  email: developer@flowgrind.net
+  email:
+    - developer@flowgrind.net
 
 addons:
   # Coverity Scan
