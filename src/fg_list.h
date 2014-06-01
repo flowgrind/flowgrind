@@ -19,19 +19,19 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  *
  */
-typedef struct ListNode
+struct _list_node
 {
 	void* data;
-	struct ListNode* next;
-	struct ListNode* previous;
-} ListNode;
+	struct _list_node* next;
+	struct _list_node* previous;
+};
 
-typedef struct LinkedList
+struct _linked_list
 {
-	ListNode* head;
-	ListNode* tail;
+	struct _list_node* head;
+	struct _list_node* tail;
 	int size;
-} LinkedList;
+};
 
 /**
  * Initializes the list by setting its head and
@@ -40,7 +40,7 @@ typedef struct LinkedList
  * @param[in] list list to initialize
  * @return zero on success, non-zero otherwise
  */
-int fg_list_init(LinkedList * const list);
+int fg_list_init(struct _linked_list * const list);
 
 /**
  * Returns the first element of the list 
@@ -49,7 +49,7 @@ int fg_list_init(LinkedList * const list);
  * @param[in] list to operate on
  * @return a pointer to the first element in @p list
  */
-const ListNode * fg_list_front(LinkedList * const list);
+const struct _list_node* fg_list_front(struct _linked_list * const list);
 
 /**
  * Returns the last element of the list.
@@ -58,7 +58,7 @@ const ListNode * fg_list_front(LinkedList * const list);
  * @param[in] list to operate on
  * @return a pointer to the last element in @p list
  */
-const ListNode * fg_list_back(LinkedList * const list);
+const struct _list_node* fg_list_back(struct _linked_list * const list);
 
 /**
  * Removes from the list the first element whose data points to @p data
@@ -69,7 +69,7 @@ const ListNode * fg_list_back(LinkedList * const list);
  * @param[in] data of the element to be removed
  * @return zero on success, non-zero otherwise
  */
-int fg_list_remove(LinkedList * const list, const void * const data);
+int fg_list_remove(struct _linked_list * const list, const void * const data);
 
 /**
  * Inserts a new element at the beginning of the list,
@@ -81,7 +81,7 @@ int fg_list_remove(LinkedList * const list, const void * const data);
  * @param[in] data of inserted element
  * @return zero on success, non-zero otherwise
  */
-int fg_list_push_front(LinkedList * const list, void * const data);
+int fg_list_push_front(struct _linked_list * const list, void * const data);
 
 /**
  * Removes the first element in the list, effectively
@@ -91,7 +91,7 @@ int fg_list_push_front(LinkedList * const list, void * const data);
  * @param[in] list to operate on
  * @return pointer to the data that was contained in the removed element, NULL on failure
  */
-void* fg_list_pop_front(LinkedList * const list);
+void* fg_list_pop_front(struct _linked_list * const list);
 
 /**
  * Inserts a new element at the end of the list,
@@ -103,7 +103,7 @@ void* fg_list_pop_front(LinkedList * const list);
  * @param[in] data of inserted element
  * @return zero on success, non-zero otherwise
  */
-int fg_list_push_back(LinkedList * const list, void * const data);
+int fg_list_push_back(struct _linked_list * const list, void * const data);
 
 /**
  * Removes the last element in the list, effectively
@@ -113,7 +113,7 @@ int fg_list_push_back(LinkedList * const list, void * const data);
  * @param[in] list to operate on
  * @return pointer to the data that was contained in the removed element, NULL on failure
  */
-void* fg_list_pop_back(LinkedList * const list);
+void* fg_list_pop_back(struct _linked_list * const list);
 
 /**
  * Returns the number of elements in the list.
@@ -121,7 +121,7 @@ void* fg_list_pop_back(LinkedList * const list);
  * @param[in] list to operate on
  * @return the number of elements in the list.
  */
-int fg_list_size(LinkedList * const list);
+int fg_list_size(struct _linked_list * const list);
 
 /**
  * Removes and destroys all elements from the list,
@@ -130,4 +130,4 @@ int fg_list_size(LinkedList * const list);
  * @param[in] list to operate on
  * @return zero on success, non-zero otherwise
  */
-int fg_list_clear(LinkedList * const list);
+int fg_list_clear(struct _linked_list * const list);

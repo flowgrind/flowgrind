@@ -238,7 +238,7 @@ extern int daemon_pipe[2];
 extern char started;
 extern char dumping;
 extern pthread_mutex_t mutex;
-extern LinkedList flows;
+extern struct _linked_list flows;
 extern struct _report* reports;
 extern struct _report* reports_last;
 extern unsigned int pending_reports;

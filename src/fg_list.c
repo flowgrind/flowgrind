@@ -6,17 +6,20 @@
 /*
  * Copyright (C) 2014 Marcel Nehring <marcel.nehring@rwth-aachen.de>
  *
- * This file is part of Flowgrind. Flowgrind is free software; you can
- * redistribute it and/or modify it under the terms of the GNU General
- * Public License version 2 as published by the Free Software Foundation.
+ * This file is part of Flowgrind.
  *
- * Flowgrind distributed in the hope that it will be useful,
+ * Flowgrind is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Flowgrind is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
+ * along with Flowgrind. If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -24,22 +27,13 @@
 
 #include <stdlib.h>
 
-/**
- * Initializes the list by setting its head and
- * tail to NULL and its size to 0.
- *
- * @param[in] list list to initialize
- * @return zero on success, non-zero otherwise
- */
-int fg_list_init(LinkedList * const list) {
-	if (!list) {
+int fg_list_init(struct _linked_list * const list) {
+	if (!list)
 		return -1;
-	}
 
 	if (list->head) {
-		if (!fg_list_clear(list)){
+		if (!fg_list_clear(list))
 			return -2;
-		}
 	}
 
 	list->head = NULL;
@@ -49,79 +43,47 @@ int fg_list_init(LinkedList * const list) {
 	return 0;
 }
 
-/**
- * Returns the first element of the list
- * The element is not removed from the list.
- *
- * @param[in] list to operate on
- * @return a pointer to the first element in @p list
- */
-const ListNode * fg_list_front(LinkedList * const list) {
-	if (!list) {
+const struct _list_node* fg_list_front(struct _linked_list * const list) {
+	if (!list)
 		return NULL;
-	}
 
 	return list->head;
 }
 
-/**
- * Returns the last element of the list.
- * The element is not removed from the list.
- *
- * @param[in] list to operate on
- * @return a pointer to the last element in @p list
- */
-const ListNode * fg_list_back(LinkedList * const list) {
-	if (!list) {
+const struct _list_node* fg_list_back(struct _linked_list * const list) {
+	if (!list)
 		return NULL;
-	}
-	
+
 	return list->tail;
 }
 
-/**
- * Removes from the list the first element whose data points to @p data
- * reducing the list size by one. The data contained in this element
- * will not be modified.
- *
- * @param[in] list to operate on
- * @param[in] data of the element to be removed
- * @return zero on success, non-zero otherwise
- */
-int fg_list_remove(LinkedList * const list, const void * const data) {
-	if (!list) {
+int fg_list_remove(struct _linked_list * const list, const void * const data) {
+	if (!list)
 		return -1;
-	}
 
-	if (!list->head) {
+	if (!list->head)
 		return -3;
-	}
 
-	ListNode *node = list->head;
+	struct _list_node *node = list->head;
 
 	while (node->data != data) {
 		node = node->next;
 
-		if (!node) {
+		if (!node)
 			return -4;
-		}
 	}
 
-	if (list->head == node) {
+	if (list->head == node)
 		list->head = node->next;
-	}
 
-	if (list->tail == node) {
+	if (list->tail == node)
 		list->tail = node->previous;
-	}
 
-	if (node->previous) {
+	if (node->previous)
 		node->previous->next = node->next;
-	}
 
-	if (node->next) {
+	if (node->next)
 		node->next->previous = node->previous;
-	}
 
 	free(node);
 
@@ -142,12 +104,11 @@ int fg_list_remove(LinkedList * const list, const void * const data) {
  * @param[in] existing list element the new element is going to be inserted before
  * @return a pointer to the newly created list element or NULL on failure
  */
-ListNode* create_node(void * const data, ListNode * const previous, ListNode * const next) {
-	ListNode *new_node = (ListNode*)malloc(sizeof(ListNode));
+static struct _list_node* create_node(void * const data, struct _list_node * const previous, struct _list_node * const next) {
+	struct _list_node *new_node = (struct _list_node*)malloc(sizeof(struct _list_node));
 
-	if (!new_node) {
+	if (!new_node)
 		return NULL;
-	}
 
 	new_node->data = data;
 	new_node->previous = previous;
@@ -156,33 +117,19 @@ ListNode* create_node(void * const data, ListNode * const previous, ListNode * c
 	return new_node;
 }
 
-/**
- * Inserts a new element at the beginning of the list,
- * right before its current first element. The data of the
- * new element will point to the same memory location as @p data.
- * This effectively increases the list's size by one.
- *
- * @param[in] list to operate on
- * @param[in] data of inserted element
- * @return zero on success, non-zero otherwise
- */
-int fg_list_push_front(LinkedList * const list, void * const data) {
-	if (!list) {
+int fg_list_push_front(struct _linked_list * const list, void * const data) {
+	if (!list)
 		return -1;
-	}
 
-	ListNode *new_node = create_node(data, NULL, list->head);
+	struct _list_node *new_node = create_node(data, NULL, list->head);
 
-	if (!new_node) {
+	if (!new_node)
 		return -5;
-	}
 
-	if (!list->head) {
+	if (!list->head)
 		list->tail = new_node;
-	}
-	else {
+	else
 		list->head->previous = new_node;
-	}
 
 	list->head = new_node;
 	++list->size;
@@ -190,32 +137,20 @@ int fg_list_push_front(LinkedList * const list, void * const data) {
 	return 0;
 }
 
-/**
- * Removes the first element in the list, effectively
- * reducing its size by one. This destroys the removed element.
- * The data contained in this element will not be modified.
- *
- * @param[in] list to operate on
- * @return pointer to the data that was contained in the removed element, NULL on failure
- */
-void* fg_list_pop_front(LinkedList * const list) {
-	if (!list) {
+void* fg_list_pop_front(struct _linked_list * const list) {
+	if (!list)
 		return NULL;
-	}
 
-	if (!list->head) {
+	if (!list->head)
 		return NULL;
-	}
 
-	ListNode *head = list->head;
+	struct _list_node *head = list->head;
 
-	if (list->head == list->tail) {
+	if (list->head == list->tail)
 		list->tail = NULL;
-	}
 
-	if (head->next) {
+	if (head->next)
 		head->next->previous = NULL;
-	}
 
 	list->head = head->next;
 	void *data = head->data;
@@ -227,34 +162,20 @@ void* fg_list_pop_front(LinkedList * const list) {
 	return data;
 }
 
-/**
- * Inserts a new element at the end of the list,
- * right after its current last element. The data of the
- * new element will point to the same memory location as @p data.
- * This effectively increases the list's size by one.
- *
- * @param[in] list to operate on
- * @param[in] data of inserted element
- * @return zero on success, non-zero otherwise
- */
-int fg_list_push_back(LinkedList * const list, void * const data) {
-	if (!list) {
+int fg_list_push_back(struct _linked_list * const list, void * const data) {
+	if (!list)
 		return -1;
-	}
 
-	ListNode *new_node = create_node(data, list->tail, NULL);
+	struct _list_node *new_node = create_node(data, list->tail, NULL);
 
-	if (!new_node) {
+	if (!new_node)
 		return -5;
-	}
 
-	if (!list->head) {
+	if (!list->head)
 		list->head = new_node;
-	}
 
-	if (list->tail) {
+	if (list->tail)
 		list->tail->next = new_node;
-	}
 
 	list->tail = new_node;
 	++list->size;
@@ -262,33 +183,22 @@ int fg_list_push_back(LinkedList * const list, void * const data) {
 	return 0;
 }
 
-/**
- * Removes the last element in the list, effectively
- * reducing its size by one. This destroys the removed element.
- * The data contained in this element will not be modified.
- *
- * @param[in] list to operate on
- * @return pointer to the data that was contained in the removed element, NULL on failure
- */
-void* fg_list_pop_back(LinkedList * const list) {
-	if (!list) {
+void* fg_list_pop_back(struct _linked_list * const list) {
+	if (!list)
 		return NULL;
-	}
 
-	if (!list->tail) {
+	if (!list->tail)
 		return NULL;
-	}
 
-	ListNode *tail = list->tail;
+
+	struct _list_node *tail = list->tail;
 	void *data = tail->data;
 
-	if (tail->previous) {
+	if (tail->previous)
 		tail->previous->next = NULL;
-	}
 
-	if (list->tail == list->head) {
+	if (list->tail == list->head)
 		list->head = NULL;
-	}
 
 	list->tail = tail->previous;
 
@@ -299,31 +209,16 @@ void* fg_list_pop_back(LinkedList * const list) {
 	return data;
 }
 
-/**
- * Returns the number of elements in the list.
- *
- * @param[in] list to operate on
- * @return the number of elements in the list.
- */
-int fg_list_size(LinkedList * const list) {
-	if (!list) {
+int fg_list_size(struct _linked_list * const list) {
+	if (!list)
 		return -1;
-	}
 
 	return list->size;
 }
 
-/**
- * Removes and destroys all elements from the list,
- * leaving it with a size of 0.
- *
- * @param[in] list to operate on
- * @return zero on success, non-zero otherwise
- */
-int fg_list_clear(LinkedList * const list) {
-	if (!list) {
+int fg_list_clear(struct _linked_list * const list) {
+	if (!list)
 		return -1;
-	}
 
 	while (fg_list_size(list)) {
 		void * data = fg_list_pop_front(list);

@@ -1114,9 +1114,8 @@ static void parse_cmdline(int argc, char *argv[])
 	}
 
 #ifdef HAVE_LIBPCAP
-    if (!process_dump_dir()) {
-        errx("dump directory %s invalid or insufficient permissions", dump_dir);
-    }
+	if (!process_dump_dir())
+		errx("dump directory %s invalid or insufficient permissions", dump_dir);
 #endif /* HAVE_LIBPCAP */
 
 	// TODO more sanity checks... (e.g. if port is in valid range)
@@ -1141,7 +1140,7 @@ int main(int argc, char *argv[])
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
 	logging_init();
-    fg_list_init(&flows);
+	fg_list_init(&flows);
 #ifdef HAVE_LIBPCAP
 	fg_pcap_init();
 #endif /* HAVE_LIBPCAP */

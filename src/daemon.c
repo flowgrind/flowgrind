@@ -102,7 +102,7 @@ struct _report* reports = 0;
 struct _report* reports_last = 0;
 unsigned int pending_reports = 0;
 
-LinkedList flows;
+struct _linked_list flows;
 
 char started = 0;
 
@@ -290,7 +290,7 @@ static int prepare_fds() {
 	struct timespec now;
 	gettime(&now);
 
-	const ListNode * node = fg_list_front(&flows);
+	const struct _list_node *node = fg_list_front(&flows);
 	while (node) {
 		struct _flow *flow = node->data;
 		node = node->next;
@@ -357,7 +357,7 @@ static void start_flows(struct _request_start_flows *request)
 	UNUSED_ARGUMENT(request);
 #endif
 
-	const ListNode * node = fg_list_front(&flows);
+	const struct _list_node *node = fg_list_front(&flows);
 	while (node) {
 		struct _flow *flow = node->data;
 		node = node->next;
@@ -398,7 +398,7 @@ static void stop_flow(struct _request_stop_flow *request)
 	if (request->flow_id == -1) {
 		/* Stop all flows */
 
-		const ListNode * node = fg_list_front(&flows);
+		const struct _list_node *node = fg_list_front(&flows);
 		while (node) {
 			struct _flow *flow = node->data;
 			node = node->next;
@@ -420,7 +420,7 @@ static void stop_flow(struct _request_stop_flow *request)
 		return;
 	}
 
-	const ListNode * node = fg_list_front(&flows);
+	const struct _list_node *node = fg_list_front(&flows);
 	while (node) {
 		struct _flow *flow = node->data;
 		node = node->next;
@@ -678,7 +678,7 @@ static void timer_check()
 		return;
 
 	gettime(&now);
-	const ListNode * node = fg_list_front(&flows);
+	const struct _list_node *node = fg_list_front(&flows);
 	while (node) {
 		struct _flow *flow = node->data;
 		node = node->next;
@@ -710,7 +710,7 @@ static void timer_check()
 
 static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 {
-	const ListNode * node = fg_list_front(&flows);
+	const struct _list_node *node = fg_list_front(&flows);
 	while (node) {
 		struct _flow *flow = node->data;
 		node = node->next;
