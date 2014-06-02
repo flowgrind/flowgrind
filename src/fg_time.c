@@ -33,6 +33,9 @@
 #include <string.h>
 #include <time.h>
 #include <stdbool.h>
+#ifdef __MACH__
+#include <mach/mach_time.h>
+#endif
 
 #include "fg_error.h"
 #include "fg_time.h"
@@ -114,6 +117,27 @@ void time_add(struct timespec *tp, double seconds)
 
 int gettime(struct timespec *tp)
 {
+#ifdef __MACH__
+	static mach_timebase_info_data_t tb = {.numer = 0, .denom = 0};
+
+	/* Find out clock resolution. Will only be retrieved on first call */
+	if (!tb.numer && !tb.denom) {
+		if (mach_timebase_info(&tb) != 0)
+			err("unable to determine clock resolution");
+
+		/* Clock resolution is lower than expected (1ns) */
+		const double hz = tb.numer/tb.denom;
+		if (hz != 1)
+			warnx("low clock resolution: %lfns", hz);
+	}
+
+	/* Get wall-clock time */
+	const uint64_t time = mach_absolute_time() * tb.numer / tb.denom;
+	tp->tv_sec = time / NSEC_PER_SEC;
+	tp->tv_nsec = time % NSEC_PER_SEC;
+
+	return 0;
+#else
 	static struct timespec res = {.tv_sec = 0, .tv_nsec = 0};
 
 	/* Find out clock resolution. Will only be retrieved on first call */
@@ -128,4 +152,5 @@ int gettime(struct timespec *tp)
 
 	/* Get wall-clock time */
 	return clock_gettime(CLOCK_REALTIME, tp);
+#endif
 }
