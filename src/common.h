@@ -166,7 +166,7 @@ struct _flow_settings {
 	int shutdown;
 
 	/** Send at specified rate per second (option -R) */
-	char *write_rate_str;
+	const char *write_rate_str;
 	/** The actual rate we should send */
 	int write_rate;
 

@@ -25,10 +25,15 @@
     reasons why the executable file might be covered by the GNU General
     Public License.
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #include "fg_argparser.h"
 
