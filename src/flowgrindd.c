@@ -1010,16 +1010,16 @@ static void parse_cmdline(int argc, char *argv[])
 #ifdef HAVE_LIBPCAP
 		{'w', 0, ap_yes},
 #endif
-		{0, 0, ap_no} 
+		{0, 0, ap_no}
 	};
 
 	struct Arg_parser parser;
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
-	if (ap_error(&parser)) { 
+	if (ap_error(&parser)) {
 		errx("%s", ap_error(&parser));
-		usage(EXIT_FAILURE); 
+		usage(EXIT_FAILURE);
 	}
 
 	/* parse command line */

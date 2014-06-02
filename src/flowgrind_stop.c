@@ -139,15 +139,15 @@ int main(int argc, char *argv[])
 	const struct ap_Option options[] = {
 		{'h', "help", ap_no},
 		{'v', "version", ap_no},
-		{0, 0, ap_no} 
+		{0, 0, ap_no}
 	};
 	struct Arg_parser parser;
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
-	if (ap_error(&parser)) { 
+	if (ap_error(&parser)) {
 		errx("%s", ap_error(&parser));
-		usage(EXIT_FAILURE); 
+		usage(EXIT_FAILURE);
 	}
 
 	/* parse command line */

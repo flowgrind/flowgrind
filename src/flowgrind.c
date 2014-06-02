@@ -2188,7 +2188,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
 	if (type != 'b' && type != 'B') {
 		errx("illegal type specifier (either 'b' or 'B') for flow %u", flow_id);
 		usage(EXIT_FAILURE);
-	}	
+	}
 	if (type == 'b')
 		optdouble /=  8;
 
@@ -2562,15 +2562,15 @@ static void parse_cmdline(int argc, char *argv[]) {
 		{'U', 0, ap_yes},
 		{'W', 0, ap_yes},
 		{'Y', 0, ap_yes},
-		{0, 0, ap_no} 
+		{0, 0, ap_no}
 	};
 
 	struct Arg_parser parser;
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
-	if (ap_error(&parser)) { 
+	if (ap_error(&parser)) {
 		errx("%s", ap_error(&parser));
-		usage(EXIT_FAILURE); 
+		usage(EXIT_FAILURE);
 	}
 
 	/* if no option -F is given, configure all flows*/
@@ -2662,7 +2662,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 			} else if (!strcmp(arg, "byte")) {
 				copt.force_unit = BYTE_BASED;
 			} else {
-				errx("invalid argument '%s' for option '%s'", 
+				errx("invalid argument '%s' for option '%s'",
 					arg, ap_opt_string(&parser, argind));
 				usage(EXIT_FAILURE);
 			}
@@ -2738,9 +2738,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option(code, arg, current_flow_ids[i], SOURCE);	
+						parse_flow_option(code, arg, current_flow_ids[i], SOURCE);
 					if (type == 'd' || type == 'b')
-						parse_flow_option(code, arg, current_flow_ids[i], DESTINATION);	
+						parse_flow_option(code, arg, current_flow_ids[i], DESTINATION);
 				}
 			}
 			break;
