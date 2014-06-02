@@ -2038,7 +2038,7 @@ static struct _daemon * get_daemon_by_url(const char* server_url,
 	return &unique_servers[num_unique_servers++];
 }
 
-static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
+static void parse_trafgen_option(const char *params, int flow_id, int endpoint_id)
 {
 	int rc;
 	double param1 = 0, param2 = 0, unused;
@@ -2147,7 +2147,7 @@ static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
  * @param[in] flow_id id of the flow for which flow to parse
  * @param[in] endpoint_id endpoint to parse for
  */
-static void parse_rate_option(char *arg, int flow_id, int endpoint_id) {
+static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
 	char unit = 0, type = 0;
 	double optdouble = 0.0;
 	/* last %c for catching wrong input... this is not nice. */
@@ -2208,7 +2208,7 @@ static void parse_rate_option(char *arg, int flow_id, int endpoint_id) {
  *		    - PORT: port for the control connection
  * @param[in] endpoint flow-endpoint to write to
  */
-static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
+static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) {
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
 	struct _daemon* daemon;
@@ -2216,16 +2216,14 @@ static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
-	char *sepptr, *rpc_address = 0;
 
 	/* RPC address */
-	sepptr = strchr(arg, '/');
+	char *rpc_address = strdup(arg);
+	char *sepptr = strchr(arg, '/');
 	if (sepptr) {
 		*sepptr = '\0';
 		rpc_address = sepptr + 1;
 		extra_rpc = true;
-	} else {
-		rpc_address = arg;
 	}
 
 	/* IPv6 Address? */
@@ -2287,10 +2285,11 @@ static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
 	daemon = get_daemon_by_url(url, rpc_address, port);
 	endpoint->daemon = daemon;
 	strcpy(endpoint->test_address, arg);
+	free(rpc_address);
 }
 
 /* Parse flow specific options given on the cmdline */
-static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
+static void parse_flow_option(int ch, const char *arg, int flow_id, int endpoint_id) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
@@ -2462,7 +2461,7 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
  *
  * @param[in] arg argument for option -c
  */
-static void parse_colon_option(char *arg)
+static void parse_colon_option(const char *arg)
 {
 	/* To make it easy (independed of default values), hide all colons */
 	HIDE_COLUMNS(COL_BEGIN, COL_END, COL_THROUGH, COL_TRANSAC,
@@ -2478,7 +2477,8 @@ static void parse_colon_option(char *arg)
 #endif /* DEBUG */
 
 	/* Set colon visibility according option */
-	for (char *token = strtok(arg, ","); token;
+	char *argcpy = strdup(arg);
+	for (char *token = strtok(argcpy, ","); token;
 	     token = strtok(NULL, ",")) {
 		if (!strcmp(token, "interval")) {
 			SHOW_COLUMNS(COL_BEGIN, COL_END);
@@ -2510,12 +2510,12 @@ static void parse_colon_option(char *arg)
 			usage(EXIT_FAILURE);
 		}
 	}
+	free(argcpy);
 }
 
 static void parse_cmdline(int argc, char *argv[]) {
 	int rc = 0;
 	int cur_num_flows = 0;
-	char *tok = NULL;
 	int current_flow_ids[MAX_FLOWS];
 	int max_flow_specifier = 0;
 	int optint = 0;
@@ -2569,7 +2569,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser)) { 
-		errx(ap_error(&parser));
+		errx("%s", ap_error(&parser));
 		usage(EXIT_FAILURE); 
 	}
 
@@ -2581,7 +2581,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 	/* parse command line */
 	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
 		const int code = ap_code(&parser, argind);
-		char *arg = ap_argument(&parser, argind);
+		const char *arg = ap_argument(&parser, argind);
+		char *argcpy = strdup(arg);
 
 		switch (code) {
 		case 0:
@@ -2672,24 +2673,24 @@ static void parse_cmdline(int argc, char *argv[]) {
 		/* flow options w/o endpoint identifier */
 		case 'F':
 			cur_num_flows = 0;
-			tok = strtok(arg, ",");
-			while (tok) {
-				rc = sscanf(tok, "%d", &optint);
+			for (char *token = strtok(argcpy, ","); token;
+			     token = strtok(NULL, ",")) {
+				rc = sscanf(token, "%d", &optint);
 				if (rc != 1) {
 					errx("malformed flow specifier");
 					usage(EXIT_FAILURE);
 				}
+
+				/* all flows */
 				if (optint == -1) {
-					/* all flows */
 					for (int i = 0; i < MAX_FLOWS; i++)
 						current_flow_ids[i] = i;
 					cur_num_flows = MAX_FLOWS;
 					break;
-				} else {
-					current_flow_ids[cur_num_flows++] = optint;
-					ASSIGN_MAX(max_flow_specifier, optint);
-					tok = strtok(NULL, ",");
 				}
+
+				current_flow_ids[cur_num_flows++] = optint;
+				ASSIGN_MAX(max_flow_specifier, optint);
 			}
 			break;
 		case 'E':
@@ -2719,7 +2720,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 		case 'W':
 		case 'Y':
 			/* pre-parse flow option for endpoints */
-			for (char *token = strtok(arg, ","); token; token = strtok(NULL, ",")) {
+			for (char *token = strtok(argcpy, ","); token;
+			     token = strtok(NULL, ",")) {
 
 				char type = token[0];
 				char* arg;
@@ -2749,6 +2751,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 			usage(EXIT_FAILURE);
 			break;
 		}
+		free(argcpy);
 	}
 
 	if (copt.num_flows <= max_flow_specifier) {

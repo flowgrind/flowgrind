@@ -255,7 +255,7 @@ struct _report* get_reports(int *has_more);
 
 #ifdef HAVE_LIBPCAP
 char *dump_prefix;
-char *dump_dir;
+const char *dump_dir;
 #endif /* HAVE_LIBPCAP */
 
 void *daemon_main(void* ptr);

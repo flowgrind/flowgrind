@@ -147,7 +147,7 @@ struct _controller_options {
 	bool log_to_file;
 #ifdef HAVE_LIBPCAP
 	/** Prefix for dumpfile (option -e) */
-	char *dump_prefix;
+	const char *dump_prefix;
 #endif /* HAVE_LIBPCAP */
 	/** Overwrite existing log files (option -o) */
 	bool clobber;
