@@ -2158,10 +2158,9 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
 		usage(EXIT_FAILURE);
 	}
 
-	if (optdouble == 0.0) {
-		cflow[flow_id].settings[endpoint_id].write_rate_str = NULL;
+	if (optdouble == 0.0)
 		usage(EXIT_FAILURE);
-	}
+
 
 	switch (unit) {
 	case 0:
