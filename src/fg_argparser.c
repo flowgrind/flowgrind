@@ -25,6 +25,7 @@
     reasons why the executable file might be covered by the GNU General
     Public License.
 */
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
