@@ -998,19 +998,19 @@ void set_affinity(int cpu)
 static void parse_cmdline(int argc, char *argv[])
 {
 	const struct ap_Option options[] = {
-		{'b', 0, ap_yes},
-		{'c', 0, ap_yes},
+		{'b', 0, ap_yes, 0},
+		{'c', 0, ap_yes, 0},
 #ifdef DEBUG
-		{'d', "debug", ap_no},
+		{'d', "debug", ap_no, 0},
 #endif
-		{'h', "help", ap_no},
-		{'o', 0, ap_yes},
-		{'p', 0, ap_yes},
-		{'v', "version", ap_no},
+		{'h', "help", ap_no, 0},
+		{'o', 0, ap_yes, 0},
+		{'p', 0, ap_yes, 0},
+		{'v', "version", ap_no, 0},
 #ifdef HAVE_LIBPCAP
-		{'w', 0, ap_yes},
+		{'w', 0, ap_yes, 0},
 #endif
-		{0, 0, ap_no} 
+		{0, 0, ap_no, 0} 
 	};
 
 	struct Arg_parser parser;
