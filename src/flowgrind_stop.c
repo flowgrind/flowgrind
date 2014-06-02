@@ -74,7 +74,7 @@ static void usage(short status)
 	exit(EXIT_SUCCESS);
 }
 
-static void stop_flows(char* address)
+static void stop_flows(const char* address)
 {
 	xmlrpc_env env;
 	xmlrpc_client *client = 0;
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser)) { 
-		errx(ap_error(&parser));
+		errx("%s", ap_error(&parser));
 		usage(EXIT_FAILURE); 
 	}
 

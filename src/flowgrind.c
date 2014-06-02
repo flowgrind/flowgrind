@@ -2542,7 +2542,7 @@ static void parse_colon_option(char *arg)
  * @param[in] arg option argument
  * @param[in] opt_string real option string
  */
-static void parse_general_option(int code, char* arg, char* opt_string) {
+static void parse_general_option(int code, char* arg, const char* opt_string) {
 
 	int rc;
 
@@ -2696,7 +2696,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser)) { 
-		errx(ap_error(&parser));
+		errx("%s", ap_error(&parser));
 		usage(EXIT_FAILURE); 
 	}
 
@@ -2708,9 +2708,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 	/* parse command line */
 	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
 		const int code = ap_code(&parser, argind);
-		char *arg = ap_argument(&parser, argind);
-		char *opt_string = ap_opt_string(&parser, argind);
-		int tag = ap_option(&parser, argind)->tag;
+		char *arg = strdup(ap_argument(&parser, argind));
+		const char *opt_string = ap_opt_string(&parser, argind);
+		const int tag = ap_option(&parser, argind)->tag;
 		
 		/* distinguish option types by tag first */
 		switch (tag) {
@@ -2773,6 +2773,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 			usage(EXIT_FAILURE);
 			break;
 		}
+
+		free(arg);
 	}
 
 	if (copt.num_flows <= max_flow_specifier) {
