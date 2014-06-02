@@ -1,9 +1,8 @@
 #!/bin/sh
 
 VERSION=$1
-SCRIPTDIR=$(dirname $(readlink -f $0))
 
-cd $SCRIPTDIR/..
+cd $(dirname $0)/..
 
 if [ "$VERSION" = "" ]; then
     echo -e "Usage: $0 VERSION\n    Where VERSION is the version number of an git tag."
