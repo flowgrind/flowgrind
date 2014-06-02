@@ -56,17 +56,25 @@
 enum ap_Has_arg { ap_no, ap_yes, ap_maybe };
 
 struct ap_Option {
-	int code;		/* Short option letter or code ( code != 0 ) */
-	const char *name;	/* Long option name (maybe null) */
+	/** Short option letter or code ( code != 0 ) */
+	int code;
+	/** Long option name (maybe null) */
+	const char *name;
+	/** argument specifier */
 	enum ap_Has_arg has_arg;
-	int tag;		/* user tag */
+	/** user tag */
+	int tag;
 };
 
 struct ap_Record {
+	/** option code */
 	int code;
-	char *opt_string;	/* the observed opt string (maybe the long or the short version) */
+	/** the observed opt string (maybe the long or the short version) */
+	char *opt_string;
+	/** the observed argument */
 	char *argument;
-	const struct ap_Option *option;	/* backpointer to option */
+	/** backpointer to option */
+	const struct ap_Option *option;
 };
 
 struct Arg_parser {
@@ -84,10 +92,10 @@ void ap_free(struct Arg_parser *const ap);
 
 const char *ap_error(const struct Arg_parser *const ap);
 
-	/* The number of arguments parsed (may be different from argc) */
+/** The number of arguments parsed (may be different from argc) */
 int ap_arguments(const struct Arg_parser *const ap);
 
-	/* If ap_code( i ) is 0, ap_argument( i ) is a non-option.
+/** If ap_code( i ) is 0, ap_argument( i ) is a non-option.
 	   Else ap_argument( i ) is the option's argument (or empty). */
 int ap_code(const struct Arg_parser *const ap, const int i);
 
@@ -95,7 +103,7 @@ const char *ap_argument(const struct Arg_parser *const ap, const int i);
 
 const struct ap_Option *ap_option(const struct Arg_parser *const ap, const int i);
 
-/* return the observed option string */
+/** return the observed option string */
 const char *ap_opt_string(const struct Arg_parser *const ap, const int i);
 
 #endif
