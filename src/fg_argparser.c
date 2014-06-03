@@ -1,4 +1,33 @@
-/*  Arg_parser - POSIX/GNU command line argument parser. (C version)
+/**
+ * @file fg_argparser.c
+ * @brief Commandline argument parser
+ */
+
+/*
+ * Copyright (C) 2013-2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+ * Copyright (C) 2010-2013 Arnd Hannemann <arnd@arndnet.de>
+ * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
+ * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
+ * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
+ *
+ * This file is part of Flowgrind.
+ *
+ * Flowgrind is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Flowgrind is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Flowgrind.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+/*  _arg_parser - POSIX/GNU command line argument parser. (C version)
     Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
     Antonio Diaz Diaz.
 
@@ -37,7 +66,12 @@
 
 #include "fg_argparser.h"
 
-/* assure at least a minimum size for buffer 'buf' */
+/**
+ * assure at least a minimum size for buffer \p buf
+ *
+ * @param[in] buf pointer to buffer
+ * @param[in] min_size minimum size \p buf should hold in bytes
+ */
 static void *ap_resize_buffer(void *buf, const int min_size)
 {
 	if (buf)
@@ -47,16 +81,24 @@ static void *ap_resize_buffer(void *buf, const int min_size)
 	return buf;
 }
 
-static char push_back_record(struct Arg_parser *const ap, const struct ap_Option *const option,
+/**
+ * Store a parsed option in the state of the arg parser given by \p ap
+ *
+ * @param[in] ap Pointer to the arg parser state
+ * @param[in] option pointer to the option to store
+ * @param[in] long_opt true iff this option was a long option
+ * @param[in] argument argument string for this option (may be empty)
+ */
+static char push_back_record(struct _arg_parser *const ap, const struct _ap_Option *const option,
 				 bool long_opt, const char *const argument)
 {
 	const int len = strlen(argument);
-	struct ap_Record *p;
+	struct _ap_Record *p;
 	void *tmp = ap_resize_buffer(ap->data,
-				     (ap->data_size + 1) * sizeof(struct ap_Record));
+				     (ap->data_size + 1) * sizeof(struct _ap_Record));
 	if (!tmp)
 		return 0;
-	ap->data = (struct ap_Record *)tmp;
+	ap->data = (struct _ap_Record *)tmp;
 	p = &(ap->data[ap->data_size]);
 	p->option = option;
 	p->argument = 0;
@@ -78,7 +120,13 @@ static char push_back_record(struct Arg_parser *const ap, const struct ap_Option
 	return 1;
 }
 
-static char add_error(struct Arg_parser *const ap, const char *const msg)
+/**
+ * Add an error message to the arg parser \p ap
+ *
+ * @param[in] ap Pointer to the arg parser state
+ * @param[in] msg error string
+ */
+static char add_error(struct _arg_parser *const ap, const char *const msg)
 {
 	const int len = strlen(msg);
 	void *tmp = ap_resize_buffer(ap->error, ap->error_size + len + 1);
@@ -90,7 +138,12 @@ static char add_error(struct Arg_parser *const ap, const char *const msg)
 	return 1;
 }
 
-static void free_data(struct Arg_parser *const ap)
+/**
+ * Free all space required by the arg parser \p ap
+ *
+ * @param[in] ap Pointer to the arg parser state
+ */
+static void free_data(struct _arg_parser *const ap)
 {
 	int i;
 	for (i = 0; i < ap->data_size; ++i) {
@@ -104,9 +157,19 @@ static void free_data(struct Arg_parser *const ap)
 	ap->data_size = 0;
 }
 
-static char parse_long_option(struct Arg_parser *const ap,
+/**
+ * Parses a long option and adds it to the record of arg parser \p ap
+ *
+ * @param[in] ap Pointer to the arg parser state
+ * @param[in] opt long option string
+ * @param[in] arg option argument string
+ * @param[in] options array containing all defined options which may be parsed
+ * @param[in] argindp pointer to the index in the cmdline argument array.
+ *		The value will be automatically updated
+ */
+static char parse_long_option(struct _arg_parser *const ap,
 			      const char *const opt, const char *const arg,
-			      const struct ap_Option options[],
+			      const struct _ap_Option options[],
 			      int *const argindp)
 {
 	unsigned len;
@@ -176,9 +239,19 @@ static char parse_long_option(struct Arg_parser *const ap,
 	return push_back_record(ap, &options[index], true, "");
 }
 
-static char parse_short_option(struct Arg_parser *const ap,
+/**
+ * Parses a short option and adds it to the record of arg parser \p ap
+ *
+ * @param[in] ap Pointer to the arg parser state
+ * @param[in] opt long option string
+ * @param[in] arg option argument string
+ * @param[in] options array containing all defined options which may be parsed
+ * @param[in] argindp pointer to the index in the cmdline argument array.
+ *		The value will be automatically updated
+ */
+static char parse_short_option(struct _arg_parser *const ap,
 			       const char *const opt, const char *const arg,
-			       const struct ap_Option options[],
+			       const struct _ap_Option options[],
 			       int *const argindp)
 {
 	int cind = 1;		/* character index in opt */
@@ -229,11 +302,11 @@ static char parse_short_option(struct Arg_parser *const ap,
 	return 1;
 }
 
-char ap_init(struct Arg_parser *const ap,
+char ap_init(struct _arg_parser *const ap,
 	     const int argc, const char *const argv[],
-	     const struct ap_Option options[], const char in_order)
+	     const struct _ap_Option options[], const char in_order)
 {
-	const struct ap_Option non_option = {0, 0, ap_no, 0};
+	const struct _ap_Option non_option = {0, 0, ap_no, 0};
 	const char **non_options = 0;	/* skipped non-options */
 	int non_options_size = 0;	/* number of skipped non-options */
 	int argind = 1;		/* index in argv */
@@ -295,7 +368,7 @@ char ap_init(struct Arg_parser *const ap,
 	return 1;
 }
 
-void ap_free(struct Arg_parser *const ap)
+void ap_free(struct _arg_parser *const ap)
 {
 	free_data(ap);
 	if (ap->error) {
@@ -305,17 +378,17 @@ void ap_free(struct Arg_parser *const ap)
 	ap->error_size = 0;
 }
 
-const char *ap_error(const struct Arg_parser *const ap)
+const char *ap_error(const struct _arg_parser *const ap)
 {
 	return ap->error;
 }
 
-int ap_arguments(const struct Arg_parser *const ap)
+int ap_arguments(const struct _arg_parser *const ap)
 {
 	return ap->data_size;
 }
 
-int ap_code(const struct Arg_parser *const ap, const int i)
+int ap_code(const struct _arg_parser *const ap, const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].option->code;
@@ -323,7 +396,7 @@ int ap_code(const struct Arg_parser *const ap, const int i)
 		return 0;
 }
 
-const char *ap_argument(const struct Arg_parser *const ap, const int i)
+const char *ap_argument(const struct _arg_parser *const ap, const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].argument;
@@ -331,7 +404,7 @@ const char *ap_argument(const struct Arg_parser *const ap, const int i)
 		return "";
 }
 
-const char *ap_opt_string(const struct Arg_parser *const ap, const int i)
+const char *ap_opt_string(const struct _arg_parser *const ap, const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap)) 
 		return ap->data[i].opt_string;
@@ -339,7 +412,7 @@ const char *ap_opt_string(const struct Arg_parser *const ap, const int i)
 		return "";
 }
 
-const struct ap_Option *ap_option(const struct Arg_parser *const ap, const int i)
+const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].option;

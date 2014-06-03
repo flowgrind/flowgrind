@@ -2644,7 +2644,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 	int max_flow_specifier = 0;
 	int optint = 0;
 
-	const struct ap_Option options[] = {
+	const struct _ap_Option options[] = {
 		{'c', "show-colon", ap_yes, OPT_CONTROLLER},
 #ifdef DEBUG
 		{'d', "debug", ap_no, OPT_CONTROLLER},
@@ -2689,7 +2689,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		{0, 0, ap_no, 0} 
 	};
 
-	struct Arg_parser parser;
+	struct _arg_parser parser;
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser)) {
