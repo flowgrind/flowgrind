@@ -1,20 +1,6 @@
 # Travis-CI Build for flowgrind
 # see travis-ci.org for details
 
-env:
-  global:
-    # encrypted COVERITY_SCAN_TOKEN
-    - secure: "By4m1AbnnXIL0ytlYCZRN0r3WdQ2gpVU02nJBtjNuhj6o+rK02kwziDfqCdJjB/UDMW4aCKcPprw+xQrb2j3mujOQOXhLOxeKndIQ/zyeizQ4WqGc9TSS/zLbksu5UaiUL8I+SmVe5KIphk28ca7H6AKQe0TUlEbEnHsM4SAAH4="
-    # Coverity run condition
-    - coverity_scan_run_condition='"$TRAVIS_OS_NAME" = linux -a "$CC" = gcc'
-    # Development packages, EXTRA_PKGS saved for additional builds
-    - CORE_PKGS="libxmlrpc-c3-dev libcurl4-gnutls-dev"
-  matrix:
-    - EXTRA_PKGS="" EXTRA_CONFIG=""
-    - EXTRA_PKGS="" EXTRA_CONFIG="--enable-debug"
-    - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG=""
-    - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
-
 language: c
 
 os:
@@ -24,6 +10,31 @@ os:
 compiler:
     - gcc
     - clang
+
+env:
+  global:
+    # encrypted COVERITY_SCAN_TOKEN
+    - secure: "By4m1AbnnXIL0ytlYCZRN0r3WdQ2gpVU02nJBtjNuhj6o+rK02kwziDfqCdJjB/UDMW4aCKcPprw+xQrb2j3mujOQOXhLOxeKndIQ/zyeizQ4WqGc9TSS/zLbksu5UaiUL8I+SmVe5KIphk28ca7H6AKQe0TUlEbEnHsM4SAAH4="
+    # Development packages, EXTRA_PKGS saved for additional builds
+    - CORE_PKGS="libxmlrpc-c3-dev libcurl4-gnutls-dev"
+  matrix:
+    - EXTRA_PKGS="" EXTRA_CONFIG=""
+    - EXTRA_PKGS="" EXTRA_CONFIG="--enable-debug"
+    - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG=""
+    - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
+
+
+matrix:
+  fast_finish: true
+  exclude:
+     - os: osx
+       compiler: gcc
+  include:
+     - compiler: gcc
+       env: COVERITY_SCAN_BRANCH=1
+       os: linux
+  allow_failures:
+       env: COVERITY_SCAN_BRANCH=1
 
 before_install:
     - sudo apt-get -qq update
