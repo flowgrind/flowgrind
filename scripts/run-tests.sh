@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BUILD_COMMAND_PREPEND=autoreconf -i && ./configure $EXTRA_CONFIG
+BUILD_COMMAND_PREPEND="autoreconf -i && ./configure $EXTRA_CONFIG"
 BUILD_COMMAND="make -j2"
 
 if [ "$COVERITY_SCAN_BUILD" -eq 1 ]; then
