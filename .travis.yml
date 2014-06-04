@@ -1,7 +1,8 @@
-# Travis-CI Build for flowgrind
-# see travis-ci.org for details
+# Travis-CI build for flowgrind. See https://travis-ci.org for details.
+# Flowgrind also uses Coverity Scan. See https://scan.coverity.com/ for details.
 
-language: c
+language:
+    - c
 
 os:
     - linux
@@ -13,10 +14,18 @@ compiler:
 
 env:
   global:
-    # encrypted COVERITY_SCAN_TOKEN
+    # Coverity Scan environment
+    - COVERITY_SCAN_PROJECT_NAME="flowgrind/flowgrind"
+    - COVERITY_SCAN_NOTIFICATION_EMAIL="developer@flowgrind.net"
+    - COVERITY_SCAN_BRANCH_PATTERN="coverity_scan"
+    - COVERITY_SCAN_BUILD_COMMAND="make -j2"
+    - COVERITY_SCAN_BUILD_URL="https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh"
+    - COVERITY_SCAN_BUILD="curl -s $COVERITY_SCAN_BUILD_URL | bash"
     - secure: "By4m1AbnnXIL0ytlYCZRN0r3WdQ2gpVU02nJBtjNuhj6o+rK02kwziDfqCdJjB/UDMW4aCKcPprw+xQrb2j3mujOQOXhLOxeKndIQ/zyeizQ4WqGc9TSS/zLbksu5UaiUL8I+SmVe5KIphk28ca7H6AKQe0TUlEbEnHsM4SAAH4="
+
     # Development packages, EXTRA_PKGS saved for additional builds
     - CORE_PKGS="libxmlrpc-c3-dev libcurl4-gnutls-dev"
+
   matrix:
     - EXTRA_PKGS="" EXTRA_CONFIG=""
     - EXTRA_PKGS="" EXTRA_CONFIG="--enable-debug"
@@ -24,30 +33,39 @@ env:
     - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
 
 matrix:
-  fast_finish: true
+  # We only check when compiled with clang on OS X
   exclude:
      - os: osx
        compiler: gcc
+  # Covertiy scan should only run once
   include:
      - os: linux
        compiler: gcc
-       env: COVERITY_SCAN_BUILD=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
+       env: COVERITY_SCAN=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
+  # Covertiy scan might fail
   allow_failures:
-      - env: COVERITY_SCAN_BUILD=1
+     - env: COVERITY_SCAN=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
+  # Build will finish as soon as a job has failed, or when the only jobs left allow failures
+  fast_finish: true
 
 before_install:
-    - sudo apt-get -qq update
+    - if [ "$TRAVIS_OS_NAME" = linux ]; then sudo apt-get -qq update; fi
+    - if [ "$TRAVIS_OS_NAME" = osx ]; then brew update; fi
 
 install:
-    - sudo apt-get -qq install $CORE_PKGS $EXTRA_PKGS
-    - sudo apt-get -qq install valgrind
+    - if [ "$TRAVIS_OS_NAME" = linux ]; then sudo apt-get -qq install $CORE_PKGS $EXTRA_PKGS; fi
+    - if [ "$TRAVIS_OS_NAME" = linux -a "$COVERITY_SCAN" != 1 ]; then sudo apt-get -qq install valgrind; fi
+
+before_script:
+    - autoreconf -i
+    - ./configure "$EXTRA_CONFIG"
 
 script:
-    - ./scripts/run-tests.sh
+    - if [ "$COVERITY_SCAN" != 1 ]; then  make -j2; fi
 
 after_success:
-    - ./src/flowgrindd
-    - valgrind --leak-check=full --show-reachable=yes --suppressions=.valgrind.supp ./src/flowgrind -T s=1
+    - if [ "$TRAVIS_OS_NAME" = linux -a "$COVERITY_SCAN" != 1 ]; then ./src/flowgrindd; fi
+    - if [ "$TRAVIS_OS_NAME" = linux -a "$COVERITY_SCAN" != 1 ]; then valgrind --leak-check=full --show-reachable=yes --suppressions=.valgrind.supp ./src/flowgrind -T s=1; fi
 
 notifications:
   email:
