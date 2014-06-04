@@ -23,30 +23,28 @@ env:
     - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG=""
     - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
 
-
 matrix:
   fast_finish: true
   exclude:
      - os: osx
        compiler: gcc
   include:
-     - compiler: gcc
-       env: COVERITY_SCAN_BRANCH=1
-       os: linux
+     - os: linux
+       compiler: gcc
+       env: COVERITY_SCAN_BUILD=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
   allow_failures:
-       env: COVERITY_SCAN_BRANCH=1
+       env: COVERITY_SCAN_BUILD=1
 
 before_install:
     - sudo apt-get -qq update
 
 install:
-    - sudo apt-get -qq install ${CORE_PKGS} ${EXTRA_PKGS}
+    - sudo apt-get -qq install $CORE_PKGS $EXTRA_PKGS
     - sudo apt-get -qq install valgrind
 
 script:
-    - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then autoreconf -i && ./configure ${EXTRA_CONFIG} && make ; fi
+    - ./scripts/run-tests.sh
 
-# Run Tests
 after_success:
     - ./src/flowgrindd
     - valgrind --leak-check=full --show-reachable=yes --suppressions=.valgrind.supp ./src/flowgrind -T s=1
@@ -54,14 +52,3 @@ after_success:
 notifications:
   email:
     - developer@flowgrind.net
-
-addons:
-  # Coverity Scan
-  coverity_scan:
-    project:
-      name: "flowgrind/flowgrind"
-      description: "Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X"
-    notification_email: developer@flowgrind.net
-    build_command_prepend: autoreconf -i && ./configure --enable-debug
-    build_command: make
-    branch_pattern: coverity_scan
