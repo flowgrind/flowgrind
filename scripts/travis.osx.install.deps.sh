@@ -14,5 +14,5 @@ for PACKAGE in $PACKAGES; do
 done
 
 set -x
-brew install xmlrpc-c $EXTRA_PKGS
+brew install xmlrpc-c gettext $EXTRA_PKGS
 
