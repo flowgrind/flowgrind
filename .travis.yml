@@ -1,12 +1,9 @@
 # Travis-CI build for flowgrind. See https://travis-ci.org for details.
 # Flowgrind also uses Coverity Scan. See https://scan.coverity.com/ for details.
 
-language:
-    - c
+language: c
 
-os:
-    - linux
-#   - osx
+os: linux
 
 compiler:
     - gcc
@@ -49,6 +46,7 @@ matrix:
   fast_finish: true
 
 before_install:
+    - echo "$TRAVIS_OS_NAME"
     - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -qq update; fi
     - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
 
