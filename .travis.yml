@@ -49,12 +49,12 @@ matrix:
   fast_finish: true
 
 before_install:
-    - if [ "$TRAVIS_OS_NAME" = linux ]; then sudo apt-get -qq update; fi
-    - if [ "$TRAVIS_OS_NAME" = osx ]; then brew update; fi
+    - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -qq update; fi
+    - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
 
 install:
-    - if [ "$TRAVIS_OS_NAME" = linux ]; then sudo apt-get -qq install $CORE_PKGS $EXTRA_PKGS; fi
-    - if [ "$TRAVIS_OS_NAME" = linux -a "$COVERITY_SCAN" != 1 ]; then sudo apt-get -qq install valgrind; fi
+    - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -qq install $CORE_PKGS $EXTRA_PKGS; fi
+    - if [ "$TRAVIS_OS_NAME" = "linux" -a "$COVERITY_SCAN" != 1 ]; then sudo apt-get -qq install valgrind; fi
 
 before_script:
     - autoreconf -i
@@ -64,8 +64,8 @@ script:
     - if [ "$COVERITY_SCAN" != 1 ]; then  make -j2; fi
 
 after_success:
-    - if [ "$TRAVIS_OS_NAME" = linux -a "$COVERITY_SCAN" != 1 ]; then ./src/flowgrindd; fi
-    - if [ "$TRAVIS_OS_NAME" = linux -a "$COVERITY_SCAN" != 1 ]; then valgrind --leak-check=full --show-reachable=yes --suppressions=.valgrind.supp ./src/flowgrind -T s=1; fi
+    - if [ "$TRAVIS_OS_NAME" = "linux" -a "$COVERITY_SCAN" != 1 ]; then ./src/flowgrindd; fi
+    - if [ "$TRAVIS_OS_NAME" = "linux" -a "$COVERITY_SCAN" != 1 ]; then valgrind --leak-check=full --show-reachable=yes --suppressions=.valgrind.supp ./src/flowgrind -T s=1; fi
 
 notifications:
   email:
