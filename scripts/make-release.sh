@@ -45,7 +45,9 @@ fi
 $GIT checkout -- INSTALL
 find . -type d -name ".git" | xargs rm -r
 
-rm -r autom4te.cache .valgrind.supp .gitignore .travis.yml
+rm -r autom4te.cache .valgrind.supp .gitignore .travis.yml \
+    ./scripts/travis.linux.install.deps.sh \
+    ./scripts/travis.osx.install.deps.sh
 
 cd ..
 
