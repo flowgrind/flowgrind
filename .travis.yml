@@ -33,7 +33,7 @@ matrix:
        compiler: gcc
        env: COVERITY_SCAN_BUILD=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
   allow_failures:
-       env: COVERITY_SCAN_BUILD=1
+      - env: COVERITY_SCAN_BUILD=1
 
 before_install:
     - sudo apt-get -qq update
