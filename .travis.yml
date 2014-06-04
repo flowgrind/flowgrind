@@ -33,8 +33,7 @@ matrix:
   exclude:
      # Only check clang on OS X
      - os: osx
-       # For now skip every OS X build since flowgrind is not ready for OS X
-       #compiler: gcc
+       compiler: gcc
   include:
      # Covertiy scan should only run once
      - os: linux
@@ -43,6 +42,8 @@ matrix:
   allow_failures:
      # Covertiy scan might fail
      - env: COVERITY_SCAN=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
+     # For now ignore every OS X build since flowgrind is not ready for OS X
+     - os: osx
   # Build will finish as soon as a job has failed, or when the only jobs left allow failures
   fast_finish: true
 
