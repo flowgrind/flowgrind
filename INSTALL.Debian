@@ -24,4 +24,4 @@ Build debian package:
   dpkg-buildpackage -rfakeroot -uc -b
 
 Install resulting packages:
-  cd .. && sudo deb -i *.dpkg
+  cd .. && sudo dpkg -i *.deb
