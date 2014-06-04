@@ -47,6 +47,11 @@ matrix:
   # Build will finish as soon as a job has failed, or when the only jobs left allow failures
   fast_finish: true
 
+branches:
+  # blacklist branches
+  except:
+     - debian
+
 before_install:
     - env | sort
     - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -qq update; fi
