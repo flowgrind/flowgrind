@@ -1,16 +1,26 @@
-AC_INIT([Flowgrind],[0.7.1],[https://github.com/flowgrind/flowgrind/issues],[flowgrind],[https://www.flowgrind.net])
+AC_INIT([Flowgrind], [0.7.1], [https://github.com/flowgrind/flowgrind/issues],
+        [flowgrind], [https://www.flowgrind.net])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror dist-bzip2])
-AC_PREREQ(2.61)
 
-AC_USE_SYSTEM_EXTENSIONS
+# Minimum Autoconf version required
+AC_PREREQ([2.61])
 
-# Checks for programs
+# Files to generate
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([ \
+    Makefile \
+    doc/Makefile \
+    src/Makefile \
+])
+
+# Checking for programs
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CPP
+AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_MAKE_SET
-AC_PATH_TOOL(PERL, perl)
+AC_PATH_TOOL([PERL], [perl])
 
 # Checking for optional use of doxygen
 AC_ARG_WITH([doxygen],
@@ -30,13 +40,13 @@ AS_IF([test -n "$DOXYGEN"],
       ])
 AM_CONDITIONAL([USE_DOXYGEN], [test "x$with-doxygen" != "xno" -a -n "$DOXYGEN"])
 
-# Checks for host-system types
+# Checking for host-system types, includes, and libs
 AC_CANONICAL_HOST
 case $host in
     *darwin*)
         AC_DEFINE([__DARWIN__], [1], [Darwin])
         AC_DEFINE([_BSD_SOCKLEN_T_], [], [Need this under Darwin so that \
-            socklen_t will be defined in <sys/socket.h>])
+                                          socklen_t will be defined in <sys/socket.h>])
         # if Macport is used
         if test -d /opt/local/lib ; then
             LDFLAGS="-L/opt/local/lib $LDFLAGS"
@@ -45,42 +55,32 @@ case $host in
             CFLAGS="-I/opt/local/include $CFLAGS"
         fi
         ;;
+
     *freebsd*)
         AC_DEFINE([__FREEBSD__], [1], [FreeBSD])
         LDFLAGS="-L/usr/local/lib $LDFLAGS"
         CFLAGS="-I/usr/local/include $CFLAGS"
         ;;
+
     *linux*)
         AC_DEFINE([__LINUX__], [1], [Linux])
         ;;
 esac
 
+# Checking for C features
 AC_C_CONST
 AC_C_INLINE
 
+# Checking for GNU extensions
 AC_GNU_SOURCE
 
+# Checking functions
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
-
-AC_HEADER_SYS_WAIT
-AC_HEADER_TIME
-AC_HEADER_STDC
-
-AC_STRUCT_TM
-
-AC_TYPE_SIGNAL
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_TYPE_INT8_T
-AC_TYPE_UINT32_T
-AC_TYPE_INT32_T
-AC_TYPE_UNSIGNED_LONG_LONG_INT
-
 AC_CHECK_FUNCS([ \
     bzero \
     memset \
@@ -91,9 +91,24 @@ AC_CHECK_FUNCS([ \
     uname \
     asprintf \
     strdup \
-], [], [AC_MSG_ERROR(required function not found.)]
-)
+], [], [AC_MSG_ERROR([required function not found])])
 
+# Checking for structs
+AC_STRUCT_TM
+
+# Checking for types
+AC_TYPE_SIGNAL
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_INT8_T
+AC_TYPE_UINT32_T
+AC_TYPE_INT32_T
+AC_TYPE_UNSIGNED_LONG_LONG_INT
+
+# Checking fot headers
+AC_HEADER_SYS_WAIT
+AC_HEADER_TIME
+AC_HEADER_STDC
 AC_CHECK_HEADERS([ \
     arpa/inet.h \
     errno.h \
@@ -119,10 +134,10 @@ AC_CHECK_HEADERS([ \
     sys/uio.h \
     sys/utsname.h \
     time.h \
-], [], [AC_MSG_ERROR(required header not found.)]
-)
+], [], [AC_MSG_ERROR([required header not found])])
 
-AC_CHECK_HEADERS(net/if.h, [], [AC_MSG_ERROR(required header not found.)], [
+AC_CHECK_HEADERS([net/if.h], [],
+                 [AC_MSG_ERROR([required header not found])], [
     #include <stdio.h>
     #include <stdlib.h>
     #include <stddef.h>
@@ -130,7 +145,8 @@ AC_CHECK_HEADERS(net/if.h, [], [AC_MSG_ERROR(required header not found.)], [
     #include <sys/socket.h>
 ])
 
-AC_CHECK_HEADERS(netinet/if_ether.h netinet/ip.h, [], [AC_MSG_ERROR(required header not found.)], [
+AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
+                 [AC_MSG_ERROR([required header not found])], [
     #include <stdio.h>
     #include <stdlib.h>
     #include <stddef.h>
@@ -140,28 +156,23 @@ AC_CHECK_HEADERS(netinet/if_ether.h netinet/ip.h, [], [AC_MSG_ERROR(required hea
     #include <netinet/in_systm.h>
 ])
 
-AC_CONFIG_HEADERS([config.h])
-# Files to generate
-AC_CONFIG_FILES([
-    Makefile \
-    doc/Makefile \
-    src/Makefile \
-])
-
+# Checking for libraries
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_SEARCH_LIBS([socket], [socket])
 AC_SEARCH_LIBS([pthread_create], [pthread])
 
-AC_SUBST(LIBS)
+AC_SUBST([LIBS])
 
+# --enable-debug
 AC_ARG_ENABLE(debug,[AS_HELP_STRING(--enable-debug, enable debugging output and symbols [[default: no]] )])
 
 if test "$enable_debug" = yes ; then
     AC_DEFINE(DEBUG, [1], [Use debugging])
 fi
 
-AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: yes]] )])
+# --enable-pcap
+AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable libpcap for packet capturing [[default: yes]] )])
 AS_IF([ test "x$enable_pcap" != "xno"], [
     AC_CHECK_HEADER(pcap.h,
         AC_CHECK_LIB([pcap], pcap_open_live, [LINKABLE_LIBPCAP=1 AC_DEFINE(HAVE_LIBPCAP, 1, [Define to 1 if \
@@ -186,6 +197,7 @@ AS_IF([ test "x$enable_pcap" != "xno"], [
 ])
 AM_CONDITIONAL([USE_LIBPCAP], [test "x$enable_pcap" != "xno" -a "$LINKABLE_LIBPCAP" -eq 1])
 
+# --enable-gsl
 AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[default: yes]] )])
 AS_IF([ test "x$enable_gsl" != "xno"], [
     AC_CHECK_HEADER(gsl/gsl_rng.h,
@@ -209,6 +221,7 @@ AS_IF([ test "x$enable_gsl" != "xno"], [
     fi
 ])
 
+# Checking for CURL
 if test -z "$CURL_CONFIG"; then
     AC_PATH_TOOL(CURL_CONFIG, curl-config, no)
 fi
@@ -223,6 +236,7 @@ CURL_LDADD=`$CURL_CONFIG --libs`
 AC_SUBST(CURL_CFLAGS)
 AC_SUBST(CURL_LDADD)
 
+# Checking for xmlrpc-c
 if test -z "$XMLRPC_C_CONFIG"; then
     AC_PATH_TOOL(XMLRPC_C_CONFIG, xmlrpc-c-config, no)
 fi
