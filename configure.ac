@@ -16,19 +16,27 @@ AC_LIB_RPATH
 # Checks for host-system types
 AC_CANONICAL_HOST
 case $host in
-  *darwin*)
-    AC_DEFINE([__DARWIN__], [1], [Darwin])
-    AC_DEFINE([_BSD_SOCKLEN_T_], [], [Need this under Darwin so that \
-        socklen_t will be defined in <sys/socket.h>])
-    ;;
-  *freebsd*)
-    AC_DEFINE([__FREEBSD__], [1], [FreeBSD])
-    LDFLAGS="-L/usr/local/lib $LDFLAGS"
-    CFLAGS="-I/usr/local/include $CFLAGS"
-    ;;
-  *linux*)
-    AC_DEFINE([__LINUX__], [1], [Linux])
-    ;;
+    *darwin*)
+        AC_DEFINE([__DARWIN__], [1], [Darwin])
+        AC_DEFINE([_BSD_SOCKLEN_T_], [], [Need this under Darwin so that \
+            socklen_t will be defined in <sys/socket.h>])
+
+        # if Macport is used
+        if test -d /opt/local/lib ; then
+            LDFLAGS="-L/opt/local/lib $LDFLAGS"
+        fi
+        if test -d /opt/local/include ; then
+            CFLAGS="-I/opt/local/include $CFLAGS"
+        fi
+        ;;
+    *freebsd*)
+        AC_DEFINE([__FREEBSD__], [1], [FreeBSD])
+        LDFLAGS="-L/usr/local/lib $LDFLAGS"
+        CFLAGS="-I/usr/local/include $CFLAGS"
+        ;;
+    *linux*)
+        AC_DEFINE([__LINUX__], [1], [Linux])
+        ;;
 esac
 
 AC_C_CONST
