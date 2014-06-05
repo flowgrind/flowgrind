@@ -1,56 +1,81 @@
-# Travis-CI Build for flowgrind
-# see travis-ci.org for details
+# Travis-CI build for flowgrind. See https://travis-ci.org for details.
+# Flowgrind also uses Coverity Scan. See https://scan.coverity.com/ for details.
 
-env:
-  global:
-    # encrypted COVERITY_SCAN_TOKEN
-    - secure: "By4m1AbnnXIL0ytlYCZRN0r3WdQ2gpVU02nJBtjNuhj6o+rK02kwziDfqCdJjB/UDMW4aCKcPprw+xQrb2j3mujOQOXhLOxeKndIQ/zyeizQ4WqGc9TSS/zLbksu5UaiUL8I+SmVe5KIphk28ca7H6AKQe0TUlEbEnHsM4SAAH4="
-    # Coverity run condition
-    - coverity_scan_run_condition='"$TRAVIS_OS_NAME" = linux -a "$CC" = gcc'
-    # Development packages, EXTRA_PKGS saved for additional builds
-    - CORE_PKGS="libxmlrpc-c3-dev libcurl4-gnutls-dev"
-  matrix:
-    - EXTRA_PKGS="" EXTRA_CONFIG=""
-    - EXTRA_PKGS="" EXTRA_CONFIG="--enable-debug"
-    - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG=""
-    - EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
-
-language: c
+language:
+    - c
 
 os:
     - linux
-#   - osx
+    - osx
 
 compiler:
     - gcc
     - clang
 
+env:
+  global:
+    # Coverity Scan environment
+    - COVERITY_SCAN_PROJECT_NAME="flowgrind/flowgrind"
+    - COVERITY_SCAN_NOTIFICATION_EMAIL="developer@flowgrind.net"
+    - COVERITY_SCAN_BRANCH_PATTERN="coverity_scan"
+    - COVERITY_SCAN_BUILD_COMMAND="make -j2"
+    - COVERITY_SCAN_BUILD_URL="https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh"
+    - COVERITY_SCAN_BUILD="curl -s $COVERITY_SCAN_BUILD_URL | bash"
+    - secure: "By4m1AbnnXIL0ytlYCZRN0r3WdQ2gpVU02nJBtjNuhj6o+rK02kwziDfqCdJjB/UDMW4aCKcPprw+xQrb2j3mujOQOXhLOxeKndIQ/zyeizQ4WqGc9TSS/zLbksu5UaiUL8I+SmVe5KIphk28ca7H6AKQe0TUlEbEnHsM4SAAH4="
+
+  matrix:
+    - PACKAGES="" EXTRA_CONFIG=""
+    - PACKAGES="" EXTRA_CONFIG="--enable-debug"
+    - PACKAGES="gsl libpcap" EXTRA_CONFIG=""
+    - PACKAGES="gsl libpcap" EXTRA_CONFIG="--enable-debug"
+
+matrix:
+  exclude:
+     # Only check clang on OS X
+     - os: osx
+       compiler: gcc
+
+  include:
+     # Covertiy scan should only run once
+     - os: linux
+       compiler: gcc
+       env: COVERITY_SCAN=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
+
+  allow_failures:
+     # Covertiy scan might fail
+     - env: COVERITY_SCAN=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug"
+     # For now ignore every OS X build since flowgrind is not ready for OS X
+     - os: osx
+
+  # Build will finish as soon as a job has failed, or when the only jobs left allow failures
+  fast_finish: true
+
+branches:
+  # blacklist branches
+  except:
+     - debian
+
 before_install:
-    - sudo apt-get -qq update
+    - env | sort
+    - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -qq update; fi
+    - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
 
 install:
-    - sudo apt-get -qq install ${CORE_PKGS} ${EXTRA_PKGS}
-    - sudo apt-get -qq install valgrind
+    - if [ "$TRAVIS_OS_NAME" = "linux" -a "$COVERITY_SCAN" != 1 ]; then sudo apt-get -qq install valgrind; fi
+    - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./scripts/travis.linux.install.deps.sh; fi
+    - if [ "$TRAVIS_OS_NAME" = "osx" ]; then ./scripts/travis.osx.install.deps.sh; fi
+
+before_script:
+    - autoreconf -i
+    - ./configure "$EXTRA_CONFIG"
 
 script:
-    - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then autoreconf -i && ./configure ${EXTRA_CONFIG} && make ; fi
+    - if [ "$COVERITY_SCAN" != 1 ]; then  make -j2; fi
 
-# Run Tests
 after_success:
-    - ./src/flowgrindd
-    - valgrind --leak-check=full --show-reachable=yes --suppressions=.valgrind.supp ./src/flowgrind -T s=1
+    - if [ "$TRAVIS_OS_NAME" = "linux" -a "$COVERITY_SCAN" != 1 ]; then ./src/flowgrindd; fi
+    - if [ "$TRAVIS_OS_NAME" = "linux" -a "$COVERITY_SCAN" != 1 ]; then valgrind --leak-check=full --show-reachable=yes --suppressions=.valgrind.supp ./src/flowgrind -T s=1; fi
 
 notifications:
   email:
     - developer@flowgrind.net
-
-addons:
-  # Coverity Scan
-  coverity_scan:
-    project:
-      name: "flowgrind/flowgrind"
-      description: "Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X"
-    notification_email: developer@flowgrind.net
-    build_command_prepend: autoreconf -i && ./configure --enable-debug
-    build_command: make
-    branch_pattern: coverity_scan
