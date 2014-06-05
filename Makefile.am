@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = src doc
 CLEANFILES = gitversion.h
 BUILT_SOURCES = gitversion.h
 

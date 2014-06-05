@@ -12,6 +12,24 @@ AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PATH_TOOL(PERL, perl)
 
+# Checking for optional use of doxygen
+AC_ARG_WITH([doxygen],
+            [AS_HELP_STRING([--without-doxygen],
+                            [ignore presence of doxygen and disable doxygen \
+                             feature to generate API documentation])
+            ])
+
+AS_IF([test "x$with_doxygen" != "xno"],
+      [AC_PATH_TOOL([DOXYGEN], [doxygen])],
+      [DOXYGEN=""])
+
+AS_IF([test -n "$DOXYGEN"],
+      [AC_DEFINE([HAVE_DOXYGEN], [1], [Define to 1 if you have doxygen installed])],
+      [AS_IF([test "x$with_doxygen" = "xyes"],
+             [AC_MSG_ERROR([doxygen requested but not found])])
+      ])
+AM_CONDITIONAL([USE_DOXYGEN], [test "x$with-doxygen" != "xno" -a -n "$DOXYGEN"])
+
 # Checks for host-system types
 AC_CANONICAL_HOST
 case $host in
@@ -123,8 +141,10 @@ AC_CHECK_HEADERS(netinet/if_ether.h netinet/ip.h, [], [AC_MSG_ERROR(required hea
 ])
 
 AC_CONFIG_HEADERS([config.h])
+# Files to generate
 AC_CONFIG_FILES([
     Makefile \
+    doc/Makefile \
     src/Makefile \
 ])
 
