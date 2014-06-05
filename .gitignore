@@ -23,14 +23,7 @@
 /*.pcap
 /cscope.out
 /*.kdev4
-
-# /build-aux/
-/build-aux/compile
-/build-aux/config.guess
-/build-aux/config.sub
-/build-aux/depcomp
-/build-aux/install-sh
-/build-aux/missing
+/build-aux
 
 # /src/
 /src/new

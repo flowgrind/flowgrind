@@ -5,30 +5,36 @@ AC_PREREQ(2.61)
 
 AC_USE_SYSTEM_EXTENSIONS
 
-# Checks for programs.
+# Checks for programs
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
-AC_LIB_RPATH
 
 # Checks for host-system types
 AC_CANONICAL_HOST
 case $host in
-  *darwin*)
-    AC_DEFINE([__DARWIN__], [1], [Darwin])
-    AC_DEFINE([_BSD_SOCKLEN_T_], [], [Need this under Darwin so that \
-        socklen_t will be defined in <sys/socket.h>])
-    ;;
-  *freebsd*)
-    AC_DEFINE([__FREEBSD__], [1], [FreeBSD])
-    LDFLAGS="-L/usr/local/lib $LDFLAGS"
-    CFLAGS="-I/usr/local/include $CFLAGS"
-    ;;
-  *linux*)
-    AC_DEFINE([__LINUX__], [1], [Linux])
-    ;;
+    *darwin*)
+        AC_DEFINE([__DARWIN__], [1], [Darwin])
+        AC_DEFINE([_BSD_SOCKLEN_T_], [], [Need this under Darwin so that \
+            socklen_t will be defined in <sys/socket.h>])
+        # if Macport is used
+        if test -d /opt/local/lib ; then
+            LDFLAGS="-L/opt/local/lib $LDFLAGS"
+        fi
+        if test -d /opt/local/include ; then
+            CFLAGS="-I/opt/local/include $CFLAGS"
+        fi
+        ;;
+    *freebsd*)
+        AC_DEFINE([__FREEBSD__], [1], [FreeBSD])
+        LDFLAGS="-L/usr/local/lib $LDFLAGS"
+        CFLAGS="-I/usr/local/include $CFLAGS"
+        ;;
+    *linux*)
+        AC_DEFINE([__LINUX__], [1], [Linux])
+        ;;
 esac
 
 AC_C_CONST
@@ -42,9 +48,13 @@ AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
+
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
+AC_HEADER_STDC
+
 AC_STRUCT_TM
+
 AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
@@ -65,8 +75,6 @@ AC_CHECK_FUNCS([ \
     strdup \
 ], [], [AC_MSG_ERROR(required function not found.)]
 )
-
-AC_HEADER_STDC
 
 AC_CHECK_HEADERS([ \
     arpa/inet.h \
@@ -93,33 +101,32 @@ AC_CHECK_HEADERS([ \
     sys/uio.h \
     sys/utsname.h \
     time.h \
-    ], [], [AC_MSG_ERROR(required header not found.)]
+], [], [AC_MSG_ERROR(required header not found.)]
 )
 
 AC_CHECK_HEADERS(net/if.h, [], [AC_MSG_ERROR(required header not found.)], [
-  #include <stdio.h>
-  #include <stdlib.h>
-  #include <stddef.h>
-  #include <sys/types.h>
-  #include <sys/socket.h>
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <stddef.h>
+    #include <sys/types.h>
+    #include <sys/socket.h>
 ])
 
 AC_CHECK_HEADERS(netinet/if_ether.h netinet/ip.h, [], [AC_MSG_ERROR(required header not found.)], [
-  #include <stdio.h>
-  #include <stdlib.h>
-  #include <stddef.h>
-  #include <sys/types.h>
-  #include <sys/socket.h>
-  #include <netinet/in.h>
-  #include <netinet/in_systm.h>
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <stddef.h>
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <netinet/in_systm.h>
 ])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
-        Makefile \
-        src/Makefile \
+    Makefile \
+    src/Makefile \
 ])
-
 
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([clock_gettime], [rt])
@@ -136,19 +143,21 @@ fi
 
 AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable lipcap for packet capturing [[default: yes]] )])
 AS_IF([ test "x$enable_pcap" != "xno"], [
-        AC_CHECK_HEADER(pcap.h,
-                AC_CHECK_LIB([pcap], pcap_open_live, [LINKABLE_LIBPCAP=1 AC_DEFINE(HAVE_LIBPCAP, 1, [Define to 1 if you have the pcap library (-lpcap).])],
-                AC_MSG_NOTICE([*** Could not find libpcap: will compile without optional traffic dump feature. ***]),[-lpcap]),
-                AC_MSG_NOTICE([*** Header file pcap.h not found: will compile without optional traffic dump. ***]))
+    AC_CHECK_HEADER(pcap.h,
+        AC_CHECK_LIB([pcap], pcap_open_live, [LINKABLE_LIBPCAP=1 AC_DEFINE(HAVE_LIBPCAP, 1, [Define to 1 if \
+                      you have the pcap library (-lpcap).])],
+        AC_MSG_NOTICE([*** Could not find libpcap: will compile without optional traffic dump feature. ***]),[-lpcap]),
+        AC_MSG_NOTICE([*** Header file pcap.h not found: will compile without optional traffic dump feature. ***])
+    )
 
-        if test -z "$PCAP_CONFIG"; then
-                AC_PATH_PROG(PCAP_CONFIG, pcap-config, no)
-        fi
+    if test -z "$PCAP_CONFIG"; then
+        AC_PATH_PROG(PCAP_CONFIG, pcap-config, no)
+    fi
 
-        if test "x$PCAP_CONFIG" = "xno"; then
-                AC_MSG_NOTICE(pcap-config not found in path.)
+    if test "x$PCAP_CONFIG" = "xno"; then
+        AC_MSG_NOTICE(pcap-config not found in path.)
     else
-            PCAP_CFLAGS=`$PCAP_CONFIG --cflags`
+        PCAP_CFLAGS=`$PCAP_CONFIG --cflags`
         PCAP_LDADD=`$PCAP_CONFIG --libs`
 
         AC_SUBST(PCAP_CFLAGS)
@@ -161,14 +170,16 @@ AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[
 AS_IF([ test "x$enable_gsl" != "xno"], [
     AC_CHECK_HEADER(gsl/gsl_rng.h,
         AC_CHECK_LIB([gsl], gsl_rng_alloc, [AC_DEFINE(HAVE_LIBGSL, 1, [Define to 1 if you have the gsl library (-lgsl).])],
-            AC_MSG_NOTICE([*** Could not find libgsl: will compile without optional trafgen distributions. ***]),[-lgslcblas]),
-            AC_MSG_NOTICE([*** Header file gsl_rng.h not found: will compile without optional trafgen distributions. ***]))
+        AC_MSG_NOTICE([*** Could not find libgsl: will compile without optional trafgen distributions. ***]),[-lgslcblas]),
+        AC_MSG_NOTICE([*** Header file gsl_rng.h not found: will compile without optional trafgen distributions. ***])
+    )
+
     if test -z "$GSL_CONFIG"; then
-            AC_PATH_PROG(GSL_CONFIG, gsl-config, no)
+        AC_PATH_PROG(GSL_CONFIG, gsl-config, no)
     fi
 
     if test "x$GSL_CONFIG" = "xno"; then
-            AC_MSG_NOTICE(gsl-config not found in path.)
+        AC_MSG_NOTICE(gsl-config not found in path.)
     else
         GSL_CFLAGS=`$GSL_CONFIG --cflags`
         GSL_LDADD=`$GSL_CONFIG --libs`
@@ -210,11 +221,10 @@ fi
 
 XMLRPC_C_VERSION=`$XMLRPC_C_CONFIG --version`
 
-AC_CHECK_MEMBERS(struct xmlrpc_curl_xportparms.dont_advertise,,,
-         [
-         #include <xmlrpc-c/client.h>
-         #include <xmlrpc-c/transport.h>
-         ])
+AC_CHECK_MEMBERS(struct xmlrpc_curl_xportparms.dont_advertise,,,[
+    #include <xmlrpc-c/client.h>
+    #include <xmlrpc-c/transport.h>
+])
 AC_MSG_NOTICE([xmlrpc-c found in version $XMLRPC_C_VERSION])
 AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION], [$XMLRPC_C_VERSION], [the current xmlrpc-c version])
 
