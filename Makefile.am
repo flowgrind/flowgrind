@@ -1,5 +1,5 @@
 SUBDIRS = src
-EXTRA_DIST = build-aux/config.rpath configure ./scripts/make-version.sh ./scripts/make-release.sh
+EXTRA_DIST = configure ./scripts/make-version.sh ./scripts/make-release.sh
 CLEANFILES = gitversion.h
 BUILT_SOURCES = gitversion.h
 

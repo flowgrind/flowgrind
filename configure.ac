@@ -11,7 +11,6 @@ AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PATH_PROG(PERL, perl)
-AC_LIB_RPATH
 
 # Checks for host-system types
 AC_CANONICAL_HOST
