@@ -2287,8 +2287,15 @@ static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) 
 	free(rpc_address);
 }
 
-/* Parse flow specific options given on the cmdline */
-static void parse_flow_option(int ch, const char *arg, int flow_id, int endpoint_id) {
+/**
+ * Parse flow options with endpoint
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the cmdline option
+ * @param[in] flow_id id of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
+ */
+static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, int endpoint_id) {
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
@@ -2296,32 +2303,7 @@ static void parse_flow_option(int ch, const char *arg, int flow_id, int endpoint
 	struct _flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
 	struct _flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
 
-	switch (ch) {
-	/* flow options w/o endpoint identifier */
-	case 'E':
-		cflow[flow_id].byte_counting = 1;
-		break;
-	case 'I':
-		SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
-		break;
-	case 'J':
-		rc = sscanf(arg, "%u", &optunsigned);
-		if (rc != 1) {
-			errx("random seed must be a valid unsigned integer");
-			usage(EXIT_FAILURE);
-		}
-		cflow[flow_id].random_seed = optunsigned;
-		break;
-	case 'L':
-		cflow[flow_id].late_connect = 1;
-		break;
-	case 'N':
-		cflow[flow_id].shutdown = 1;
-		break;
-	case 'Q':
-		cflow[flow_id].summarize_only = 1;
-		break;
-	/* flow options w/ endpoint identifier */
+	switch (code) {
 	case 'G':
 		parse_trafgen_option(arg, flow_id, endpoint_id);
 		break;
@@ -2455,8 +2437,47 @@ static void parse_flow_option(int ch, const char *arg, int flow_id, int endpoint
 }
 
 /**
- * Parse argument for option -c, which hides/shows intermediated interval
- * report columns
+ * Parse flow options without endpoint
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the cmdline option
+ * @param[in] flow_id id of flow to apply option to
+ */
+static void parse_flow_option(int code, const char* arg, int flow_id) {
+	int rc = 0;
+	unsigned optunsigned = 0;
+
+	switch (code) {
+	/* flow options w/o endpoint identifier */
+	case 'E':
+		cflow[flow_id].byte_counting = 1;
+		break;
+	case 'I':
+		SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
+		break;
+	case 'J':
+		rc = sscanf(arg, "%u", &optunsigned);
+		if (rc != 1) {
+			errx("random seed must be a valid unsigned integer");
+			usage(EXIT_FAILURE);
+		}
+		cflow[flow_id].random_seed = optunsigned;
+		break;
+	case 'L':
+		cflow[flow_id].late_connect = 1;
+		break;
+	case 'N':
+		cflow[flow_id].shutdown = 1;
+		break;
+	case 'Q':
+		cflow[flow_id].summarize_only = 1;
+		break;
+	}
+}
+
+/**
+ * Parse argument for option -c to hide/show intermediated interval report
+ * columns
  *
  * @param[in] arg argument for option -c
  */
@@ -2512,6 +2533,110 @@ static void parse_colon_option(const char *arg)
 	free(argcpy);
 }
 
+/**
+ * Parse general controller options given on the cmdline
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
+ */
+static void parse_general_option(int code, const char* arg, const char* opt_string) {
+
+	int rc;
+
+	switch (code) {
+	case 0:
+		errx("invalid argument: %s", arg);
+		usage(EXIT_FAILURE);
+	/* general options */
+	case 'h':
+		usage(EXIT_SUCCESS);
+		break;
+	case HELP_OPTION:
+		if (!arg || !strlen(arg)) {
+			usage(EXIT_SUCCESS);
+		} else if (!strcmp(arg, "socket")) {
+			usage_sockopt();
+		} else if (!strcmp(arg, "traffic")) {
+			usage_trafgenopt();
+		} else {
+			errx("invalid argument '%s' for '%s'", arg, opt_string);
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'v':
+		fprintf(stderr, "%s version: %s\n", progname,
+			FLOWGRIND_VERSION);
+		exit(EXIT_SUCCESS);
+
+	/* controller options */
+	case 'c':
+		parse_colon_option(arg);
+		break;
+	case 'd':
+		increase_debuglevel();
+		break;
+	#ifdef HAVE_LIBPCAP
+	case 'e':
+		copt.dump_prefix = arg;
+		break;
+	#endif /* HAVE_LIBPCAP */
+	case 'i':
+		rc = sscanf(arg, "%lf", &copt.reporting_interval);
+		if (rc != 1 || copt.reporting_interval <= 0) {
+			errx("%s: reporting interval must be a "
+			     "positive number (in seconds)", progname);
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case LOG_FILE_OPTION:
+		copt.log_to_file = true;
+		if (arg)
+			log_filename = strdup(arg);
+		break;
+	case 'm':
+		copt.mbyte = true;
+		column_info[COL_THROUGH].header.unit = " [MB/s]";
+		break;
+	case 'n':
+		rc = sscanf(arg, "%hd", &copt.num_flows);
+		if (rc != 1 || copt.num_flows > MAX_FLOWS) {
+			errx("number of test flows must be within "
+			     "[1..%d]", MAX_FLOWS);
+			usage(EXIT_FAILURE);
+		}
+		break;
+	case 'o':
+		copt.clobber = true;
+		break;
+	case 'p':
+		copt.symbolic = false;
+		break;
+	case 'q':
+		copt.log_to_stdout = false;
+		break;
+	case 's':
+		if (!strcmp(arg, "segment")) {
+			copt.force_unit = SEGMENT_BASED;
+		} else if (!strcmp(arg, "byte")) {
+			copt.force_unit = BYTE_BASED;
+		} else {
+			errx("invalid argument '%s' for option '%s'", 
+				arg, opt_string);
+			usage(EXIT_FAILURE);
+		}
+	case 'w':
+		copt.log_to_file = true;
+		break;
+	/* unknown option or missing option-argument */
+	default:
+		errx("uncaught option: %s", arg);
+		usage(EXIT_FAILURE);
+		break;
+	}
+	
+}
+
 static void parse_cmdline(int argc, char *argv[]) {
 	int rc = 0;
 	int cur_num_flows = 0;
@@ -2519,52 +2644,52 @@ static void parse_cmdline(int argc, char *argv[]) {
 	int max_flow_specifier = 0;
 	int optint = 0;
 
-	const struct ap_Option options[] = {
-		{'c', "show-colon", ap_yes},
+	const struct _ap_Option options[] = {
+		{'c', "show-colon", ap_yes, OPT_CONTROLLER},
 #ifdef DEBUG
-		{'d', "debug", ap_no},
+		{'d', "debug", ap_no, OPT_CONTROLLER},
 #endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
-		{'e', "dump-prefix", ap_yes},
+		{'e', "dump-prefix", ap_yes, OPT_CONTROLLER},
 #endif /* HAVE_LIBPCAP */
-		{'h', 0, ap_no},
-		{HELP_OPTION, "help", ap_maybe},
-		{'i', "report-interval", ap_yes},
-		{LOG_FILE_OPTION, "log-file", ap_maybe},
-		{'m', 0, ap_no},
-		{'n', "flows", ap_yes},
-		{'o', 0, ap_no},
-		{'p', 0, ap_no},
-		{'q', "quiet", ap_no},
-		{'s', "tcp-stack", ap_yes},
-		{'v', "version", ap_no},
-		{'w', 0, ap_no},
-		{'A', 0, ap_yes},
-		{'B', 0, ap_yes},
-		{'C', 0, ap_no},
-		{'D', 0, ap_yes},
-		{'E', 0, ap_no},
-		{'F', 0, ap_yes},
-		{'G', 0, ap_yes},
-		{'H', 0, ap_yes},
-		{'I', 0, ap_no},
-		{'J', 0, ap_yes},
-		{'L', 0, ap_no},
-		{'M', 0, ap_yes},
-		{'N', 0, ap_no},
-		{'O', 0, ap_yes},
-		{'P', 0, ap_yes},
-		{'Q', 0, ap_no},
-		{'R', 0, ap_yes},
-		{'S', 0, ap_yes},
-		{'T', 0, ap_yes},
-		{'U', 0, ap_yes},
-		{'W', 0, ap_yes},
-		{'Y', 0, ap_yes},
-		{0, 0, ap_no}
+		{'h', 0, ap_no, OPT_CONTROLLER},
+		{HELP_OPTION, "help", ap_maybe, OPT_CONTROLLER},
+		{'i', "report-interval", ap_yes, OPT_CONTROLLER},
+		{LOG_FILE_OPTION, "log-file", ap_maybe, OPT_CONTROLLER},
+		{'m', 0, ap_no, OPT_CONTROLLER},
+		{'n', "flows", ap_yes, OPT_CONTROLLER},
+		{'o', 0, ap_no, OPT_CONTROLLER},
+		{'p', 0, ap_no, OPT_CONTROLLER},
+		{'q', "quiet", ap_no, OPT_CONTROLLER},
+		{'s', "tcp-stack", ap_yes, OPT_CONTROLLER},
+		{'v', "version", ap_no, OPT_CONTROLLER},
+		{'w', 0, ap_no, OPT_CONTROLLER},
+		{'A', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'B', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'C', 0, ap_no, OPT_FLOW_ENDPOINT},
+		{'D', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'E', 0, ap_no, OPT_FLOW},
+		{'F', 0, ap_yes, OPT_SELECTOR},
+		{'G', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'H', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'I', 0, ap_no, OPT_FLOW},
+		{'J', 0, ap_yes, OPT_FLOW},
+		{'L', 0, ap_no, OPT_FLOW},
+		{'M', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'N', 0, ap_no, OPT_FLOW},
+		{'O', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'P', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'Q', 0, ap_no, OPT_FLOW},
+		{'R', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'S', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'T', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'U', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'W', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT},
+		{0, 0, ap_no, 0} 
 	};
 
-	struct Arg_parser parser;
+	struct _arg_parser parser;
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser)) {
@@ -2582,95 +2707,15 @@ static void parse_cmdline(int argc, char *argv[]) {
 		const int code = ap_code(&parser, argind);
 		const char *arg = ap_argument(&parser, argind);
 		char *argcpy = strdup(arg);
-
-		switch (code) {
-		case 0:
-			errx("invalid argument: %s", arg);
-			usage(EXIT_FAILURE);
-		/* general options */
-		case 'h':
-			usage(EXIT_SUCCESS);
+		const char *opt_string = ap_opt_string(&parser, argind);
+		int tag = ap_option(&parser, argind)->tag;
+		
+		/* distinguish option types by tag first */
+		switch (tag) {
+		case OPT_CONTROLLER:
+			parse_general_option(code, arg, opt_string);
 			break;
-		case HELP_OPTION:
-			if (!arg || !strlen(arg)) {
-				usage(EXIT_SUCCESS);
-			} else if (!strcmp(arg, "socket")) {
-				usage_sockopt();
-			} else if (!strcmp(arg, "traffic")) {
-				usage_trafgenopt();
-			} else {
-				errx("invalid argument '%s' for '%s'", arg,
-				     ap_opt_string(&parser, argind));
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'v':
-			fprintf(stderr, "%s version: %s\n", progname,
-				FLOWGRIND_VERSION);
-			exit(EXIT_SUCCESS);
-
-		/* controller options */
-		case 'c':
-			parse_colon_option(arg);
-			break;
-		case 'd':
-			increase_debuglevel();
-			break;
-#ifdef HAVE_LIBPCAP
-		case 'e':
-			copt.dump_prefix = arg;
-			break;
-#endif /* HAVE_LIBPCAP */
-		case 'i':
-			rc = sscanf(arg, "%lf", &copt.reporting_interval);
-			if (rc != 1 || copt.reporting_interval <= 0) {
-				errx("%s: reporting interval must be a "
-				     "positive number (in seconds)", progname);
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case LOG_FILE_OPTION:
-			copt.log_to_file = true;
-			if (arg)
-				log_filename = strdup(arg);
-			break;
-		case 'm':
-			copt.mbyte = true;
-			column_info[COL_THROUGH].header.unit = " [MB/s]";
-			break;
-		case 'n':
-			rc = sscanf(arg, "%hd", &copt.num_flows);
-			if (rc != 1 || copt.num_flows > MAX_FLOWS) {
-				errx("number of test flows must be within "
-				     "[1..%d]", MAX_FLOWS);
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'o':
-			copt.clobber = true;
-			break;
-		case 'p':
-			copt.symbolic = false;
-			break;
-		case 'q':
-			copt.log_to_stdout = false;
-			break;
-		case 's':
-			if (!strcmp(arg, "segment")) {
-				copt.force_unit = SEGMENT_BASED;
-			} else if (!strcmp(arg, "byte")) {
-				copt.force_unit = BYTE_BASED;
-			} else {
-				errx("invalid argument '%s' for option '%s'",
-					arg, ap_opt_string(&parser, argind));
-				usage(EXIT_FAILURE);
-			}
-		case 'w':
-			copt.log_to_file = true;
-			break;
-
-		/* flow options w/o endpoint identifier */
-		case 'F':
+		case OPT_SELECTOR:
 			cur_num_flows = 0;
 			for (char *token = strtok(argcpy, ","); token;
 			     token = strtok(NULL, ",")) {
@@ -2692,32 +2737,11 @@ static void parse_cmdline(int argc, char *argv[]) {
 				ASSIGN_MAX(max_flow_specifier, optint);
 			}
 			break;
-		case 'E':
-		case 'I':
-		case 'J':
-		case 'L':
-		case 'N':
-		case 'Q':
+		case OPT_FLOW:
 			for (int i = 0; i < cur_num_flows; i++)
-				parse_flow_option(code, arg, current_flow_ids[i], 0);
+				parse_flow_option(code, arg, current_flow_ids[i]);
 			break;
-
-		/* flow options w/ endpoint identifier */
-		case 'G':
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'H':
-		case 'O':
-		case 'M':
-		case 'P':
-		case 'R':
-		case 'S':
-		case 'T':
-		case 'U':
-		case 'W':
-		case 'Y':
+		case OPT_FLOW_ENDPOINT:
 			/* pre-parse flow option for endpoints */
 			for (char *token = strtok(argcpy, ","); token;
 			     token = strtok(NULL, ",")) {
@@ -2737,16 +2761,14 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option(code, arg, current_flow_ids[i], SOURCE);
+						parse_flow_option_endpoint(code, arg, current_flow_ids[i], SOURCE);	
 					if (type == 'd' || type == 'b')
-						parse_flow_option(code, arg, current_flow_ids[i], DESTINATION);
+						parse_flow_option_endpoint(code, arg, current_flow_ids[i], DESTINATION);	
 				}
 			}
 			break;
-
-		/* unknown option or missing option-argument */
 		default:
-			errx("uncaught option: %s", arg);
+			errx("uncaught option tag!");
 			usage(EXIT_FAILURE);
 			break;
 		}
