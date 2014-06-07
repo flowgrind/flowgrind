@@ -292,6 +292,7 @@ static void* fg_pcap_work(void* arg)
 	}
 
 remove:
+	;
 	pthread_cleanup_pop(1);
 
 #ifndef __DARWIN__
