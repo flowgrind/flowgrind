@@ -10,7 +10,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_MAKE_SET
-AC_PATH_PROG(PERL, perl)
+AC_PATH_TOOL(PERL, perl)
 
 # Checks for host-system types
 AC_CANONICAL_HOST
@@ -190,7 +190,7 @@ AS_IF([ test "x$enable_gsl" != "xno"], [
 ])
 
 if test -z "$CURL_CONFIG"; then
-    AC_PATH_PROG(CURL_CONFIG, curl-config, no)
+    AC_PATH_TOOL(CURL_CONFIG, curl-config, no)
 fi
 
 if test "x$CURL_CONFIG" = "xno" ; then
@@ -204,7 +204,7 @@ AC_SUBST(CURL_CFLAGS)
 AC_SUBST(CURL_LDADD)
 
 if test -z "$XMLRPC_C_CONFIG"; then
-    AC_PATH_PROG(XMLRPC_C_CONFIG, xmlrpc-c-config, no)
+    AC_PATH_TOOL(XMLRPC_C_CONFIG, xmlrpc-c-config, no)
 fi
 
 if test "x$XMLRPC_C_CONFIG" = "xno"; then
