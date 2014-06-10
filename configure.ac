@@ -48,18 +48,16 @@ case $host in
         AC_DEFINE([_BSD_SOCKLEN_T_], [], [Need this under Darwin so that \
                                           socklen_t will be defined in <sys/socket.h>])
         # if Macport is used
-        if test -d /opt/local/lib ; then
-            LDFLAGS="-L/opt/local/lib $LDFLAGS"
-        fi
-        if test -d /opt/local/include ; then
-            CFLAGS="-I/opt/local/include $CFLAGS"
-        fi
+        AS_IF([test -d /opt/local/lib],
+              [AC_SUBST([LDFLAGS], [-L/opt/local/lib])])
+        AS_IF([test -d /opt/local/include],
+              [AC_SUBST([CFLAGS], [-I/opt/local/include])])
         ;;
 
     *freebsd*)
         AC_DEFINE([__FREEBSD__], [1], [FreeBSD])
-        LDFLAGS="-L/usr/local/lib $LDFLAGS"
-        CFLAGS="-I/usr/local/include $CFLAGS"
+        AC_SUBST([LDFLAGS], [-L/usr/local/lib])
+        AC_SUBST([CFLAGS], [-I/usr/local/include])
         ;;
 
     *linux*)
