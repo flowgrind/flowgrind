@@ -53,14 +53,14 @@
 /** Maximal number of parallel flows */
 #define MAX_FLOWS 2048
 
-/* XXX add a brief description doxygen */
+/** Max number of arbitrary extra socket options which may be sent to the deamon */
 #define MAX_EXTRA_SOCKET_OPTIONS 10
 
-/* XXX add a brief description doxygen */
+/** Ensures that extra options are limited in length on both controller and deamon side */
 #define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
 
 #ifndef TCP_CA_NAME_MAX
-/* XXX add a brief description doxygen */
+/** Max size of the congestion control algorithm specifier string */
 #define TCP_CA_NAME_MAX 16
 #endif /* TCP_CA_NAME_MAX */
 
@@ -137,32 +137,51 @@ struct _block {
 	struct timespec data2;
 };
 
-/* XXX add a brief description doxygen */
+/** options for stochastic traffic generation */
 struct _trafgen_options {
+	/** The stochastic distribution to draw values from */
 	enum distributions distribution;
+	/** First mathemathical parameter of the distribution */
 	double param_one;
+	/** Second mathematical parameter of the distribution, if required */
 	double param_two;
 
 };
 
-/* Common to both endpoints */
+/** Settings that describe a flow between two endpoints. 
+  * These options can be specified for each of the two endpoints.
+  */
 struct _flow_settings {
+	/** The interface address for the flow (used by daemon) */
 	char bind_address[1000];
 
+	/** Delay of flow in seconds (option -Y) */
 	double delay[2];
+	/** Duration of flow in seconds (option -T) */
 	double duration[2];
 
+	/** Interval to report flow on screen (option -i) */
 	double reporting_interval;
 
+	/** Request sender buffer in bytes (option -B) */
 	int requested_send_buffer_size;
+	/** Request receiver buffer, advertised window in bytes (option -W) */
 	int requested_read_buffer_size;
 
+	/** Application buffer size in bytes (option -U) */
 	int maximum_block_size;
 
+	/** Dump traffic using libpcap (option -M) */
 	int traffic_dump;
+	/** Sets SO_DEBUG on test socket (option -O) */
 	int so_debug;
+	/** Sets ROUTE_RECORD on test socket (option -O) */
 	int route_record;
+	/** Do not iterate through select() to continue sending in case
+	  * block size did not suffice to fill sending queue (pushy) (option -P)
+	  */
 	int pushy;
+	/** Shutdown socket after test flow (option -N) */
 	int shutdown;
 
 	/** Send at specified rate per second (option -R) */
@@ -170,25 +189,40 @@ struct _flow_settings {
 	/** The actual rate we should send */
 	int write_rate;
 
+	/** Random seed to use (default: read /dev/urandom) (option -J) */
 	unsigned int random_seed;
 
+	/** Stop flow if it is experiencing local congestion (option -C) */
 	int flow_control;
 
+	/** Enumerate bytes in payload instead of sending zeros (option -E) */
 	int byte_counting;
 
+	/** Sets SO_DEBUG on test socket (option -O) */
 	int cork;
+	/** Disable nagle algorithm on test socket (option -O) */
 	int nonagle;
+	/** Set congestion control algorithm ALG on test socket (option -O) */
 	char cc_alg[TCP_CA_NAME_MAX];
+	/** Set TCP_ELCN (20) on test socket (option -O) */
 	int elcn;
+	/** Set TCP_LCD (21) on test socket (option -O) */
 	int lcd;
+	/** Set TCP_MTCP (15) on test socket (option -O) */
 	int mtcp;
+	/** DSCP value for TOS byte (option -D) */
 	int dscp;
+	/** Set IP_MTU_DISCOVER on test socket (option -O) */
 	int ipmtudiscover;
 
+	/** Stochastic traffic generation settings for the request size */
 	struct _trafgen_options request_trafgen_options;
+	/** Stochastic traffic generation settings for the response size */
 	struct _trafgen_options response_trafgen_options;
+	/** Stochastic traffic generation settings for the interpacket gap */
 	struct _trafgen_options interpacket_gap_trafgen_options;
 
+	/* XXX add a brief description doxygen + is this obsolete? */
 	struct _extra_socket_options {
 		int level;
 		int optname;
