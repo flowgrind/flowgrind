@@ -260,19 +260,17 @@ AS_IF([test "x$have_gsl" = "xyes"],
 AM_CONDITIONAL([USE_LIBPCAP], [test "x$with_gsl" != "xno" -a "x$have_gsl" = "xyes"])
 
 # Checking for CURL
-if test -z "$CURL_CONFIG"; then
-    AC_PATH_TOOL(CURL_CONFIG, curl-config, no)
-fi
+AS_IF([test -z "$CURL_CONFIG"],
+      [AC_PATH_TOOL([CURL_CONFIG], [curl-config], [no])])
 
-if test "x$CURL_CONFIG" = "xno" ; then
-    AC_MSG_ERROR(required curl-config not found in path.)
-fi
+AS_IF([test "x$CURL_CONFIG" = "xno"],
+      [AC_MSG_ERROR([required curl-config not found in path])])
 
 CURL_CFLAGS=`$CURL_CONFIG --cflags`
 CURL_LDADD=`$CURL_CONFIG --libs`
 
-AC_SUBST(CURL_CFLAGS)
-AC_SUBST(CURL_LDADD)
+AC_SUBST([CURL_CFLAGS])
+AC_SUBST([CURL_LDADD])
 
 # Checking for xmlrpc-c
 if test -z "$XMLRPC_C_CONFIG"; then
