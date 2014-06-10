@@ -273,39 +273,35 @@ AC_SUBST([CURL_CFLAGS])
 AC_SUBST([CURL_LDADD])
 
 # Checking for xmlrpc-c
-if test -z "$XMLRPC_C_CONFIG"; then
-    AC_PATH_TOOL(XMLRPC_C_CONFIG, xmlrpc-c-config, no)
-fi
+AS_IF([test -z "$XMLRPC_C_CONFIG"],
+      [AC_PATH_TOOL([XMLRPC_C_CONFIG], [xmlrpc-c-config], [no])])
 
-if test "x$XMLRPC_C_CONFIG" = "xno"; then
-    AC_MSG_ERROR([xmlrpc-c-config not found in path.])
-fi
+AS_IF([test "x$XMLRPC_C_CONFIG" = "xno"],
+      [AC_MSG_ERROR([required xmlrpc-c-config not found in path])])
 
-if ! $XMLRPC_C_CONFIG --features | grep "curl-client" > /dev/null; then
-    AC_MSG_ERROR([xmlrpc-c needs to be compiled with curl-client enabled.])
-fi
+AS_IF([! $XMLRPC_C_CONFIG --features | grep "curl-client" > /dev/null],
+      [AC_MSG_ERROR([xmlrpc-c needs to be compiled with curl-client enabled])])
 
-if ! $XMLRPC_C_CONFIG --features | grep "abyss-server" > /dev/null; then
-    AC_MSG_ERROR([xmlrpc-c needs to be compiled with abyss-server enabled.])
-fi
+AS_IF([! $XMLRPC_C_CONFIG --features | grep "abyss-server" > /dev/null],
+      [AC_MSG_ERROR([xmlrpc-c needs to be compiled with abyss-server enabled])])
 
 XMLRPC_C_VERSION=`$XMLRPC_C_CONFIG --version`
+AC_MSG_NOTICE([xmlrpc-c found in version $XMLRPC_C_VERSION])
+AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION], [$XMLRPC_C_VERSION], [the current xmlrpc-c version])
 
-AC_CHECK_MEMBERS(struct xmlrpc_curl_xportparms.dont_advertise,,,[
+AC_CHECK_MEMBERS([struct xmlrpc_curl_xportparms.dont_advertise], [], [], [
     #include <xmlrpc-c/client.h>
     #include <xmlrpc-c/transport.h>
 ])
-AC_MSG_NOTICE([xmlrpc-c found in version $XMLRPC_C_VERSION])
-AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION], [$XMLRPC_C_VERSION], [the current xmlrpc-c version])
 
 XMLRPC_C_CLIENT_CFLAGS=`$XMLRPC_C_CONFIG client --cflags`
 XMLRPC_C_CLIENT_LDADD=`$XMLRPC_C_CONFIG client --ldadd`
 XMLRPC_C_SERVER_CFLAGS=`$XMLRPC_C_CONFIG abyss-server --cflags`
 XMLRPC_C_SERVER_LDADD=`$XMLRPC_C_CONFIG abyss-server --ldadd`
 
-AC_SUBST(XMLRPC_C_CLIENT_CFLAGS)
-AC_SUBST(XMLRPC_C_CLIENT_LDADD)
-AC_SUBST(XMLRPC_C_SERVER_CFLAGS)
-AC_SUBST(XMLRPC_C_SERVER_LDADD)
+AC_SUBST([XMLRPC_C_CLIENT_CFLAGS])
+AC_SUBST([XMLRPC_C_CLIENT_LDADD])
+AC_SUBST([XMLRPC_C_SERVER_CFLAGS])
+AC_SUBST([XMLRPC_C_SERVER_LDADD])
 
 AC_OUTPUT
