@@ -164,12 +164,12 @@ AC_SEARCH_LIBS([pthread_create], [pthread])
 
 AC_SUBST([LIBS])
 
-# --enable-debug
-AC_ARG_ENABLE(debug,[AS_HELP_STRING(--enable-debug, enable debugging output and symbols [[default: no]] )])
+# Checking for feature --enable-debug
+AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug],
+                                       [enable debugging output and symbols])])
 
-if test "$enable_debug" = yes ; then
-    AC_DEFINE(DEBUG, [1], [Use debugging])
-fi
+AS_IF([test "x$enable_debug" = "xyes"],
+      [AC_DEFINE([DEBUG], [1], [enable debugging output])])
 
 # --enable-pcap
 AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable libpcap for packet capturing [[default: yes]] )])
