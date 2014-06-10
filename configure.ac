@@ -171,31 +171,49 @@ AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug],
 AS_IF([test "x$enable_debug" = "xyes"],
       [AC_DEFINE([DEBUG], [1], [enable debugging output])])
 
-# --enable-pcap
-AC_ARG_ENABLE(pcap,[AS_HELP_STRING(--enable-pcap, enable libpcap for packet capturing [[default: yes]] )])
-AS_IF([ test "x$enable_pcap" != "xno"], [
-    AC_CHECK_HEADER(pcap.h,
-        AC_CHECK_LIB([pcap], pcap_open_live, [LINKABLE_LIBPCAP=1 AC_DEFINE(HAVE_LIBPCAP, 1, [Define to 1 if \
-                      you have the pcap library (-lpcap).])],
-        AC_MSG_NOTICE([*** Could not find libpcap: will compile without optional traffic dump feature. ***]),[-lpcap]),
-        AC_MSG_NOTICE([*** Header file pcap.h not found: will compile without optional traffic dump feature. ***])
-    )
+# Checking for libpcap
+AC_ARG_WITH([pcap],
+            [AS_HELP_STRING([--without-pcap],
+                            [ignore presence of libpcap and disable packet \
+                             capturing feature
+                            ])
+            ])
 
-    if test -z "$PCAP_CONFIG"; then
-        AC_PATH_PROG(PCAP_CONFIG, pcap-config, no)
-    fi
+AS_IF([test "x$with_pcap" != "xno"],
+      [AC_CHECK_HEADER([pcap/pcap.h],
+                       [AC_CHECK_LIB([pcap], [pcap_create], [have_pcap=yes],
+                                     [have_pcap=no;
+                                      AC_MSG_WARN([could not find libpcap: will compile without\
+                                                   optional traffic dump feature])],
+                                     [-lpcap])
+                       ],
+                       [have_pcap=no;
+                        AC_MSG_WARN([header file pcap.h not found: will compile \
+                                     without optional traffic dump feature])
+                       ])
+      ],
+      [have_pcap=no])
 
-    if test "x$PCAP_CONFIG" = "xno"; then
-        AC_MSG_NOTICE(pcap-config not found in path.)
-    else
-        PCAP_CFLAGS=`$PCAP_CONFIG --cflags`
-        PCAP_LDADD=`$PCAP_CONFIG --libs`
+AS_IF([test "x$have_pcap" = "xyes"],
+      [AC_DEFINE([HAVE_LIBPCAP], [1],
+                 [Define to 1 if you have libpcap installed (-lpcap)])
 
-        AC_SUBST(PCAP_CFLAGS)
-        AC_SUBST(PCAP_LDADD)
-    fi
-])
-AM_CONDITIONAL([USE_LIBPCAP], [test "x$enable_pcap" != "xno" -a "$LINKABLE_LIBPCAP" -eq 1])
+       AS_IF([test -z "$PCAP_CONFIG"],
+             [AC_PATH_TOOL([PCAP_CONFIG], [pcap-config], [no])])
+
+       AS_IF([test "x$PCAP_CONFIG" = "xno"],
+             [AC_MSG_NOTICE([pcap-config not found in path])],
+             [PCAP_CFLAGS=`$PCAP_CONFIG --cflags`
+              PCAP_LDADD=`$PCAP_CONFIG --libs`
+
+              AC_SUBST([PCAP_CFLAGS])
+              AC_SUBST([PCAP_LDADD])
+             ])
+      ],
+      [AS_IF([test "x$with_pcap" = "xyes"],
+             [AC_MSG_ERROR([libpcap requested but not found])])
+      ])
+AM_CONDITIONAL([USE_LIBPCAP], [test "x$with_pcap" != "xno" -a "x$have_pcap" = "xyes"])
 
 # --enable-gsl
 AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[default: yes]] )])
