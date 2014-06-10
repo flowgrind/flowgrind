@@ -183,4 +183,5 @@ int main(int argc, char *argv[])
 
 	xmlrpc_env_clean(&rpc_env);
 	xmlrpc_client_teardown_global_const();
+	ap_free(&parser);
 }
