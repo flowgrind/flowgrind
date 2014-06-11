@@ -26,8 +26,7 @@ AC_PATH_TOOL([PERL], [perl])
 AC_ARG_WITH([doxygen],
             [AS_HELP_STRING([--without-doxygen],
                             [ignore presence of doxygen and disable doxygen \
-                             feature to generate API documentation])
-            ])
+                             feature to generate API documentation])])
 
 AS_IF([test "x$with_doxygen" != "xno"],
       [AC_PATH_TOOL([DOXYGEN], [doxygen])],
@@ -175,9 +174,7 @@ AS_IF([test "x$enable_debug" = "xyes"],
 AC_ARG_WITH([pcap],
             [AS_HELP_STRING([--without-pcap],
                             [ignore presence of libpcap and disable packet \
-                             capturing feature
-                            ])
-            ])
+                             capturing feature])])
 
 AS_IF([test "x$with_pcap" != "xno"],
       [AC_CHECK_HEADER([pcap/pcap.h],
@@ -219,9 +216,7 @@ AM_CONDITIONAL([USE_LIBPCAP], [test "x$with_pcap" != "xno" -a "x$have_pcap" = "x
 AC_ARG_WITH([gsl],
             [AS_HELP_STRING([--without-gsl],
                             [ignore presence of libgsl and disable usage of \
-                             GNU Scientific Library
-                            ])
-            ])
+                             GNU Scientific Library])])
 
 AS_IF([test "x$with_gsl" != "xno"],
       [AC_CHECK_HEADER([gsl/gsl_rng.h],
