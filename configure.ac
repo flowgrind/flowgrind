@@ -51,13 +51,15 @@ case $host in
         AS_IF([test -d /opt/local/lib],
               [AC_SUBST([LDFLAGS], [-L/opt/local/lib])])
         AS_IF([test -d /opt/local/include],
-              [AC_SUBST([CFLAGS], [-I/opt/local/include])])
+              [AC_SUBST([CFLAGS], [-I/opt/local/include])
+               AC_SUBST([CPPFLAGS], [-I/opt/local/include])])
         ;;
 
     *freebsd*)
         AC_DEFINE([__FREEBSD__], [1], [FreeBSD])
         AC_SUBST([LDFLAGS], [-L/usr/local/lib])
         AC_SUBST([CFLAGS], [-I/usr/local/include])
+        AC_SUBST([CPPFLAGS], [-I/usr/local/include])
         ;;
 
     *linux*)
