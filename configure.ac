@@ -215,29 +215,49 @@ AS_IF([test "x$have_pcap" = "xyes"],
       ])
 AM_CONDITIONAL([USE_LIBPCAP], [test "x$with_pcap" != "xno" -a "x$have_pcap" = "xyes"])
 
-# --enable-gsl
-AC_ARG_ENABLE(gsl,[AS_HELP_STRING(--enable-gsl, enable GNU Scientific Library [[default: yes]] )])
-AS_IF([ test "x$enable_gsl" != "xno"], [
-    AC_CHECK_HEADER(gsl/gsl_rng.h,
-        AC_CHECK_LIB([gsl], gsl_rng_alloc, [AC_DEFINE(HAVE_LIBGSL, 1, [Define to 1 if you have the gsl library (-lgsl).])],
-        AC_MSG_NOTICE([*** Could not find libgsl: will compile without optional trafgen distributions. ***]),[-lgslcblas]),
-        AC_MSG_NOTICE([*** Header file gsl_rng.h not found: will compile without optional trafgen distributions. ***])
-    )
+# Checking for gsl
+AC_ARG_WITH([gsl],
+            [AS_HELP_STRING([--without-gsl],
+                            [ignore presence of libgsl and disable usage of \
+                             GNU Scientific Library
+                            ])
+            ])
 
-    if test -z "$GSL_CONFIG"; then
-        AC_PATH_PROG(GSL_CONFIG, gsl-config, no)
-    fi
+AS_IF([test "x$with_gsl" != "xno"],
+      [AC_CHECK_HEADER([gsl/gsl_rng.h],
+                       [AC_CHECK_LIB([gsl], [gsl_rng_alloc], [have_gsl=yes],
+                                     [have_gsl=no;
+                                      AC_MSG_WARN([could not find libgsl: will compile without\
+                                                   optional traffic trafgen distributions])],
+                                     [-lgslcblas])
+                       ],
+                       [have_gsl=no;
+                        AC_MSG_WARN([header file gsl_rng.h not found: will compile \
+                                     without optional traffic trafgen distributions])
+                       ])
+      ],
+      [have_gsl=no])
 
-    if test "x$GSL_CONFIG" = "xno"; then
-        AC_MSG_NOTICE(gsl-config not found in path.)
-    else
-        GSL_CFLAGS=`$GSL_CONFIG --cflags`
-        GSL_LDADD=`$GSL_CONFIG --libs`
+AS_IF([test "x$have_gsl" = "xyes"],
+      [AC_DEFINE([HAVE_LIBGSL], [1],
+                 [Define to 1 if you have libgsl installed (-lgsl)])
 
-        AC_SUBST(GSL_CFLAGS)
-        AC_SUBST(GSL_LDADD)
-    fi
-])
+       AS_IF([test -z "$GSL_CONFIG"],
+             [AC_PATH_TOOL([GSL_CONFIG], [gsl-config], [no])])
+
+       AS_IF([test "x$GSL_CONFIG" = "xno"],
+             [AC_MSG_NOTICE([gsl-config not found in path])],
+             [GSL_CFLAGS=`$GSL_CONFIG --cflags`
+              GSL_LDADD=`$GSL_CONFIG --libs`
+
+              AC_SUBST([GSL_CFLAGS])
+              AC_SUBST([GSL_LDADD])
+             ])
+      ],
+      [AS_IF([test "x$with_gsl" = "xyes"],
+             [AC_MSG_ERROR([libgsl requested but not found])])
+      ])
+AM_CONDITIONAL([USE_LIBPCAP], [test "x$with_gsl" != "xno" -a "x$have_gsl" = "xyes"])
 
 # Checking for CURL
 if test -z "$CURL_CONFIG"; then
