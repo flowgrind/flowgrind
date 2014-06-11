@@ -2041,6 +2041,13 @@ static struct _daemon * get_daemon_by_url(const char* server_url,
 	return &unique_servers[num_unique_servers++];
 }
 
+/**
+ * Parse option for stochastic traffic generation (option -G)
+ *
+ * @param[in] params parameter string in the form 'x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]'
+ * @param[in] flow_id id of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
+ */
 static void parse_trafgen_option(const char *params, int flow_id, int endpoint_id)
 {
 	int rc;
@@ -2147,8 +2154,8 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
  * Parse argument for option -R, which specifies the rate the endpoint will send
  *
  * @param[in] arg argument for option -R in form of #.#(z|k|M|G)(b|B|o)
- * @param[in] flow_id id of the flow for which flow to parse
- * @param[in] endpoint_id endpoint to parse for
+ * @param[in] flow_id id of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
 static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
 	char unit = 0, type = 0;
@@ -2208,9 +2215,10 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
  *		    - HOST: test address where the actual test connection goes to
  *		    - CONTROL: RPC address, where this program connects to
  *		    - PORT: port for the control connection
- * @param[in] endpoint flow-endpoint to write to
+ * @param[in] flow_id id of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
-static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) {
+static void parse_host_option(const char* arg, int flow_id, int endpoint_id) {
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
 	struct _daemon* daemon;
@@ -2218,6 +2226,7 @@ static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) 
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
+	struct _flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
 
 	/* RPC address */
 	char *rpc_address = strdup(arg);
@@ -2303,7 +2312,6 @@ static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, i
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
 
-	struct _flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
 	struct _flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
 
 	switch (code) {
@@ -2336,7 +2344,7 @@ static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, i
 		settings->dscp = optunsigned;
 		break;
 	case 'H':
-		parse_host_option(arg, endpoint);
+		parse_host_option(arg, flow_id, endpoint_id);
 		break;
 	case 'M':
 		settings->traffic_dump = 1;
@@ -2443,7 +2451,7 @@ static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, i
  * Parse flow options without endpoint
  *
  * @param[in] code the code of the cmdline option
- * @param[in] arg the argument of the cmdline option
+ * @param[in] arg the argument string of the cmdline option
  * @param[in] flow_id id of flow to apply option to
  */
 static void parse_flow_option(int code, const char* arg, int flow_id) {
@@ -2540,7 +2548,7 @@ static void parse_colon_option(const char *arg)
  * Parse general controller options given on the cmdline
  *
  * @param[in] code the code of the cmdline option
- * @param[in] arg the argument of the cmdline option
+ * @param[in] arg the argument stting of the cmdline option
  * @param[in] opt_string contains the real cmdline option string
  */
 static void parse_general_option(int code, const char* arg, const char* opt_string) {
@@ -2640,6 +2648,15 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 	
 }
 
+/**
+ * The main commandline argument parsing function
+ *
+ * Defines the cmdline options and distinguishes option types (flow, general, ...)
+ * and tokenizes flow options which can have several endpoints
+ *
+ * @param[in] argc Number of arguments (as in main())
+ * @param[in] argv array of argument strings (as in main())
+ */
 static void parse_cmdline(int argc, char *argv[]) {
 	int rc = 0;
 	int cur_num_flows = 0;
