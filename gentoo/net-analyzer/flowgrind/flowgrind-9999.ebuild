@@ -20,7 +20,7 @@ else
 	SLOT="0"
 	KEYWORDS="~amd64 ~x86"
 fi
-LICENSE="GPL-2"
+LICENSE="GPL-3"
 IUSE="debug gsl pcap"
 
 RDEPEND="gsl?  ( sci-libs/gsl )
