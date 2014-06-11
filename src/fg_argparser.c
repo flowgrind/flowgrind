@@ -419,3 +419,15 @@ const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int
 	else
 		return 0;
 }
+
+bool ap_is_used(const struct _arg_parser *const ap, int code){
+	bool ret = false;
+	
+	for (int i=0; i < ap->data_size; i++)
+		if (ap->data[i].option->code == code) {
+			ret = true;
+			break;
+		}
+
+	return ret;		
+}

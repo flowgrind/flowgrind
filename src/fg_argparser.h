@@ -82,6 +82,8 @@
 #ifndef _CARG_PARSER_H_
 #define _CARG_PARSER_H_
 
+#include <stdbool.h>
+
 /** Specifies whether a cmdline option needs an argument */
 enum ap_Has_arg {
 	/** Option without argument (flag) */
@@ -195,5 +197,13 @@ const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int
  * @param[in] i index of the parsed option
  */
 const char *ap_opt_string(const struct _arg_parser *const ap, const int i);
+
+/**
+ * Returns true iff the option specified by \p code was given at least once
+ *
+ * @param[in] ap pointer to arg parser state
+ * @param[in] code code of the option to check
+ */
+bool ap_is_used(const struct _arg_parser *const ap, int code);
 
 #endif
