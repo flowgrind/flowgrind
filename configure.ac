@@ -252,7 +252,7 @@ AS_IF([test "x$have_gsl" = "xyes"],
       [AS_IF([test "x$with_gsl" = "xyes"],
              [AC_MSG_ERROR([libgsl requested but not found])])
       ])
-AM_CONDITIONAL([USE_LIBPCAP], [test "x$with_gsl" != "xno" -a "x$have_gsl" = "xyes"])
+AM_CONDITIONAL([USE_LIBGSL], [test "x$with_gsl" != "xno" -a "x$have_gsl" = "xyes"])
 
 # Checking for CURL
 AS_IF([test -z "$CURL_CONFIG"],
