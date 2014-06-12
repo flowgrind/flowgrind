@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+ * Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
  *
@@ -36,8 +36,10 @@
 #include <time.h>
 #include <stdbool.h>
 
+#ifndef NSEC_PER_SEC
 /** Number of nanoseconds per second */
 #define NSEC_PER_SEC	1000000000L
+#endif /* NSEC_PER_SEC */
 
 /**
  * Converts timespec struct @p tp into a null-terminated string and stores the

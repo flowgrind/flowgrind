@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+ * Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
  *
@@ -67,7 +67,7 @@ const char *ctimespec(const struct timespec *tp)
 double time_diff(const struct timespec *tp1, const struct timespec *tp2)
 {
 	return (double) (tp2->tv_sec - tp1->tv_sec)
-		+ (double) (tp2->tv_nsec - tp1->tv_nsec) / NSEC_PER_SEC;
+		+ (double) (tp2->tv_nsec - tp1->tv_nsec) / (long) NSEC_PER_SEC;
 }
 
 double time_diff_now(const struct timespec *tp)
@@ -76,7 +76,7 @@ double time_diff_now(const struct timespec *tp)
 
 	gettime(&now);
 	return (double) (now.tv_sec - tp->tv_sec)
-		+ (double) (now.tv_nsec - tp->tv_nsec) / NSEC_PER_SEC;
+		+ (double) (now.tv_nsec - tp->tv_nsec) / (long) NSEC_PER_SEC;
 }
 
 bool time_is_after(const struct timespec *tp1, const struct timespec *tp2)
@@ -92,13 +92,13 @@ bool normalize_tp(struct timespec *tp)
 {
 	bool normalized = true;
 
-	while (tp->tv_nsec >= NSEC_PER_SEC) {
-		tp->tv_nsec -= NSEC_PER_SEC;
+	while (tp->tv_nsec >= (long) NSEC_PER_SEC) {
+		tp->tv_nsec -= (long) NSEC_PER_SEC;
 		tp->tv_sec++;
 		normalized = false;
 	}
 	while (tp->tv_nsec < 0) {
-		tp->tv_nsec += NSEC_PER_SEC;
+		tp->tv_nsec += (long) NSEC_PER_SEC;
 		tp->tv_sec--;
 		normalized = false;
 	}
@@ -107,8 +107,8 @@ bool normalize_tp(struct timespec *tp)
 
 void time_add(struct timespec *tp, double seconds)
 {
-	tp->tv_sec += (time_t)seconds;
-	tp->tv_nsec += (long)((seconds - (time_t)seconds) * NSEC_PER_SEC);
+	tp->tv_sec += (time_t) seconds;
+	tp->tv_nsec += (long) ((seconds - (time_t) seconds) * (long) NSEC_PER_SEC);
 	normalize_tp(tp);
 }
 
