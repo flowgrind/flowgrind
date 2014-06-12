@@ -127,6 +127,18 @@ enum column_id {
 #endif /* DEBUG */
 };
 
+/** Option types in flowgrind controller */
+enum opt_types {
+	/** General controller options */
+	OPT_CONTROLLER,
+	/** Selects a subset of flows to apply options to (-F) */
+	OPT_SELECTOR,	
+	/** Flow option without endpoint string */
+	OPT_FLOW,
+	/** Flow option with endpoint string */	
+	OPT_FLOW_ENDPOINT,
+};
+
 /** For long options with no equivalent short option, use a pseudo short option */
 enum long_opt_only {
 	/** Pseudo short option for option --help */
@@ -185,7 +197,7 @@ struct _flow_endpoint {
 
 	/** Pointer to the daemon managing this endpoint */
 	struct _daemon* daemon;
-	/* XXX add a brief description doxygen */
+	/** network address where the actual test connection goes to */
 	char test_address[1000];
 };
 
@@ -211,9 +223,9 @@ struct _cflow {
 
 	/* For the following arrays: 0 stands for source; 1 for destination */
 
-	/* XXX add a brief description doxygen */
+	/** ID used internally by the deamon to distinguish its flows */
 	int endpoint_id[2];
-	/* XXX add a brief description doxygen */
+	/** Timestamp set just before starting flow */
 	struct timespec start_timestamp[2];
 	/** Infos about flow endpoint */
 	struct _flow_endpoint endpoint[2];
