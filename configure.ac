@@ -33,7 +33,7 @@ AS_IF([test "x$with_doxygen" != "xno"],
       [DOXYGEN=""])
 
 AS_IF([test -n "$DOXYGEN"],
-      [AC_DEFINE([HAVE_DOXYGEN], [1], [Define to 1 if you have doxygen installed])],
+      [AC_DEFINE([HAVE_DOXYGEN], [1], [Define if the system has doxygen installed])],
       [AS_IF([test "x$with_doxygen" = "xyes"],
              [AC_MSG_ERROR([doxygen requested but not found])])
       ])
@@ -43,10 +43,10 @@ AM_CONDITIONAL([USE_DOXYGEN], [test "x$with-doxygen" != "xno" -a -n "$DOXYGEN"])
 AC_CANONICAL_HOST
 case $host in
     *darwin*)
-        AC_DEFINE([__DARWIN__], [1], [Darwin])
-        AC_DEFINE([_BSD_SOCKLEN_T_], [], [Need this under Darwin so that \
-                                          socklen_t will be defined in <sys/socket.h>])
-        # if Macport is used
+        AC_DEFINE([__DARWIN__], [1], [This is an OS X system])
+        AC_DEFINE([_BSD_SOCKLEN_T_], [], [Needed under Darwin so that socklen_t \
+                                          will be defined in <sys/socket.h>])
+        # test if Macport is used
         AS_IF([test -d /opt/local/lib],
               [AC_SUBST([LDFLAGS], [-L/opt/local/lib])])
         AS_IF([test -d /opt/local/include],
@@ -55,14 +55,14 @@ case $host in
         ;;
 
     *freebsd*)
-        AC_DEFINE([__FREEBSD__], [1], [FreeBSD])
+        AC_DEFINE([__FREEBSD__], [1], [This is a FreeBSD system])
         AC_SUBST([LDFLAGS], [-L/usr/local/lib])
         AC_SUBST([CFLAGS], [-I/usr/local/include])
         AC_SUBST([CPPFLAGS], [-I/usr/local/include])
         ;;
 
     *linux*)
-        AC_DEFINE([__LINUX__], [1], [Linux])
+        AC_DEFINE([__LINUX__], [1], [This is a GNU/Linux system])
         ;;
 esac
 
@@ -193,7 +193,7 @@ AS_IF([test "x$with_pcap" != "xno"],
 
 AS_IF([test "x$have_pcap" = "xyes"],
       [AC_DEFINE([HAVE_LIBPCAP], [1],
-                 [Define to 1 if you have libpcap installed (-lpcap)])
+                 [Define if the system has libpcap installed (-lpcap)])
 
        AS_IF([test -z "$PCAP_CONFIG"],
              [AC_PATH_TOOL([PCAP_CONFIG], [pcap-config], [no])])
@@ -235,7 +235,7 @@ AS_IF([test "x$with_gsl" != "xno"],
 
 AS_IF([test "x$have_gsl" = "xyes"],
       [AC_DEFINE([HAVE_LIBGSL], [1],
-                 [Define to 1 if you have libgsl installed (-lgsl)])
+                 [Define if the system has libgsl installed (-lgsl)])
 
        AS_IF([test -z "$GSL_CONFIG"],
              [AC_PATH_TOOL([GSL_CONFIG], [gsl-config], [no])])
