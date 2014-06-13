@@ -2201,13 +2201,13 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
 /**
  * Parse argument for option -H, which specifies the endpoints of a flow
  *
- * @param[in] arg argument for option -H in form of HOST[/CONTROL[:PORT]]
+ * @param[in] hostarg argument for option -H in form of HOST[/CONTROL[:PORT]]
  *		    - HOST: test address where the actual test connection goes to
  *		    - CONTROL: RPC address, where this program connects to
  *		    - PORT: port for the control connection
  * @param[in] endpoint flow-endpoint to write to
  */
-static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) {
+static void parse_host_option(const char* hostarg, struct _flow_endpoint* endpoint) {
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
 	struct _daemon* daemon;
@@ -2216,6 +2216,7 @@ static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) 
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
 	char *rpc_address, *sepptr = 0;
+	char *arg = strdup(hostarg);
 
 	/* RPC address */
 	sepptr = strchr(arg, '/');
@@ -2286,6 +2287,7 @@ static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) 
 	daemon = get_daemon_by_url(url, rpc_address, port);
 	endpoint->daemon = daemon;
 	strcpy(endpoint->test_address, arg);
+	free(arg);
 }
 
 /**
