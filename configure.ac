@@ -41,30 +41,27 @@ AM_CONDITIONAL([USE_DOXYGEN], [test "x$with-doxygen" != "xno" -a -n "$DOXYGEN"])
 
 # Checking for host-system types, includes, and libs
 AC_CANONICAL_HOST
-case $host in
-    *darwin*)
-        AC_DEFINE([__DARWIN__], [1], [This is an OS X system])
-        AC_DEFINE([_BSD_SOCKLEN_T_], [], [Needed under Darwin so that socklen_t \
-                                          will be defined in <sys/socket.h>])
-        # test if Macport is used
-        AS_IF([test -d /opt/local/lib],
-              [AC_SUBST([LDFLAGS], [-L/opt/local/lib])])
-        AS_IF([test -d /opt/local/include],
-              [AC_SUBST([CFLAGS], [-I/opt/local/include])
-               AC_SUBST([CPPFLAGS], [-I/opt/local/include])])
-        ;;
-
-    *freebsd*)
-        AC_DEFINE([__FREEBSD__], [1], [This is a FreeBSD system])
-        AC_SUBST([LDFLAGS], [-L/usr/local/lib])
-        AC_SUBST([CFLAGS], [-I/usr/local/include])
-        AC_SUBST([CPPFLAGS], [-I/usr/local/include])
-        ;;
-
-    *linux*)
-        AC_DEFINE([__LINUX__], [1], [This is a GNU/Linux system])
-        ;;
-esac
+AS_CASE([$host],
+        [*darwin*],
+        [AC_DEFINE([__DARWIN__], [1], [This is an OS X system])
+         AC_DEFINE([_BSD_SOCKLEN_T_], [], [Needed under Darwin so that socklen_t \
+                                           will be defined in <sys/socket.h>])
+         # test if Macport is used
+         AS_IF([test -d /opt/local/lib],
+               [AC_SUBST([LDFLAGS], [-L/opt/local/lib])])
+         AS_IF([test -d /opt/local/include],
+               [AC_SUBST([CFLAGS], [-I/opt/local/include])
+                AC_SUBST([CPPFLAGS], [-I/opt/local/include])])
+        ],
+        [*freebsd*],
+        [AC_DEFINE([__FREEBSD__], [1], [This is a FreeBSD system])
+         AC_SUBST([LDFLAGS], [-L/usr/local/lib])
+         AC_SUBST([CFLAGS], [-I/usr/local/include])
+         AC_SUBST([CPPFLAGS], [-I/usr/local/include])
+        ],
+        [*linux*],
+        [AC_DEFINE([__LINUX__], [1], [This is a GNU/Linux system])],
+        [AC_MSG_WARN([Unknown system. Hoping this is a GNU/Linux-compatible system])])
 
 # Checking for C features
 AC_C_CONST
