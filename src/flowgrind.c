@@ -2215,14 +2215,16 @@ static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) 
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
+	char *rpc_address, *sepptr = 0;
 
 	/* RPC address */
-	char *rpc_address = strdup(arg);
-	char *sepptr = strchr(arg, '/');
+	sepptr = strchr(arg, '/');
 	if (sepptr) {
 		*sepptr = '\0';
 		rpc_address = sepptr + 1;
 		extra_rpc = true;
+	} else {
+		rpc_address = arg;
 	}
 
 	/* IPv6 Address? */
@@ -2284,7 +2286,6 @@ static void parse_host_option(const char* arg, struct _flow_endpoint* endpoint) 
 	daemon = get_daemon_by_url(url, rpc_address, port);
 	endpoint->daemon = daemon;
 	strcpy(endpoint->test_address, arg);
-	free(rpc_address);
 }
 
 /**
