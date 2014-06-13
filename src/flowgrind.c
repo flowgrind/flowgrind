@@ -2287,7 +2287,7 @@ static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
 				port = atoi(sepptr);
 			}
 		}
-		if (is_ipv6 && (inet_pton(AF_INET6, arg,
+		if (is_ipv6 && (inet_pton(AF_INET6, rpc_address,
 			(char*)&source_in6.sin6_addr) <= 0)) {
 			errx("invalid IPv6 address '%s' for RPC connection", arg);
 			usage(EXIT_FAILURE);
