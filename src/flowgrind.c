@@ -2199,6 +2199,42 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
 }
 
 /**
+ * Parse RPC address for the xmlrpc control connection
+ *
+ * @param[in,out] rpc_address string in format CONTROL[:PORT] will be truncated to CONTROL
+ * @param[out] port port is returned in this argument
+ * @param[out] is_ipv6 true is returend in this argument if the control address is a numerical ipv6 address
+*/
+static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6) {
+	char* sepptr = 0;
+
+	/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
+	if ((sepptr = strchr(*rpc_address, ']'))) {
+		*is_ipv6 = true;
+		*sepptr = '\0';
+		if (*rpc_address[0] == '[')
+			(*rpc_address)++;
+		sepptr++;
+		if (sepptr != '\0' && *sepptr == ':')
+			sepptr++;
+		*port = atoi(sepptr);
+	} else if ((sepptr = strchr(*rpc_address, ':'))) {
+		/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
+		if (strchr(sepptr+1, ':')) {
+			*is_ipv6 = true;
+		} else {
+		/* 3rd case: IPv4 or name with port 1.2.3.4:5999 */
+			*sepptr = '\0';
+			sepptr++;
+			if ((*sepptr != '\0') && (*sepptr == ':'))
+					sepptr++;
+			*port = atoi(sepptr);
+		}
+	}
+
+}
+
+/**
  * Parse argument for option -H, which specifies the endpoints of a flow
  *
  * @param[in] hostarg argument for option -H in form of HOST[/CONTROL[:PORT]]
@@ -2218,7 +2254,7 @@ static void parse_host_option(const char* hostarg, struct _flow_endpoint* endpoi
 	char *rpc_address, *sepptr = 0;
 	char *arg = strdup(hostarg);
 
-	/* RPC address */
+	/* extra RPC address ? */
 	sepptr = strchr(arg, '/');
 	if (sepptr) {
 		*sepptr = '\0';
@@ -2239,31 +2275,9 @@ static void parse_host_option(const char* hostarg, struct _flow_endpoint* endpoi
 			is_ipv6 = true;
 	}
 
+	/* optional dedicated rpc address was supplied and needs to be parsed */
 	if (extra_rpc) {
-		/* Now it's getting tricky... */
-		/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
-		if ((sepptr = strchr(rpc_address, ']'))) {
-			is_ipv6 = true;
-			*sepptr = '\0';
-			if (rpc_address[0] == '[')
-				rpc_address++;
-			sepptr++;
-			if (sepptr != '\0' && *sepptr == ':')
-				sepptr++;
-			port = atoi(sepptr);
-		} else if ((sepptr = strchr(rpc_address, ':'))) {
-			/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
-			if (strchr(sepptr+1, ':')) {
-				is_ipv6 = true;
-			} else {
-			/* 3rd case: IPv4 or name with port 1.2.3.4:5999 */
-				*sepptr = '\0';
-				sepptr++;
-				if ((*sepptr != '\0') && (*sepptr == ':'))
-						sepptr++;
-				port = atoi(sepptr);
-			}
-		}
+		parse_rpc_address(&rpc_address, &port, &is_ipv6);
 		if (is_ipv6 && (inet_pton(AF_INET6, rpc_address,
 			(char*)&source_in6.sin6_addr) <= 0)) {
 			errx("invalid IPv6 address '%s' for RPC connection", arg);
