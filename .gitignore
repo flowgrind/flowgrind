@@ -5,7 +5,6 @@
 .nfs*
 
 # /
-/doc
 /tmp
 /autom4te.cache
 /aclocal.m4
@@ -24,6 +23,13 @@
 /cscope.out
 /*.kdev4
 /build-aux
+
+# /doc/
+/doc/Makefile
+/doc/Makefile.in
+/doc/html.timestamp
+/doc/html/
+/doc/latex/
 
 # /src/
 /src/new

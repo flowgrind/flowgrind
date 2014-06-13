@@ -28,7 +28,7 @@ Building flowgrind
    output of configure for more information.
    Read  ./configure --help  for a list of supported options.
 
-   e.g. disable libgsl and libpcap with: --disable-gsl --disable-pcap
+   e.g. disable libgsl and libpcap with: --without-gsl --without-pcap
 
 5. Run make to compile flowgrind. This creates src/flowgrind and src/flowgrindd
 

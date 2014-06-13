@@ -42,11 +42,11 @@ if [ $? -ne 0 ]; then
 fi
 
 $GIT checkout -- INSTALL
-find . -type d -name ".git" | xargs rm -r
 
-rm -r autom4te.cache .valgrind.supp .gitignore .travis.yml \
-    ./scripts/travis.linux.install.deps.sh \
-    ./scripts/travis.osx.install.deps.sh
+make maintainer-clean
+find . -type d -name ".git" | xargs rm -r
+rm -r .gitignore .travis.yml .valgrind.supp ./scripts/make-release.sh \
+    ./scripts/travis.linux.install.deps.sh ./scripts/travis.osx.install.deps.sh
 
 cd ..
 
