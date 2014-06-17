@@ -47,7 +47,7 @@ AS_CASE([$host],
 			   [AC_SUBST([LDFLAGS], [-L/opt/local/lib])])
 		 AS_IF([test -d /opt/local/include],
 			   [AC_SUBST([CFLAGS], [-I/opt/local/include])
-			    AC_SUBST([CPPFLAGS], [-I/opt/local/include])])
+				AC_SUBST([CPPFLAGS], [-I/opt/local/include])])
 		],
 
 		[*freebsd*],
@@ -148,11 +148,23 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 
 # Checking for libraries
 AC_SEARCH_LIBS([log], [m])
-AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_SEARCH_LIBS([socket], [socket])
 AC_SEARCH_LIBS([pthread_create], [pthread])
 
+AC_CHECK_FUNC([clock_gettime],
+			  [have_clock_gettime=yes;
+			   AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+						 [Define if the system has clock_gettime])
+			  ],
+			  [AC_SEARCH_LIBS([clock_gettime], [rt],
+							  [have_clock_gettime=yes;
+							   AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+										 [Define if the system has clock_gettime])])])
+
+AM_CONDITIONAL([CLOCK_GETTIME], [test "x$have_clock_gettime" = "xyes"])
+
 AC_SUBST([LIBS])
+
 
 # Checking for feature --enable-debug
 AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug],

@@ -34,6 +34,10 @@
 #include <time.h>
 #include <stdbool.h>
 
+#ifndef HAVE_CLOCK_GETTIME
+#include "fg_gettime.h"
+#endif /* HAVE_CLOCK_GETTIME */
+
 #include "fg_error.h"
 #include "fg_time.h"
 
