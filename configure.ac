@@ -1,16 +1,14 @@
 AC_INIT([Flowgrind], [0.7.1], [https://github.com/flowgrind/flowgrind/issues],
 		[flowgrind], [https://www.flowgrind.net])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror no-dist])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror no-dist subdir-objects])
 
 # Minimum Autoconf version required
 AC_PREREQ([2.61])
 
 # Files to generate
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile \
-				 doc/Makefile \
-				 src/Makefile])
+AC_CONFIG_FILES([Makefile])
 
 # Checking for programs
 AC_PROG_CC
