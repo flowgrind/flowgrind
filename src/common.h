@@ -67,6 +67,16 @@
 /** Minium block (message) size we can send */
 #define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
 
+/** The standard gpl3 no warranty message */
+#define GPL_STRING "Copyright (C) 2011 Free Software Foundation, Inc.\n"\
+			"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"\
+			"This is free software: you are free to change and redistribute it.\n"\
+			"There is NO WARRANTY, to the extent permitted by law.\n"
+
+/** The authors in a printable string */
+#define AUTHORS_STRING "Written by Alexander Zimmermann, Christian Samsel, "\
+			"Tim Kosse and Daniel Schaffrath.\n"
+
 /** Flow endpoint */
 enum flow_endpoint {
 	/** Endpoint that opens the connection */

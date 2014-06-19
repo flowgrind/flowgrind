@@ -2556,8 +2556,8 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		}
 		break;
 	case 'v':
-		fprintf(stderr, "%s version: %s\n", progname,
-			FLOWGRIND_VERSION);
+		fprintf(stderr, "%s %s\n%s\n%s", progname, FLOWGRIND_VERSION, 
+				GPL_STRING, AUTHORS_STRING);
 		exit(EXIT_SUCCESS);
 
 	/* controller options */
