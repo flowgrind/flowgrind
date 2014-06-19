@@ -141,10 +141,8 @@ enum opt_types {
 
 /** For long options with no equivalent short option, use a pseudo short option */
 enum long_opt_only {
-	/** Pseudo short option for option --help */
-	HELP_OPTION = CHAR_MAX + 1,
 	/** Pseudo short option for option --log-file */
-	LOG_FILE_OPTION
+	LOG_FILE_OPTION = CHAR_MAX + 1,
 };
 
 /** Controller options */
