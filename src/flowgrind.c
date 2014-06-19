@@ -228,8 +228,7 @@ static void usage(short status)
 		"Mandatory arguments to long options are mandatory for short options too.\n\n"
 
 		"General options:\n"
-		"  -h             display this help and exit (same as --help)\n"
-		"      --help[=WHAT]\n"
+		"  -h, --help[=WHAT]\n"
 		"                 display help and exit. Optional WHAT can either be 'socket' for\n"
 		"                 help on socket options or 'traffic' traffic generation help\n"
 		"  -v, --version  print version information and exit\n\n"
@@ -2546,9 +2545,6 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		ERRX_AND_EXIT("invalid argument: %s", arg);
 	/* general options */
 	case 'h':
-		usage(EXIT_SUCCESS);
-		break;
-	case HELP_OPTION:
 		if (!arg || !strlen(arg)) {
 			usage(EXIT_SUCCESS);
 		} else if (!strcmp(arg, "socket")) {
@@ -2651,8 +2647,7 @@ static void parse_cmdline(int argc, char *argv[])
 #ifdef HAVE_LIBPCAP
 		{'e', "dump-prefix", ap_yes, OPT_CONTROLLER},
 #endif /* HAVE_LIBPCAP */
-		{'h', 0, ap_no, OPT_CONTROLLER},
-		{HELP_OPTION, "help", ap_maybe, OPT_CONTROLLER},
+		{'h', "help", ap_maybe, OPT_CONTROLLER},
 		{'i', "report-interval", ap_yes, OPT_CONTROLLER},
 		{LOG_FILE_OPTION, "log-file", ap_maybe, OPT_CONTROLLER},
 		{'m', 0, ap_no, OPT_CONTROLLER},
