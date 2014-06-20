@@ -1,4 +1,8 @@
 CLEANFILES = gitversion.h doc/doxyfile.stamp
+CLEAN_LOCAL_FILES = doc/html doc/latex doc/html.timestamp
+MR_PROPER_FILES = Makefile.in aclocal.m4 build-aux config.h.in config.h.in~ \
+				  configure
+
 BUILT_SOURCES = gitversion.h
 
 bin_PROGRAMS = flowgrind flowgrind-stop
@@ -53,21 +57,23 @@ flowgrind_SOURCES += src/fg_gettime.h src/fg_gettime.c
 flowgrindd_SOURCES += src/fg_gettime.h src/fg_gettime.c
 endif
 
-.PHONY: gitversion.h html.timestamp
+.PHONY: gitversion.h mrproper html.timestamp clean-local
 
 gitversion.h:
 	$(shellL) ./scripts/make-version.sh
 
+mrproper: maintainer-clean
+	-rm -rf $(MR_PROPER_FILES)
 
 # configured w/ doxygen
 if USE_DOXYGEN
 html: html.timestamp
 
 html.timestamp:
-		$(DOXYGEN) doc/Doxyfile
-			touch doc/$@
+	$(DOXYGEN) doc/Doxyfile
+	touch doc/$@
 
 clean-local:
-		-rm -rf doc/html doc/latex doc/html.timestamp
+	-rm -rf $(CLEAN_LOCAL_FILES)
 endif
 
