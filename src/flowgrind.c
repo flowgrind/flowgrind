@@ -2644,7 +2644,7 @@ static void parse_cmdline(int argc, char *argv[])
 	int max_flow_specifier = 0;
 	int optint = 0;
 
-	const struct _ap_Option options[] = {
+	static const struct _ap_Option options[] = {
 		{'c', "show-colon", ap_yes, OPT_CONTROLLER},
 #ifdef DEBUG
 		{'d', "debug", ap_no, OPT_CONTROLLER},
