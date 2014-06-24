@@ -1,10 +1,10 @@
 #!/bin/sh
 
-SCRIPTDIR=$(dirname $(readlink -f $0))
+#SCRIPTDIR=$(dirname $(readlink -f $0))
 VLINE='/*#define GITVERSION ""*/'
 GIT=`which git`
 
-cd $SCRIPTDIR/..
+#cd $SCRIPTDIR/..
 
 if [ "$GIT" = "" ]; then
     echo "The command 'git' is not installed. Please install git."

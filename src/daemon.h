@@ -147,11 +147,8 @@ struct _flow
 		/** Accumulated round-trip time */
 		double rtt_sum;
 
-#if (defined __LINUX__ || defined __FreeBSD__)
 		int has_tcp_info;
 		struct _fg_tcp_info tcp_info;
-#endif /* (defined __LINUX__ || defined __FreeBSD__) */
-
 	} statistics[2];
 
 #ifdef HAVE_LIBPCAP

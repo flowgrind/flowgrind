@@ -36,8 +36,10 @@
 #include <time.h>
 #include <stdbool.h>
 
+#ifndef __MACH__
 /** Number of nanoseconds per second */
 #define NSEC_PER_SEC	1000000000L
+#endif
 
 /**
  * Converts timespec struct @p tp into a null-terminated string and stores the

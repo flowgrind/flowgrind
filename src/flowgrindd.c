@@ -956,6 +956,7 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 
 void set_affinity(int cpu)
 {
+#ifndef __MACH__
 #ifdef __LINUX__
 	typedef cpu_set_t fg_cpuset;
 #elif __FreeBSD__
@@ -987,6 +988,7 @@ void set_affinity(int cpu)
 	else
 		DEBUG_MSG(LOG_WARNING, "bind %s (PID %d) to CPU %i\n",
 			  progname, getpid(), cpu);
+#endif
 }
 
 /**

@@ -658,7 +658,7 @@ int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
 	CPY_INFO_MEMBER(tcpi_reordering);
 #endif
 #else
-	memset(info, 0, sizeof(_fg_tcp_info);
+	memset(info, 0, sizeof(struct _fg_tcp_info));
 #endif
 	return 0;
 }
