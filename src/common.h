@@ -34,6 +34,7 @@
 #endif /* HAVE_CONFIG_H */
 
 #include "gitversion.h"
+#include <stdbool.h>
 
 #ifdef GITVERSION
 /** Flowgrind version number */
@@ -182,17 +183,17 @@ struct _flow_settings {
 	int maximum_block_size;
 
 	/** dump traffic using libpcap (option -M) */
-	int traffic_dump;
+	bool traffic_dump;
 	/** sets SO_DEBUG on test socket (option -O) */
-	int so_debug;
+	bool so_debug;
 	/** sets ROUTE_RECORD on test socket (option -O) */
-	int route_record;
+	bool route_record;
 	/** do not iterate through select() to continue sending in case
           * block size did not suffice to fill sending queue (pushy) (option -P)
 	  */
-	int pushy;
+	bool pushy;
 	/** shutdown socket after test flow (option -N) */
-	int shutdown;
+	bool shutdown;
 
 	/** Send at specified rate per second (option -R) */
 	const char *write_rate_str;
@@ -203,27 +204,27 @@ struct _flow_settings {
 	unsigned int random_seed;
 
 	/** stop flow if it is experiencing local congestion (option -C) */
-	int flow_control;
+	bool flow_control;
 
 	/** enumerate bytes in payload instead of sending zeros (option -E) */
-	int byte_counting;
+	bool byte_counting;
 
 	/** sets SO_DEBUG on test socket (option -O) */
-	int cork;
+	bool cork;
 	/** disable nagle algorithm on test socket (option -O) */
-	int nonagle;
+	bool nonagle;
 	/** set congestion control algorithm ALG on test socket (option -O) */
 	char cc_alg[TCP_CA_NAME_MAX];
 	/** set TCP_ELCN (20) on test socket (option -O) */
-	int elcn;
+	bool elcn;
 	/** set TCP_LCD (21) on test socket (option -O) */
-	int lcd;
+	bool lcd;
 	/** set TCP_MTCP (15) on test socket (option -O) */
-	int mtcp;
+	bool mtcp;
 	/** DSCP value for TOS byte (option -D) */
 	int dscp;
 	/** set IP_MTU_DISCOVER on test socket (option -O) */
-	int ipmtudiscover;
+	bool ipmtudiscover;
 
 	/** Stochastic traffic generation settings for the request size */
 	struct _trafgen_options request_trafgen_options;
