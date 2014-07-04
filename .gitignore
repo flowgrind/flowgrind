@@ -5,39 +5,35 @@
 .nfs*
 
 # /
-/tmp
-/autom4te.cache
 /aclocal.m4
-/configure
-/configure.scan
-/config.log
-/config.status
+/autom4te.cache
+/build-aux
 /config.h
 /config.h.in
+/config.log
+/config.status
+/configure
+/configure.scan
+/cscope.out
+/flowgrind
+/flowgrindd
+/flowgrind-stop
 /gitversion.h
+/flowlog-*
 /Makefile
 /Makefile.in
 /stamp-h1
-/flowlog-*
+/tmp
 /*.pcap
-/cscope.out
 /*.kdev4
-/build-aux
 
 # /doc/
-/doc/Makefile
-/doc/Makefile.in
 /doc/html.timestamp
 /doc/html/
 /doc/latex/
 
 # /src/
-/src/new
-/src/Makefile
-/src/Makefile.in
-/src/flowgrind
-/src/flowgrindd
-/src/flowgrind-stop
 /src/.deps
+/src/.dirstamp
 /src/.nfs*
 /src/*.o
