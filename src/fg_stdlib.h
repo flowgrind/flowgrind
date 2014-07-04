@@ -32,7 +32,7 @@
 
 /** These macros gain us a few percent of speed @{ */
 #define likely(x)   __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)			    /** @} */
+#define unlikely(x) __builtin_expect(!!(x), 0)			/** @} */
 
 /** Suppress warning for unused argument */
 #define UNUSED_ARGUMENT(x) (void)x
@@ -52,15 +52,15 @@
 #define free_all(...) FN_APPLY(void, free, __VA_ARGS__);
 
 /** Assign value if it less than current one */
-#define ASSIGN_MIN(s, c)	    \
-	({ typeof (s) _s = (s);	    \
-	   typeof (c) _c = (c);	    \
+#define ASSIGN_MIN(s, c)		\
+	({ typeof (s) _s = (s);		\
+	   typeof (c) _c = (c);		\
 	   if (_s > _c) s = c; })
 
 /** Assign value if it's greater than current one */
-#define ASSIGN_MAX(s, c)	    \
-	({ typeof (s) _s = (s);	    \
-	   typeof (c) _c = (c);	    \
+#define ASSIGN_MAX(s, c)		\
+	({ typeof (s) _s = (s);		\
+	   typeof (c) _c = (c);		\
 	   if (_s < _c) s = c; })
 
 #endif /* _FG_STDLIB_H_*/
