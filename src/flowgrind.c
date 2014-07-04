@@ -81,7 +81,7 @@
 #define SET_COLUMN_UNIT(unit, ...)                                          \
         (set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** 
+/**
  * To print error message and usage and then exit. Used for cmdline parsing errors.
  * Set up as a regular statement like function call with trailing ';'
  */
@@ -89,7 +89,7 @@
 	do {					\
 		errx(err_msg, __VA_ARGS__);	\
 		usage(EXIT_FAILURE);		\
-	} while (0)	
+	} while (0)
 
 /** Logfile for measurement output */
 static FILE *log_stream = NULL;
@@ -2113,7 +2113,7 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 					"needs one positive parameters", flow_id);
 		break;
 	default:
-		PARSE_ERR("flow %i: option -G: syntax error: %c is not a distribution", 
+		PARSE_ERR("flow %i: option -G: syntax error: %c is not a distribution",
 				flow_id, distchar);
 		break;
 	}
@@ -2314,7 +2314,7 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
  * @param[in] flow_id Id of flow to apply option to
  * @param[in] endpoint_id Endpoint to apply option to
  */
-static void parse_flow_option_endpoint(int code, const char* arg, 
+static void parse_flow_option_endpoint(int code, const char* arg,
 			const char* opt_string, int flow_id, int endpoint_id)
 {
 	int optint = 0;
@@ -2386,7 +2386,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 			settings->ipmtudiscover = 1;
 		} else {
 			PARSE_ERR("in flow %i: option %s: unknown socket "
-				"option or socket option not implemented", 
+				"option or socket option not implemented",
 				flow_id, opt_string);
 		}
 		break;
@@ -2400,7 +2400,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 		parse_rate_option(arg, flow_id, endpoint_id);
 		break;
 	case 'S':
-		if (sscanf(arg, "%u", &optint) != 1 || optint < 0) 			
+		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs positive integer",
 					 flow_id, opt_string);
 		settings->request_trafgen_options.distribution = CONSTANT;
@@ -2419,7 +2419,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 		settings->duration[WRITE] = optdouble;
 		break;
 	case 'U':
-		if (sscanf(arg, "%u", &optint) != 1 || optint < 0) 			
+		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs positive integer",
 					 flow_id, opt_string);
 		settings->maximum_block_size = optint;
@@ -2577,7 +2577,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	#endif /* HAVE_LIBPCAP */
 	case 'i':
-		if (sscanf(arg, "%lf", &copt.reporting_interval) != 1 || 
+		if (sscanf(arg, "%lf", &copt.reporting_interval) != 1 ||
 					copt.reporting_interval <= 0)
 			PARSE_ERR("option %s needs a positive number "
 					"(in seconds)", opt_string);
@@ -2592,7 +2592,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		column_info[COL_THROUGH].header.unit = " [MB/s]";
 		break;
 	case 'n':
-		if (sscanf(arg, "%hd", &copt.num_flows) != 1 || 
+		if (sscanf(arg, "%hd", &copt.num_flows) != 1 ||
 						copt.num_flows > MAX_FLOWS)
 			PARSE_ERR("option %s (number of flows) must be within "
 			     "[1..%d]", opt_string, MAX_FLOWS);
@@ -2612,7 +2612,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		} else if (!strcmp(arg, "byte")) {
 			copt.force_unit = BYTE_BASED;
 		} else {
-			PARSE_ERR("invalid argument '%s' for option %s", 
+			PARSE_ERR("invalid argument '%s' for option %s",
 				arg, opt_string);
 		}
 	case 'w':
@@ -2623,7 +2623,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		PARSE_ERR("uncaught option: %s", arg);
 		break;
 	}
-	
+
 }
 
 /**
@@ -2684,7 +2684,7 @@ static void parse_cmdline(int argc, char *argv[])
 		{'U', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{'W', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{0, 0, ap_no, 0} 
+		{0, 0, ap_no, 0}
 	};
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
@@ -2704,7 +2704,7 @@ static void parse_cmdline(int argc, char *argv[])
 		char *argcpy = strdup(arg);
 		const char *opt_string = ap_opt_string(&parser, argind);
 		int tag = ap_option(&parser, argind)->tag;
-		
+
 		/* distinguish option types by tag first */
 		switch (tag) {
 		case OPT_CONTROLLER:
@@ -2715,7 +2715,7 @@ static void parse_cmdline(int argc, char *argv[])
 			for (char *token = strtok(argcpy, ","); token;
 			     token = strtok(NULL, ",")) {
 				rc = sscanf(token, "%d", &optint);
-				if (rc != 1) 
+				if (rc != 1)
 					PARSE_ERR("%s", "Malformed flow specifier");
 
 				/* all flows */
@@ -2732,7 +2732,7 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 		case OPT_FLOW:
 			for (int i = 0; i < cur_num_flows; i++)
-				parse_flow_option(code, arg, opt_string, 
+				parse_flow_option(code, arg, opt_string,
 						current_flow_ids[i]);
 			break;
 		case OPT_FLOW_ENDPOINT:
@@ -2754,15 +2754,15 @@ static void parse_cmdline(int argc, char *argv[])
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option_endpoint(code, 
-							arg, opt_string, 
-							current_flow_ids[i], 
-							SOURCE);	
+						parse_flow_option_endpoint(code,
+							arg, opt_string,
+							current_flow_ids[i],
+							SOURCE);
 					if (type == 'd' || type == 'b')
-						parse_flow_option_endpoint(code, 
-							arg, opt_string, 
-							current_flow_ids[i], 
-							DESTINATION);	
+						parse_flow_option_endpoint(code,
+							arg, opt_string,
+							current_flow_ids[i],
+							DESTINATION);
 				}
 			}
 			break;

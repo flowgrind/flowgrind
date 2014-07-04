@@ -89,7 +89,7 @@ enum ap_Has_arg {
 	/** Option without argument (flag) */
 	ap_no = 0,
 	/** Argument required */
-	ap_yes, 
+	ap_yes,
 	/** Optional Argument */
 	ap_maybe
 };
@@ -135,7 +135,7 @@ struct _arg_parser {
  * @param[in] argc number of cmdline arguments
  * @param[in] argv array of cmdline argument strings
  * @param[in] options defines the options to parse for
- * @param[in] in_order if set to true, arguments are stored in the order in which 
+ * @param[in] in_order if set to true, arguments are stored in the order in which
  * 		they appear. If false, non-option arguments are stored after options.
  */
 char ap_init(struct _arg_parser *const ap,
@@ -173,7 +173,7 @@ int ap_arguments(const struct _arg_parser *const ap);
 int ap_code(const struct _arg_parser *const ap, const int i);
 
 /**
- * Returns the argument of a parsed option. If the corresponding code returned 
+ * Returns the argument of a parsed option. If the corresponding code returned
  * by ap_code() is 0, it returns the non-option.
  *
  * @param[in] ap pointer to arg parser state
@@ -182,7 +182,7 @@ int ap_code(const struct _arg_parser *const ap, const int i);
 const char *ap_argument(const struct _arg_parser *const ap, const int i);
 
 /**
- * Returns a pointer to the #_ap_Option struct of the parsed option as defined 
+ * Returns a pointer to the #_ap_Option struct of the parsed option as defined
  * during ap_init()
  *
  * @param[in] ap pointer to arg parser state

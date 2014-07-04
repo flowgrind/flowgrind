@@ -29,11 +29,11 @@
  */
 struct _list_node {
 	/** Pointer to user defined data stored with this node */
-	void* data; 
-	
+	void* data;
+
 	/** Pointer to the previous node in the list. NULL if this is the head of the list */
 	struct _list_node* next;
-	
+
 	/** Pointer to the next node in the list. NULL if this is the tail of the list */
 	struct _list_node* previous;
 };
@@ -44,10 +44,10 @@ struct _list_node {
 struct _linked_list {
 	/** Pointer to the first element in the list. NULL if the list is empty */
 	struct _list_node* head;
-	
+
 	/** Pointer to the last element in the list. NULL if the list is empty */
 	struct _list_node* tail;
-	
+
 	/** Size of the list i.e. the number of elements stored in the list */
 	size_t size;
 };
@@ -62,7 +62,7 @@ struct _linked_list {
 int fg_list_init(struct _linked_list * const list);
 
 /**
- * Returns the first element of the list 
+ * Returns the first element of the list
  * The element is not removed from the list.
  *
  * @param[in] list to operate on
