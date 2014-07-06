@@ -2167,7 +2167,8 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
  * @param[in] flow_id Id of flow to apply option to
  * @param[in] endpoint_id Endpoint to apply option to
  */
-static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
+static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
+{
 	char unit = 0, type = 0;
 	double optdouble = 0.0;
 	/* last %c for catching wrong input... this is not nice. */
@@ -2225,7 +2226,8 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
  * @param[out] port Port is returned in this argument
  * @param[out] is_ipv6 True is returend in this argument if the control address is a numerical ipv6 address
 */
-static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6) {
+static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
+{
 	char* sepptr = 0;
 
 	/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
@@ -2264,7 +2266,8 @@ static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6) {
  * @param[in] flow_id Id of flow to apply option to
  * @param[in] endpoint_id Endpoint to apply option to
  */
-static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id) {
+static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
+{
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
 	struct _daemon* daemon;
@@ -2334,7 +2337,8 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
  * @param[in] flow_id Id of flow to apply option to
  * @param[in] endpoint_id Endpoint to apply option to
  */
-static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, int endpoint_id) {
+static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, int endpoint_id)
+{
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
@@ -2481,7 +2485,8 @@ static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, i
  * @param[in] arg The argument string of the cmdline option
  * @param[in] flow_id Id of flow to apply option to
  */
-static void parse_flow_option(int code, const char* arg, int flow_id) {
+static void parse_flow_option(int code, const char* arg, int flow_id)
+{
 	int rc = 0;
 	unsigned optunsigned = 0;
 
@@ -2578,7 +2583,8 @@ static void parse_colon_option(const char *arg)
  * @param[in] arg The argument string of the cmdline option
  * @param[in] opt_string Contains the real cmdline option string
  */
-static void parse_general_option(int code, const char* arg, const char* opt_string) {
+static void parse_general_option(int code, const char* arg, const char* opt_string)
+{
 
 	int rc;
 
@@ -2684,7 +2690,8 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * @param[in] argc Number of arguments (as in main())
  * @param[in] argv Array of argument strings (as in main())
  */
-static void parse_cmdline(int argc, char *argv[]) {
+static void parse_cmdline(int argc, char *argv[])
+{
 	int rc = 0;
 	int cur_num_flows = 0;
 	int current_flow_ids[MAX_FLOWS];
@@ -2874,7 +2881,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 /**
  * Sanity checking flow options
  */
-static void sanity_check(void) {
+static void sanity_check(void)
+{
 
 	bool sanity_err = false;
 
