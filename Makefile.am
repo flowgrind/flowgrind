@@ -1,3 +1,22 @@
+#
+# Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+#
+# This file is part of Flowgrind.
+#
+# Flowgrind is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flowgrind is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flowgrind.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 CLEANFILES = gitversion.h doc/doxyfile.stamp
 CLEAN_LOCAL_FILES = doc/html doc/latex doc/html.timestamp
 MR_PROPER_FILES = Makefile.in aclocal.m4 build-aux config.h.in config.h.in~ \
