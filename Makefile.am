@@ -34,6 +34,8 @@ dist_man1_MANS = man/flowgrind.1 \
 
 AM_CFLAGS = -Wall -Wextra -Werror=implicit -std=gnu99 -fgnu89-inline
 
+AM_CPPFLAGS = -Ilib -I$(top_srcdir)/lib
+
 # flowgrind controller
 flowgrind_SOURCES = src/common.h src/debug.c src/fg_error.h src/fg_error.c \
 					src/fg_progname.h src/fg_progname.c src/fg_socket.h \
@@ -72,8 +74,8 @@ endif
 
 # system has no clock_gettime
 if ! CLOCK_GETTIME
-flowgrind_SOURCES += src/fg_gettime.h src/fg_gettime.c
-flowgrindd_SOURCES += src/fg_gettime.h src/fg_gettime.c
+flowgrind_SOURCES += lib/fg_gettime.h lib/fg_gettime.c
+flowgrindd_SOURCES += lib/fg_gettime.h lib/fg_gettime.c
 endif
 
 .PHONY: gitversion.h mrproper html.timestamp clean-local
