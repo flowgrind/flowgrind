@@ -2737,7 +2737,8 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 		case OPT_FLOW:
 			for (int i = 0; i < cur_num_flows; i++)
-				parse_flow_option(code, arg, opt_string, current_flow_ids[i]);
+				parse_flow_option(code, arg, opt_string, 
+						current_flow_ids[i]);
 			break;
 		case OPT_FLOW_ENDPOINT:
 			/* pre-parse flow option for endpoints */
@@ -2758,9 +2759,15 @@ static void parse_cmdline(int argc, char *argv[])
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option_endpoint(code, arg, opt_string, current_flow_ids[i], SOURCE);	
+						parse_flow_option_endpoint(code, 
+							arg, opt_string, 
+							current_flow_ids[i], 
+							SOURCE);	
 					if (type == 'd' || type == 'b')
-						parse_flow_option_endpoint(code, arg, opt_string, current_flow_ids[i], DESTINATION);	
+						parse_flow_option_endpoint(code, 
+							arg, opt_string, 
+							current_flow_ids[i], 
+							DESTINATION);	
 				}
 			}
 			break;
