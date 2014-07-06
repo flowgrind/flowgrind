@@ -76,8 +76,7 @@ flowgrind_SOURCES += src/fg_gettime.h src/fg_gettime.c
 flowgrindd_SOURCES += src/fg_gettime.h src/fg_gettime.c
 endif
 
-.PHONY: gitversion.h mrproper html.timestamp clean-local
-
+.PHONY: gitversion.h
 gitversion.h:
 	$(shellL) ./scripts/make-version.sh
 
@@ -88,10 +87,12 @@ mrproper: maintainer-clean
 if USE_DOXYGEN
 html: html.timestamp
 
+.PHONY: html.timestamp
 html.timestamp:
 	$(DOXYGEN) doc/Doxyfile
 	touch doc/$@
 
+.PHONY: clean-local
 clean-local:
 	-rm -rf $(CLEAN_LOCAL_FILES)
 endif
