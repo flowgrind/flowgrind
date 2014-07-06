@@ -1064,8 +1064,8 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 #endif /* HAVE_LIBPCAP */
 		case 'v':
-			fprintf(stderr, "%s version: %s\n", progname,
-				FLOWGRIND_VERSION);
+			fprintf(stderr, "%s %s\n%s\n%s", progname, FLOWGRIND_VERSION,
+				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 			exit(EXIT_SUCCESS);
 			break;
 		default:

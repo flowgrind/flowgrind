@@ -67,6 +67,22 @@
 /** Minium block (message) size we can send */
 #define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
 
+/** The standard gpl3 no warranty message */
+#define FLOWGRIND_COPYRIGHT_YEAR "2014"
+
+/** The standard gpl3 no warranty message */
+#define FLOWGRIND_COPYING "Copyright (C) "FLOWGRIND_COPYRIGHT_YEAR" Free "	\
+			"Software Foundation, Inc.\nLicense GPLv3+: GNU GPL "	\
+			"version 3 or later <http://gnu.org/licenses/"		\
+			"gpl.html>.\nThis is free software: you are "		\
+			"free to change and redistribute it.\nThere is "	\
+			"NO WARRANTY, to the extent permitted by law.\n"
+
+/** The authors in a printable string */
+#define FLOWGRIND_AUTHORS "Written by Alexander Zimmermann, Arnd Hannemann, "	\
+			"Christian Samsel, Tim Kosse and Daniel Schaffrath.\n"
+
+
 /** Flow endpoint */
 enum flow_endpoint {
 	/** Endpoint that opens the connection */
