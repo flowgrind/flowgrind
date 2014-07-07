@@ -2860,59 +2860,50 @@ static void parse_cmdline(int argc, char *argv[])
  */
 static void sanity_check(void)
 {
-
-	bool sanity_err = false;
-
 	for (int id = 0; id < copt.num_flows; id++) {
-		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
+		DEBUG_MSG(LOG_DEBUG, "sanity checking parameter set of flow %d", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
 		    cflow[id].late_connect &&
 		    cflow[id].settings[DESTINATION].delay[WRITE] <
 		    cflow[id].settings[SOURCE].delay[WRITE]) {
 			warnx("server flow %d starts earlier than client "
 			      "flow while late connecting", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[SOURCE].delay[WRITE] > 0 &&
 		    cflow[id].settings[SOURCE].duration[WRITE] == 0) {
 			warnx("client flow %d has a delay but no runtime", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[DESTINATION].delay[WRITE] > 0 &&
 		    cflow[id].settings[DESTINATION].duration[WRITE] == 0) {
 			warnx("server flow %d has a delay but no runtime", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (!cflow[id].settings[DESTINATION].duration[WRITE] &&
 		    !cflow[id].settings[SOURCE].duration[WRITE]) {
 			warnx("server and client flow have both zero runtime "
 			      "for flow %d", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 
 		for (unsigned i = 0; i < 2; i++) {
-			if (cflow[id].settings[i].flow_control && !cflow[id].settings[i].write_rate_str) {
+			if (cflow[id].settings[i].flow_control &&
+			    !cflow[id].settings[i].write_rate_str) {
 				warnx("flow %d has flow control enabled but no "
-				      "rate.", id);
-				sanity_err = true;
+				      "rate", id);
+				exit(EXIT_FAILURE);
 			}
 
-			if (cflow[id].settings[i].write_rate && cflow[id].settings[i].write_rate /
+			if (cflow[id].settings[i].write_rate &&
+			    cflow[id].settings[i].write_rate /
 				cflow[id].settings[i].maximum_block_size < 1) {
 				warnx("client block size for flow %u is too big for "
 				      "specified rate", id);
-				sanity_err = true;
+				exit(EXIT_FAILURE);
 			}
 		}
-		DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
-	}
-
-	if (sanity_err) {
-#ifdef DEBUG
-		DEBUG_MSG(LOG_ERR, "Skipping errors discovered by sanity checks.");
-#else
-		usage(EXIT_FAILURE);
-#endif /* DEBUG */
+		DEBUG_MSG(LOG_DEBUG, "sanity check parameter set of flow %d completed", id);
 	}
 }
 
