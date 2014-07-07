@@ -610,7 +610,8 @@ inline static void die_if_fault_occurred(xmlrpc_env *env)
 }
 
 /* creates an xmlrpc_client for connect to server, uses global env rpc_env */
-static void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
+static void prepare_xmlrpc_client(xmlrpc_client **rpc_client)
+{
 	struct xmlrpc_clientparms clientParms;
 	size_t clientParms_cpsize = XMLRPC_CPSIZE(transport);
 
@@ -1049,7 +1050,8 @@ static void grind_flows(xmlrpc_client *rpc_client)
 }
 
 /* Poll the daemons for reports */
-static void fetch_reports(xmlrpc_client *rpc_client) {
+static void fetch_reports(xmlrpc_client *rpc_client)
+{
 
 	xmlrpc_value * resultP = 0;
 
@@ -2147,7 +2149,8 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
  * @param[in] flow_id id of the flow for which flow to parse
  * @param[in] endpoint_id endpoint to parse for
  */
-static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
+static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
+{
 	char unit = 0, type = 0;
 	double optdouble = 0.0;
 	/* last %c for catching wrong input... this is not nice. */
@@ -2201,11 +2204,14 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
 /**
  * Parse RPC address for the xmlrpc control connection
  *
- * @param[in,out] rpc_address string in format CONTROL[:PORT] will be truncated to CONTROL
- * @param[out] port port is returned in this argument
- * @param[out] is_ipv6 true is returend in this argument if the control address is a numerical ipv6 address
+ * @param[in,out] rpc_address string in format CONTROL[:PORT]. It will be
+ * truncated to CONTROL
+ * @param[out] port port if the control address @p rpc_address contains a port
+ * @param[out] is_ipv6 true if control address @p rpc_address is a numerical
+ * ipv6 address
 */
-static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6) {
+static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
+{
 	char* sepptr = 0;
 
 	/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
@@ -2238,12 +2244,13 @@ static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6) {
  * Parse argument for option -H, which specifies the endpoints of a flow
  *
  * @param[in] hostarg argument for option -H in form of HOST[/CONTROL[:PORT]]
- *		    - HOST: test address where the actual test connection goes to
- *		    - CONTROL: RPC address, where this program connects to
- *		    - PORT: port for the control connection
+ *	    - HOST: test address where the actual test connection goes to
+ *	    - CONTROL: RPC address, where this program connects to
+ *	    - PORT: port for the control connection
  * @param[in] endpoint flow-endpoint to write to
  */
-static void parse_host_option(const char* hostarg, struct _flow_endpoint* endpoint) {
+static void parse_host_option(const char* hostarg, struct _flow_endpoint* endpoint)
+{
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
 	struct _daemon* daemon;
@@ -2312,7 +2319,9 @@ static void parse_host_option(const char* hostarg, struct _flow_endpoint* endpoi
  * @param[in] flow_id id of flow to apply option to
  * @param[in] endpoint_id endpoint to apply option to
  */
-static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, int endpoint_id) {
+static void parse_flow_option_endpoint(int code, const char* arg, int flow_id,
+				       int endpoint_id)
+{
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
@@ -2460,7 +2469,8 @@ static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, i
  * @param[in] arg the argument of the cmdline option
  * @param[in] flow_id id of flow to apply option to
  */
-static void parse_flow_option(int code, const char* arg, int flow_id) {
+static void parse_flow_option(int code, const char* arg, int flow_id)
+{
 	int rc = 0;
 	unsigned optunsigned = 0;
 
@@ -2557,7 +2567,9 @@ static void parse_colon_option(const char *arg)
  * @param[in] arg the argument of the cmdline option
  * @param[in] opt_string contains the real cmdline option string
  */
-static void parse_general_option(int code, const char* arg, const char* opt_string) {
+static void parse_general_option(int code, const char* arg,
+				 const char* opt_string)
+{
 
 	int rc;
 
@@ -2654,7 +2666,8 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 
 }
 
-static void parse_cmdline(int argc, char *argv[]) {
+static void parse_cmdline(int argc, char *argv[])
+{
 	int rc = 0;
 	int cur_num_flows = 0;
 	int current_flow_ids[MAX_FLOWS];
@@ -2845,7 +2858,8 @@ static void parse_cmdline(int argc, char *argv[]) {
 /**
  * Sanity checking flow options
  */
-static void sanity_check(void) {
+static void sanity_check(void)
+{
 
 	bool sanity_err = false;
 
