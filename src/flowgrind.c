@@ -2638,7 +2638,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		} else if (!strcmp(arg, "byte")) {
 			copt.force_unit = BYTE_BASED;
 		} else {
-			errx("invalid argument '%s' for option '%s'", 
+			errx("invalid argument '%s' for option '%s'",
 				arg, opt_string);
 			usage(EXIT_FAILURE);
 		}
@@ -2651,7 +2651,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		usage(EXIT_FAILURE);
 		break;
 	}
-	
+
 }
 
 static void parse_cmdline(int argc, char *argv[]) {
@@ -2703,7 +2703,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		{'U', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{'W', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{0, 0, ap_no, 0} 
+		{0, 0, ap_no, 0}
 	};
 
 	struct _arg_parser parser;
@@ -2726,7 +2726,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		char *argcpy = strdup(arg);
 		const char *opt_string = ap_opt_string(&parser, argind);
 		int tag = ap_option(&parser, argind)->tag;
-		
+
 		/* distinguish option types by tag first */
 		switch (tag) {
 		case OPT_CONTROLLER:
@@ -2778,9 +2778,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option_endpoint(code, arg, current_flow_ids[i], SOURCE);	
+						parse_flow_option_endpoint(code, arg, current_flow_ids[i], SOURCE);
 					if (type == 'd' || type == 'b')
-						parse_flow_option_endpoint(code, arg, current_flow_ids[i], DESTINATION);	
+						parse_flow_option_endpoint(code, arg, current_flow_ids[i], DESTINATION);
 				}
 			}
 			break;
