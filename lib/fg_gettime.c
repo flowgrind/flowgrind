@@ -35,35 +35,35 @@
 
 int clock_getres(clockid_t clk_id, struct timespec *res)
 {
-	kern_return_t retval = KERN_SUCCESS;
+	kern_return_t rc = KERN_SUCCESS;
 	clock_serv_t cclock;
 	natural_t attribute[4];
 	mach_msg_type_number_t count = sizeof(attribute)/sizeof(natural_t);
 
 	host_get_clock_service(mach_host_self(), clk_id, &cclock);
-	retval = clock_get_attributes(cclock, CLOCK_GET_TIME_RES,
+	rc = clock_get_attributes(cclock, CLOCK_GET_TIME_RES,
 				      (clock_attr_t) &attribute, &count);
 	mach_port_deallocate(mach_task_self(), cclock);
 
 	res->tv_nsec = attribute[0];
 
-	return (retval == KERN_SUCCESS ? 0 : -1);
+	return (rc == KERN_SUCCESS ? 0 : -1);
 }
 
 int clock_gettime(clockid_t clk_id, struct timespec *tp)
 {
-	kern_return_t retval = KERN_SUCCESS;
+	kern_return_t rc = KERN_SUCCESS;
 	clock_serv_t cclock;
 	mach_timespec_t mts;
 
 	host_get_clock_service(mach_host_self(), clk_id, &cclock);
-	retval = clock_get_time(cclock, &mts);
+	rc = clock_get_time(cclock, &mts);
 	mach_port_deallocate(mach_task_self(), cclock);
 
 	tp->tv_sec = mts.tv_sec;
 	tp->tv_nsec = mts.tv_nsec;
 
-	return (retval == KERN_SUCCESS ? 0 : -1);
+	return (rc == KERN_SUCCESS ? 0 : -1);
 }
 
 #endif /* __DARWIN__ */
