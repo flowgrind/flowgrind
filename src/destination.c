@@ -152,7 +152,7 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	struct _flow *flow;
 	unsigned short server_data_port;
 
-	if (num_flows >= MAX_FLOWS) {
+	if (fg_list_size(&flows) >= MAX_FLOWS) {
 		logging_log(LOG_WARNING, "Can not accept another flow, already "
 			    "handling MAX_FLOW flows.");
 		request_error(&request->r, "Can not accept another flow, "
@@ -160,7 +160,12 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		return;
 	}
 
-	flow = &flows[num_flows++];
+	flow = malloc(sizeof(struct _flow));
+	if (!flow) {
+		logging_log(LOG_ALERT, "could not allocate memory for flow");
+		return;
+	}
+	
 	init_flow(flow, 0);
 
 	flow->settings = request->settings;
@@ -172,7 +177,6 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		request_error(&request->r, "could not allocate memory "
 			      "for read/write blocks");
 		uninit_flow(flow);
-		num_flows--;
 		return;
 	}
 
@@ -195,7 +199,6 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		request_error(&request->r, "could not create listen socket "
 			      "for data connection: %s", flow->error);
 		uninit_flow(flow);
-		num_flows--;
 		return;
 	} else {
 		DEBUG_MSG(LOG_WARNING, "listening on %s port %u for data "
@@ -218,6 +221,8 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	request->real_listen_read_buffer_size =
 		flow->real_listen_receive_buffer_size;
 	request->flow_id = flow->id;
+
+	fg_list_push_back(&flows, flow);
 
 	return;
 }
