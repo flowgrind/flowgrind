@@ -2502,21 +2502,21 @@ static void parse_colon_option(const char *arg)
 	char *argcpy = strdup(arg);
 	for (char *token = strtok(argcpy, ","); token;
 	     token = strtok(NULL, ",")) {
-		if (!strcmp(token, "interval")) {
+		if (!strcmp(token, "interval"))
 			SHOW_COLUMNS(COL_BEGIN, COL_END);
-		} else if (!strcmp(token, "through")) {
+		else if (!strcmp(token, "through"))
 			SHOW_COLUMNS(COL_THROUGH);
-		} else if (!strcmp(token, "transac")) {
+		else if (!strcmp(token, "transac"))
 			SHOW_COLUMNS(COL_TRANSAC);
-		} else if (!strcmp(token, "blocks")) {
+		else if (!strcmp(token, "blocks"))
 			SHOW_COLUMNS(COL_BLOCK_REQU, COL_BLOCK_RESP);
-		} else if (!strcmp(token, "rtt")) {
+		else if (!strcmp(token, "rtt"))
 			SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
-		} else if (!strcmp(token, "iat")) {
+		else if (!strcmp(token, "iat"))
 			SHOW_COLUMNS(COL_IAT_MIN, COL_IAT_AVG, COL_IAT_MAX);
-		} else if (!strcmp(token, "delay")) {
+		else if (!strcmp(token, "delay"))
 			SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
-		} else if (!strcmp(token, "kernel")) {
+		else if (!strcmp(token, "kernel"))
 			SHOW_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_UACK,
 				     COL_TCP_SACK, COL_TCP_LOST, COL_TCP_RETR,
 				     COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
@@ -2524,12 +2524,11 @@ static void parse_colon_option(const char *arg)
 				     COL_TCP_RTO, COL_TCP_CA_STATE, COL_SMSS,
 				     COL_PMTU);
 #ifdef DEBUG
-		} else if (!strcmp(token, "status")) {
+		else if (!strcmp(token, "status"))
 			SHOW_COLUMNS(COL_STATUS);
 #endif /* DEBUG */
-		} else {
+		else
 			PARSE_ERR("%s", "malformed option '-c'");
-		}
 	}
 	free(argcpy);
 }
@@ -2549,15 +2548,14 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		PARSE_ERR("invalid argument: %s", arg);
 	/* general options */
 	case 'h':
-		if (!arg || !strlen(arg)) {
+		if (!arg || !strlen(arg))
 			usage(EXIT_SUCCESS);
-		} else if (!strcmp(arg, "socket")) {
+		else if (!strcmp(arg, "socket"))
 			usage_sockopt();
-		} else if (!strcmp(arg, "traffic")) {
+		else if (!strcmp(arg, "traffic"))
 			usage_trafgenopt();
-		} else {
+		else
 			PARSE_ERR("invalid argument '%s' for %s", arg, opt_string);
-		}
 		break;
 	case 'v':
 		fprintf(stderr, "%s %s\n%s\n%s", progname, FLOWGRIND_VERSION,
@@ -2607,14 +2605,13 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		copt.log_to_stdout = false;
 		break;
 	case 's':
-		if (!strcmp(arg, "segment")) {
+		if (!strcmp(arg, "segment"))
 			copt.force_unit = SEGMENT_BASED;
-		} else if (!strcmp(arg, "byte")) {
+		else if (!strcmp(arg, "byte"))
 			copt.force_unit = BYTE_BASED;
-		} else {
+		else
 			PARSE_ERR("invalid argument '%s' for option %s",
-				arg, opt_string);
-		}
+				  arg, opt_string);
 	case 'w':
 		copt.log_to_file = true;
 		break;

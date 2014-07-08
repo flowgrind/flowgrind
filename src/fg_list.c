@@ -31,11 +31,9 @@ int fg_list_init(struct _linked_list * const list)
 {
 	if (!list)
 		return -1;
-
-	if (list->head) {
+	if (list->head)
 		if (!fg_list_clear(list))
 			return -2;
-	}
 
 	list->head = NULL;
 	list->tail = NULL;
