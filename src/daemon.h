@@ -40,6 +40,7 @@
 #endif /* HAVE_LIBGSL */
 
 #include "common.h"
+#include "fg_list.h"
 
 /** time select() will block waiting for a file descriptor to become ready */
 #define DEFAULT_SELECT_TIMEOUT  10000000
@@ -240,8 +241,7 @@ extern int daemon_pipe[2];
 extern char started;
 extern char dumping;
 extern pthread_mutex_t mutex;
-extern struct _flow flows[MAX_FLOWS];
-extern unsigned int num_flows;
+extern struct _linked_list flows;
 extern struct _report* reports;
 extern struct _report* reports_last;
 extern unsigned int pending_reports;
@@ -252,7 +252,7 @@ struct _report* get_reports(int *has_more);
 
 #ifdef HAVE_LIBPCAP
 char *dump_prefix;
-const char *dump_dir;
+char *dump_dir;
 #endif /* HAVE_LIBPCAP */
 
 void *daemon_main(void* ptr);

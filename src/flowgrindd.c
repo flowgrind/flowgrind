@@ -45,6 +45,7 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <sys/stat.h>
 
 /* CPU affinity */
 #ifdef __LINUX__
@@ -989,6 +990,36 @@ void set_affinity(int cpu)
 			  progname, getpid(), cpu);
 }
 
+#ifdef HAVE_LIBPCAP
+int process_dump_dir() {
+	if (!dump_dir)
+		dump_dir = getcwd(NULL, 0);
+
+	struct stat dirstats;
+
+	if (stat(dump_dir, &dirstats) == -1) {
+		DEBUG_MSG(LOG_WARNING, "Unable to stat %s: %s", dump_dir, strerror(errno));
+		return 0;
+	}
+
+	if (!S_ISDIR(dirstats.st_mode)) {
+		DEBUG_MSG(LOG_ERR, "Provided path %s is not a directory", dump_dir);
+		return 0;
+	}
+
+	if (access(dump_dir, W_OK | X_OK) == -1) {
+		DEBUG_MSG(LOG_ERR, "Insufficent permissions to access %s: %s", dump_dir, strerror(errno));
+		return 0;
+	}
+
+	/* ensure path contains terminating slash */
+	if (dump_dir[strlen(dump_dir) - 1] != '/')
+		asprintf_append(&dump_dir, "/");
+
+	return 1;
+}
+#endif
+
 /**
  * Parse command line options to initialize global options
  *
@@ -1021,6 +1052,8 @@ static void parse_cmdline(int argc, char *argv[])
 		errx("%s", ap_error(&parser));
 		usage(EXIT_FAILURE);
 	}
+
+	bool dump_dir_specified = false;
 
 	/* parse command line */
 	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
@@ -1059,7 +1092,8 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 #ifdef HAVE_LIBPCAP
 		case 'w':
-			dump_dir = arg;
+			dump_dir = strdup(arg);
+			dump_dir_specified = true;
 			break;
 #endif /* HAVE_LIBPCAP */
 		case 'v':
@@ -1073,6 +1107,17 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 		}
 	}
+
+#ifdef HAVE_LIBPCAP
+	if (!process_dump_dir()) {
+		if(dump_dir_specified) {
+			errx("the dump directory %s for tcpdumps does either not exist or you have insufficient permissions to write to it", dump_dir);
+			exit(EXIT_FAILURE);
+		} else {
+			warnx("tcpdumping will not be available since you dont have sufficient permissions to write to %s", dump_dir);
+		}
+	}
+#endif /* HAVE_LIBPCAP */
 
 	// TODO more sanity checks... (e.g. if port is in valid range)
 }
@@ -1096,6 +1141,7 @@ int main(int argc, char *argv[])
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
 	logging_init();
+	fg_list_init(&flows);
 #ifdef HAVE_LIBPCAP
 	fg_pcap_init();
 #endif /* HAVE_LIBPCAP */
