@@ -8,8 +8,6 @@
 /aclocal.m4
 /autom4te.cache
 /build-aux
-/config.h
-/config.h.in
 /config.log
 /config.status
 /configure
@@ -18,11 +16,9 @@
 /flowgrind
 /flowgrindd
 /flowgrind-stop
-/gitversion.h
 /flowlog-*
 /Makefile
 /Makefile.in
-/stamp-h1
 /tmp
 /*.pcap
 /*.kdev4
@@ -35,5 +31,8 @@
 # /src/
 /src/.deps
 /src/.dirstamp
-/src/.nfs*
+/src/config.h
+/src/config.h.in
+/src/gitversion.h
+/src/stamp-h1
 /src/*.o

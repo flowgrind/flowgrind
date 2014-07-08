@@ -26,7 +26,7 @@ AM_INIT_AUTOMAKE([foreign -Wall -Werror no-dist subdir-objects 1.10])
 AC_PREREQ([2.61])
 
 # Files to generate
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_FILES([Makefile])
 
 # Checking for programs

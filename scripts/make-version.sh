@@ -2,6 +2,7 @@
 
 VLINE='/*#define GITVERSION ""*/'
 GIT=`which git`
+FILE='src/gitversion.h'
 
 cd $(dirname $0)/..
 
@@ -14,5 +15,5 @@ else
     VLINE="#define GITVERSION \"$VERSION\""
 fi
 
-echo "$VLINE" | cmp -s - gitversion.h || echo "$VLINE" > gitversion.h
+echo "$VLINE" | cmp -s - "$FILE" || echo "$VLINE" > "$FILE"
 exit 0
