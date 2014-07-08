@@ -68,20 +68,18 @@
 #define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
 
 /** Flowgrind's copyright year */
-#define FLOWGRIND_COPYRIGHT_YEAR "2014"
+#define FLOWGRIND_COPYRIGHT "Copyright (C) 2007 - 2014 Flowgrind authors."
 
 /** Standard GPL3 no warranty message */
-#define FLOWGRIND_COPYING "Copyright (C) "FLOWGRIND_COPYRIGHT_YEAR" Free "	\
-			"Software Foundation, Inc.\nLicense GPLv3+: GNU GPL "	\
-			"version 3 or later <http://gnu.org/licenses/"		\
-			"gpl.html>.\nThis is free software: you are "		\
-			"free to change and redistribute it.\nThere is "	\
-			"NO WARRANTY, to the extent permitted by law.\n"
+#define FLOWGRIND_COPYING								    \
+	"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"  \
+	"This is free software: you are free to change and redistribute it.\n"		    \
+	"There is NO WARRANTY, to the extent permitted by law."
 
 /** Flowgrind's authors in a printable string */
-#define FLOWGRIND_AUTHORS "Written by Alexander Zimmermann, Arnd Hannemann, "	\
-			"Christian Samsel, Tim Kosse and Daniel Schaffrath.\n"
-
+#define FLOWGRIND_AUTHORS								    \
+	"Written by Arnd Hannemann, Tim Kosse, Christian Samsel, Daniel Schaffrath\n"	    \
+	"and Alexander Zimmermann."
 
 /** Flow endpoint */
 enum flow_endpoint {

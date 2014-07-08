@@ -2565,7 +2565,8 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 			PARSE_ERR("invalid argument '%s' for %s", arg, opt_string);
 		break;
 	case 'v':
-		fprintf(stderr, "%s %s\n%s\n%s", progname, FLOWGRIND_VERSION,
+		fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+			FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
 			FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 		exit(EXIT_SUCCESS);
 
