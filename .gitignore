@@ -35,5 +35,9 @@
 # /src/
 /src/.deps
 /src/.dirstamp
-/src/.nfs*
 /src/*.o
+
+# /lib/
+/lib/.deps
+/lib/.dirstamp
+/lib/*.o

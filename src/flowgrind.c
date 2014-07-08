@@ -610,7 +610,8 @@ inline static void die_if_fault_occurred(xmlrpc_env *env)
 }
 
 /* creates an xmlrpc_client for connect to server, uses global env rpc_env */
-static void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
+static void prepare_xmlrpc_client(xmlrpc_client **rpc_client)
+{
 	struct xmlrpc_clientparms clientParms;
 	size_t clientParms_cpsize = XMLRPC_CPSIZE(transport);
 
@@ -1049,7 +1050,8 @@ static void grind_flows(xmlrpc_client *rpc_client)
 }
 
 /* Poll the daemons for reports */
-static void fetch_reports(xmlrpc_client *rpc_client) {
+static void fetch_reports(xmlrpc_client *rpc_client)
+{
 
 	xmlrpc_value * resultP = 0;
 
@@ -2147,7 +2149,8 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
  * @param[in] flow_id id of the flow for which flow to parse
  * @param[in] endpoint_id endpoint to parse for
  */
-static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
+static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
+{
 	char unit = 0, type = 0;
 	double optdouble = 0.0;
 	/* last %c for catching wrong input... this is not nice. */
@@ -2201,11 +2204,14 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id) {
 /**
  * Parse RPC address for the xmlrpc control connection
  *
- * @param[in,out] rpc_address string in format CONTROL[:PORT] will be truncated to CONTROL
- * @param[out] port port is returned in this argument
- * @param[out] is_ipv6 true is returend in this argument if the control address is a numerical ipv6 address
+ * @param[in,out] rpc_address string in format CONTROL[:PORT]. It will be
+ * truncated to CONTROL
+ * @param[out] port port if the control address @p rpc_address contains a port
+ * @param[out] is_ipv6 true if control address @p rpc_address is a numerical
+ * ipv6 address
 */
-static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6) {
+static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
+{
 	char* sepptr = 0;
 
 	/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
@@ -2238,12 +2244,13 @@ static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6) {
  * Parse argument for option -H, which specifies the endpoints of a flow
  *
  * @param[in] hostarg argument for option -H in form of HOST[/CONTROL[:PORT]]
- *		    - HOST: test address where the actual test connection goes to
- *		    - CONTROL: RPC address, where this program connects to
- *		    - PORT: port for the control connection
+ *	    - HOST: test address where the actual test connection goes to
+ *	    - CONTROL: RPC address, where this program connects to
+ *	    - PORT: port for the control connection
  * @param[in] endpoint flow-endpoint to write to
  */
-static void parse_host_option(const char* hostarg, struct _flow_endpoint* endpoint) {
+static void parse_host_option(const char* hostarg, struct _flow_endpoint* endpoint)
+{
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
 	struct _daemon* daemon;
@@ -2312,7 +2319,9 @@ static void parse_host_option(const char* hostarg, struct _flow_endpoint* endpoi
  * @param[in] flow_id id of flow to apply option to
  * @param[in] endpoint_id endpoint to apply option to
  */
-static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, int endpoint_id) {
+static void parse_flow_option_endpoint(int code, const char* arg, int flow_id,
+				       int endpoint_id)
+{
 	int rc = 0;
 	unsigned optunsigned = 0;
 	double optdouble = 0.0;
@@ -2460,7 +2469,8 @@ static void parse_flow_option_endpoint(int code, const char* arg, int flow_id, i
  * @param[in] arg the argument of the cmdline option
  * @param[in] flow_id id of flow to apply option to
  */
-static void parse_flow_option(int code, const char* arg, int flow_id) {
+static void parse_flow_option(int code, const char* arg, int flow_id)
+{
 	int rc = 0;
 	unsigned optunsigned = 0;
 
@@ -2557,7 +2567,9 @@ static void parse_colon_option(const char *arg)
  * @param[in] arg the argument of the cmdline option
  * @param[in] opt_string contains the real cmdline option string
  */
-static void parse_general_option(int code, const char* arg, const char* opt_string) {
+static void parse_general_option(int code, const char* arg,
+				 const char* opt_string)
+{
 
 	int rc;
 
@@ -2638,7 +2650,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		} else if (!strcmp(arg, "byte")) {
 			copt.force_unit = BYTE_BASED;
 		} else {
-			errx("invalid argument '%s' for option '%s'", 
+			errx("invalid argument '%s' for option '%s'",
 				arg, opt_string);
 			usage(EXIT_FAILURE);
 		}
@@ -2651,10 +2663,11 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		usage(EXIT_FAILURE);
 		break;
 	}
-	
+
 }
 
-static void parse_cmdline(int argc, char *argv[]) {
+static void parse_cmdline(int argc, char *argv[])
+{
 	int rc = 0;
 	int cur_num_flows = 0;
 	int current_flow_ids[MAX_FLOWS];
@@ -2703,7 +2716,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		{'U', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{'W', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{0, 0, ap_no, 0} 
+		{0, 0, ap_no, 0}
 	};
 
 	struct _arg_parser parser;
@@ -2726,7 +2739,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		char *argcpy = strdup(arg);
 		const char *opt_string = ap_opt_string(&parser, argind);
 		int tag = ap_option(&parser, argind)->tag;
-		
+
 		/* distinguish option types by tag first */
 		switch (tag) {
 		case OPT_CONTROLLER:
@@ -2778,9 +2791,9 @@ static void parse_cmdline(int argc, char *argv[]) {
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option_endpoint(code, arg, current_flow_ids[i], SOURCE);	
+						parse_flow_option_endpoint(code, arg, current_flow_ids[i], SOURCE);
 					if (type == 'd' || type == 'b')
-						parse_flow_option_endpoint(code, arg, current_flow_ids[i], DESTINATION);	
+						parse_flow_option_endpoint(code, arg, current_flow_ids[i], DESTINATION);
 				}
 			}
 			break;
@@ -2845,60 +2858,52 @@ static void parse_cmdline(int argc, char *argv[]) {
 /**
  * Sanity checking flow options
  */
-static void sanity_check(void) {
-
-	bool sanity_err = false;
-
+static void sanity_check(void)
+{
 	for (int id = 0; id < copt.num_flows; id++) {
-		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
+		DEBUG_MSG(LOG_DEBUG, "sanity checking parameter set of flow %d", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
 		    cflow[id].late_connect &&
 		    cflow[id].settings[DESTINATION].delay[WRITE] <
 		    cflow[id].settings[SOURCE].delay[WRITE]) {
 			warnx("server flow %d starts earlier than client "
 			      "flow while late connecting", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[SOURCE].delay[WRITE] > 0 &&
 		    cflow[id].settings[SOURCE].duration[WRITE] == 0) {
 			warnx("client flow %d has a delay but no runtime", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[DESTINATION].delay[WRITE] > 0 &&
 		    cflow[id].settings[DESTINATION].duration[WRITE] == 0) {
 			warnx("server flow %d has a delay but no runtime", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (!cflow[id].settings[DESTINATION].duration[WRITE] &&
 		    !cflow[id].settings[SOURCE].duration[WRITE]) {
 			warnx("server and client flow have both zero runtime "
 			      "for flow %d", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 
 		for (unsigned i = 0; i < 2; i++) {
-			if (cflow[id].settings[i].flow_control && !cflow[id].settings[i].write_rate_str) {
+			if (cflow[id].settings[i].flow_control &&
+			    !cflow[id].settings[i].write_rate_str) {
 				warnx("flow %d has flow control enabled but no "
-				      "rate.", id);
-				sanity_err = true;
+				      "rate", id);
+				exit(EXIT_FAILURE);
 			}
 
-			if (cflow[id].settings[i].write_rate && cflow[id].settings[i].write_rate /
+			if (cflow[id].settings[i].write_rate &&
+			    cflow[id].settings[i].write_rate /
 				cflow[id].settings[i].maximum_block_size < 1) {
 				warnx("client block size for flow %u is too big for "
 				      "specified rate", id);
-				sanity_err = true;
+				exit(EXIT_FAILURE);
 			}
 		}
-		DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
-	}
-
-	if (sanity_err) {
-#ifdef DEBUG
-		DEBUG_MSG(LOG_ERR, "Skipping errors discovered by sanity checks.");
-#else
-		usage(EXIT_FAILURE);
-#endif /* DEBUG */
+		DEBUG_MSG(LOG_DEBUG, "sanity check parameter set of flow %d completed", id);
 	}
 }
 

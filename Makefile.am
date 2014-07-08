@@ -1,3 +1,22 @@
+#
+# Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+#
+# This file is part of Flowgrind.
+#
+# Flowgrind is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flowgrind is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flowgrind.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 CLEANFILES = gitversion.h doc/doxyfile.stamp
 CLEAN_LOCAL_FILES = doc/html doc/latex doc/html.timestamp
 MR_PROPER_FILES = Makefile.in aclocal.m4 build-aux config.h.in config.h.in~ \
@@ -14,6 +33,8 @@ dist_man1_MANS = man/flowgrind.1 \
 				 man/flowgrind-stop.1
 
 AM_CFLAGS = -Wall -Wextra -Werror=implicit -std=gnu99 -fgnu89-inline
+
+AM_CPPFLAGS = -Ilib -I$(top_srcdir)/lib
 
 # flowgrind controller
 flowgrind_SOURCES = src/common.h src/debug.c src/fg_error.h src/fg_error.c \
@@ -54,8 +75,8 @@ endif
 
 # system has no clock_gettime
 if ! CLOCK_GETTIME
-flowgrind_SOURCES += src/fg_gettime.h src/fg_gettime.c
-flowgrindd_SOURCES += src/fg_gettime.h src/fg_gettime.c
+flowgrind_SOURCES += lib/fg_gettime.h lib/fg_gettime.c
+flowgrindd_SOURCES += lib/fg_gettime.h lib/fg_gettime.c
 endif
 
 .PHONY: gitversion.h mrproper html.timestamp clean-local
