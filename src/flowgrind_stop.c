@@ -161,8 +161,8 @@ int main(int argc, char *argv[])
 			usage(EXIT_SUCCESS);
 			break;
 		case 'v':
-			fprintf(stderr, "%s version: %s\n", progname,
-				FLOWGRIND_VERSION);
+			fprintf(stderr, "%s %s\n%s\n%s", progname, FLOWGRIND_VERSION,
+				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 			exit(EXIT_SUCCESS);
 			break;
 		default:
@@ -183,4 +183,5 @@ int main(int argc, char *argv[])
 
 	xmlrpc_env_clean(&rpc_env);
 	xmlrpc_client_teardown_global_const();
+	ap_free(&parser);
 }
