@@ -622,7 +622,8 @@ inline static void die_if_fault_occurred(xmlrpc_env *env)
 }
 
 /* creates an xmlrpc_client for connect to server, uses global env rpc_env */
-static void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
+static void prepare_xmlrpc_client(xmlrpc_client **rpc_client)
+{
 	struct xmlrpc_clientparms clientParms;
 	size_t clientParms_cpsize = XMLRPC_CPSIZE(transport);
 
@@ -1061,7 +1062,8 @@ static void grind_flows(xmlrpc_client *rpc_client)
 }
 
 /* Poll the daemons for reports */
-static void fetch_reports(xmlrpc_client *rpc_client) {
+static void fetch_reports(xmlrpc_client *rpc_client)
+{
 
 	xmlrpc_value * resultP = 0;
 
@@ -2064,57 +2066,58 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 	char typechar, distchar;
 	enum distributions distr = CONSTANT;
 
-	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar, &param1, &param2, &unused);
+	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar,
+		    &param1, &param2, &unused);
 	if (rc != 3 && rc != 4)
 		PARSE_ERR("flow %i: option -G: malformed traffic generation "
-				"parameters", flow_id);
+			  "parameters", flow_id);
 
 	switch (distchar) {
 	case 'N':
 		distr = NORMAL;
 		if (!param1 || !param2)
 			PARSE_ERR("flow %i: option -G: normal distribution "
-					"needs two non-zero parameters", flow_id);
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'W':
 		distr = WEIBULL;
 		if (!param1 || !param2)
 			PARSE_ERR("flow %i: option -G: weibull distribution "
-					"needs two non-zero parameters", flow_id);
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'U':
 		distr = UNIFORM;
 		if  (param1 <= 0 || param2 <= 0 || (param1 > param2))
 			PARSE_ERR("flow %i: option -G: uniform distribution "
-					"needs two positive parameters", flow_id);
+				  "needs two positive parameters", flow_id);
 		break;
 	case 'E':
 		distr = EXPONENTIAL;
 		if (param1 <= 0)
 			PARSE_ERR("flow %i: option -G: exponential distribution "
-					"needs one positive parameter", flow_id);
+				  "needs one positive parameter", flow_id);
 		break;
 	case 'P':
 		distr = PARETO;
 		if (!param1 || !param2)
 			PARSE_ERR("flow %i: option -G: pareto distribution "
-					"needs two non-zero parameters", flow_id);
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'L':
 		distr = LOGNORMAL;
 		if (!param1 || !param2)
 			PARSE_ERR("flow %i: option -G: lognormal distribution "
-					"needs two non-zero parameters", flow_id);
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'C':
 		distr = CONSTANT;
 		if (param1 <= 0)
 			PARSE_ERR("flow %i: option -G: constant distribution "
-					"needs one positive parameters", flow_id);
+				  "needs one positive parameters", flow_id);
 		break;
 	default:
-		PARSE_ERR("flow %i: option -G: syntax error: %c is not a distribution",
-				flow_id, distchar);
+		PARSE_ERR("flow %i: option -G: syntax error: %c is not a "
+			  "distribution", flow_id, distchar);
 		break;
 	}
 
@@ -2135,6 +2138,7 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.param_two = param2;
 		break;
 	}
+
 	/* sanity check for max block size */
 	for (int i = 0; i < 2; i++) {
 		if (distr == CONSTANT && cflow[flow_id].settings[i].maximum_block_size < param1)
@@ -2189,7 +2193,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 
 	if (type != 'b' && type != 'B')
 		PARSE_ERR("flow %i: option -R: illegal type specifier "
-			"(either 'b' or 'B')", flow_id);
+			  "(either 'b' or 'B')", flow_id);
 	if (type == 'b')
 		optdouble /=  8;
 
@@ -2274,7 +2278,7 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	if (strchr(arg, ':')) {
 		if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)
 			PARSE_ERR("flow %i: invalid IPv6 address '%s' for "
-					"test connection", flow_id, arg);
+				  "test connection", flow_id, arg);
 
 		if (!extra_rpc)
 			is_ipv6 = true;
@@ -2284,12 +2288,11 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	if (extra_rpc) {
 		parse_rpc_address(&rpc_address, &port, &is_ipv6);
 		if (is_ipv6 && (inet_pton(AF_INET6, rpc_address,
-			(char*)&source_in6.sin6_addr) <= 0))
+				(char*)&source_in6.sin6_addr) <= 0))
 			PARSE_ERR("flow %i: invalid IPv6 address '%s' for RPC",
-					flow_id, arg);
+				  flow_id, arg);
 		if (port < 1 || port > 65535)
-			PARSE_ERR("flow %i: invalid port for RPC",
-					flow_id);
+			PARSE_ERR("flow %i: invalid port for RPC", flow_id);
 	}
 
 	if (!*arg)
@@ -2315,7 +2318,8 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
  * @param[in] endpoint_id Endpoint to apply option to
  */
 static void parse_flow_option_endpoint(int code, const char* arg,
-			const char* opt_string, int flow_id, int endpoint_id)
+				       const char* opt_string, int flow_id,
+				       int endpoint_id)
 {
 	int optint = 0;
 	double optdouble = 0.0;
@@ -2334,7 +2338,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'B':
 		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs positive integer",
-					flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->requested_send_buffer_size = optint;
 		break;
 	case 'C':
@@ -2343,7 +2347,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'D':
 		if (sscanf(arg, "%x", &optint) != 1 || (optint & ~0x3f))
 			PARSE_ERR("in flow %i: option %s service code point "
-					"is malformed", flow_id, opt_string);
+				  "is malformed", flow_id, opt_string);
 		settings->dscp = optint;
 		break;
 	case 'H':
@@ -2355,7 +2359,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'O':
 		if (!*arg)
 			PARSE_ERR("in flow %i: option %s requires a value "
-				"for each endpoint", flow_id, opt_string);
+				  "for each endpoint", flow_id, opt_string);
 
 		if (!strcmp(arg, "TCP_CORK")) {
 			settings->cork = 1;
@@ -2373,12 +2377,14 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 		} else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
 			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg))
 				PARSE_ERR("in flow %i: option %s: too large "
-				"string for TCP_CONG_MODULE", flow_id, opt_string);
+					  "string for TCP_CONG_MODULE",
+					  flow_id, opt_string);
 			strcpy(settings->cc_alg, arg + 16);
 		} else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
 			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg))
 				PARSE_ERR("in flow %i: option %s: too large "
-				"string for TCP_CONGESTION", flow_id, opt_string);
+					  "string for TCP_CONGESTION",
+					  flow_id, opt_string);
 			strcpy(settings->cc_alg, arg + 15);
 		} else if (!strcmp(arg, "SO_DEBUG")) {
 			settings->so_debug = 1;
@@ -2386,8 +2392,8 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 			settings->ipmtudiscover = 1;
 		} else {
 			PARSE_ERR("in flow %i: option %s: unknown socket "
-				"option or socket option not implemented",
-				flow_id, opt_string);
+				  "option or socket option not implemented",
+				  flow_id, opt_string);
 		}
 		break;
 	case 'P':
@@ -2396,13 +2402,13 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'R':
 		if (!*arg)
 			PARSE_ERR("in flow %i: option %s requires a value "
-				"for each given endpoint", flow_id, opt_string);
+				  "for each given endpoint", flow_id, opt_string);
 		parse_rate_option(arg, flow_id, endpoint_id);
 		break;
 	case 'S':
 		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs positive integer",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->request_trafgen_options.distribution = CONSTANT;
 		settings->request_trafgen_options.param_one = optint;
 		for (int id = 0; id < MAX_FLOWS; id++) {
@@ -2415,25 +2421,25 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'T':
 		if (sscanf(arg, "%lf", &optdouble) != 1 || optdouble < 0)
 			PARSE_ERR("in flow %i: option %s needs positive number",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->duration[WRITE] = optdouble;
 		break;
 	case 'U':
 		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs positive integer",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->maximum_block_size = optint;
 		break;
 	case 'W':
 		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs non-negative number",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->requested_read_buffer_size = optint;
 		break;
 	case 'Y':
 		if (sscanf(arg, "%lf", &optdouble) != 1 || optdouble < 0)
 			PARSE_ERR("in flow %i: option %s needs non-negative number",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->delay[WRITE] = optdouble;
 		break;
 	}
@@ -2448,7 +2454,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
  * @param[in] flow_id Id of flow to apply option to
  */
 static void parse_flow_option(int code, const char* arg, const char* opt_string,
-							int flow_id)
+			      int flow_id)
 {
 	unsigned optunsigned = 0;
 
@@ -2462,7 +2468,8 @@ static void parse_flow_option(int code, const char* arg, const char* opt_string,
 		break;
 	case 'J':
 		if (sscanf(arg, "%u", &optunsigned) != 1)
-			PARSE_ERR("option %s needs an integer argument", opt_string);
+			PARSE_ERR("option %s needs an integer argument",
+				  opt_string);
 		cflow[flow_id].random_seed = optunsigned;
 		break;
 	case 'L':
@@ -2559,7 +2566,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	case 'v':
 		fprintf(stderr, "%s %s\n%s\n%s", progname, FLOWGRIND_VERSION,
-				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
+			FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 		exit(EXIT_SUCCESS);
 
 	/* controller options */
@@ -2578,7 +2585,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		if (sscanf(arg, "%lf", &copt.reporting_interval) != 1 ||
 					copt.reporting_interval <= 0)
 			PARSE_ERR("option %s needs a positive number "
-					"(in seconds)", opt_string);
+				  "(in seconds)", opt_string);
 		break;
 	case LOG_FILE_OPTION:
 		copt.log_to_file = true;
@@ -2591,9 +2598,9 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	case 'n':
 		if (sscanf(arg, "%hd", &copt.num_flows) != 1 ||
-						copt.num_flows > MAX_FLOWS)
+			   copt.num_flows > MAX_FLOWS)
 			PARSE_ERR("option %s (number of flows) must be within "
-			     "[1..%d]", opt_string, MAX_FLOWS);
+				  "[1..%d]", opt_string, MAX_FLOWS);
 		break;
 	case 'o':
 		copt.clobber = true;
@@ -2747,7 +2754,7 @@ static void parse_cmdline(int argc, char *argv[])
 
 				if (type != 's' && type != 'd' && type != 'b')
 					PARSE_ERR("Invalid enpoint specifier"
-					" in Option %s", opt_string);
+						  " in Option %s", opt_string);
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')

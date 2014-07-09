@@ -89,8 +89,9 @@ static void *ap_resize_buffer(void *buf, const int min_size)
  * @param[in] long_opt true iff this option was a long option
  * @param[in] argument argument string for this option (may be empty)
  */
-static char push_back_record(struct _arg_parser *const ap, const struct _ap_Option *const option,
-				 bool long_opt, const char *const argument)
+static char push_back_record(struct _arg_parser *const ap,
+			     const struct _ap_Option *const option,
+			     bool long_opt, const char *const argument)
 {
 	const int len = strlen(argument);
 	struct _ap_Record *p;
@@ -135,6 +136,7 @@ static char add_error(struct _arg_parser *const ap, const char *const msg)
 	ap->error = (char *)tmp;
 	strncpy(ap->error + ap->error_size, msg, len + 1);
 	ap->error_size += len;
+
 	return 1;
 }
 
@@ -182,7 +184,8 @@ static char parse_long_option(struct _arg_parser *const ap,
 	for (i = 0; options[i].code != 0; ++i)
 		if (options[i].name
 		    && strncmp(options[i].name, &opt[2], len) == 0) {
-			if (strlen(options[i].name) == len) {	/* Exact match found */
+			/* Exact match found */
+			if (strlen(options[i].name) == len) {
 				index = i;
 				exact = 1;
 				break;
@@ -200,7 +203,8 @@ static char parse_long_option(struct _arg_parser *const ap,
 		return 1;
 	}
 
-	if (index < 0) {	/* nothing found */
+	/* nothing found */
+	if (index < 0) {
 		add_error(ap, "unrecognized option '");
 		add_error(ap, opt);
 		add_error(ap, "'");
@@ -209,7 +213,8 @@ static char parse_long_option(struct _arg_parser *const ap,
 
 	++*argindp;
 
-	if (opt[len + 2]) {	/* '--<long_option>=<argument>' syntax */
+	/* '--<long_option>=<argument>' syntax */
+	if (opt[len + 2]) {
 		if (options[index].has_arg == ap_no) {
 			add_error(ap, "option '--");
 			add_error(ap, options[index].name);
@@ -254,7 +259,7 @@ static char parse_short_option(struct _arg_parser *const ap,
 			       const struct _ap_Option options[],
 			       int *const argindp)
 {
-	int cind = 1;		/* character index in opt */
+	int cind = 1;	/* character index in opt */
 
 	while (cind > 0) {
 		int index = -1, i;
@@ -276,8 +281,9 @@ static char parse_short_option(struct _arg_parser *const ap,
 			return 1;
 		}
 
+		/* opt finished */
 		if (opt[++cind] == 0) {
-			++*argindp;	/* opt finished */
+			++*argindp;
 			cind = 0;
 		}
 
@@ -406,13 +412,14 @@ const char *ap_argument(const struct _arg_parser *const ap, const int i)
 
 const char *ap_opt_string(const struct _arg_parser *const ap, const int i)
 {
-	if (i >= 0 && i < ap_arguments(ap)) 
+	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].opt_string;
 	else
 		return "";
 }
 
-const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int i)
+const struct _ap_Option *ap_option(const struct _arg_parser *const ap,
+				   const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].option;
@@ -420,7 +427,8 @@ const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int
 		return 0;
 }
 
-bool ap_is_used(const struct _arg_parser *const ap, int code){
+bool ap_is_used(const struct _arg_parser *const ap, int code)
+{
 	bool ret = false;
 
 	for (int i=0; i < ap->data_size; i++)

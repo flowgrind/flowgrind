@@ -101,8 +101,8 @@ int fg_list_remove(struct _linked_list * const list, const void * const data)
  * @return a pointer to the newly created list element or NULL on failure
  */
 static struct _list_node* create_node(void * const data,
-					struct _list_node * const previous,
-					struct _list_node * const next)
+				      struct _list_node * const previous,
+				      struct _list_node * const next)
 {
 	struct _list_node *new_node = (struct _list_node*)malloc(sizeof(struct _list_node));
 
