@@ -62,7 +62,6 @@ int fg_list_remove(struct _linked_list * const list, const void * const data)
 {
 	if (!list)
 		return -1;
-
 	if (!list->head)
 		return -3;
 
@@ -70,25 +69,20 @@ int fg_list_remove(struct _linked_list * const list, const void * const data)
 
 	while (node->data != data) {
 		node = node->next;
-
 		if (!node)
 			return -4;
 	}
 
 	if (list->head == node)
 		list->head = node->next;
-
 	if (list->tail == node)
 		list->tail = node->previous;
-
 	if (node->previous)
 		node->previous->next = node->next;
-
 	if (node->next)
 		node->next->previous = node->previous;
 
 	free(node);
-
 	--list->size;
 
 	return 0;
@@ -147,7 +141,6 @@ void* fg_list_pop_front(struct _linked_list * const list)
 {
 	if (!list)
 		return NULL;
-
 	if (!list->head)
 		return NULL;
 
@@ -155,7 +148,6 @@ void* fg_list_pop_front(struct _linked_list * const list)
 
 	if (list->head == list->tail)
 		list->tail = NULL;
-
 	if (head->next)
 		head->next->previous = NULL;
 
@@ -163,7 +155,6 @@ void* fg_list_pop_front(struct _linked_list * const list)
 	void *data = head->data;
 
 	free(head);
-
 	--list->size;
 
 	return data;
@@ -181,7 +172,6 @@ int fg_list_push_back(struct _linked_list * const list, void * const data)
 
 	if (!list->head)
 		list->head = new_node;
-
 	if (list->tail)
 		list->tail->next = new_node;
 
@@ -195,24 +185,20 @@ void* fg_list_pop_back(struct _linked_list * const list)
 {
 	if (!list)
 		return NULL;
-
 	if (!list->tail)
 		return NULL;
-
 
 	struct _list_node *tail = list->tail;
 	void *data = tail->data;
 
 	if (tail->previous)
 		tail->previous->next = NULL;
-
 	if (list->tail == list->head)
 		list->head = NULL;
 
 	list->tail = tail->previous;
 
 	free(tail);
-
 	--list->size;
 
 	return data;
