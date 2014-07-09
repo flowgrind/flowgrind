@@ -22,6 +22,10 @@
 * along with Flowgrind. If not, see <http://www.gnu.org/licenses/>.
 *
 */
+
+#ifndef _FG_LIST_H_
+#define _FG_LIST_H_
+
 #include <stddef.h>
 
 /** Single element in a doubly linked list */
@@ -137,3 +141,5 @@ size_t fg_list_size(struct _linked_list * const list);
  * @return zero on success, non-zero otherwise
  */
 int fg_list_clear(struct _linked_list * const list);
+
+#endif /* _FG_LIST_H_ */
