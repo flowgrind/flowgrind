@@ -26,6 +26,10 @@
 #ifndef _FG_LIST_H_
 #define _FG_LIST_H_
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
 #include <stddef.h>
 
 /** Single element in a doubly linked list */

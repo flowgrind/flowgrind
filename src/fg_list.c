@@ -23,9 +23,13 @@
  *
  */
 
-#include "fg_list.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
+
+#include "fg_list.h"
 
 int fg_list_init(struct _linked_list * const list)
 {
