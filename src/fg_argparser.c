@@ -160,11 +160,14 @@ static char parse_long_option(struct _arg_parser *const ap,
 				index = i;
 				exact = 1;
 				break;
-			} else if (index < 0)
-				index = i;	/* First nonexact match found */
-			else if (options[index].code != options[i].code ||
-				 options[index].has_arg != options[i].has_arg)
-				ambig = 1;	/* Second or later nonexact match found */
+			/* First nonexact match found */
+			} else if (index < 0) {
+				index = i;
+			/* Second or later nonexact match found */
+			} else if (options[index].code != options[i].code ||
+				 options[index].has_arg != options[i].has_arg) {
+				ambig = 1;
+			}
 		}
 
 	if (ambig && !exact) {
@@ -273,9 +276,11 @@ static char parse_short_option(struct _arg_parser *const ap,
 			cind = 0;
 			if (!push_back_record(ap, &options[index], false, arg))
 				return 0;
-		} else if (!push_back_record(ap, &options[index], false, ""))
+		} else if (!push_back_record(ap, &options[index], false, "")) {
 			return 0;
+		}
 	}
+
 	return 1;
 }
 
@@ -308,14 +313,16 @@ char ap_init(struct _arg_parser *const ap,
 				if (!argv[argind][2]) {
 					++argind;	/* we found "--" */
 					break;
-				} else
+				} else {
 				    if (!parse_long_option
 					(ap, opt, arg, options, &argind))
 					return 0;
-			} else
+				}
+			} else {
 			    if (!parse_short_option
 				(ap, opt, arg, options, &argind))
 				return 0;
+			}
 			if (ap->error)
 				break;
 		} else {
@@ -326,13 +333,15 @@ char ap_init(struct _arg_parser *const ap,
 					return 0;
 				non_options = (const char **)tmp;
 				non_options[non_options_size++] = argv[argind++];
-			} else if (!push_back_record(ap, &non_option, false, argv[argind++]))
+			} else if (!push_back_record(ap, &non_option, false, argv[argind++])) {
 				return 0;
+			}
 		}
 	}
-	if (ap->error)
+
+	if (ap->error) {
 		free_data(ap);
-	else {
+	} else {
 		for (i = 0; i < non_options_size; ++i)
 			if (!push_back_record(ap, &non_option, false, non_options[i]))
 				return 0;
@@ -340,6 +349,7 @@ char ap_init(struct _arg_parser *const ap,
 			if (!push_back_record(ap, &non_option, false, argv[argind++]))
 				return 0;
 	}
+
 	if (non_options)
 		free(non_options);
 	return 1;
