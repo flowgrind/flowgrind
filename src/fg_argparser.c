@@ -433,3 +433,179 @@ bool ap_is_used(const struct _arg_parser *const ap, int code)
 
 	return ret;
 }
+
+/**
+ * Count the distinct mutex definitions in \p mutex_definition a code belongs to.
+ *
+ * @param[in] mutex_definition Definition of mutual exclusions. See also ap_init_mutex_manager()
+ * @param[in] code Option code to count. If set to 0, the number of mutex will be returned.
+ * @return number of mutex the code belongs to
+ */
+int get_mutex_count(const int mutex_definition[], const int code)
+{
+	int num = 0;
+
+	int i=0;
+	while (true) {
+		if (mutex_definition[i] == code)
+			num++;
+		if (mutex_definition[i] == 0 && mutex_definition[i+1] == 0)
+				break;
+		i++;
+	}
+	return num;
+}
+
+bool ap_init_mutex_manager(const struct _arg_parser *const ap, 
+		struct _ap_Mutex_manager *const mm, const int mutex_definition[])
+{
+	if(!ap)
+		return false;
+	mm->parser = ap;
+	mm->num_mutex = get_mutex_count(mutex_definition, 0);
+	if(!mm->num_mutex)
+		return false;
+	
+	mm->option_to_mutex = malloc(ap->num_options*sizeof(int*));
+	mm->option_to_mutex_size = malloc(ap->num_options*sizeof(int));
+
+	if(!mm->option_to_mutex || !mm->option_to_mutex_size)
+		return false;
+
+	for(int option_index=0; option_index< ap->num_options; option_index++) {
+		int opt_mutex_size = get_mutex_count(mutex_definition, ap->options[option_index].code);
+		int *opt_mutex = malloc(opt_mutex_size*sizeof(int));
+
+		if(!opt_mutex)
+			return false;
+		
+		int opt_mutex_index = 0;
+		int mutex_index = 0;
+		int i = 0;
+		while (opt_mutex_index < opt_mutex_size) {
+			if (mutex_definition[i] == 0)
+				mutex_index++;
+			if (mutex_definition[i] == ap->options[option_index].code) {
+				opt_mutex[opt_mutex_index] = mutex_index;
+				opt_mutex_index++;
+			}
+			i++;
+		}
+		mm->option_to_mutex_size[option_index] = opt_mutex_size;
+		mm->option_to_mutex[option_index] = opt_mutex;
+	}
+
+	return true;
+}
+
+bool ap_init_mutex_state(const struct _ap_Mutex_manager *const mm, struct _ap_Mutex_state *const ms)
+{
+	ms->seen_records = malloc(sizeof(int)*mm->num_mutex);
+	if(!mm->num_mutex || !ms->seen_records)
+		return false;
+	memset(ms->seen_records,0,sizeof(int)*mm->num_mutex);
+	ms->num_mutex = mm->num_mutex;
+	return true;
+}
+
+bool ap_check_mutex(const struct _ap_Mutex_manager *const mm, const struct _ap_Mutex_state *const ms, 
+			const int i, int *conflict)
+{
+	if(mm->num_mutex != ms->num_mutex)
+		return false;
+
+	*conflict = 0;
+
+	if (i >= 0 && i < ap_arguments(mm->parser) && mm->num_mutex){
+		int index = mm->parser->data[i].option_index;
+		int size = mm->option_to_mutex_size[index];
+		int *mutex = mm->option_to_mutex[index];
+		for (int j=0; j<size; j++) {
+			if (ms->seen_records[mutex[j]]) {
+				*conflict = ms->seen_records[mutex[j]]-1;
+				if (mm->parser->data[*conflict].option_index !=
+					index)
+					return true;
+				else
+					*conflict = 0;
+			}
+		}
+	}
+	
+	return false;
+}
+
+bool ap_set_mutex(const struct _ap_Mutex_manager *const mm, struct _ap_Mutex_state *const ms, 
+			const int i)
+{
+	if(mm->num_mutex != ms->num_mutex)
+		return false;
+
+	if (i >= 0 && i < ap_arguments(mm->parser) && mm->num_mutex){
+		int index = mm->parser->data[i].option_index;
+		int size = mm->option_to_mutex_size[index];
+		int *mutex = mm->option_to_mutex[index];
+		for (int j=0; j<size; j++)
+			ms->seen_records[mutex[j]] = i+1;
+	}
+	
+	return true;
+}
+
+bool ap_set_check_mutex(const struct _ap_Mutex_manager *const mm, struct _ap_Mutex_state *const ms, 
+			const int i, int *conflict)
+{
+	if(mm->num_mutex != ms->num_mutex)
+		return false;
+
+	*conflict = 0;
+
+	if (i >= 0 && i < ap_arguments(mm->parser) && mm->num_mutex){
+		int index = mm->parser->data[i].option_index;
+		int size = mm->option_to_mutex_size[index];
+		int *mutex = mm->option_to_mutex[index];
+		for (int j=0; j<size; j++) {
+			if (ms->seen_records[mutex[j]]) {
+				*conflict = ms->seen_records[mutex[j]]-1;
+				if (mm->parser->data[*conflict].option_index !=
+					index)
+					return true;
+				else
+					*conflict = 0;
+			} else {
+				ms->seen_records[mutex[j]] = i+1;
+			}		
+		}
+	}
+	
+	return false;
+}
+
+void ap_reset_mutex(struct _ap_Mutex_state *const ms)
+{
+	memset(ms->seen_records,0,sizeof(int)*ms->num_mutex);
+}
+
+void ap_free_mutex_manager(struct _ap_Mutex_manager *const mm)
+{
+	for (int i = 0; i < mm->parser->num_options; ++i)
+		free(mm->option_to_mutex[i]);
+	if (mm->option_to_mutex) {
+		free(mm->option_to_mutex);
+		mm->option_to_mutex = 0;
+	}
+	if (mm->option_to_mutex_size) {
+		free(mm->option_to_mutex_size);
+		mm->option_to_mutex_size = 0;
+	}
+	mm->num_mutex = 0;
+}
+
+void ap_free_mutex_state(struct _ap_Mutex_state *const ms)
+{
+	if (ms->seen_records) {
+		free(ms->seen_records);
+		ms->seen_records = 0;
+		ms->num_mutex = 0;
+	}
+}
