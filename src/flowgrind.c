@@ -81,15 +81,11 @@
 #define SET_COLUMN_UNIT(unit, ...)                                          \
         (set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/**
- * To print error message and usage and then exit. Used for cmdline parsing errors.
- * Set up as a regular statement like function call with trailing ';'
- */
-#define PARSE_ERR(err_msg, ...)		\
-	do {					\
-		errx(err_msg, __VA_ARGS__);	\
-		usage(EXIT_FAILURE);		\
-	} while (0)
+/** Print error message, usage string and exit. Used for cmdline parsing errors */
+#define PARSE_ERR(err_msg, ...) do {	\
+	errx(err_msg, ##__VA_ARGS__);	\
+	usage(EXIT_FAILURE);		\
+} while (0)
 
 /** Logfile for measurement output */
 static FILE *log_stream = NULL;
