@@ -44,7 +44,7 @@
 #include "debug.h"
 #include "fg_math.h"
 #include "fg_error.h"
-#include "fg_stdlib.h"
+#include "fg_definitions.h"
 
 #ifdef HAVE_LIBGSL
 #include <gsl/gsl_rng.h>

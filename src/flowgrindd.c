@@ -69,7 +69,7 @@
 #include "fg_progname.h"
 #include "fg_string.h"
 #include "fg_time.h"
-#include "fg_stdlib.h"
+#include "fg_definitions.h"
 #include "debug.h"
 #include "fg_argparser.h"
 

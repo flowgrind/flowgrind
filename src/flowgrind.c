@@ -63,7 +63,7 @@
 #include "fg_error.h"
 #include "fg_progname.h"
 #include "fg_time.h"
-#include "fg_stdlib.h"
+#include "fg_definitions.h"
 #include "fg_socket.h"
 #include "fg_string.h"
 #include "debug.h"

@@ -1,6 +1,6 @@
 /**
- * @file fg_stdlib.h
- * @brief Routines used by the Flowgrind daemon, controller, and libs
+ * @file fg_defintions.h
+ * @brief Common definitions used by the Flowgrind daemon, controller, and libs
  */
 
 /*
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef _FG_STDLIB_H_
-#define _FG_STDLIB_H_
+#ifndef _FG_DEFINITIONS_H_
+#define _FG_DEFINITIONS_H_
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -37,7 +37,7 @@
 /** Suppress warning for unused argument */
 #define UNUSED_ARGUMENT(x) (void)x
 
-/** To determine the number of input arguments passed to a funczion call */
+/** To determine the number of input arguments passed to a function call */
 #define NARGS(...) (sizeof((int[]){__VA_ARGS__})/sizeof(int))
 
 /** To vectorize an arbitrary function that takes any type of pointer */
@@ -63,4 +63,4 @@
 	   typeof (c) _c = (c);		\
 	   if (_s < _c) s = c; })
 
-#endif /* _FG_STDLIB_H_*/
+#endif /* _FG_DEFINITIONS_H_*/
