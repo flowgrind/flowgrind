@@ -77,6 +77,12 @@
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
 
+/** Print error message, usage string and exit. Used for cmdline parsing errors */
+#define PARSE_ERR(err_msg, ...) do {	\
+	errx(err_msg, ##__VA_ARGS__);	\
+	usage(EXIT_FAILURE);		\
+} while (0)
+
 /* XXX add a brief description doxygen */
 static unsigned port = DEFAULT_LISTEN_PORT;
 
@@ -1036,10 +1042,8 @@ static void parse_cmdline(int argc, char *argv[])
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
-	if (ap_error(&parser)) {
-		errx("%s", ap_error(&parser));
-		usage(EXIT_FAILURE);
-	}
+	if (ap_error(&parser))
+		PARSE_ERR("%s", ap_error(&parser));
 
 	bool dump_dir_specified = false;
 
@@ -1050,20 +1054,15 @@ static void parse_cmdline(int argc, char *argv[])
 
 		switch (code) {
 		case 0:
-			errx("invalid argument: %s", arg);
-			usage(EXIT_FAILURE);
+			PARSE_ERR("invalid argument: %s", arg);
 		case 'b':
 			rpc_bind_addr = strdup(arg);
-			if (sscanf(arg, "%s", rpc_bind_addr) != 1) {
-				errx("failed to parse bind address");
-				usage(EXIT_FAILURE);
-			}
+			if (sscanf(arg, "%s", rpc_bind_addr) != 1)
+				PARSE_ERR("failed to parse bind address");
 			break;
 		case 'c':
-			if (sscanf(arg, "%i", &cpu) != 1) {
-				errx("failed to parse CPU number");
-				usage(EXIT_FAILURE);
-			}
+			if (sscanf(arg, "%i", &cpu) != 1)
+				PARSE_ERR("failed to parse CPU number");
 			break;
 		case 'd':
 			log_type = LOGTYPE_STDERR;
@@ -1073,10 +1072,8 @@ static void parse_cmdline(int argc, char *argv[])
 			usage(EXIT_SUCCESS);
 			break;
 		case 'p':
-			if (sscanf(arg, "%u", &port) != 1) {
-				errx("failed to parse port number");
-				usage(EXIT_FAILURE);
-			}
+			if (sscanf(arg, "%u", &port) != 1)
+				PARSE_ERR("failed to parse port number");
 			break;
 #ifdef HAVE_LIBPCAP
 		case 'w':
@@ -1091,20 +1088,21 @@ static void parse_cmdline(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		default:
-			errx("uncaught option: %s", arg);
-			usage(EXIT_FAILURE);
+			PARSE_ERR("uncaught option: %s", arg);
 			break;
 		}
 	}
 
 #ifdef HAVE_LIBPCAP
 	if (!process_dump_dir()) {
-		if(dump_dir_specified) {
-			errx("the dump directory %s for tcpdumps does either not exist or you have insufficient permissions to write to it", dump_dir);
-			exit(EXIT_FAILURE);
-		} else {
-			warnx("tcpdumping will not be available since you dont have sufficient permissions to write to %s", dump_dir);
-		}
+		if(dump_dir_specified)
+			PARSE_ERR("the dump directory %s for tcpdumps does "
+				  "either not exist or you have insufficient "
+				  "permissions to write to it", dump_dir);
+		else
+			warnx("tcpdumping will not be available since you "
+			      "don't have sufficient permissions to write to "
+			      "%s", dump_dir);
 	}
 #endif /* HAVE_LIBPCAP */
 
