@@ -62,7 +62,7 @@
 #include "debug.h"
 #include "fg_error.h"
 #include "fg_math.h"
-#include "fg_stdlib.h"
+#include "fg_definitions.h"
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "log.h"

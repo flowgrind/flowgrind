@@ -23,19 +23,21 @@
  *
  */
 
-#include "fg_list.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
+
+#include "fg_list.h"
 
 int fg_list_init(struct _linked_list * const list)
 {
 	if (!list)
 		return -1;
-
-	if (list->head) {
+	if (list->head)
 		if (!fg_list_clear(list))
 			return -2;
-	}
 
 	list->head = NULL;
 	list->tail = NULL;
@@ -64,7 +66,6 @@ int fg_list_remove(struct _linked_list * const list, const void * const data)
 {
 	if (!list)
 		return -1;
-
 	if (!list->head)
 		return -3;
 
@@ -72,36 +73,29 @@ int fg_list_remove(struct _linked_list * const list, const void * const data)
 
 	while (node->data != data) {
 		node = node->next;
-
 		if (!node)
 			return -4;
 	}
 
 	if (list->head == node)
 		list->head = node->next;
-
 	if (list->tail == node)
 		list->tail = node->previous;
-
 	if (node->previous)
 		node->previous->next = node->next;
-
 	if (node->next)
 		node->next->previous = node->previous;
 
 	free(node);
-
 	--list->size;
 
 	return 0;
 }
 
 /**
- * Helper function for internal use only!
- * Creates a new list element on the heap and prepares it for
- * insertion into the list between elements pointed to by @p previous and
- * @p next. The data of the newly created element will point to the same
- * memory location as @p data
+ * Creates a new list element on the heap and prepares it for insertion into
+ * the list between elements pointed to by @p previous and @p next. The data of
+ * the newly created element will point to the same memory location as @p data
  *
  * @param[in] data of newly created element
  * @param[in] existing list element the new element is going to be inserted after
@@ -109,8 +103,8 @@ int fg_list_remove(struct _linked_list * const list, const void * const data)
  * @return a pointer to the newly created list element or NULL on failure
  */
 static struct _list_node* create_node(void * const data,
-					struct _list_node * const previous,
-					struct _list_node * const next)
+				      struct _list_node * const previous,
+				      struct _list_node * const next)
 {
 	struct _list_node *new_node = (struct _list_node*)malloc(sizeof(struct _list_node));
 
@@ -149,7 +143,6 @@ void* fg_list_pop_front(struct _linked_list * const list)
 {
 	if (!list)
 		return NULL;
-
 	if (!list->head)
 		return NULL;
 
@@ -157,7 +150,6 @@ void* fg_list_pop_front(struct _linked_list * const list)
 
 	if (list->head == list->tail)
 		list->tail = NULL;
-
 	if (head->next)
 		head->next->previous = NULL;
 
@@ -165,7 +157,6 @@ void* fg_list_pop_front(struct _linked_list * const list)
 	void *data = head->data;
 
 	free(head);
-
 	--list->size;
 
 	return data;
@@ -183,7 +174,6 @@ int fg_list_push_back(struct _linked_list * const list, void * const data)
 
 	if (!list->head)
 		list->head = new_node;
-
 	if (list->tail)
 		list->tail->next = new_node;
 
@@ -197,24 +187,20 @@ void* fg_list_pop_back(struct _linked_list * const list)
 {
 	if (!list)
 		return NULL;
-
 	if (!list->tail)
 		return NULL;
-
 
 	struct _list_node *tail = list->tail;
 	void *data = tail->data;
 
 	if (tail->previous)
 		tail->previous->next = NULL;
-
 	if (list->tail == list->head)
 		list->head = NULL;
 
 	list->tail = tail->previous;
 
 	free(tail);
-
 	--list->size;
 
 	return data;

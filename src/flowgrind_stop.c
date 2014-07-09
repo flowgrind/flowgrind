@@ -161,7 +161,8 @@ int main(int argc, char *argv[])
 			usage(EXIT_SUCCESS);
 			break;
 		case 'v':
-			fprintf(stderr, "%s %s\n%s\n%s", progname, FLOWGRIND_VERSION,
+			fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+				FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
 				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 			exit(EXIT_SUCCESS);
 			break;

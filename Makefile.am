@@ -1,3 +1,22 @@
+#
+# Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+#
+# This file is part of Flowgrind.
+#
+# Flowgrind is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flowgrind is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flowgrind.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 CLEANFILES = gitversion.h doc/doxyfile.stamp
 CLEAN_LOCAL_FILES = doc/html doc/latex doc/html.timestamp
 MR_PROPER_FILES = Makefile.in aclocal.m4 build-aux config.h.in config.h.in~ \
@@ -19,7 +38,7 @@ AM_CFLAGS = -Wall -Wextra -Werror=implicit -std=gnu99 -fgnu89-inline
 flowgrind_SOURCES = src/common.h src/debug.c src/fg_error.h src/fg_error.c \
 					src/fg_progname.h src/fg_progname.c src/fg_socket.h \
 					src/fg_socket.c src/fg_string.h src/fg_string.c \
-					src/fg_stdlib.h src/fg_time.h src/fg_time.c \
+					fg_definitions.h src/fg_time.h src/fg_time.c \
 					src/flowgrind.h src/flowgrind.c src/fg_argparser.h \
 					src/fg_argparser.c
 flowgrind_LDADD = $(LIBS) $(CURL_LDADD) $(XMLRPC_C_CLIENT_LDADD) $(GSL_LDADD)
@@ -34,7 +53,7 @@ flowgrindd_SOURCES = src/common.h src/daemon.h src/daemon.c src/debug.c \
 					 src/fg_time.c src/flowgrindd.c src/log.h src/log.c \
 					 src/source.h src/source.c src/trafgen.h src/trafgen.c \
 					 src/fg_argparser.h src/fg_argparser.c src/fg_list.h \
-					 src/fg_list.c
+					 src/fg_list.c fg_definitions.h
 flowgrindd_LDADD = $(LIBS) $(XMLRPC_C_SERVER_LDADD) $(GSL_LDADD)
 flowgrindd_CFLAGS = $(AM_CFLAGS) $(XMLRPC_C_SERVER_CFLAGS) $(GSL_CFLAGS)
 

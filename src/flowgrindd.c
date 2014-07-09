@@ -69,13 +69,19 @@
 #include "fg_progname.h"
 #include "fg_string.h"
 #include "fg_time.h"
-#include "fg_stdlib.h"
+#include "fg_definitions.h"
 #include "debug.h"
 #include "fg_argparser.h"
 
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
+
+/** Print error message, usage string and exit. Used for cmdline parsing errors */
+#define PARSE_ERR(err_msg, ...) do {	\
+	errx(err_msg, ##__VA_ARGS__);	\
+	usage(EXIT_FAILURE);		\
+} while (0)
 
 /* XXX add a brief description doxygen */
 static unsigned port = DEFAULT_LISTEN_PORT;
@@ -117,7 +123,7 @@ static void usage(short status)
 		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
 		"                 increase the verbosity (no daemon, log to stderr)\n"
 #else
-		"  -d             don't fork into background,increase debugging verbosity.\n"
+		"  -d             don't fork into background, increase debugging verbosity.\n"
 		"                 Add option multiple times to increase the verbosity\n"
 #endif /* DEBUG */
 		"  -h, --help     display this help and exit\n"
@@ -179,12 +185,11 @@ static int dispatch_request(struct _request *request, int type)
 	if (!requests) {
 		requests = request;
 		requests_last = request;
-	}
-	else {
+	} else {
 		requests_last->next = request;
 		requests_last = request;
 	}
-	if ( write(daemon_pipe[1], &type, 1) != 1 ) /* Doesn't matter what we write */
+	if (write(daemon_pipe[1], &type, 1) != 1) /* Doesn't matter what we write */
 		return -1;
 	/* Wait until the daemon thread has processed the request */
 	pthread_cond_wait(&cond, &mutex);
@@ -365,9 +370,8 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	request->source_settings = source_settings;
 	rc = dispatch_request((struct _request*)request, REQUEST_ADD_SOURCE);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "{s:i,s:s,s:i,s:i}",
@@ -386,9 +390,8 @@ cleanup:
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_source failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method add_flow_source successful");
-	}
 
 	return ret;
 }
@@ -547,9 +550,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	request->settings = settings;
 	rc = dispatch_request((struct _request*)request, REQUEST_ADD_DESTINATION);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "{s:i,s:i,s:i,s:i}",
@@ -568,9 +570,8 @@ cleanup:
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_destination failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method add_flow_destination successful");
-	}
 
 	return ret;
 }
@@ -601,9 +602,8 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	request->start_timestamp = start_timestamp;
 	rc = dispatch_request((struct _request*)request, REQUEST_START_FLOWS);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "i", 0);
@@ -614,9 +614,8 @@ cleanup:
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method start_flows failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method start_flows successful");
-	}
 
 	return ret;
 }
@@ -718,9 +717,8 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_reports failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method get_reports successful");
-	}
 
 	return ret;
 }
@@ -751,9 +749,8 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	request->flow_id = flow_id;
 	rc = dispatch_request((struct _request*)request, REQUEST_STOP_FLOW);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "()");
@@ -764,9 +761,8 @@ cleanup:
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method stop_flow failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method stop_flow successful");
-	}
 
 	return ret;
 }
@@ -797,9 +793,8 @@ static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_version failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method get_version successful");
-	}
 
 	return ret;
 }
@@ -821,9 +816,8 @@ static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 	request = malloc(sizeof(struct _request_get_status));
 	rc = dispatch_request((struct _request*)request, REQUEST_GET_STATUS);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "{s:i,s:i}",
@@ -951,10 +945,9 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	serverparm.socket_handle = bind_rpc_server(rpc_bind_addr, port);
 	xmlrpc_server_abyss(env, &serverparm, XMLRPC_APSIZE(socket_handle));
 
-	if (env->fault_occurred) {
+	if (env->fault_occurred)
 		logging_log(LOG_ALERT, "XML-RPC Fault: %s (%d)\n",
-			env->fault_string, env->fault_code);
-	}
+			    env->fault_string, env->fault_code);
 	/* xmlrpc_server_abyss() never returns */
 }
 
@@ -1049,10 +1042,8 @@ static void parse_cmdline(int argc, char *argv[])
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
-	if (ap_error(&parser)) {
-		errx("%s", ap_error(&parser));
-		usage(EXIT_FAILURE);
-	}
+	if (ap_error(&parser))
+		PARSE_ERR("%s", ap_error(&parser));
 
 	bool dump_dir_specified = false;
 
@@ -1063,20 +1054,15 @@ static void parse_cmdline(int argc, char *argv[])
 
 		switch (code) {
 		case 0:
-			errx("invalid argument: %s", arg);
-			usage(EXIT_FAILURE);
+			PARSE_ERR("invalid argument: %s", arg);
 		case 'b':
 			rpc_bind_addr = strdup(arg);
-			if (sscanf(arg, "%s", rpc_bind_addr) != 1) {
-				errx("failed to parse bind address");
-				usage(EXIT_FAILURE);
-			}
+			if (sscanf(arg, "%s", rpc_bind_addr) != 1)
+				PARSE_ERR("failed to parse bind address");
 			break;
 		case 'c':
-			if (sscanf(arg, "%i", &cpu) != 1) {
-				errx("failed to parse CPU number");
-				usage(EXIT_FAILURE);
-			}
+			if (sscanf(arg, "%i", &cpu) != 1)
+				PARSE_ERR("failed to parse CPU number");
 			break;
 		case 'd':
 			log_type = LOGTYPE_STDERR;
@@ -1086,10 +1072,8 @@ static void parse_cmdline(int argc, char *argv[])
 			usage(EXIT_SUCCESS);
 			break;
 		case 'p':
-			if (sscanf(arg, "%u", &port) != 1) {
-				errx("failed to parse port number");
-				usage(EXIT_FAILURE);
-			}
+			if (sscanf(arg, "%u", &port) != 1)
+				PARSE_ERR("failed to parse port number");
 			break;
 #ifdef HAVE_LIBPCAP
 		case 'w':
@@ -1098,25 +1082,27 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 #endif /* HAVE_LIBPCAP */
 		case 'v':
-			fprintf(stderr, "%s %s\n%s\n%s", progname, FLOWGRIND_VERSION,
+			fprintf(stderr, "%s %s\%s\n%s\n\n%s\n", progname,
+				FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
 				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 			exit(EXIT_SUCCESS);
 			break;
 		default:
-			errx("uncaught option: %s", arg);
-			usage(EXIT_FAILURE);
+			PARSE_ERR("uncaught option: %s", arg);
 			break;
 		}
 	}
 
 #ifdef HAVE_LIBPCAP
 	if (!process_dump_dir()) {
-		if(dump_dir_specified) {
-			errx("the dump directory %s for tcpdumps does either not exist or you have insufficient permissions to write to it", dump_dir);
-			exit(EXIT_FAILURE);
-		} else {
-			warnx("tcpdumping will not be available since you dont have sufficient permissions to write to %s", dump_dir);
-		}
+		if(dump_dir_specified)
+			PARSE_ERR("the dump directory %s for tcpdumps does "
+				  "either not exist or you have insufficient "
+				  "permissions to write to it", dump_dir);
+		else
+			warnx("tcpdumping will not be available since you "
+			      "don't have sufficient permissions to write to "
+			      "%s", dump_dir);
 	}
 #endif /* HAVE_LIBPCAP */
 

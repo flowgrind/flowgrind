@@ -63,7 +63,7 @@
 #include "fg_error.h"
 #include "fg_progname.h"
 #include "fg_time.h"
-#include "fg_stdlib.h"
+#include "fg_definitions.h"
 #include "fg_socket.h"
 #include "fg_string.h"
 #include "debug.h"
@@ -81,15 +81,11 @@
 #define SET_COLUMN_UNIT(unit, ...)                                          \
         (set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** 
- * To print error message and usage and then exit. Used for cmdline parsing errors.
- * Set up as a regular statement like function call with trailing ';'
- */
-#define PARSE_ERR(err_msg, ...)		\
-	do {					\
-		errx(err_msg, __VA_ARGS__);	\
-		usage(EXIT_FAILURE);		\
-	} while (0)	
+/** Print error message, usage string and exit. Used for cmdline parsing errors */
+#define PARSE_ERR(err_msg, ...) do {	\
+	errx(err_msg, ##__VA_ARGS__);	\
+	usage(EXIT_FAILURE);		\
+} while (0)
 
 /** Logfile for measurement output */
 static FILE *log_stream = NULL;
@@ -622,7 +618,8 @@ inline static void die_if_fault_occurred(xmlrpc_env *env)
 }
 
 /* creates an xmlrpc_client for connect to server, uses global env rpc_env */
-static void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
+static void prepare_xmlrpc_client(xmlrpc_client **rpc_client)
+{
 	struct xmlrpc_clientparms clientParms;
 	size_t clientParms_cpsize = XMLRPC_CPSIZE(transport);
 
@@ -1061,7 +1058,8 @@ static void grind_flows(xmlrpc_client *rpc_client)
 }
 
 /* Poll the daemons for reports */
-static void fetch_reports(xmlrpc_client *rpc_client) {
+static void fetch_reports(xmlrpc_client *rpc_client)
+{
 
 	xmlrpc_value * resultP = 0;
 
@@ -2053,9 +2051,9 @@ static struct _daemon * get_daemon_by_url(const char* server_url,
 /**
  * Parse option for stochastic traffic generation (option -G)
  *
- * @param[in] params Parameter string in the form 'x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]'
- * @param[in] flow_id Id of flow to apply option to
- * @param[in] endpoint_id Endpoint to apply option to
+ * @param[in] params parameter string in the form 'x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]'
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
 static void parse_trafgen_option(const char *params, int flow_id, int endpoint_id)
 {
@@ -2064,57 +2062,58 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 	char typechar, distchar;
 	enum distributions distr = CONSTANT;
 
-	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar, &param1, &param2, &unused);
+	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar,
+		    &param1, &param2, &unused);
 	if (rc != 3 && rc != 4)
 		PARSE_ERR("flow %i: option -G: malformed traffic generation "
-				"parameters", flow_id);
+			  "parameters", flow_id);
 
 	switch (distchar) {
 	case 'N':
 		distr = NORMAL;
 		if (!param1 || !param2)
 			PARSE_ERR("flow %i: option -G: normal distribution "
-					"needs two non-zero parameters", flow_id);
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'W':
 		distr = WEIBULL;
 		if (!param1 || !param2)
 			PARSE_ERR("flow %i: option -G: weibull distribution "
-					"needs two non-zero parameters", flow_id);
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'U':
 		distr = UNIFORM;
 		if  (param1 <= 0 || param2 <= 0 || (param1 > param2))
 			PARSE_ERR("flow %i: option -G: uniform distribution "
-					"needs two positive parameters", flow_id);
+				  "needs two positive parameters", flow_id);
 		break;
 	case 'E':
 		distr = EXPONENTIAL;
 		if (param1 <= 0)
 			PARSE_ERR("flow %i: option -G: exponential distribution "
-					"needs one positive parameter", flow_id);
+				  "needs one positive parameter", flow_id);
 		break;
 	case 'P':
 		distr = PARETO;
 		if (!param1 || !param2)
 			PARSE_ERR("flow %i: option -G: pareto distribution "
-					"needs two non-zero parameters", flow_id);
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'L':
 		distr = LOGNORMAL;
 		if (!param1 || !param2)
 			PARSE_ERR("flow %i: option -G: lognormal distribution "
-					"needs two non-zero parameters", flow_id);
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'C':
 		distr = CONSTANT;
 		if (param1 <= 0)
 			PARSE_ERR("flow %i: option -G: constant distribution "
-					"needs one positive parameters", flow_id);
+				  "needs one positive parameters", flow_id);
 		break;
 	default:
-		PARSE_ERR("flow %i: option -G: syntax error: %c is not a distribution", 
-				flow_id, distchar);
+		PARSE_ERR("flow %i: option -G: syntax error: %c is not a "
+			  "distribution", flow_id, distchar);
 		break;
 	}
 
@@ -2135,6 +2134,7 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.param_two = param2;
 		break;
 	}
+
 	/* sanity check for max block size */
 	for (int i = 0; i < 2; i++) {
 		if (distr == CONSTANT && cflow[flow_id].settings[i].maximum_block_size < param1)
@@ -2147,9 +2147,9 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 /**
  * Parse argument for option -R, which specifies the rate the endpoint will send
  *
- * @param[in] arg Argument for option -R in form of #.#(z|k|M|G)(b|B|o)
- * @param[in] flow_id Id of flow to apply option to
- * @param[in] endpoint_id Endpoint to apply option to
+ * @param[in] arg argument for option -R in form of #.#(z|k|M|G)(b|B|o)
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
 static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 {
@@ -2189,7 +2189,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 
 	if (type != 'b' && type != 'B')
 		PARSE_ERR("flow %i: option -R: illegal type specifier "
-			"(either 'b' or 'B')", flow_id);
+			  "(either 'b' or 'B')", flow_id);
 	if (type == 'b')
 		optdouble /=  8;
 
@@ -2203,9 +2203,10 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 /**
  * Parse RPC address for the xmlrpc control connection
  *
- * @param[in,out] rpc_address String in format CONTROL[:PORT] will be truncated to CONTROL
- * @param[out] port Port is returned in this argument
- * @param[out] is_ipv6 True is returend in this argument if the control address is a numerical ipv6 address
+ * @param[in,out] rpc_address string in format CONTROL[:PORT]. It will be
+ * truncated to CONTROL
+ * @param[out] port port if the control address @p rpc_address contains a port
+ * @param[out] is_ipv6 true if control address @p rpc_address is a numerical
 */
 static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
 {
@@ -2234,18 +2235,17 @@ static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
 			*port = atoi(sepptr);
 		}
 	}
-
 }
 
 /**
  * Parse argument for option -H, which specifies the endpoints of a flow
  *
- * @param[in] hostarg Argument for option -H in form of HOST[/CONTROL[:PORT]]
- *		    - HOST: test address where the actual test connection goes to
- *		    - CONTROL: RPC address, where this program connects to
- *		    - PORT: port for the control connection
- * @param[in] flow_id Id of flow to apply option to
- * @param[in] endpoint_id Endpoint to apply option to
+ * @param[in] hostarg argument for option -H in form of HOST[/CONTROL[:PORT]]
+ *	- HOST: test address where the actual test connection goes to
+ *	- CONTROL: RPC address, where this program connects to
+ *	- PORT: port for the control connection
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
 static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 {
@@ -2274,7 +2274,7 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	if (strchr(arg, ':')) {
 		if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)
 			PARSE_ERR("flow %i: invalid IPv6 address '%s' for "
-					"test connection", flow_id, arg);
+				  "test connection", flow_id, arg);
 
 		if (!extra_rpc)
 			is_ipv6 = true;
@@ -2284,12 +2284,11 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	if (extra_rpc) {
 		parse_rpc_address(&rpc_address, &port, &is_ipv6);
 		if (is_ipv6 && (inet_pton(AF_INET6, rpc_address,
-			(char*)&source_in6.sin6_addr) <= 0))
+				(char*)&source_in6.sin6_addr) <= 0))
 			PARSE_ERR("flow %i: invalid IPv6 address '%s' for RPC",
-					flow_id, arg);
+				  flow_id, arg);
 		if (port < 1 || port > 65535)
-			PARSE_ERR("flow %i: invalid port for RPC",
-					flow_id);
+			PARSE_ERR("flow %i: invalid port for RPC", flow_id);
 	}
 
 	if (!*arg)
@@ -2308,14 +2307,15 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 /**
  * Parse flow options with endpoint
  *
- * @param[in] code The code of the cmdline option
- * @param[in] arg The argument of the cmdline option
- * @param[in] opt_string Contains the real cmdline option string
- * @param[in] flow_id Id of flow to apply option to
- * @param[in] endpoint_id Endpoint to apply option to
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
-static void parse_flow_option_endpoint(int code, const char* arg, 
-			const char* opt_string, int flow_id, int endpoint_id)
+static void parse_flow_option_endpoint(int code, const char* arg,
+				       const char* opt_string, int flow_id,
+				       int endpoint_id)
 {
 	int optint = 0;
 	double optdouble = 0.0;
@@ -2334,7 +2334,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'B':
 		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs positive integer",
-					flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->requested_send_buffer_size = optint;
 		break;
 	case 'C':
@@ -2343,7 +2343,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'D':
 		if (sscanf(arg, "%x", &optint) != 1 || (optint & ~0x3f))
 			PARSE_ERR("in flow %i: option %s service code point "
-					"is malformed", flow_id, opt_string);
+				  "is malformed", flow_id, opt_string);
 		settings->dscp = optint;
 		break;
 	case 'H':
@@ -2355,7 +2355,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'O':
 		if (!*arg)
 			PARSE_ERR("in flow %i: option %s requires a value "
-				"for each endpoint", flow_id, opt_string);
+				  "for each endpoint", flow_id, opt_string);
 
 		if (!strcmp(arg, "TCP_CORK")) {
 			settings->cork = 1;
@@ -2373,12 +2373,14 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 		} else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
 			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg))
 				PARSE_ERR("in flow %i: option %s: too large "
-				"string for TCP_CONG_MODULE", flow_id, opt_string);
+					  "string for TCP_CONG_MODULE",
+					  flow_id, opt_string);
 			strcpy(settings->cc_alg, arg + 16);
 		} else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
 			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg))
 				PARSE_ERR("in flow %i: option %s: too large "
-				"string for TCP_CONGESTION", flow_id, opt_string);
+					  "string for TCP_CONGESTION",
+					  flow_id, opt_string);
 			strcpy(settings->cc_alg, arg + 15);
 		} else if (!strcmp(arg, "SO_DEBUG")) {
 			settings->so_debug = 1;
@@ -2386,8 +2388,8 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 			settings->ipmtudiscover = 1;
 		} else {
 			PARSE_ERR("in flow %i: option %s: unknown socket "
-				"option or socket option not implemented", 
-				flow_id, opt_string);
+				  "option or socket option not implemented",
+				  flow_id, opt_string);
 		}
 		break;
 	case 'P':
@@ -2396,13 +2398,13 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'R':
 		if (!*arg)
 			PARSE_ERR("in flow %i: option %s requires a value "
-				"for each given endpoint", flow_id, opt_string);
+				  "for each given endpoint", flow_id, opt_string);
 		parse_rate_option(arg, flow_id, endpoint_id);
 		break;
 	case 'S':
-		if (sscanf(arg, "%u", &optint) != 1 || optint < 0) 			
+		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs positive integer",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->request_trafgen_options.distribution = CONSTANT;
 		settings->request_trafgen_options.param_one = optint;
 		for (int id = 0; id < MAX_FLOWS; id++) {
@@ -2415,25 +2417,25 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	case 'T':
 		if (sscanf(arg, "%lf", &optdouble) != 1 || optdouble < 0)
 			PARSE_ERR("in flow %i: option %s needs positive number",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->duration[WRITE] = optdouble;
 		break;
 	case 'U':
-		if (sscanf(arg, "%u", &optint) != 1 || optint < 0) 			
+		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs positive integer",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->maximum_block_size = optint;
 		break;
 	case 'W':
 		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
 			PARSE_ERR("in flow %i: option %s needs non-negative number",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->requested_read_buffer_size = optint;
 		break;
 	case 'Y':
 		if (sscanf(arg, "%lf", &optdouble) != 1 || optdouble < 0)
 			PARSE_ERR("in flow %i: option %s needs non-negative number",
-					 flow_id, opt_string);
+				  flow_id, opt_string);
 		settings->delay[WRITE] = optdouble;
 		break;
 	}
@@ -2442,13 +2444,13 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 /**
  * Parse flow options without endpoint
  *
- * @param[in] code The code of the cmdline option
- * @param[in] arg The argument string of the cmdline option
- * @param[in] opt_string Contains the real cmdline option string
- * @param[in] flow_id Id of flow to apply option to
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument string of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
+ * @param[in] flow_id ID of flow to apply option to
  */
 static void parse_flow_option(int code, const char* arg, const char* opt_string,
-							int flow_id)
+			      int flow_id)
 {
 	unsigned optunsigned = 0;
 
@@ -2462,7 +2464,8 @@ static void parse_flow_option(int code, const char* arg, const char* opt_string,
 		break;
 	case 'J':
 		if (sscanf(arg, "%u", &optunsigned) != 1)
-			PARSE_ERR("option %s needs an integer argument", opt_string);
+			PARSE_ERR("option %s needs an integer argument",
+				  opt_string);
 		cflow[flow_id].random_seed = optunsigned;
 		break;
 	case 'L':
@@ -2481,7 +2484,7 @@ static void parse_flow_option(int code, const char* arg, const char* opt_string,
  * Parse argument for option -c to hide/show intermediated interval report
  * columns
  *
- * @param[in] arg Argument for option -c
+ * @param[in] arg argument for option -c
  */
 static void parse_colon_option(const char *arg)
 {
@@ -2502,21 +2505,21 @@ static void parse_colon_option(const char *arg)
 	char *argcpy = strdup(arg);
 	for (char *token = strtok(argcpy, ","); token;
 	     token = strtok(NULL, ",")) {
-		if (!strcmp(token, "interval")) {
+		if (!strcmp(token, "interval"))
 			SHOW_COLUMNS(COL_BEGIN, COL_END);
-		} else if (!strcmp(token, "through")) {
+		else if (!strcmp(token, "through"))
 			SHOW_COLUMNS(COL_THROUGH);
-		} else if (!strcmp(token, "transac")) {
+		else if (!strcmp(token, "transac"))
 			SHOW_COLUMNS(COL_TRANSAC);
-		} else if (!strcmp(token, "blocks")) {
+		else if (!strcmp(token, "blocks"))
 			SHOW_COLUMNS(COL_BLOCK_REQU, COL_BLOCK_RESP);
-		} else if (!strcmp(token, "rtt")) {
+		else if (!strcmp(token, "rtt"))
 			SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
-		} else if (!strcmp(token, "iat")) {
+		else if (!strcmp(token, "iat"))
 			SHOW_COLUMNS(COL_IAT_MIN, COL_IAT_AVG, COL_IAT_MAX);
-		} else if (!strcmp(token, "delay")) {
+		else if (!strcmp(token, "delay"))
 			SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
-		} else if (!strcmp(token, "kernel")) {
+		else if (!strcmp(token, "kernel"))
 			SHOW_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_UACK,
 				     COL_TCP_SACK, COL_TCP_LOST, COL_TCP_RETR,
 				     COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
@@ -2524,12 +2527,11 @@ static void parse_colon_option(const char *arg)
 				     COL_TCP_RTO, COL_TCP_CA_STATE, COL_SMSS,
 				     COL_PMTU);
 #ifdef DEBUG
-		} else if (!strcmp(token, "status")) {
+		else if (!strcmp(token, "status"))
 			SHOW_COLUMNS(COL_STATUS);
 #endif /* DEBUG */
-		} else {
+		else
 			PARSE_ERR("%s", "malformed option '-c'");
-		}
 	}
 	free(argcpy);
 }
@@ -2537,9 +2539,9 @@ static void parse_colon_option(const char *arg)
 /**
  * Parse general controller options given on the cmdline
  *
- * @param[in] code The code of the cmdline option
- * @param[in] arg The argument string of the cmdline option
- * @param[in] opt_string Contains the real cmdline option string
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument string of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
  */
 static void parse_general_option(int code, const char* arg, const char* opt_string)
 {
@@ -2549,19 +2551,19 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		PARSE_ERR("invalid argument: %s", arg);
 	/* general options */
 	case 'h':
-		if (!arg || !strlen(arg)) {
+		if (!arg || !strlen(arg))
 			usage(EXIT_SUCCESS);
-		} else if (!strcmp(arg, "socket")) {
+		else if (!strcmp(arg, "socket"))
 			usage_sockopt();
-		} else if (!strcmp(arg, "traffic")) {
+		else if (!strcmp(arg, "traffic"))
 			usage_trafgenopt();
-		} else {
+		else
 			PARSE_ERR("invalid argument '%s' for %s", arg, opt_string);
-		}
 		break;
 	case 'v':
-		fprintf(stderr, "%s %s\n%s\n%s", progname, FLOWGRIND_VERSION,
-				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
+		fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+			FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
+			FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 		exit(EXIT_SUCCESS);
 
 	/* controller options */
@@ -2577,10 +2579,10 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	#endif /* HAVE_LIBPCAP */
 	case 'i':
-		if (sscanf(arg, "%lf", &copt.reporting_interval) != 1 || 
+		if (sscanf(arg, "%lf", &copt.reporting_interval) != 1 ||
 					copt.reporting_interval <= 0)
 			PARSE_ERR("option %s needs a positive number "
-					"(in seconds)", opt_string);
+				  "(in seconds)", opt_string);
 		break;
 	case LOG_FILE_OPTION:
 		copt.log_to_file = true;
@@ -2592,10 +2594,10 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		column_info[COL_THROUGH].header.unit = " [MB/s]";
 		break;
 	case 'n':
-		if (sscanf(arg, "%hd", &copt.num_flows) != 1 || 
-						copt.num_flows > MAX_FLOWS)
+		if (sscanf(arg, "%hd", &copt.num_flows) != 1 ||
+			   copt.num_flows > MAX_FLOWS)
 			PARSE_ERR("option %s (number of flows) must be within "
-			     "[1..%d]", opt_string, MAX_FLOWS);
+				  "[1..%d]", opt_string, MAX_FLOWS);
 		break;
 	case 'o':
 		copt.clobber = true;
@@ -2607,14 +2609,13 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		copt.log_to_stdout = false;
 		break;
 	case 's':
-		if (!strcmp(arg, "segment")) {
+		if (!strcmp(arg, "segment"))
 			copt.force_unit = SEGMENT_BASED;
-		} else if (!strcmp(arg, "byte")) {
+		else if (!strcmp(arg, "byte"))
 			copt.force_unit = BYTE_BASED;
-		} else {
-			PARSE_ERR("invalid argument '%s' for option %s", 
-				arg, opt_string);
-		}
+		else
+			PARSE_ERR("invalid argument '%s' for option %s",
+				  arg, opt_string);
 	case 'w':
 		copt.log_to_file = true;
 		break;
@@ -2623,17 +2624,17 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		PARSE_ERR("uncaught option: %s", arg);
 		break;
 	}
-	
+
 }
 
 /**
  * The main commandline argument parsing function
  *
- * Defines the cmdline options and distinguishes option types (flow, general, ...)
- * and tokenizes flow options which can have several endpoints
+ * Defines the cmdline options and distinguishes option types (flow, general,
+ * ...) and tokenizes flow options which can have several endpoints
  *
- * @param[in] argc Number of arguments (as in main())
- * @param[in] argv Array of argument strings (as in main())
+ * @param[in] argc number of arguments (as in main())
+ * @param[in] argv array of argument strings (as in main())
  */
 static void parse_cmdline(int argc, char *argv[])
 {
@@ -2684,7 +2685,7 @@ static void parse_cmdline(int argc, char *argv[])
 		{'U', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{'W', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{0, 0, ap_no, 0} 
+		{0, 0, ap_no, 0}
 	};
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
@@ -2704,7 +2705,7 @@ static void parse_cmdline(int argc, char *argv[])
 		char *argcpy = strdup(arg);
 		const char *opt_string = ap_opt_string(&parser, argind);
 		int tag = ap_option(&parser, argind)->tag;
-		
+
 		/* distinguish option types by tag first */
 		switch (tag) {
 		case OPT_CONTROLLER:
@@ -2715,7 +2716,7 @@ static void parse_cmdline(int argc, char *argv[])
 			for (char *token = strtok(argcpy, ","); token;
 			     token = strtok(NULL, ",")) {
 				rc = sscanf(token, "%d", &optint);
-				if (rc != 1) 
+				if (rc != 1)
 					PARSE_ERR("%s", "Malformed flow specifier");
 
 				/* all flows */
@@ -2732,7 +2733,7 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 		case OPT_FLOW:
 			for (int i = 0; i < cur_num_flows; i++)
-				parse_flow_option(code, arg, opt_string, 
+				parse_flow_option(code, arg, opt_string,
 						current_flow_ids[i]);
 			break;
 		case OPT_FLOW_ENDPOINT:
@@ -2750,19 +2751,19 @@ static void parse_cmdline(int argc, char *argv[])
 
 				if (type != 's' && type != 'd' && type != 'b')
 					PARSE_ERR("Invalid enpoint specifier"
-					" in Option %s", opt_string);
+						  " in Option %s", opt_string);
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
-						parse_flow_option_endpoint(code, 
-							arg, opt_string, 
-							current_flow_ids[i], 
-							SOURCE);	
+						parse_flow_option_endpoint(code,
+							arg, opt_string,
+							current_flow_ids[i],
+							SOURCE);
 					if (type == 'd' || type == 'b')
-						parse_flow_option_endpoint(code, 
-							arg, opt_string, 
-							current_flow_ids[i], 
-							DESTINATION);	
+						parse_flow_option_endpoint(code,
+							arg, opt_string,
+							current_flow_ids[i],
+							DESTINATION);
 				}
 			}
 			break;
@@ -2818,7 +2819,6 @@ static void parse_cmdline(int argc, char *argv[])
 			}
 		}
 	}
-
 }
 
 /**
@@ -2826,59 +2826,50 @@ static void parse_cmdline(int argc, char *argv[])
  */
 static void sanity_check(void)
 {
-
-	bool sanity_err = false;
-
 	for (int id = 0; id < copt.num_flows; id++) {
-		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
+		DEBUG_MSG(LOG_DEBUG, "sanity checking parameter set of flow %d", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
 		    cflow[id].late_connect &&
 		    cflow[id].settings[DESTINATION].delay[WRITE] <
 		    cflow[id].settings[SOURCE].delay[WRITE]) {
 			warnx("server flow %d starts earlier than client "
 			      "flow while late connecting", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[SOURCE].delay[WRITE] > 0 &&
 		    cflow[id].settings[SOURCE].duration[WRITE] == 0) {
 			warnx("client flow %d has a delay but no runtime", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[DESTINATION].delay[WRITE] > 0 &&
 		    cflow[id].settings[DESTINATION].duration[WRITE] == 0) {
 			warnx("server flow %d has a delay but no runtime", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (!cflow[id].settings[DESTINATION].duration[WRITE] &&
 		    !cflow[id].settings[SOURCE].duration[WRITE]) {
 			warnx("server and client flow have both zero runtime "
 			      "for flow %d", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 
 		for (unsigned i = 0; i < 2; i++) {
-			if (cflow[id].settings[i].flow_control && !cflow[id].settings[i].write_rate_str) {
+			if (cflow[id].settings[i].flow_control &&
+			    !cflow[id].settings[i].write_rate_str) {
 				warnx("flow %d has flow control enabled but no "
-				      "rate.", id);
-				sanity_err = true;
+				      "rate", id);
+				exit(EXIT_FAILURE);
 			}
 
-			if (cflow[id].settings[i].write_rate && cflow[id].settings[i].write_rate /
+			if (cflow[id].settings[i].write_rate &&
+			    cflow[id].settings[i].write_rate /
 				cflow[id].settings[i].maximum_block_size < 1) {
 				warnx("client block size for flow %u is too big for "
 				      "specified rate", id);
-				sanity_err = true;
+				exit(EXIT_FAILURE);
 			}
 		}
-		DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
-	}
-
-	if (sanity_err) {
-#ifdef DEBUG
-		DEBUG_MSG(LOG_ERR, "Skipping errors discovered by sanity checks.");
-#else
-		usage(EXIT_FAILURE);
-#endif /* DEBUG */
+		DEBUG_MSG(LOG_DEBUG, "sanity check parameter set of flow %d completed", id);
 	}
 }
 

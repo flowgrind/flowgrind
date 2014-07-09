@@ -1,16 +1,15 @@
 /**
  * @file fg_argparser.c
- * @brief Commandline argument parser
+ * @brief Command line argument parser
  */
 
 /*
- * Copyright (C) 2013-2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
- * Copyright (C) 2010-2013 Arnd Hannemann <arnd@arndnet.de>
- * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
- * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
- * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
+ * Copyright (C) 2014 Felix Rietig <felix.rietig@rwth-aachen.de>
+ * Copyright (C) 2006-2013 Antonio Diaz Diaz <antonio@gnu.org>
  *
- * This file is part of Flowgrind.
+ * This file is part of Flowgrind.  It is based on the POSIX/GNU
+ * command line argument parser 'arg_parser' origninally written by
+ * Antonio Diaz Diaz.
  *
  * Flowgrind is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,34 +26,6 @@
  *
  */
 
-/*  _arg_parser - POSIX/GNU command line argument parser. (C version)
-    Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
-    Antonio Diaz Diaz.
-
-    This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this library.  If not, see <http://www.gnu.org/licenses/>.
-
-    As a special exception, you may use this file as part of a free
-    software library without restriction.  Specifically, if other files
-    instantiate templates or use macros or inline functions from this
-    file, or you compile this file and link it with other files to
-    produce an executable, this file does not by itself cause the
-    resulting executable to be covered by the GNU General Public
-    License.  This exception does not however invalidate any other
-    reasons why the executable file might be covered by the GNU General
-    Public License.
-*/
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
@@ -67,10 +38,10 @@
 #include "fg_argparser.h"
 
 /**
- * assure at least a minimum size for buffer \p buf
+ * Assure at least a minimum size for buffer @p buf
  *
  * @param[in] buf pointer to buffer
- * @param[in] min_size minimum size \p buf should hold in bytes
+ * @param[in] min_size minimum size @p buf should hold in bytes
  */
 static void *ap_resize_buffer(void *buf, const int min_size)
 {
@@ -82,15 +53,16 @@ static void *ap_resize_buffer(void *buf, const int min_size)
 }
 
 /**
- * Store a parsed option in the state of the arg parser given by \p ap
+ * Store a parsed option in the state of the arg parser given by @p ap
  *
- * @param[in] ap Pointer to the arg parser state
+ * @param[in] ap pointer to the arg parser state
  * @param[in] option pointer to the option to store
- * @param[in] long_opt true iff this option was a long option
+ * @param[in] long_opt true if this option was a long option
  * @param[in] argument argument string for this option (may be empty)
  */
-static char push_back_record(struct _arg_parser *const ap, const struct _ap_Option *const option,
-				 bool long_opt, const char *const argument)
+static char push_back_record(struct _arg_parser *const ap,
+			     const struct _ap_Option *const option,
+			     bool long_opt, const char *const argument)
 {
 	const int len = strlen(argument);
 	struct _ap_Record *p;
@@ -121,9 +93,9 @@ static char push_back_record(struct _arg_parser *const ap, const struct _ap_Opti
 }
 
 /**
- * Add an error message to the arg parser \p ap
+ * Add an error message to the arg parser @p ap
  *
- * @param[in] ap Pointer to the arg parser state
+ * @param[in] ap pointer to the arg parser state
  * @param[in] msg error string
  */
 static char add_error(struct _arg_parser *const ap, const char *const msg)
@@ -135,18 +107,18 @@ static char add_error(struct _arg_parser *const ap, const char *const msg)
 	ap->error = (char *)tmp;
 	strncpy(ap->error + ap->error_size, msg, len + 1);
 	ap->error_size += len;
+
 	return 1;
 }
 
 /**
- * Free all space required by the arg parser \p ap
+ * Free all space required by the arg parser @p ap
  *
  * @param[in] ap Pointer to the arg parser state
  */
 static void free_data(struct _arg_parser *const ap)
 {
-	int i;
-	for (i = 0; i < ap->data_size; ++i) {
+	for (int i = 0; i < ap->data_size; ++i) {
 		free(ap->data[i].argument);
 		free(ap->data[i].opt_string);
 	}
@@ -158,14 +130,14 @@ static void free_data(struct _arg_parser *const ap)
 }
 
 /**
- * Parses a long option and adds it to the record of arg parser \p ap
+ * Parses a long option and adds it to the record of arg parser @p ap
  *
- * @param[in] ap Pointer to the arg parser state
+ * @param[in] ap pointer to the arg parser state
  * @param[in] opt long option string
  * @param[in] arg option argument string
  * @param[in] options array containing all defined options which may be parsed
- * @param[in] argindp pointer to the index in the cmdline argument array.
- *		The value will be automatically updated
+ * @param[in] argindp pointer to the index in the command line argument array.
+ * The value will be automatically updated
  */
 static char parse_long_option(struct _arg_parser *const ap,
 			      const char *const opt, const char *const arg,
@@ -173,24 +145,28 @@ static char parse_long_option(struct _arg_parser *const ap,
 			      int *const argindp)
 {
 	unsigned len;
-	int index = -1, i;
+	int index = -1;
 	char exact = 0, ambig = 0;
 
 	for (len = 0; opt[len + 2] && opt[len + 2] != '='; ++len) ;
 
 	/* Test all long options for either exact match or abbreviated matches. */
-	for (i = 0; options[i].code != 0; ++i)
+	for (int i = 0; options[i].code != 0; ++i)
 		if (options[i].name
 		    && strncmp(options[i].name, &opt[2], len) == 0) {
-			if (strlen(options[i].name) == len) {	/* Exact match found */
+			/* Exact match found */
+			if (strlen(options[i].name) == len) {
 				index = i;
 				exact = 1;
 				break;
-			} else if (index < 0)
-				index = i;	/* First nonexact match found */
-			else if (options[index].code != options[i].code ||
-				 options[index].has_arg != options[i].has_arg)
-				ambig = 1;	/* Second or later nonexact match found */
+			/* First nonexact match found */
+			} else if (index < 0) {
+				index = i;
+			/* Second or later nonexact match found */
+			} else if (options[index].code != options[i].code ||
+				 options[index].has_arg != options[i].has_arg) {
+				ambig = 1;
+			}
 		}
 
 	if (ambig && !exact) {
@@ -200,7 +176,8 @@ static char parse_long_option(struct _arg_parser *const ap,
 		return 1;
 	}
 
-	if (index < 0) {	/* nothing found */
+	/* nothing found */
+	if (index < 0) {
 		add_error(ap, "unrecognized option '");
 		add_error(ap, opt);
 		add_error(ap, "'");
@@ -209,7 +186,8 @@ static char parse_long_option(struct _arg_parser *const ap,
 
 	++*argindp;
 
-	if (opt[len + 2]) {	/* '--<long_option>=<argument>' syntax */
+	/* '--<long_option>=<argument>' syntax */
+	if (opt[len + 2]) {
 		if (options[index].has_arg == ap_no) {
 			add_error(ap, "option '--");
 			add_error(ap, options[index].name);
@@ -240,31 +218,31 @@ static char parse_long_option(struct _arg_parser *const ap,
 }
 
 /**
- * Parses a short option and adds it to the record of arg parser \p ap
+ * Parses a short option and adds it to the record of arg parser @p ap
  *
  * @param[in] ap Pointer to the arg parser state
  * @param[in] opt long option string
  * @param[in] arg option argument string
  * @param[in] options array containing all defined options which may be parsed
- * @param[in] argindp pointer to the index in the cmdline argument array.
- *		The value will be automatically updated
+ * @param[in] argindp pointer to the index in the command line argument array.
+ * The value will be automatically updated
  */
 static char parse_short_option(struct _arg_parser *const ap,
 			       const char *const opt, const char *const arg,
 			       const struct _ap_Option options[],
 			       int *const argindp)
 {
-	int cind = 1;		/* character index in opt */
+	int cind = 1;	/* character index in opt */
 
 	while (cind > 0) {
-		int index = -1, i;
+		int index = -1;
 		const unsigned char code = opt[cind];
 		char code_str[2];
 		code_str[0] = code;
 		code_str[1] = 0;
 
 		if (code != 0)
-			for (i = 0; options[i].code; ++i)
+			for (int i = 0; options[i].code; ++i)
 				if (code == options[i].code) {
 					index = i;
 					break;
@@ -276,8 +254,9 @@ static char parse_short_option(struct _arg_parser *const ap,
 			return 1;
 		}
 
+		/* opt finished */
 		if (opt[++cind] == 0) {
-			++*argindp;	/* opt finished */
+			++*argindp;
 			cind = 0;
 		}
 
@@ -296,9 +275,11 @@ static char parse_short_option(struct _arg_parser *const ap,
 			cind = 0;
 			if (!push_back_record(ap, &options[index], false, arg))
 				return 0;
-		} else if (!push_back_record(ap, &options[index], false, ""))
+		} else if (!push_back_record(ap, &options[index], false, "")) {
 			return 0;
+		}
 	}
+
 	return 1;
 }
 
@@ -309,8 +290,7 @@ char ap_init(struct _arg_parser *const ap,
 	const struct _ap_Option non_option = {0, 0, ap_no, 0};
 	const char **non_options = 0;	/* skipped non-options */
 	int non_options_size = 0;	/* number of skipped non-options */
-	int argind = 1;		/* index in argv */
-	int i;
+	int argind = 1;			/* index in argv */
 
 	ap->data = 0;
 	ap->error = 0;
@@ -331,14 +311,16 @@ char ap_init(struct _arg_parser *const ap,
 				if (!argv[argind][2]) {
 					++argind;	/* we found "--" */
 					break;
-				} else
+				} else {
 				    if (!parse_long_option
 					(ap, opt, arg, options, &argind))
 					return 0;
-			} else
+				}
+			} else {
 			    if (!parse_short_option
 				(ap, opt, arg, options, &argind))
 				return 0;
+			}
 			if (ap->error)
 				break;
 		} else {
@@ -349,20 +331,23 @@ char ap_init(struct _arg_parser *const ap,
 					return 0;
 				non_options = (const char **)tmp;
 				non_options[non_options_size++] = argv[argind++];
-			} else if (!push_back_record(ap, &non_option, false, argv[argind++]))
+			} else if (!push_back_record(ap, &non_option, false, argv[argind++])) {
 				return 0;
+			}
 		}
 	}
-	if (ap->error)
+
+	if (ap->error) {
 		free_data(ap);
-	else {
-		for (i = 0; i < non_options_size; ++i)
+	} else {
+		for (int i = 0; i < non_options_size; ++i)
 			if (!push_back_record(ap, &non_option, false, non_options[i]))
 				return 0;
 		while (argind < argc)
 			if (!push_back_record(ap, &non_option, false, argv[argind++]))
 				return 0;
 	}
+
 	if (non_options)
 		free(non_options);
 	return 1;
@@ -406,13 +391,14 @@ const char *ap_argument(const struct _arg_parser *const ap, const int i)
 
 const char *ap_opt_string(const struct _arg_parser *const ap, const int i)
 {
-	if (i >= 0 && i < ap_arguments(ap)) 
+	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].opt_string;
 	else
 		return "";
 }
 
-const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int i)
+const struct _ap_Option *ap_option(const struct _arg_parser *const ap,
+				   const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].option;
@@ -420,7 +406,8 @@ const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int
 		return 0;
 }
 
-bool ap_is_used(const struct _arg_parser *const ap, int code){
+bool ap_is_used(const struct _arg_parser *const ap, int code)
+{
 	bool ret = false;
 
 	for (int i=0; i < ap->data_size; i++)

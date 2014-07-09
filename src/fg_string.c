@@ -33,7 +33,7 @@
 #include <string.h>
 
 #include "fg_string.h"
-#include "fg_stdlib.h"
+#include "fg_definitions.h"
 
 /**
  * Append the duplication of string @p a of length @p alen to the given
