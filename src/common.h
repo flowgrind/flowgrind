@@ -87,6 +87,8 @@ enum flow_endpoint {
 	SOURCE = 0,
 	/** Endpoint that accepts the connection */
 	DESTINATION,
+	/** Invalid or not specified endpoint */
+	NO_ENDPOINT,	
 };
 
 /** I/O operation */
