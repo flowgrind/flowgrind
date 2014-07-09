@@ -1,16 +1,15 @@
 /**
  * @file fg_argparser.c
- * @brief Commandline argument parser
+ * @brief Command line argument parser
  */
 
 /*
- * Copyright (C) 2013-2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
- * Copyright (C) 2010-2013 Arnd Hannemann <arnd@arndnet.de>
- * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
- * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
- * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
+ * Copyright (C) 2014 Felix Rietig <felix.rietig@rwth-aachen.de>
+ * Copyright (C) 2006-2013 Antonio Diaz Diaz <antonio@gnu.org>
  *
- * This file is part of Flowgrind.
+ * This file is part of Flowgrind.  It is based on the POSIX/GNU
+ * command line argument parser 'arg_parser' origninally written by
+ * Antonio Diaz Diaz.
  *
  * Flowgrind is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,34 +25,6 @@
  * along with Flowgrind.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-/*  _arg_parser - POSIX/GNU command line argument parser. (C version)
-    Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
-    Antonio Diaz Diaz.
-
-    This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this library.  If not, see <http://www.gnu.org/licenses/>.
-
-    As a special exception, you may use this file as part of a free
-    software library without restriction.  Specifically, if other files
-    instantiate templates or use macros or inline functions from this
-    file, or you compile this file and link it with other files to
-    produce an executable, this file does not by itself cause the
-    resulting executable to be covered by the GNU General Public
-    License.  This exception does not however invalidate any other
-    reasons why the executable file might be covered by the GNU General
-    Public License.
-*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
