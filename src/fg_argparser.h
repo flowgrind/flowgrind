@@ -79,12 +79,12 @@
     (without whitespace), or '--<long_option>=<argument>'.
 */
 
-#ifndef _CARG_PARSER_H_
-#define _CARG_PARSER_H_
+#ifndef _ARG_PARSER_H_
+#define _ARG_PARSER_H_
 
 #include <stdbool.h>
 
-/** Specifies whether a cmdline option needs an argument */
+/** Specifies whether a command line option needs an argument */
 enum ap_Has_arg {
 	/** Option without argument (flag) */
 	ap_no = 0,
@@ -94,49 +94,49 @@ enum ap_Has_arg {
 	ap_maybe
 };
 
-/** Defines a valid cmdline option */
+/** Defines a valid command line option */
 struct _ap_Option {
-	/** Short option letter or code ( code != 0 ) */
+	/** Short option letter or code (code != 0) */
 	int code;
 	/** Long option name (maybe null) */
 	const char *name;
 	/** Argument specifier */
 	enum ap_Has_arg has_arg;
-	/** A user tag for distinction of options */
+	/** User tag for distinction of options */
 	int tag;
 };
 
-/** Holds a parsed cmdline option and its argument */
+/** Holds a parsed command line option and its argument */
 struct _ap_Record {
-	/** backpointer to option */
+	/** Backpointer to option */
 	const struct _ap_Option *option;
-	/** the observed opt string (maybe the long or the short version) */
+	/** Observed opt string (maybe the long or the short version) */
 	char *opt_string;
-	/** The argument string (may be empty) */
+	/** Argument string (may be empty) */
 	char *argument;
 };
 
-/** The internal state of the argument parser */
+/** Internal state of the argument parser */
 struct _arg_parser {
-	/** Container for parsed cmdline options */
+	/** Container for parsed command line options */
 	struct _ap_Record *data;
 	/** Contains errors encountered during parsing */
 	char *error;
 	/** Number of parsed records */
 	int data_size;
-	/** The real size of the error string */
+	/** Real size of the error string */
 	int error_size;
 };
 
 /**
- * Initialize the arg parser given commandline options
+ * Initialize the arg parser given command line options
  *
  * @param[in] ap pointer to arg parser state
- * @param[in] argc number of cmdline arguments
- * @param[in] argv array of cmdline argument strings
+ * @param[in] argc number of command line arguments
+ * @param[in] argv array of command line argument strings
  * @param[in] options defines the options to parse for
- * @param[in] in_order if set to true, arguments are stored in the order in which
- * 		they appear. If false, non-option arguments are stored after options.
+ * @param[in] in_order if set to true, arguments are stored in the order in
+ * which they appear. If false, non-option arguments are stored after options
  */
 char ap_init(struct _arg_parser *const ap,
 	     const int argc, const char *const argv[],
@@ -150,22 +150,23 @@ char ap_init(struct _arg_parser *const ap,
 void ap_free(struct _arg_parser *const ap);
 
 /**
- * Get the string containing errors encountered during parsing. If no errors occured,
- * this returns null.
+ * Get the string containing errors encountered during parsing. If no errors
+ * occurred, this returns null.
  *
  * @param[in] ap pointer to arg parser state
  */
 const char *ap_error(const struct _arg_parser *const ap);
 
 /**
- * The number of arguments parsed (may be different from argc)
+ * Number of arguments parsed (may be different from argc)
  *
  * @param[in] ap pointer to arg parser state
  */
 int ap_arguments(const struct _arg_parser *const ap);
 
 /**
- * Returns the code of a parsed option with given index. It returns 0 for non-options.
+ * Returns the code of a parsed option with given index. It returns 0 for
+ * non-options
  *
  * @param[in] ap pointer to arg parser state
  * @param[in] i index of the parsed option
@@ -191,7 +192,7 @@ const char *ap_argument(const struct _arg_parser *const ap, const int i);
 const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int i);
 
 /**
- * Returns the real cmdline option string (may be the short or long version)
+ * Returns the real command line option string (may be the short or long version)
  *
  * @param[in] ap pointer to arg parser state
  * @param[in] i index of the parsed option
@@ -199,11 +200,11 @@ const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int
 const char *ap_opt_string(const struct _arg_parser *const ap, const int i);
 
 /**
- * Returns true iff the option specified by \p code was given at least once
+ * Returns true if the option specified by @p code was given at least once
  *
  * @param[in] ap pointer to arg parser state
  * @param[in] code code of the option to check
  */
 bool ap_is_used(const struct _arg_parser *const ap, int code);
 
-#endif
+#endif /* _ARG_PARSER_H_ */

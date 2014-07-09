@@ -67,10 +67,10 @@
 #include "fg_argparser.h"
 
 /**
- * assure at least a minimum size for buffer \p buf
+ * Assure at least a minimum size for buffer @p buf
  *
  * @param[in] buf pointer to buffer
- * @param[in] min_size minimum size \p buf should hold in bytes
+ * @param[in] min_size minimum size @p buf should hold in bytes
  */
 static void *ap_resize_buffer(void *buf, const int min_size)
 {
@@ -82,11 +82,11 @@ static void *ap_resize_buffer(void *buf, const int min_size)
 }
 
 /**
- * Store a parsed option in the state of the arg parser given by \p ap
+ * Store a parsed option in the state of the arg parser given by @p ap
  *
- * @param[in] ap Pointer to the arg parser state
+ * @param[in] ap pointer to the arg parser state
  * @param[in] option pointer to the option to store
- * @param[in] long_opt true iff this option was a long option
+ * @param[in] long_opt true if this option was a long option
  * @param[in] argument argument string for this option (may be empty)
  */
 static char push_back_record(struct _arg_parser *const ap,
@@ -122,9 +122,9 @@ static char push_back_record(struct _arg_parser *const ap,
 }
 
 /**
- * Add an error message to the arg parser \p ap
+ * Add an error message to the arg parser @p ap
  *
- * @param[in] ap Pointer to the arg parser state
+ * @param[in] ap pointer to the arg parser state
  * @param[in] msg error string
  */
 static char add_error(struct _arg_parser *const ap, const char *const msg)
@@ -141,7 +141,7 @@ static char add_error(struct _arg_parser *const ap, const char *const msg)
 }
 
 /**
- * Free all space required by the arg parser \p ap
+ * Free all space required by the arg parser @p ap
  *
  * @param[in] ap Pointer to the arg parser state
  */
@@ -160,14 +160,14 @@ static void free_data(struct _arg_parser *const ap)
 }
 
 /**
- * Parses a long option and adds it to the record of arg parser \p ap
+ * Parses a long option and adds it to the record of arg parser @p ap
  *
- * @param[in] ap Pointer to the arg parser state
+ * @param[in] ap pointer to the arg parser state
  * @param[in] opt long option string
  * @param[in] arg option argument string
  * @param[in] options array containing all defined options which may be parsed
- * @param[in] argindp pointer to the index in the cmdline argument array.
- *		The value will be automatically updated
+ * @param[in] argindp pointer to the index in the command line argument array.
+ * The value will be automatically updated
  */
 static char parse_long_option(struct _arg_parser *const ap,
 			      const char *const opt, const char *const arg,
@@ -245,14 +245,14 @@ static char parse_long_option(struct _arg_parser *const ap,
 }
 
 /**
- * Parses a short option and adds it to the record of arg parser \p ap
+ * Parses a short option and adds it to the record of arg parser @p ap
  *
  * @param[in] ap Pointer to the arg parser state
  * @param[in] opt long option string
  * @param[in] arg option argument string
  * @param[in] options array containing all defined options which may be parsed
- * @param[in] argindp pointer to the index in the cmdline argument array.
- *		The value will be automatically updated
+ * @param[in] argindp pointer to the index in the command line argument array.
+ * The value will be automatically updated
  */
 static char parse_short_option(struct _arg_parser *const ap,
 			       const char *const opt, const char *const arg,

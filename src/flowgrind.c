@@ -2055,9 +2055,9 @@ static struct _daemon * get_daemon_by_url(const char* server_url,
 /**
  * Parse option for stochastic traffic generation (option -G)
  *
- * @param[in] params Parameter string in the form 'x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]'
- * @param[in] flow_id Id of flow to apply option to
- * @param[in] endpoint_id Endpoint to apply option to
+ * @param[in] params parameter string in the form 'x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]'
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
 static void parse_trafgen_option(const char *params, int flow_id, int endpoint_id)
 {
@@ -2151,9 +2151,9 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 /**
  * Parse argument for option -R, which specifies the rate the endpoint will send
  *
- * @param[in] arg Argument for option -R in form of #.#(z|k|M|G)(b|B|o)
- * @param[in] flow_id Id of flow to apply option to
- * @param[in] endpoint_id Endpoint to apply option to
+ * @param[in] arg argument for option -R in form of #.#(z|k|M|G)(b|B|o)
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
 static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 {
@@ -2207,9 +2207,10 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 /**
  * Parse RPC address for the xmlrpc control connection
  *
- * @param[in,out] rpc_address String in format CONTROL[:PORT] will be truncated to CONTROL
- * @param[out] port Port is returned in this argument
- * @param[out] is_ipv6 True is returend in this argument if the control address is a numerical ipv6 address
+ * @param[in,out] rpc_address string in format CONTROL[:PORT]. It will be
+ * truncated to CONTROL
+ * @param[out] port port if the control address @p rpc_address contains a port
+ * @param[out] is_ipv6 true if control address @p rpc_address is a numerical
 */
 static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
 {
@@ -2238,18 +2239,17 @@ static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
 			*port = atoi(sepptr);
 		}
 	}
-
 }
 
 /**
  * Parse argument for option -H, which specifies the endpoints of a flow
  *
- * @param[in] hostarg Argument for option -H in form of HOST[/CONTROL[:PORT]]
- *		    - HOST: test address where the actual test connection goes to
- *		    - CONTROL: RPC address, where this program connects to
- *		    - PORT: port for the control connection
- * @param[in] flow_id Id of flow to apply option to
- * @param[in] endpoint_id Endpoint to apply option to
+ * @param[in] hostarg argument for option -H in form of HOST[/CONTROL[:PORT]]
+ *	- HOST: test address where the actual test connection goes to
+ *	- CONTROL: RPC address, where this program connects to
+ *	- PORT: port for the control connection
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
 static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 {
@@ -2311,11 +2311,11 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 /**
  * Parse flow options with endpoint
  *
- * @param[in] code The code of the cmdline option
- * @param[in] arg The argument of the cmdline option
- * @param[in] opt_string Contains the real cmdline option string
- * @param[in] flow_id Id of flow to apply option to
- * @param[in] endpoint_id Endpoint to apply option to
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
 static void parse_flow_option_endpoint(int code, const char* arg,
 				       const char* opt_string, int flow_id,
@@ -2448,10 +2448,10 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 /**
  * Parse flow options without endpoint
  *
- * @param[in] code The code of the cmdline option
- * @param[in] arg The argument string of the cmdline option
- * @param[in] opt_string Contains the real cmdline option string
- * @param[in] flow_id Id of flow to apply option to
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument string of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
+ * @param[in] flow_id ID of flow to apply option to
  */
 static void parse_flow_option(int code, const char* arg, const char* opt_string,
 			      int flow_id)
@@ -2488,7 +2488,7 @@ static void parse_flow_option(int code, const char* arg, const char* opt_string,
  * Parse argument for option -c to hide/show intermediated interval report
  * columns
  *
- * @param[in] arg Argument for option -c
+ * @param[in] arg argument for option -c
  */
 static void parse_colon_option(const char *arg)
 {
@@ -2543,9 +2543,9 @@ static void parse_colon_option(const char *arg)
 /**
  * Parse general controller options given on the cmdline
  *
- * @param[in] code The code of the cmdline option
- * @param[in] arg The argument string of the cmdline option
- * @param[in] opt_string Contains the real cmdline option string
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument string of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
  */
 static void parse_general_option(int code, const char* arg, const char* opt_string)
 {
@@ -2633,11 +2633,11 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 /**
  * The main commandline argument parsing function
  *
- * Defines the cmdline options and distinguishes option types (flow, general, ...)
- * and tokenizes flow options which can have several endpoints
+ * Defines the cmdline options and distinguishes option types (flow, general,
+ * ...) and tokenizes flow options which can have several endpoints
  *
- * @param[in] argc Number of arguments (as in main())
- * @param[in] argv Array of argument strings (as in main())
+ * @param[in] argc number of arguments (as in main())
+ * @param[in] argv array of argument strings (as in main())
  */
 static void parse_cmdline(int argc, char *argv[])
 {

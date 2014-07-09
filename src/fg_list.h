@@ -24,37 +24,28 @@
 */
 #include <stddef.h>
 
-/**
- * Single element in a doubly linked list.
- */
+/** Single element in a doubly linked list */
 struct _list_node {
 	/** Pointer to user defined data stored with this node */
 	void* data;
-
-	/** Pointer to the previous node in the list. NULL if this is the head of the list */
+	/** Pointer to the previous node in the list. NULL if head of the list */
 	struct _list_node* next;
-
-	/** Pointer to the next node in the list. NULL if this is the tail of the list */
+	/** Pointer to the next node in the list. NULL if tail of the list */
 	struct _list_node* previous;
 };
 
-/**
- * A doubly linked list
- */
+/** A doubly linked list */
 struct _linked_list {
 	/** Pointer to the first element in the list. NULL if the list is empty */
 	struct _list_node* head;
-
 	/** Pointer to the last element in the list. NULL if the list is empty */
 	struct _list_node* tail;
-
 	/** Size of the list i.e. the number of elements stored in the list */
 	size_t size;
 };
 
 /**
- * Initializes the list by setting its head and
- * tail to NULL and its size to 0.
+ * Initializes the list by setting its head and tail to NULL and its size to 0
  *
  * @param[in] list list to initialize
  * @return zero on success, non-zero otherwise
@@ -62,8 +53,7 @@ struct _linked_list {
 int fg_list_init(struct _linked_list * const list);
 
 /**
- * Returns the first element of the list
- * The element is not removed from the list.
+ * Returns the first element of the list The element is not removed from the list
  *
  * @param[in] list to operate on
  * @return a pointer to the first element in @p list
@@ -71,8 +61,7 @@ int fg_list_init(struct _linked_list * const list);
 const struct _list_node* fg_list_front(struct _linked_list * const list);
 
 /**
- * Returns the last element of the list.
- * The element is not removed from the list.
+ * Returns the last element of the list. The element is not removed from the list
  *
  * @param[in] list to operate on
  * @return a pointer to the last element in @p list
@@ -80,9 +69,8 @@ const struct _list_node* fg_list_front(struct _linked_list * const list);
 const struct _list_node* fg_list_back(struct _linked_list * const list);
 
 /**
- * Removes from the list the first element whose data points to @p data
- * reducing the list size by one. The data contained in this element
- * will not be modified.
+ * Removes from the list the first element whose data points to @p data reducing
+ * the list size by one. The data contained in this element will not be modified
  *
  * @param[in] list to operate on
  * @param[in] data of the element to be removed
@@ -91,10 +79,9 @@ const struct _list_node* fg_list_back(struct _linked_list * const list);
 int fg_list_remove(struct _linked_list * const list, const void * const data);
 
 /**
- * Inserts a new element at the beginning of the list,
- * right before its current first element. The data of the
- * new element will point to the same memory location as @p data.
- * This effectively increases the list's size by one.
+ * Inserts a new element at the beginning of the list, right before its current
+ * first element. The data of the new element will point to the same memory
+ * location as @p data. This effectively increases the list's size by one
  *
  * @param[in] list to operate on
  * @param[in] data of inserted element
@@ -103,20 +90,20 @@ int fg_list_remove(struct _linked_list * const list, const void * const data);
 int fg_list_push_front(struct _linked_list * const list, void * const data);
 
 /**
- * Removes the first element in the list, effectively
- * reducing its size by one. This destroys the removed element.
- * The data contained in this element will not be modified.
+ * Removes the first element in the list, effectively reducing its size by one.
+ * This destroys the removed element. The data contained in this element will
+ * not be modified
  *
  * @param[in] list to operate on
- * @return pointer to the data that was contained in the removed element, NULL on failure
+ * @return pointer to the data that was contained in the removed element, NULL
+ * on failure
  */
 void* fg_list_pop_front(struct _linked_list * const list);
 
 /**
- * Inserts a new element at the end of the list,
- * right after its current last element. The data of the
- * new element will point to the same memory location as @p data.
- * This effectively increases the list's size by one.
+ * Inserts a new element at the end of the list, right after its current last
+ * element. The data of the new element will point to the same memory location
+ * as @p data. This effectively increases the list's size by one
  *
  * @param[in] list to operate on
  * @param[in] data of inserted element
@@ -125,17 +112,18 @@ void* fg_list_pop_front(struct _linked_list * const list);
 int fg_list_push_back(struct _linked_list * const list, void * const data);
 
 /**
- * Removes the last element in the list, effectively
- * reducing its size by one. This destroys the removed element.
- * The data contained in this element will not be modified.
+ * Removes the last element in the list, effectively reducing its size by one.
+ * This destroys the removed element. The data contained in this element will
+ * not be modified
  *
  * @param[in] list to operate on
- * @return pointer to the data that was contained in the removed element, NULL on failure
+ * @return pointer to the data that was contained in the removed element, NULL
+ * on failure
  */
 void* fg_list_pop_back(struct _linked_list * const list);
 
 /**
- * Returns the number of elements in the list.
+ * Returns the number of elements in the list
  *
  * @param[in] list to operate on
  * @return the number of elements in the list.
@@ -143,8 +131,7 @@ void* fg_list_pop_back(struct _linked_list * const list);
 size_t fg_list_size(struct _linked_list * const list);
 
 /**
- * Removes and destroys all elements from the list,
- * leaving it with a size of 0.
+ * Removes and destroys all elements from the list, leaving it with a size of 0
  *
  * @param[in] list to operate on
  * @return zero on success, non-zero otherwise

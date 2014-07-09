@@ -89,11 +89,9 @@ int fg_list_remove(struct _linked_list * const list, const void * const data)
 }
 
 /**
- * Helper function for internal use only!
- * Creates a new list element on the heap and prepares it for
- * insertion into the list between elements pointed to by @p previous and
- * @p next. The data of the newly created element will point to the same
- * memory location as @p data
+ * Creates a new list element on the heap and prepares it for insertion into
+ * the list between elements pointed to by @p previous and @p next. The data of
+ * the newly created element will point to the same memory location as @p data
  *
  * @param[in] data of newly created element
  * @param[in] existing list element the new element is going to be inserted after

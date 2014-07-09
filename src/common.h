@@ -56,7 +56,7 @@
 /** Max number of arbitrary extra socket options which may be sent to the deamon */
 #define MAX_EXTRA_SOCKET_OPTIONS 10
 
-/** Ensures that extra options are limited in length on both controller and deamon side */
+/** Ensures extra options are limited in length on both controller and deamon side */
 #define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
 
 #ifndef TCP_CA_NAME_MAX
@@ -67,10 +67,10 @@
 /** Minium block (message) size we can send */
 #define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
 
-/** The standard gpl3 no warranty message */
+/** Flowgrind's copyright year */
 #define FLOWGRIND_COPYRIGHT_YEAR "2014"
 
-/** The standard gpl3 no warranty message */
+/** Standard GPL3 no warranty message */
 #define FLOWGRIND_COPYING "Copyright (C) "FLOWGRIND_COPYRIGHT_YEAR" Free "	\
 			"Software Foundation, Inc.\nLicense GPLv3+: GNU GPL "	\
 			"version 3 or later <http://gnu.org/licenses/"		\
@@ -78,7 +78,7 @@
 			"free to change and redistribute it.\nThere is "	\
 			"NO WARRANTY, to the extent permitted by law.\n"
 
-/** The authors in a printable string */
+/** Flowgrind's authors in a printable string */
 #define FLOWGRIND_AUTHORS "Written by Alexander Zimmermann, Arnd Hannemann, "	\
 			"Christian Samsel, Tim Kosse and Daniel Schaffrath.\n"
 
@@ -153,7 +153,7 @@ struct _block {
 	struct timespec data2;
 };
 
-/** options for stochastic traffic generation */
+/** Options for stochastic traffic generation */
 struct _trafgen_options {
 	/** The stochastic distribution to draw values from */
 	enum distributions distribution;
@@ -164,9 +164,10 @@ struct _trafgen_options {
 
 };
 
-/** Settings that describe a flow between two endpoints. 
-  * These options can be specified for each of the two endpoints.
-  */
+/**
+ * Settings that describe a flow between two endpoints. These options can be
+ * specified for each of the two endpoints
+ */
 struct _flow_settings {
 	/** The interface address for the flow (used by daemon) */
 	char bind_address[1000];
@@ -193,9 +194,10 @@ struct _flow_settings {
 	int so_debug;
 	/** Sets ROUTE_RECORD on test socket (option -O) */
 	int route_record;
-	/** Do not iterate through select() to continue sending in case
-	  * block size did not suffice to fill sending queue (pushy) (option -P)
-	  */
+	/**
+	 * Do not iterate through select() to continue sending in case
+	 * block size did not suffice to fill sending queue (pushy) (option -P)
+	 */
 	int pushy;
 	/** Shutdown socket after test flow (option -N) */
 	int shutdown;
