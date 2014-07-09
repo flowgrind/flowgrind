@@ -118,8 +118,7 @@ static char add_error(struct _arg_parser *const ap, const char *const msg)
  */
 static void free_data(struct _arg_parser *const ap)
 {
-	int i;
-	for (i = 0; i < ap->data_size; ++i) {
+	for (int i = 0; i < ap->data_size; ++i) {
 		free(ap->data[i].argument);
 		free(ap->data[i].opt_string);
 	}
@@ -146,13 +145,13 @@ static char parse_long_option(struct _arg_parser *const ap,
 			      int *const argindp)
 {
 	unsigned len;
-	int index = -1, i;
+	int index = -1;
 	char exact = 0, ambig = 0;
 
 	for (len = 0; opt[len + 2] && opt[len + 2] != '='; ++len) ;
 
 	/* Test all long options for either exact match or abbreviated matches. */
-	for (i = 0; options[i].code != 0; ++i)
+	for (int i = 0; options[i].code != 0; ++i)
 		if (options[i].name
 		    && strncmp(options[i].name, &opt[2], len) == 0) {
 			/* Exact match found */
@@ -236,14 +235,14 @@ static char parse_short_option(struct _arg_parser *const ap,
 	int cind = 1;	/* character index in opt */
 
 	while (cind > 0) {
-		int index = -1, i;
+		int index = -1;
 		const unsigned char code = opt[cind];
 		char code_str[2];
 		code_str[0] = code;
 		code_str[1] = 0;
 
 		if (code != 0)
-			for (i = 0; options[i].code; ++i)
+			for (int i = 0; options[i].code; ++i)
 				if (code == options[i].code) {
 					index = i;
 					break;
@@ -291,8 +290,7 @@ char ap_init(struct _arg_parser *const ap,
 	const struct _ap_Option non_option = {0, 0, ap_no, 0};
 	const char **non_options = 0;	/* skipped non-options */
 	int non_options_size = 0;	/* number of skipped non-options */
-	int argind = 1;		/* index in argv */
-	int i;
+	int argind = 1;			/* index in argv */
 
 	ap->data = 0;
 	ap->error = 0;
@@ -342,7 +340,7 @@ char ap_init(struct _arg_parser *const ap,
 	if (ap->error) {
 		free_data(ap);
 	} else {
-		for (i = 0; i < non_options_size; ++i)
+		for (int i = 0; i < non_options_size; ++i)
 			if (!push_back_record(ap, &non_option, false, non_options[i]))
 				return 0;
 		while (argind < argc)
