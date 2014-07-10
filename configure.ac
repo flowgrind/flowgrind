@@ -173,7 +173,6 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 
 # Checking for functions in libraries
 AC_SEARCH_LIBS([log], [m])
-AC_SEARCH_LIBS([socket], [socket])
 AC_SEARCH_LIBS([pthread_create], [pthread])
 
 AC_CHECK_FUNC([clock_gettime],
