@@ -126,6 +126,8 @@ AC_TYPE_UNSIGNED_LONG_LONG_INT
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_HEADER_STDC
+AC_HEADER_STDBOOL
+AC_HEADER_ASSERT
 AC_CHECK_HEADERS(
     [arpa/inet.h \
 	 errno.h \
@@ -140,25 +142,21 @@ AC_CHECK_HEADERS(
 	 netinet/tcp.h \
 	 pthread.h \
 	 signal.h \
-	 stdarg.h \
 	 stdio.h \
-	 stdlib.h \
-	 string.h \
 	 sys/ioctl.h \
 	 syslog.h \
 	 sys/param.h \
-	 sys/time.h \
 	 sys/uio.h \
 	 sys/utsname.h \
-	 time.h \
     ], [], [AC_MSG_ERROR([required header not found])])
+
+AC_CHECK_HEADERS([sys/socket.h])
 
 AC_CHECK_HEADERS([net/if.h], [],
 	[AC_MSG_ERROR([required header not found])],
 	[#include <stdio.h>
 	 #include <stdlib.h>
 	 #include <stddef.h>
-	 #include <sys/types.h>
 	 #include <sys/socket.h>
     ])
 
