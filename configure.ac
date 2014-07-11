@@ -17,6 +17,7 @@
 # along with Flowgrind.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+AC_COPYRIGHT([Copyright (C) 2007 - 2014 Flowgrind authors])
 AC_INIT([Flowgrind], [0.7.1], [https://github.com/flowgrind/flowgrind/issues],
 	[flowgrind], [https://www.flowgrind.net])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -30,7 +31,7 @@ AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_FILES([Makefile])
 
 # Checking for programs
-AC_PROG_CC
+AC_PROG_CC([cc gcc clang])
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_USE_SYSTEM_EXTENSIONS
@@ -189,7 +190,6 @@ AC_CHECK_FUNC([clock_gettime],
 AM_CONDITIONAL([CLOCK_GETTIME], [test "x$have_clock_gettime" = "xyes"])
 
 AC_SUBST([LIBS])
-
 
 # Checking for feature --enable-debug
 AC_ARG_ENABLE([debug],
