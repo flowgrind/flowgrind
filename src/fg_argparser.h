@@ -75,6 +75,13 @@ struct _ap_Option {
 	enum ap_Has_arg has_arg;
 	/** User tag for distinction of options */
 	int tag;
+	/** 
+	 * Null-terminated array of mutex IDs (greater zero) this option belongs to.
+	 * If two options share a mutex ID, they exclude each other.
+	 * If this pointer is set to zero, this means no mutex are defined for 
+	 * this option
+	 */	
+	int *mutex;	
 };
 
 /** Holds a parsed command line option and its argument */
