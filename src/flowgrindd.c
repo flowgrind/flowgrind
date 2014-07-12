@@ -1022,19 +1022,19 @@ int process_dump_dir() {
 static void parse_cmdline(int argc, char *argv[])
 {
 	const struct _ap_Option options[] = {
-		{'b', 0, ap_yes, 0},
-		{'c', 0, ap_yes, 0},
+		{'b', 0, ap_yes, 0, 0},
+		{'c', 0, ap_yes, 0, 0},
 #ifdef DEBUG
-		{'d', "debug", ap_no, 0},
+		{'d', "debug", ap_no, 0, 0},
 #endif
-		{'h', "help", ap_no, 0},
-		{'o', 0, ap_yes, 0},
-		{'p', 0, ap_yes, 0},
-		{'v', "version", ap_no, 0},
+		{'h', "help", ap_no, 0, 0},
+		{'o', 0, ap_yes, 0, 0},
+		{'p', 0, ap_yes, 0, 0},
+		{'v', "version", ap_no, 0, 0},
 #ifdef HAVE_LIBPCAP
-		{'w', 0, ap_yes, 0},
+		{'w', 0, ap_yes, 0, 0},
 #endif
-		{0, 0, ap_no, 0}
+		{0, 0, ap_no, 0, 0}
 	};
 
 	struct _arg_parser parser;
