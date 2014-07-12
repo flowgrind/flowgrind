@@ -92,9 +92,6 @@ static char *rpc_bind_addr = NULL;
 /* XXX add a brief description doxygen */
 static int cpu = -1;				    /* No CPU affinity */
 
-/** Command line option parser */
-static struct _arg_parser parser;
-
 /* External global variables */
 extern const char *progname;
 
@@ -1040,6 +1037,8 @@ static void parse_cmdline(int argc, char *argv[])
 		{0, 0, ap_no, 0}
 	};
 
+	struct _arg_parser parser;
+
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser))
@@ -1106,6 +1105,7 @@ static void parse_cmdline(int argc, char *argv[])
 	}
 #endif /* HAVE_LIBPCAP */
 
+	ap_free(&parser);
 	// TODO more sanity checks... (e.g. if port is in valid range)
 }
 
@@ -1148,8 +1148,6 @@ int main(int argc, char *argv[])
 	xmlrpc_env_init(&env);
 
 	run_rpc_server(&env, port);
-
-	ap_free(&parser);
 
 	critx("control should never reach end of main()");
 }
