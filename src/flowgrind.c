@@ -2196,7 +2196,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 	if (optdouble > 5e9)
 		warnx("rate of flow %d too high", flow_id);
 
-	cflow[flow_id].settings[endpoint_id].write_rate_str = arg;
+	cflow[flow_id].settings[endpoint_id].write_rate_str = strdup(arg);
 	cflow[flow_id].settings[endpoint_id].write_rate = optdouble;
 }
 
