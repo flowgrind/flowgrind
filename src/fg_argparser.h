@@ -108,6 +108,16 @@ struct _arg_parser {
 	int data_size;
 	/** Real size of the error string */
 	int error_size;
+	/** The number of defined mutex */	
+	int num_mutex;
+};
+
+/** Contains the state of all mutex */
+struct _ap_Mutex_state {
+	/** A table containing for each mutex the last seen option record */
+	int *seen_records;
+	/** The number of defined mutex */
+	int num_mutex;
 };
 
 /**
@@ -188,5 +198,72 @@ const char *ap_opt_string(const struct _arg_parser *const ap, const int i);
  * @param[in] code code of the option to check
  */
 bool ap_is_used(const struct _arg_parser *const ap, int code);
+
+/**
+* Initialize a new mutex state table. This can be seen as a separate context for checking mutex.
+* Thus, by initializing more than one mutex state, mutual exclusions of options may be evaluated
+* in independent contexts.
+*
+* @param[in] ap pointer to arg parser state
+* @param[in] ms pointer to a new mutex context. It can be used in the following
+* to check and set mutex
+* @return true iff successful.
+*/
+bool ap_init_mutex_state(const struct _arg_parser *const ap, 
+			 struct _ap_Mutex_state *const ms);
+
+/**
+* Check a new option record for mutex.
+*
+* @param[in] ap pointer to arg parser state
+* @param[in] ms pointer to an initialized mutex context
+* @param[in] i index of the option to check for previous occurrences of mutexed
+* options
+* @param[in] conflict pointer to a single integer value. This will contain the conflicting
+* record position, iff a conflict has been found.
+* @return true iff conflict according to the state given by @p ms has occurred.
+*/
+bool ap_check_mutex(const struct _arg_parser *const ap,
+		    const struct _ap_Mutex_state *const ms,
+		    const int i, int *conflict);
+
+/**
+* Register an option record in a mutex context.
+*
+* @param[in] ap pointer to arg parser state
+* @param[in] ms pointer to an initialized mutex context
+* @param[in] i index of the option to register in the mutex state @p ms
+* @return true iff successful.
+*/
+bool ap_set_mutex(const struct _arg_parser *const ap, 
+		  struct _ap_Mutex_state *const ms, const int i);
+
+/**
+* Check a new option record for mutex and register it at the same time.
+*
+* @param[in] ap pointer to arg parser state
+* @param[in] ms pointer to an initialized mutex context
+* @param[in] i index of the option to register in the mutex state @p ms
+* @param[in] conflict pointer to a single integer value. This will contain the conflicting
+* record position, iff a conflict has been found.
+* @return true iff conflict according to the state given by @p ms has occurred.
+*/
+bool ap_set_check_mutex(const struct _arg_parser *const ap, 
+			struct _ap_Mutex_state *const ms,
+			const int i, int *conflict);
+
+/**
+* Reset a mutex context.
+*
+* @param[in] ms pointer to an initialized mutex context
+*/
+void ap_reset_mutex(struct _ap_Mutex_state *const ms);
+
+/**
+* Free a mutex context.
+*
+* @param[in] ms pointer to an initialized mutex context
+*/
+void ap_free_mutex_state(struct _ap_Mutex_state *const ms);
 
 #endif /* _ARG_PARSER_H_ */
