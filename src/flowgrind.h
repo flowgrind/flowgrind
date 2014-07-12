@@ -139,6 +139,18 @@ enum opt_types {
 	OPT_FLOW_ENDPOINT,
 };
 
+/** Mutual exclusion contexts for options */
+enum mutex_contexts {
+	/** Context for controller options */
+	MUTEX_CONTEXT_CONTROLLER = 0,
+	/** Context for flow options for both endpoints */
+	MUTEX_CONTEXT_TWO_SIDED,
+	/** Context for flow options on source side */
+	MUTEX_CONTEXT_SOURCE,
+	/** Context for flow options on destination side */
+	MUTEX_CONTEXT_DESTINATION,
+};
+
 /** For long options with no equivalent short option, use a pseudo short option */
 enum long_opt_only {
 	/** Pseudo short option for option --log-file */
