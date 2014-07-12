@@ -2625,6 +2625,36 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 }
 
 /**
+ * Wrapper function for mutex checking and error message printing.
+ *
+ * Defines the cmdline options and distinguishes option types (flow, general, ...)
+ * and tokenizes flow options which can have several endpoints
+ *
+ * @param[in] mm Pointer to mutex manager
+ * @param[in] ms Array of mutex states (of size 3)
+ * @param[in] endpoint The endpoint of this option (see enum #flow_endpoint)
+ * @param[in] argind The option record index
+ * @param[in] flow_id ID of the flow to show in error message
+ */
+static void check_mutex(const struct _arg_parser *const parser, 
+			struct _ap_Mutex_state ms[], const int endpoint,
+			const int argind, int flow_id)
+{
+	int mutex_index;
+	if (endpoint == UNSPECIFIED){
+		if (ap_set_check_mutex(parser, &ms[UNSPECIFIED], argind, &mutex_index))
+			PARSE_ERR("Option %s conflicts with option %s", 
+				ap_opt_string(parser, argind), 
+				ap_opt_string(parser, mutex_index));
+	} else {
+		if (ap_set_check_mutex(parser, &ms[endpoint], argind, &mutex_index))
+			PARSE_ERR("In flow %i: option %s conflicts with option %s", 
+				flow_id, ap_opt_string(parser, argind), 
+				ap_opt_string(parser, mutex_index));
+	}
+}
+
+/**
  * The main commandline argument parsing function
  *
  * Defines the cmdline options and distinguishes option types (flow, general,
@@ -2692,6 +2722,12 @@ static void parse_cmdline(int argc, char *argv[])
 	if (ap_error(&parser))
 		PARSE_ERR("%s", ap_error(&parser));
 
+	/* initialize 3 mutex contexts (for SOURCE+DESTINATION+NO_ENDPOINT) */
+  	struct _ap_Mutex_state ms[3];
+	ap_init_mutex_state(&parser, &ms[SOURCE]);
+	ap_init_mutex_state(&parser, &ms[DESTINATION]);
+	ap_init_mutex_state(&parser, &ms[UNSPECIFIED]);
+
 	/* if no option -F is given, configure all flows*/
 	for (int i = 0; i < MAX_FLOWS; i++)
 		current_flow_ids[i] = i;
@@ -2708,6 +2744,7 @@ static void parse_cmdline(int argc, char *argv[])
 		/* distinguish option types by tag first */
 		switch (tag) {
 		case OPT_CONTROLLER:
+			check_mutex(&parser, ms, UNSPECIFIED, argind, 0);
 			parse_general_option(code, arg, opt_string);
 			break;
 		case OPT_SELECTOR:
@@ -2729,8 +2766,12 @@ static void parse_cmdline(int argc, char *argv[])
 				current_flow_ids[cur_num_flows++] = optint;
 				ASSIGN_MAX(max_flow_specifier, optint);
 			}
+			/* reset mutex for each new flow */
+			ap_reset_mutex(&ms[SOURCE]);
+			ap_reset_mutex(&ms[DESTINATION]);
 			break;
 		case OPT_FLOW:
+			check_mutex(&parser, ms, SOURCE, argind, current_flow_ids[0]);
 			for (int i = 0; i < cur_num_flows; i++)
 				parse_flow_option(code, arg, opt_string,
 						current_flow_ids[i]);
@@ -2751,6 +2792,14 @@ static void parse_cmdline(int argc, char *argv[])
 				if (type != 's' && type != 'd' && type != 'b')
 					PARSE_ERR("Invalid enpoint specifier"
 						  " in Option %s", opt_string);
+
+				/* check mutex in context of current endpoint */
+				if (type == 's' || type == 'b')
+					check_mutex(&parser, ms, SOURCE, argind, 
+						    current_flow_ids[0]);
+				if (type == 'd' || type == 'b')
+					check_mutex(&parser, ms, DESTINATION, 
+						    argind, current_flow_ids[0]);		
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
@@ -2821,6 +2870,9 @@ static void parse_cmdline(int argc, char *argv[])
 
 
 	ap_free(&parser);
+	ap_free_mutex_state(&ms[SOURCE]);
+	ap_free_mutex_state(&ms[DESTINATION]);
+	ap_free_mutex_state(&ms[UNSPECIFIED]);
 }
 
 /**
