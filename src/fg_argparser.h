@@ -75,28 +75,49 @@ struct _ap_Option {
 	enum ap_Has_arg has_arg;
 	/** User tag for distinction of options */
 	int tag;
+	/** 
+	 * Null-terminated array of mutex IDs (greater zero) this option belongs to.
+	 * If two options share a mutex ID, they exclude each other.
+	 * If this pointer is set to zero, this means no mutex are defined for 
+	 * this option
+	 */	
+	int *mutex;	
 };
 
 /** Holds a parsed command line option and its argument */
 struct _ap_Record {
-	/** Backpointer to option */
-	const struct _ap_Option *option;
 	/** Observed opt string (maybe the long or the short version) */
 	char *opt_string;
 	/** Argument string (may be empty) */
 	char *argument;
+	/** Index of the option for internal use (e.g. mutex, tag) */	
+	int option_index;
 };
 
 /** Internal state of the argument parser */
 struct _arg_parser {
-	/** Container for parsed command line options */
+	/** Pointer for user defined options */
+	const struct _ap_Option *options;
+	/** Container for parsed cmdline options */
 	struct _ap_Record *data;
 	/** Contains errors encountered during parsing */
 	char *error;
+	/** Number of known options */
+	int num_options;
 	/** Number of parsed records */
 	int data_size;
 	/** Real size of the error string */
 	int error_size;
+	/** The number of defined mutex */	
+	int num_mutex;
+};
+
+/** Contains the state of all mutex */
+struct _ap_Mutex_state {
+	/** A table containing for each mutex the last seen option record */
+	int *seen_records;
+	/** The number of defined mutex */
+	int num_mutex;
 };
 
 /**
@@ -177,5 +198,72 @@ const char *ap_opt_string(const struct _arg_parser *const ap, const int i);
  * @param[in] code code of the option to check
  */
 bool ap_is_used(const struct _arg_parser *const ap, int code);
+
+/**
+* Initialize a new mutex state table. This can be seen as a separate context for checking mutex.
+* Thus, by initializing more than one mutex state, mutual exclusions of options may be evaluated
+* in independent contexts.
+*
+* @param[in] ap Pointer to arg parser state
+* @param[in] ms Pointer to a new mutex context. It can be used in the following
+* to check and set mutex
+* @return True iff successful.
+*/
+bool ap_init_mutex_state(const struct _arg_parser *const ap, 
+			 struct _ap_Mutex_state *const ms);
+
+/**
+* Check a new option record for mutex.
+*
+* @param[in] ap Pointer to arg parser state
+* @param[in] ms Pointer to an initialized mutex context
+* @param[in] i Index of the option to check for previous occurrences of mutexed
+* options
+* @param[in] conflict Pointer to a single integer value. This will contain the conflicting
+* record position, iff a conflict has been found.
+* @return True iff conflict according to the state given by @p ms has occurred.
+*/
+bool ap_check_mutex(const struct _arg_parser *const ap,
+		    const struct _ap_Mutex_state *const ms,
+		    const int i, int *conflict);
+
+/**
+* Register an option record in a mutex context.
+*
+* @param[in] ap Pointer to arg parser state
+* @param[in] ms Pointer to an initialized mutex context
+* @param[in] i Index of the option to register in the mutex state @p ms
+* @return True iff successful.
+*/
+bool ap_set_mutex(const struct _arg_parser *const ap, 
+		  struct _ap_Mutex_state *const ms, const int i);
+
+/**
+* Check a new option record for mutex and register it at the same time.
+*
+* @param[in] ap Pointer to arg parser state
+* @param[in] ms Pointer to an initialized mutex context
+* @param[in] i Index of the option to register in the mutex state @p ms
+* @param[in] conflict Pointer to a single integer value. This will contain the conflicting
+* record position, iff a conflict has been found.
+* @return True iff conflict according to the state given by @p ms has occurred.
+*/
+bool ap_set_check_mutex(const struct _arg_parser *const ap, 
+			struct _ap_Mutex_state *const ms,
+			const int i, int *conflict);
+
+/**
+* Reset a mutex context.
+*
+* @param[in] ms Pointer to an initialized mutex context
+*/
+void ap_reset_mutex(struct _ap_Mutex_state *const ms);
+
+/**
+* Free a mutex context.
+*
+* @param[in] ms Pointer to an initialized mutex context
+*/
+void ap_free_mutex_state(struct _ap_Mutex_state *const ms);
 
 #endif /* _ARG_PARSER_H_ */
