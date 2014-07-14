@@ -29,10 +29,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef DEBUG
 #include <assert.h>
-#endif /* DEBUG */
-
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -131,9 +128,7 @@ int gettime(struct timespec *tp)
 	if (!res.tv_sec && !res.tv_nsec) {
 		clock_getres(CLOCK_REALTIME, &res);
 		/* Clock resolution is lower than expected (1ns) */
-#ifdef DEBUG
 		assert(res.tv_nsec > 1);
-#endif /* DEBUG */
 	}
 
 	/* Get wall-clock time */
@@ -156,9 +151,7 @@ int gettime(struct timespec *tp)
 		clock_get_attributes(cclock, CLOCK_GET_TIME_RES,
                                      (clock_attr_t) &attribute, &count);
 		/* Clock resolution is lower than expected (1ns) */
-#ifdef DEBUG
 		assert(attribute[0] > 1);
-#endif /* DEBUG */
 	}
 
 	kern_return_t rc = clock_get_time(cclock, &mts);

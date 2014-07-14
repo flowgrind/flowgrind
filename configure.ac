@@ -155,7 +155,6 @@ AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_HEADER_STDC
 AC_HEADER_STDBOOL
-AC_HEADER_ASSERT
 AC_CHECK_HEADERS(
 	[arpa/inet.h \
 	 errno.h \
@@ -209,6 +208,25 @@ AC_ARG_ENABLE([debug],
 
 AS_IF([test "x$enable_debug" = "xyes"],
 	[AC_DEFINE([DEBUG], [1], [enable debugging output.])])
+
+# Checking for feature --enable-assert
+AC_MSG_CHECKING([whether to enable assertions])
+AC_ARG_ENABLE([assert],
+	[AS_HELP_STRING([--enable-assert], [turn on assertions])],
+	[AS_IF([test "x$enable_assert" = "xno"],
+		[AC_DEFINE([NDEBUG], [1],
+			[Define to 1 if assertions should be disabled.])
+		],
+		[test "x$enable_assert" != "xyes"],
+		[enable_assert=no;
+		 AC_MSG_WARN([invalid argument supplied to --enable-assert])
+		])
+	],
+    [enable_assert=no;
+	 AC_DEFINE([NDEBUG], [1],
+		[Define to 1 if assertions should be disabled.])
+	])
+AC_MSG_RESULT([$enable_assert])
 
 # Checking for libpcap
 AC_ARG_WITH([pcap],

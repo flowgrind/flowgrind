@@ -29,10 +29,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef DEBUG
 #include <assert.h>
-#endif /* DEBUG */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -216,9 +213,7 @@ static void prepare_wfds(struct timespec *now, struct _flow *flow, fd_set *wfds)
 	}
 
 	if (flow_sending(now, flow, WRITE)) {
-#ifdef DEBUG
 		assert(!flow->finished[WRITE]);
-#endif
 		if (flow_block_scheduled(now, flow)) {
 			DEBUG_MSG(LOG_DEBUG, "adding sock of flow %d to wfds",
 				  flow->id);
@@ -977,10 +972,8 @@ static int write_data(struct _flow *flow)
 
 		if (flow->current_block_bytes_written >=
 		    flow->current_write_block_size) {
-#ifdef DEBUG
 			assert(flow->current_block_bytes_written ==
 			       flow->current_write_block_size);
-#endif
 			/* we just finished writing a block */
 			flow->current_block_bytes_written = 0;
 			gettime(&flow->last_block_written);
@@ -1143,10 +1136,8 @@ static int read_data(struct _flow *flow)
 
 		if (flow->current_block_bytes_read >=
 		    flow->current_read_block_size ) {
-#ifdef DEBUG
 			assert(flow->current_block_bytes_read ==
 					flow->current_read_block_size);
-#endif
 			flow->current_block_bytes_read = 0;
 
 			/* TODO process_rtt(), process_iat(), and
@@ -1278,9 +1269,9 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 {
 	int rc;
 	int try = 0;
-#ifdef DEBUG
+
 	assert(!flow->current_block_bytes_written);
-#endif
+
 	/* write requested block size as current size */
 	((struct _block *)flow->write_block)->this_block_size =
 		htonl(requested_response_block_size);
@@ -1343,10 +1334,8 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 
 			if (flow->current_block_bytes_written >=
 			    (unsigned int)requested_response_block_size) {
-#ifdef DEBUG
 				assert(flow->current_block_bytes_written ==
 					(unsigned int)requested_response_block_size);
-#endif
 				/* just finish sending response block */
 				flow->current_block_bytes_written = 0;
 				gettime(&flow->last_block_written);
