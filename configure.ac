@@ -42,7 +42,7 @@ AC_PATH_TOOL([PERL], [perl])
 AC_ARG_WITH([doxygen],
 	[AS_HELP_STRING([--without-doxygen],
 		[disable doxygen feature to generate API documentation])
-    ])
+	])
 
 AS_IF([test "x$with_doxygen" != "xno"],
 	[AC_PATH_TOOL([DOXYGEN], [doxygen])],
@@ -50,10 +50,10 @@ AS_IF([test "x$with_doxygen" != "xno"],
 
 AS_IF([test -n "$DOXYGEN"],
 	[AC_DEFINE([HAVE_DOXYGEN], [1],
-        [Define if the system has doxygen installed])],
+		[Define if the system has doxygen installed])],
 	[AS_IF([test "x$with_doxygen" = "xyes"],
 		[AC_MSG_ERROR([doxygen requested but not found])])
-    ])
+	])
 AM_CONDITIONAL([USE_DOXYGEN],
 	[test "x$with-doxygen" != "xno" -a -n "$DOXYGEN"])
 
@@ -63,7 +63,7 @@ AS_CASE([$host],
 	[*darwin*],
 	[AC_DEFINE([__DARWIN__], [1], [This is an OS X system])
 	 AC_DEFINE([_BSD_SOCKLEN_T_], [],
-        [Needed under Darwin so that socklen_t will be defined in <sys/socket.h>])
+		[Needed under Darwin so that socklen_t will be defined in <sys/socket.h>])
 
 	 # test if Macport is used
 	 AS_IF([test -d /opt/local/lib],
@@ -97,7 +97,7 @@ AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS(
-    [bzero \
+	[bzero \
 	 memset \
 	 pselect \
 	 socket \
@@ -127,7 +127,7 @@ AC_HEADER_STDC
 AC_HEADER_STDBOOL
 AC_HEADER_ASSERT
 AC_CHECK_HEADERS(
-    [arpa/inet.h \
+	[arpa/inet.h \
 	 errno.h \
 	 fcntl.h \
 	 fenv.h \
@@ -146,7 +146,7 @@ AC_CHECK_HEADERS(
 	 sys/param.h \
 	 sys/uio.h \
 	 sys/utsname.h \
-    ], [], [AC_MSG_ERROR([required header not found])])
+	], [], [AC_MSG_ERROR([required header not found])])
 
 AC_CHECK_HEADERS([sys/socket.h])
 
@@ -156,7 +156,7 @@ AC_CHECK_HEADERS([net/if.h], [],
 	 #include <stdlib.h>
 	 #include <stddef.h>
 	 #include <sys/socket.h>
-    ])
+	])
 
 AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 	[AC_MSG_ERROR([required header not found])],
@@ -167,7 +167,7 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 	 #include <sys/socket.h>
 	 #include <netinet/in.h>
 	 #include <netinet/in_systm.h>
-     ])
+	])
 
 # Checking for functions in libraries
 AC_SEARCH_LIBS([log], [m])
@@ -176,21 +176,19 @@ AC_SEARCH_LIBS([pthread_create], [pthread])
 AC_CHECK_FUNC([clock_gettime],
 	[have_clock_gettime=yes;
 	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-        [Define if the system has clock_gettime])
+		[Define if the system has clock_gettime])
 	],
 	[AC_SEARCH_LIBS([clock_gettime], [rt],
 		[have_clock_gettime=yes;
-         AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-            [Define if the system has clock_gettime])
-        ])
-    ])
+		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+			[Define if the system has clock_gettime])
+		])
+	])
 AM_CONDITIONAL([CLOCK_GETTIME], [test "x$have_clock_gettime" = "xyes"])
-
-AC_SUBST([LIBS])
 
 # Checking for feature --enable-debug
 AC_ARG_ENABLE([debug],
-    [AS_HELP_STRING([--enable-debug], [enable debugging output and symbols])])
+	[AS_HELP_STRING([--enable-debug], [enable debugging output and symbols])])
 
 AS_IF([test "x$enable_debug" = "xyes"],
 	[AC_DEFINE([DEBUG], [1], [enable debugging output])])
@@ -201,11 +199,11 @@ AC_ARG_WITH([pcap],
 
 AS_IF([test "x$with_pcap" != "xno"],
 	[AC_CHECK_HEADER([pcap/pcap.h],
-	    [AC_CHECK_LIB([pcap], [pcap_create],
-            [have_pcap=yes],
+		[AC_CHECK_LIB([pcap], [pcap_create],
+			[have_pcap=yes],
 			[have_pcap=no;
 			 AC_MSG_WARN([libpcap not found. compile without traffic dump feature])
-            ],
+			],
 			[-lpcap])
 		],
 		[have_pcap=no;
@@ -216,24 +214,23 @@ AS_IF([test "x$with_pcap" != "xno"],
 
 AS_IF([test "x$have_pcap" = "xyes"],
 	[AC_DEFINE([HAVE_LIBPCAP], [1],
-        [Define if the system has libpcap installed (-lpcap)])
+		[Define if the system has libpcap installed (-lpcap)])
 
 	 AS_IF([test -z "$PCAP_CONFIG"],
-        [AC_PATH_TOOL([PCAP_CONFIG], [pcap-config], [no])])
+		[AC_PATH_TOOL([PCAP_CONFIG], [pcap-config], [no])])
 
 	 AS_IF([test "x$PCAP_CONFIG" = "xno"],
 		[AC_MSG_NOTICE([pcap-config not found in path])],
 		[PCAP_CFLAGS=`$PCAP_CONFIG --cflags`
 		 PCAP_LDADD=`$PCAP_CONFIG --libs`
 
-	     AC_SUBST([PCAP_CFLAGS])
+		 AC_SUBST([PCAP_CFLAGS])
 		 AC_SUBST([PCAP_LDADD])
 		])
-    ],
+	],
 	[AS_IF([test "x$with_pcap" = "xyes"],
-        [AC_MSG_ERROR([libpcap requested but not found])])
-    ]
-)
+		[AC_MSG_ERROR([libpcap requested but not found])])
+	])
 AM_CONDITIONAL([USE_LIBPCAP],
 	[test "x$with_pcap" != "xno" -a "x$have_pcap" = "xyes"])
 
@@ -245,18 +242,18 @@ AC_ARG_WITH([gsl],
 AS_IF([test "x$with_gsl" != "xno"],
 	[AC_CHECK_HEADER([gsl/gsl_rng.h],
 		[AC_CHECK_LIB([gsl], [gsl_rng_alloc],
-            [have_gsl=yes],
+			[have_gsl=yes],
 			[have_gsl=no;
 			 AC_MSG_WARN(
-                [libgsl not found. compile without traffic generation distributions])
-            ],
+				[libgsl not found. compile without traffic generation distributions])
+			],
 			[-lgslcblas])
 		],
 		[have_gsl=no;
 		 AC_MSG_WARN(
-            [gsl_rng.h not found. compile without traffic generationg distributions])
+			[gsl_rng.h not found. compile without traffic generationg distributions])
 		])
-    ],
+	],
 	[have_gsl=no])
 
 AS_IF([test "x$have_gsl" = "xyes"],
@@ -264,20 +261,20 @@ AS_IF([test "x$have_gsl" = "xyes"],
 		[Define if the system has libgsl installed (-lgsl)])
 
 	 AS_IF([test -z "$GSL_CONFIG"],
-           [AC_PATH_TOOL([GSL_CONFIG], [gsl-config], [no])])
+		[AC_PATH_TOOL([GSL_CONFIG], [gsl-config], [no])])
 
 	 AS_IF([test "x$GSL_CONFIG" = "xno"],
-	    [AC_MSG_NOTICE([gsl-config not found in path])],
+		[AC_MSG_NOTICE([gsl-config not found in path])],
 		[GSL_CFLAGS=`$GSL_CONFIG --cflags`
 		 GSL_LDADD=`$GSL_CONFIG --libs`
 
 		 AC_SUBST([GSL_CFLAGS])
 		 AC_SUBST([GSL_LDADD])
 		])
-    ],
+	],
 	[AS_IF([test "x$with_gsl" = "xyes"],
-	    [AC_MSG_ERROR([libgsl requested but not found])])
-    ])
+		[AC_MSG_ERROR([libgsl requested but not found])])
+	])
 AM_CONDITIONAL([USE_LIBGSL],
 	[test "x$with_gsl" != "xno" -a "x$have_gsl" = "xyes"])
 
@@ -310,12 +307,12 @@ AS_IF([! $XMLRPC_C_CONFIG --features | grep "abyss-server" > /dev/null],
 XMLRPC_C_VERSION=`$XMLRPC_C_CONFIG --version`
 AC_MSG_NOTICE([xmlrpc-c found in version $XMLRPC_C_VERSION])
 AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION],
-    [$XMLRPC_C_VERSION], [the current xmlrpc-c version])
+	[$XMLRPC_C_VERSION], [the current xmlrpc-c version])
 
 AC_CHECK_MEMBERS([struct xmlrpc_curl_xportparms.dont_advertise], [], [],
 	[#include <xmlrpc-c/client.h>
 	 #include <xmlrpc-c/transport.h>
-    ])
+	])
 
 XMLRPC_C_CLIENT_CFLAGS=`$XMLRPC_C_CONFIG client --cflags`
 XMLRPC_C_CLIENT_LDADD=`$XMLRPC_C_CONFIG client --ldadd`
