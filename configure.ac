@@ -108,6 +108,35 @@ AC_CHECK_FUNCS(
 	 strdup \
 	], [], [AC_MSG_ERROR([required function not found])])
 
+AC_CHECK_FUNC([clock_gettime],
+	[have_clock_gettime=yes;
+	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+		[Define if the system has clock_gettime])
+	],
+	[AC_SEARCH_LIBS([clock_gettime], [rt],
+		[have_clock_gettime=yes;
+		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+			[Define if the system has clock_gettime])
+		])
+	])
+AS_IF([test "x$have_clock_gettime" != "xyes"],
+	[AC_MSG_CHECKING([for clock_get_time])
+	 AC_TRY_LINK(
+		[#include <mach/mach.h>],
+		[clock_serv_t cclock; mach_timespec_t mts;
+		 host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &cclock);
+		 clock_get_time(cclock, &mts);
+		],
+		[have_clock_get_time=yes;
+		 AC_DEFINE([HAVE_CLOCK_GET_TIME], [1],
+			[Define if the system has clock_get_time])
+		],
+		[have_clock_get_time=no])
+	 AC_MSG_RESULT([$have_clock_get_time])
+	])
+AS_IF([test "x$have_clock_gettime" != "xyes" -a "x$have_clock_get_time" != "xyes"],
+	[AC_MSG_ERROR([required function not found])])
+
 # Checking for structs
 AC_STRUCT_TM
 
@@ -172,19 +201,6 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 # Checking for functions in libraries
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
-
-AC_CHECK_FUNC([clock_gettime],
-	[have_clock_gettime=yes;
-	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-		[Define if the system has clock_gettime])
-	],
-	[AC_SEARCH_LIBS([clock_gettime], [rt],
-		[have_clock_gettime=yes;
-		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-			[Define if the system has clock_gettime])
-		])
-	])
-AM_CONDITIONAL([CLOCK_GETTIME], [test "x$have_clock_gettime" = "xyes"])
 
 # Checking for feature --enable-debug
 AC_ARG_ENABLE([debug],

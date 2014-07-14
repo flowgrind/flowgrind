@@ -110,13 +110,12 @@ bool normalize_tp(struct timespec *tp);
 void time_add(struct timespec *tp, double seconds);
 
 /**
- * Returns wall-clock time with nanosecond precision
+ * Returns the current wall-clock time with nanosecond precision
  *
- * Get time from 'REALTIME' clock. A system-wide clock that measures real
- * time. This clock is affected by discontinuous jumps in the system time
- * (e.g., if admin manually changes the clock), and by the incremental
- * adjustments performed by NTP. The clock's time represents seconds and
- * nanoseconds since the Epoch
+ * Since the returned time is retrieved from a system-wide clock that measures
+ * real time, the time is may be affected by discontinuous jumps in the system
+ * time (e.g., if admin manually changes the clock), and by the incremental
+ * adjustments performed by NTP.
  *
  * @param[out] tp current time in seconds and nanoseconds since the Epoch
  * @return return 0 for success, or -1 for failure

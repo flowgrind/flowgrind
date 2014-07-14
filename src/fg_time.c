@@ -29,16 +29,21 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#ifdef DEBUG
+#include <assert.h>
+#endif /* DEBUG */
+
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <stdbool.h>
 
-#ifndef HAVE_CLOCK_GETTIME
-#include "fg_gettime.h"
-#endif /* HAVE_CLOCK_GETTIME */
+/* OS X hasn't defined POSIX clocks */
+#if (!defined HAVE_CLOCK_GETTIME && defined HAVE_CLOCK_GET_TIME)
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif /* (!defined HAVE_CLOCK_GETTIME && defined HAVE_CLOCK_GET_TIME) */
 
-#include "fg_error.h"
 #include "fg_time.h"
 
 const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size)
@@ -116,20 +121,52 @@ void time_add(struct timespec *tp, double seconds)
 	normalize_tp(tp);
 }
 
+/* Linux and FreeBSD have POSIX clocks */
+#if defined HAVE_CLOCK_GETTIME
 int gettime(struct timespec *tp)
 {
 	static struct timespec res = {.tv_sec = 0, .tv_nsec = 0};
 
 	/* Find out clock resolution. Will only be retrieved on first call */
 	if (!res.tv_sec && !res.tv_nsec) {
-		if (clock_getres(CLOCK_REALTIME, &res) != 0)
-			err("unable to determine clock resolution");
-
+		clock_getres(CLOCK_REALTIME, &res);
 		/* Clock resolution is lower than expected (1ns) */
-		if (res.tv_nsec != 1)
-			warnx("low clock resolution: %ldns", res.tv_nsec);
+#ifdef DEBUG
+		assert(res.tv_nsec > 1);
+#endif /* DEBUG */
 	}
 
 	/* Get wall-clock time */
 	return clock_gettime(CLOCK_REALTIME, tp);
 }
+#elif defined HAVE_CLOCK_GET_TIME
+/* OS X hasn't defined POSIX clocks */
+int gettime(struct timespec *tp)
+{
+	static struct timespec res = {.tv_sec = 0, .tv_nsec = 0};
+	clock_serv_t cclock;
+	mach_timespec_t mts;
+
+	host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+
+	/* Find out clock resolution. Will only be retrieved on first call */
+	if (!res.tv_sec && !res.tv_nsec) {
+		natural_t attribute[4];
+		mach_msg_type_number_t count = sizeof(attribute)/sizeof(natural_t);
+		clock_get_attributes(cclock, CLOCK_GET_TIME_RES,
+                                     (clock_attr_t) &attribute, &count);
+		/* Clock resolution is lower than expected (1ns) */
+#ifdef DEBUG
+		assert(attribute[0] > 1);
+#endif /* DEBUG */
+	}
+
+	kern_return_t rc = clock_get_time(cclock, &mts);
+	mach_port_deallocate(mach_task_self(), cclock);
+
+	tp->tv_sec = mts.tv_sec;
+	tp->tv_nsec = mts.tv_nsec;
+
+	return (rc == KERN_SUCCESS ? 0 : -1);
+}
+#endif /* (!defined HAVE_CLOCK_GETTIME && defined HAVE_CLOCK_GET_TIME) */
