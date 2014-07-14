@@ -67,18 +67,15 @@ AS_CASE([$host],
 
 	 # test if Macport is used
 	 AS_IF([test -d /opt/local/lib],
-		[AC_SUBST([LDFLAGS], [-L/opt/local/lib])])
+		[LDFLAGS="${LDFLAGS} -L/opt/local/lib"])
 	 AS_IF([test -d /opt/local/include],
-		[AC_SUBST([CFLAGS], [-I/opt/local/include])
-         AC_SUBST([CPPFLAGS], [-I/opt/local/include])
-        ])
+		[CPPFLAGS="${CPPFLAGS} -I/opt/local/include"])
 	],
 
 	[*freebsd*],
 	[AC_DEFINE([__FREEBSD__], [1], [This is a FreeBSD system])
-	 AC_SUBST([LDFLAGS], [-L/usr/local/lib])
-	 AC_SUBST([CFLAGS], [-I/usr/local/include])
-	 AC_SUBST([CPPFLAGS], [-I/usr/local/include])
+	 LDFLAGS="${LDFLAGS} -L/usr/local/lib"
+	 CPPFLAGS="${CPPFLAGS} -I/usr/local/include"
 	],
 
 	[*linux*],
