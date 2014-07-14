@@ -203,11 +203,20 @@ AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
 
 # Checking for feature --enable-debug
+AC_MSG_CHECKING([whether to enable debugging output])
 AC_ARG_ENABLE([debug],
-	[AS_HELP_STRING([--enable-debug], [enable debugging output and symbols])])
-
-AS_IF([test "x$enable_debug" = "xyes"],
-	[AC_DEFINE([DEBUG], [1], [enable debugging output.])])
+	[AS_HELP_STRING([--enable-debug], [turn on debugging output])],
+	[AS_IF([test "x$enable_debug" = "xyes"],
+		[AC_DEFINE([DEBUG], [1],
+			[Define to 1 if debugging output should be enabled.])
+		],
+		[test "x$enable_debug" != "xno"],
+		[enable_debug=no;
+		 AC_MSG_WARN([invalid argument supplied to --enable-debug])
+		])
+	],
+    [enable_debug=no])
+AC_MSG_RESULT([$enable_debug])
 
 # Checking for feature --enable-assert
 AC_MSG_CHECKING([whether to enable assertions])
