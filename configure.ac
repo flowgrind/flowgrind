@@ -50,7 +50,8 @@ AS_IF([test "x$with_doxygen" != "xno"],
 
 AS_IF([test -n "$DOXYGEN"],
 	[AC_DEFINE([HAVE_DOXYGEN], [1],
-		[Define if the system has doxygen installed])],
+		[Define to 1 if the system has doxygen installed.])
+	],
 	[AS_IF([test "x$with_doxygen" = "xyes"],
 		[AC_MSG_ERROR([doxygen requested but not found])])
 	])
@@ -61,9 +62,9 @@ AM_CONDITIONAL([USE_DOXYGEN],
 AC_CANONICAL_HOST
 AS_CASE([$host],
 	[*darwin*],
-	[AC_DEFINE([__DARWIN__], [1], [This is an OS X system])
+	[AC_DEFINE([__DARWIN__], [1], [This is an OS X system.])
 	 AC_DEFINE([_BSD_SOCKLEN_T_], [],
-		[Needed under Darwin so that socklen_t will be defined in <sys/socket.h>])
+		[Needed under Darwin so that socklen_t will be defined in <sys/socket.h>.])
 
 	 # test if Macport is used
 	 AS_IF([test -d /opt/local/lib],
@@ -73,14 +74,14 @@ AS_CASE([$host],
 	],
 
 	[*freebsd*],
-	[AC_DEFINE([__FREEBSD__], [1], [This is a FreeBSD system])
+	[AC_DEFINE([__FREEBSD__], [1], [This is a FreeBSD system.])
 	 LDFLAGS="${LDFLAGS} -L/usr/local/lib"
 	 CPPFLAGS="${CPPFLAGS} -I/usr/local/include"
 	],
 
 	[*linux*],
-	[AC_DEFINE([__LINUX__], [1], [This is a GNU/Linux system])],
-	[AC_MSG_WARN([Unknown system. Hoping this is a GNU/Linux-compatible system])])
+	[AC_DEFINE([__LINUX__], [1], [This is a GNU/Linux system.])],
+	[AC_MSG_WARN([Unknown system. Hoping this is a GNU/Linux-compatible system.])])
 
 # Checking for C features
 AC_C_CONST
@@ -111,12 +112,12 @@ AC_CHECK_FUNCS(
 AC_CHECK_FUNC([clock_gettime],
 	[have_clock_gettime=yes;
 	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-		[Define if the system has clock_gettime])
+		[Define to 1 if the system has clock_gettime.])
 	],
 	[AC_SEARCH_LIBS([clock_gettime], [rt],
 		[have_clock_gettime=yes;
 		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-			[Define if the system has clock_gettime])
+			[Define to 1 if the system has clock_gettime.])
 		])
 	])
 AS_IF([test "x$have_clock_gettime" != "xyes"],
@@ -129,7 +130,7 @@ AS_IF([test "x$have_clock_gettime" != "xyes"],
 		],
 		[have_clock_get_time=yes;
 		 AC_DEFINE([HAVE_CLOCK_GET_TIME], [1],
-			[Define if the system has clock_get_time])
+			[Define to 1 if the system has clock_get_time.])
 		],
 		[have_clock_get_time=no])
 	 AC_MSG_RESULT([$have_clock_get_time])
@@ -207,7 +208,7 @@ AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug], [enable debugging output and symbols])])
 
 AS_IF([test "x$enable_debug" = "xyes"],
-	[AC_DEFINE([DEBUG], [1], [enable debugging output])])
+	[AC_DEFINE([DEBUG], [1], [enable debugging output.])])
 
 # Checking for libpcap
 AC_ARG_WITH([pcap],
@@ -218,19 +219,19 @@ AS_IF([test "x$with_pcap" != "xno"],
 		[AC_CHECK_LIB([pcap], [pcap_create],
 			[have_pcap=yes],
 			[have_pcap=no;
-			 AC_MSG_WARN([libpcap not found. compile without traffic dump feature])
+			 AC_MSG_WARN([libpcap not found. No support for traffic dump])
 			],
 			[-lpcap])
 		],
 		[have_pcap=no;
-		 AC_MSG_WARN([pcap.h not found. compile without traffic dump feature])
+		 AC_MSG_WARN([pcap.h not found. No support for traffic dump])
 		])
 	],
 	[have_pcap=no])
 
 AS_IF([test "x$have_pcap" = "xyes"],
 	[AC_DEFINE([HAVE_LIBPCAP], [1],
-		[Define if the system has libpcap installed (-lpcap)])
+		[Define to 1 if the system has libpcap installed (-lpcap).])
 
 	 AS_IF([test -z "$PCAP_CONFIG"],
 		[AC_PATH_TOOL([PCAP_CONFIG], [pcap-config], [no])])
@@ -253,28 +254,26 @@ AM_CONDITIONAL([USE_LIBPCAP],
 # Checking for libgsl
 AC_ARG_WITH([gsl],
 	[AS_HELP_STRING([--without-gsl],
-		[disable traffic generation distribution feature])])
+		[disable stochastic traffic generation feature])])
 
 AS_IF([test "x$with_gsl" != "xno"],
 	[AC_CHECK_HEADER([gsl/gsl_rng.h],
 		[AC_CHECK_LIB([gsl], [gsl_rng_alloc],
 			[have_gsl=yes],
 			[have_gsl=no;
-			 AC_MSG_WARN(
-				[libgsl not found. compile without traffic generation distributions])
+			 AC_MSG_WARN([libgsl not found. No stochastic traffic generation])
 			],
 			[-lgslcblas])
 		],
 		[have_gsl=no;
-		 AC_MSG_WARN(
-			[gsl_rng.h not found. compile without traffic generationg distributions])
+		 AC_MSG_WARN([gsl_rng.h not found. No stochastic traffic generation])
 		])
 	],
 	[have_gsl=no])
 
 AS_IF([test "x$have_gsl" = "xyes"],
 	[AC_DEFINE([HAVE_LIBGSL], [1],
-		[Define if the system has libgsl installed (-lgsl)])
+		[Define to 1 if the system has libgsl installed (-lgsl).])
 
 	 AS_IF([test -z "$GSL_CONFIG"],
 		[AC_PATH_TOOL([GSL_CONFIG], [gsl-config], [no])])
