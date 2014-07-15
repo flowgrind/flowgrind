@@ -102,9 +102,6 @@ static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
 
-/** Command line option parser */
-static struct _arg_parser parser;
-
 /** Controller options */
 static struct _controller_options copt;
 
@@ -2191,7 +2188,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 	if (optdouble > 5e9)
 		warnx("rate of flow %d too high", flow_id);
 
-	cflow[flow_id].settings[endpoint_id].write_rate_str = arg;
+	cflow[flow_id].settings[endpoint_id].write_rate_str = strdup(arg);
 	cflow[flow_id].settings[endpoint_id].write_rate = optdouble;
 }
 
@@ -2570,7 +2567,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	#ifdef HAVE_LIBPCAP
 	case 'e':
-		copt.dump_prefix = arg;
+		copt.dump_prefix = strdup(arg);
 		break;
 	#endif /* HAVE_LIBPCAP */
 	case 'i':
@@ -2682,6 +2679,8 @@ static void parse_cmdline(int argc, char *argv[])
 		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT},
 		{0, 0, ap_no, 0}
 	};
+
+	struct _arg_parser parser;
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
@@ -2814,6 +2813,8 @@ static void parse_cmdline(int argc, char *argv[])
 			}
 		}
 	}
+
+	ap_free(&parser);
 }
 
 /**
@@ -2918,7 +2919,5 @@ int main(int argc, char *argv[])
 	xmlrpc_env_clean(&rpc_env);
 
 	xmlrpc_client_teardown_global_const();
-
-	ap_free(&parser);
 	DEBUG_MSG(LOG_WARNING, "bye");
 }
