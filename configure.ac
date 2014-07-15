@@ -59,6 +59,7 @@ AS_CASE([$host],
 AC_PROG_CC([cc gcc clang])
 AM_PROG_CC_C_O
 AC_PROG_CPP
+AC_LANG([C])
 AC_USE_SYSTEM_EXTENSIONS
 AC_C_CONST
 AC_C_INLINE
@@ -286,6 +287,7 @@ AC_CHECK_FUNCS(
 	 strdup \
 	], [], [AC_MSG_ERROR([required function not found])])
 
+# Checking for function clock_gettime & clock_get_time
 AC_CHECK_FUNC([clock_gettime],
 	[have_clock_gettime=yes;
 	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
@@ -297,13 +299,16 @@ AC_CHECK_FUNC([clock_gettime],
 			[Define to 1 if the system has clock_gettime.])
 		])
 	])
+
 AS_IF([test "x$have_clock_gettime" != "xyes"],
 	[AC_MSG_CHECKING([for clock_get_time])
-	 AC_TRY_LINK(
-		[#include <mach/mach.h>],
-		[clock_serv_t cclock; mach_timespec_t mts;
-		 host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &cclock);
-		 clock_get_time(cclock, &mts);
+	 AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM(
+			[[#include <mach/mach.h>]],
+			[[clock_serv_t cclock; mach_timespec_t mts;
+			  host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &cclock);
+			  clock_get_time(cclock, &mts);
+			]])
 		],
 		[have_clock_get_time=yes;
 		 AC_DEFINE([HAVE_CLOCK_GET_TIME], [1],
