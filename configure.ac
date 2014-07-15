@@ -203,66 +203,6 @@ AS_IF([test "x$have_gsl" = "xyes"],
 AM_CONDITIONAL([USE_LIBGSL],
 	[test "x$with_gsl" != "xno" -a "x$have_gsl" = "xyes"])
 
-# Checking for functions
-AC_FUNC_ERROR_AT_LINE
-AC_FUNC_FORK
-AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
-AC_FUNC_SELECT_ARGTYPES
-AC_FUNC_STRFTIME
-AC_CHECK_FUNCS(
-	[bzero \
-	 memset \
-	 pselect \
-	 socket \
-	 strchr \
-	 strerror \
-	 uname \
-	 asprintf \
-	 strdup \
-	], [], [AC_MSG_ERROR([required function not found])])
-
-AC_CHECK_FUNC([clock_gettime],
-	[have_clock_gettime=yes;
-	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-		[Define to 1 if the system has clock_gettime.])
-	],
-	[AC_SEARCH_LIBS([clock_gettime], [rt],
-		[have_clock_gettime=yes;
-		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-			[Define to 1 if the system has clock_gettime.])
-		])
-	])
-AS_IF([test "x$have_clock_gettime" != "xyes"],
-	[AC_MSG_CHECKING([for clock_get_time])
-	 AC_TRY_LINK(
-		[#include <mach/mach.h>],
-		[clock_serv_t cclock; mach_timespec_t mts;
-		 host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &cclock);
-		 clock_get_time(cclock, &mts);
-		],
-		[have_clock_get_time=yes;
-		 AC_DEFINE([HAVE_CLOCK_GET_TIME], [1],
-			[Define to 1 if the system has clock_get_time.])
-		],
-		[have_clock_get_time=no])
-	 AC_MSG_RESULT([$have_clock_get_time])
-	])
-AS_IF([test "x$have_clock_gettime" != "xyes" -a "x$have_clock_get_time" != "xyes"],
-	[AC_MSG_ERROR([required function not found])])
-
-# Checking for structures
-AC_STRUCT_TM
-
-# Checking for types
-AC_TYPE_SIGNAL
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_TYPE_INT8_T
-AC_TYPE_UINT32_T
-AC_TYPE_INT32_T
-AC_TYPE_UNSIGNED_LONG_LONG_INT
-
 # Checking fot header files
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
@@ -314,6 +254,66 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 # Checking for libraries
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
+
+# Checking for structures
+AC_STRUCT_TM
+
+# Checking for types
+AC_TYPE_SIGNAL
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_INT8_T
+AC_TYPE_UINT32_T
+AC_TYPE_INT32_T
+AC_TYPE_UNSIGNED_LONG_LONG_INT
+
+# Checking for functions
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_FUNC_MEMCMP
+AC_FUNC_SELECT_ARGTYPES
+AC_FUNC_STRFTIME
+AC_CHECK_FUNCS(
+	[bzero \
+	 memset \
+	 pselect \
+	 socket \
+	 strchr \
+	 strerror \
+	 uname \
+	 asprintf \
+	 strdup \
+	], [], [AC_MSG_ERROR([required function not found])])
+
+AC_CHECK_FUNC([clock_gettime],
+	[have_clock_gettime=yes;
+	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+		[Define to 1 if the system has clock_gettime.])
+	],
+	[AC_SEARCH_LIBS([clock_gettime], [rt],
+		[have_clock_gettime=yes;
+		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+			[Define to 1 if the system has clock_gettime.])
+		])
+	])
+AS_IF([test "x$have_clock_gettime" != "xyes"],
+	[AC_MSG_CHECKING([for clock_get_time])
+	 AC_TRY_LINK(
+		[#include <mach/mach.h>],
+		[clock_serv_t cclock; mach_timespec_t mts;
+		 host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &cclock);
+		 clock_get_time(cclock, &mts);
+		],
+		[have_clock_get_time=yes;
+		 AC_DEFINE([HAVE_CLOCK_GET_TIME], [1],
+			[Define to 1 if the system has clock_get_time.])
+		],
+		[have_clock_get_time=no])
+	 AC_MSG_RESULT([$have_clock_get_time])
+	])
+AS_IF([test "x$have_clock_gettime" != "xyes" -a "x$have_clock_get_time" != "xyes"],
+	[AC_MSG_ERROR([required function not found])])
 
 # Checking for CURL library
 AS_IF([test -z "$CURL_CONFIG"],
