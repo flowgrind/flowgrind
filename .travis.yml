@@ -67,7 +67,7 @@ install:
 
 before_script:
     - autoreconf -i
-    - ./configure "$EXTRA_CONFIG"
+    - ./configure $EXTRA_CONFIG
 
 script:
     - if [ "$COVERITY_SCAN" != 1 ]; then  make -j2; fi
