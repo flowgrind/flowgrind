@@ -31,10 +31,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef DEBUG
 #include <assert.h>
-#endif /* DEBUG */
-
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
@@ -1267,9 +1264,7 @@ exit_outer_loop:
 				active_flows--;
 				DEBUG_MSG(LOG_DEBUG, "remaining active flows: "
 					  "%d", active_flows);
-#ifdef DEBUG
 				assert(active_flows >= 0);
-#endif /* DEBUG */
 			}
 		}
 		return;

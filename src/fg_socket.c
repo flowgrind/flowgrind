@@ -29,6 +29,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -51,10 +52,6 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif /* HAVE_STRING_H */
-
-#ifdef DEBUG
-#include <assert.h>
-#endif /* DEBUG */
 
 #ifdef HAVE_LIBPCAP
 #include <pcap.h>
@@ -392,10 +389,9 @@ const char *fg_nameinfo(const struct sockaddr *sa, socklen_t salen)
 
 char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b)
 {
-#ifdef DEBUG
 	assert(a != NULL);
 	assert(b != NULL);
-#endif /* DEBUG */
+
 	if (a->sa_family != b->sa_family)
 		return 0;
 

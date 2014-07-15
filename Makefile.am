@@ -71,12 +71,6 @@ flowgrindd_LDADD += $(PCAP_LDADD)
 flowgrindd_CFLAGS += $(PCAP_CFLAGS)
 endif
 
-# system has no clock_gettime
-if ! CLOCK_GETTIME
-flowgrind_SOURCES += src/fg_gettime.h src/fg_gettime.c
-flowgrindd_SOURCES += src/fg_gettime.h src/fg_gettime.c
-endif
-
 .PHONY: gitversion.h mrproper html.timestamp clean-local
 
 gitversion.h:

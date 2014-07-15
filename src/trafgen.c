@@ -27,10 +27,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef DEBUG
-#include <assert.h>
-#endif /* DEBUG */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
