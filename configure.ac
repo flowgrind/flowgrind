@@ -231,7 +231,14 @@ AC_CHECK_HEADERS(
 	 sys/utsname.h \
 	], [], [AC_MSG_ERROR([required header not found])])
 
-AC_CHECK_HEADERS([sys/socket.h])
+AC_CHECK_HEADERS(
+	[sys/socket.h \
+	 pthread_np.h \
+	])
+
+AC_CHECK_HEADERS(
+	[sys/cpuset.h], [], [],
+	[#include <sys/param.h>])
 
 AC_CHECK_HEADERS([net/if.h], [],
 	[AC_MSG_ERROR([required header not found])],
@@ -258,6 +265,24 @@ AC_SEARCH_LIBS([pthread_create], [pthread])
 
 # Checking for structures
 AC_STRUCT_TM
+
+# Checking for cpuset_t struct
+AC_MSG_CHECKING([for struct cpuset_t])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#if HAVE_SYS_CPUSET_H
+		  #include <sys/param.h>
+		  #include <sys/cpuset.h>
+		  #endif
+		]],
+		[[cpuset_t cpuset;]])
+	],
+	[have_cpuset_t=yes;
+	 AC_DEFINE([HAVE_CPUSET_T], [1],
+		[Define to 1 if the system has cpuset_t.])
+	],
+	[have_cpuset_t=no])
+AC_MSG_RESULT([$have_cpuset_t])
 
 # Checking for types
 AC_TYPE_SIGNAL
@@ -317,7 +342,62 @@ AS_IF([test "x$have_clock_gettime" != "xyes"],
 		[have_clock_get_time=no])
 	 AC_MSG_RESULT([$have_clock_get_time])
 	])
-AS_IF([test "x$have_clock_gettime" != "xyes" -a "x$have_clock_get_time" != "xyes"],
+
+AS_IF([test "x$have_clock_gettime" != "xyes" -a \
+			"x$have_clock_get_time" != "xyes"],
+	[AC_MSG_ERROR([required function not found])])
+
+# Checking for function pthread_getaffinity_np & thread_policy_get
+AC_MSG_CHECKING([for pthread_getaffinity_np])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#include <pthread.h>
+		  #if HAVE_PTHREAD_NP_H
+		  #include <pthread_np.h>
+		  #endif
+		  #if HAVE_SYS_CPUSET_H
+		  #include <sys/param.h>
+		  #include <sys/cpuset.h>
+		  #endif
+		  #if HAVE_CPUSET_T
+		  typedef cpuset_t cpu_set_t;
+		  #endif
+		]],
+		[[cpu_set_t cpuset; CPU_ZERO(&cpuset);
+		  pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+		]])
+	],
+	[have_pthread_getaffinity_np=yes;
+	 AC_DEFINE([HAVE_PTHREAD_AFFINITY_NP], [1],
+		[Define to 1 if the system has pthread_getaffinity_np.])
+	],
+	[have_pthread_getaffinity_np=no])
+AC_MSG_RESULT([$have_pthread_getaffinity_np])
+
+AS_IF([test "x$have_pthread_getaffinity_np" != "xyes"],
+	[AC_MSG_CHECKING([for thread_policy_get])
+	 AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM(
+			[[#include <mach/mach.h>
+			  #include <mach/mach_time.h>
+			]],
+			[[thread_affinity_policy_data_t policy;
+			  mach_msg_type_number_t count = THREAD_AFFINITY_POLICY_COUNT;
+			  boolean_t	get_default = FALSE;
+			  thread_policy_get(mach_thread_self(), THREAD_AFFINITY_POLICY,
+								(thread_policy_t) &policy, &count, &get_default);
+			]])
+		],
+		[have_thread_policy_get=yes;
+		 AC_DEFINE([HAVE_THREAD_POLICY], [1],
+			[Define to 1 if the system has thread_policy_get.])
+		],
+		[have_thread_policy_get=no])
+	 AC_MSG_RESULT([$have_thread_policy_get])
+	])
+
+AS_IF([test "x$have_pthread_getaffinity_np" != "xyes" -a \
+			"x$have_thread_policy_get" != "xyes"],
 	[AC_MSG_ERROR([required function not found])])
 
 # Checking for CURL library
