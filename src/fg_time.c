@@ -134,8 +134,8 @@ int gettime(struct timespec *tp)
 	/* Get wall-clock time */
 	return clock_gettime(CLOCK_REALTIME, tp);
 }
+/* OS X hasn't defined POSIX clocks, but clock_get_time() */
 #elif defined HAVE_CLOCK_GET_TIME
-/* OS X hasn't defined POSIX clocks */
 int gettime(struct timespec *tp)
 {
 	static struct timespec res = {.tv_sec = 0, .tv_nsec = 0};
@@ -162,4 +162,4 @@ int gettime(struct timespec *tp)
 
 	return (rc == KERN_SUCCESS ? 0 : -1);
 }
-#endif /* (!defined HAVE_CLOCK_GETTIME && defined HAVE_CLOCK_GET_TIME) */
+#endif /* HAVE_CLOCK_GETTIME */
