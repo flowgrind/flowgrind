@@ -80,12 +80,6 @@
 #define SOL_IP IPPROTO_IP
 #endif /* SOL_IP */
 
-#ifdef __DARWIN__
-#define RANDOM_MAX  LONG_MAX        /* Darwin */
-#else
-#define RANDOM_MAX  RAND_MAX        /* Linux, FreeBSD */
-#endif /* __SOLARIS__ */
-
 #define CONGESTION_LIMIT 10000
 
 int daemon_pipe[2];
