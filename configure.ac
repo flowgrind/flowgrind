@@ -357,7 +357,9 @@ AS_IF([test "x$have_clock_gettime" != "xyes"],
 	[AC_MSG_CHECKING([for clock_get_time])
 	 AC_LINK_IFELSE(
 		[AC_LANG_PROGRAM(
-			[[#include <mach/mach.h>]],
+			[[#include <mach/mach.h>
+			  #include <mach/clock.h>
+			]],
 			[[clock_serv_t cclock; mach_timespec_t mts;
 			  host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &cclock);
 			  clock_get_time(cclock, &mts);
