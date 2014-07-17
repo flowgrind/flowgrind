@@ -62,7 +62,7 @@ enum tcp_stack {
 	BYTE_BASED
 };
 
-#ifndef __LINUX__
+#ifndef HAVE_TCP_CA_STATE
 /** Values for Linux tcpi_state, if not compiled on Linux */
 enum tcp_ca_state {
 	/** TCP sender follows fast path execution (normal state) */
@@ -76,7 +76,7 @@ enum tcp_ca_state {
 	/** Retransmission timeout occurred */
         TCP_CA_Loss = 4
 };
-#endif /* __LINUX__ */
+#endif /* HAVE_TCP_CA_STATE */
 
 /** IDs to explicit address an intermediated interval report column */
 enum column_id {

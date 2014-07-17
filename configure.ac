@@ -298,6 +298,20 @@ AC_LINK_IFELSE(
 	[have_cpuset_t=no])
 AC_MSG_RESULT([$have_cpuset_t])
 
+# Checking for enum tcp_ca_state
+AC_MSG_CHECKING([for enum tcp_ca_state])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#include <netinet/tcp.h>]],
+		[[enum tcp_ca_state state;]])
+	],
+	[have_tcp_ca_state=yes;
+	 AC_DEFINE([HAVE_TCP_CA_STATE], [1],
+		[Define to 1 if the system has tcp_ca_state.])
+	],
+	[have_tcp_ca_state=no])
+AC_MSG_RESULT([$have_tcp_ca_state])
+
 # Checking for types
 AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
