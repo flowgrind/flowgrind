@@ -263,6 +263,20 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
 
+# Checking for declarations
+AC_CHECK_DECL([IP_MTU_DISCOVER],
+	[AC_DEFINE([HAVE_IP_MTU_DISCOVER], [1],
+		[Define to 1 if system has IP_MTU_DISCOVER as socket option.])],
+	[], [[#include <netinet/ip.h>]])
+AC_CHECK_DECL([TCP_CORK],
+	[AC_DEFINE([HAVE_TCP_CORK], [1],
+		[Define to 1 if system has TCP_CORK as socket option.])],
+	[], [[#include <netinet/tcp.h>]])
+AC_CHECK_DECL([TCP_CONGESTION],
+	[AC_DEFINE([HAVE_TCP_CONGESTION], [1],
+		[Define to 1 if system has TCP_CONGESTION as socket option.])],
+	[], [[#include <netinet/tcp.h>]])
+
 # Checking for structures
 AC_STRUCT_TM
 
