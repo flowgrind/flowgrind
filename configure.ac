@@ -263,6 +263,15 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
 
+# Checking for types
+AC_TYPE_SIGNAL
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_INT8_T
+AC_TYPE_UINT32_T
+AC_TYPE_INT32_T
+AC_TYPE_UNSIGNED_LONG_LONG_INT
+
 # Checking for declarations
 AC_CHECK_DECL([IP_MTU_DISCOVER],
 	[AC_DEFINE([HAVE_IP_MTU_DISCOVER], [1],
@@ -280,7 +289,7 @@ AC_CHECK_DECL([TCP_CONGESTION],
 # Checking for structures
 AC_STRUCT_TM
 
-# Checking for cpuset_t struct
+# Checking for struct cpuset_t
 AC_MSG_CHECKING([for struct cpuset_t])
 AC_LINK_IFELSE(
 	[AC_LANG_PROGRAM(
@@ -311,15 +320,6 @@ AC_LINK_IFELSE(
 	],
 	[have_tcp_ca_state=no])
 AC_MSG_RESULT([$have_tcp_ca_state])
-
-# Checking for types
-AC_TYPE_SIGNAL
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_TYPE_INT8_T
-AC_TYPE_UINT32_T
-AC_TYPE_INT32_T
-AC_TYPE_UNSIGNED_LONG_LONG_INT
 
 # Checking for functions
 AC_FUNC_ERROR_AT_LINE
