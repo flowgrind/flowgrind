@@ -285,6 +285,10 @@ AC_CHECK_DECL([TCP_CONGESTION],
 	[AC_DEFINE([HAVE_SO_TCP_CONGESTION], [1],
 		[Define to 1 if system has TCP_CONGESTION as socket option.])],
 	[], [[#include <netinet/tcp.h>]])
+AC_CHECK_DECL([TCP_INFO],
+	[AC_DEFINE([HAVE_SO_TCP_INFO], [1],
+		[Define to 1 if system has TCP_INFO as socket option.])],
+	[], [[#include <netinet/tcp.h>]])
 
 # Checking for structures
 AC_STRUCT_TM
@@ -306,6 +310,20 @@ AC_LINK_IFELSE(
 	],
 	[have_cpuset_t=no])
 AC_MSG_RESULT([$have_cpuset_t])
+
+# Checking for struct tcp_info
+AC_MSG_CHECKING([for struct tcp_info])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#include <netinet/tcp.h>]],
+		[[struct tcp_info ti;]])
+	],
+	[have_tcp_info=yes;
+	 AC_DEFINE([HAVE_TCP_INFO], [1],
+		[Define to 1 if the system has struct tcp_info.])
+	],
+	[have_tcp_info=no])
+AC_MSG_RESULT([$have_tcp_info])
 
 # Checking for enum tcp_ca_state
 AC_MSG_CHECKING([for enum tcp_ca_state])
