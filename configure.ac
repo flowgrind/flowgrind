@@ -238,26 +238,26 @@ AC_CHECK_HEADERS(
 
 AC_CHECK_HEADERS(
 	[sys/cpuset.h], [], [],
-	[#include <sys/param.h>])
+	[[#include <sys/param.h>]])
 
 AC_CHECK_HEADERS([net/if.h], [],
 	[AC_MSG_ERROR([required header not found])],
-	[#include <stdio.h>
-	 #include <stdlib.h>
-	 #include <stddef.h>
-	 #include <sys/socket.h>
-	])
+	[[#include <stdio.h>
+	  #include <stdlib.h>
+	  #include <stddef.h>
+	  #include <sys/socket.h>
+	]])
 
 AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 	[AC_MSG_ERROR([required header not found])],
-	[#include <stdio.h>
-	 #include <stdlib.h>
-	 #include <stddef.h>
-	 #include <sys/types.h>
-	 #include <sys/socket.h>
-	 #include <netinet/in.h>
-	 #include <netinet/in_systm.h>
-	])
+	[[#include <stdio.h>
+	  #include <stdlib.h>
+	  #include <stddef.h>
+	  #include <sys/types.h>
+	  #include <sys/socket.h>
+	  #include <netinet/in.h>
+	  #include <netinet/in_systm.h>
+	]])
 
 # Checking for libraries
 AC_SEARCH_LIBS([log], [m])
@@ -462,9 +462,9 @@ AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION],
 	[$XMLRPC_C_VERSION], [the current xmlrpc-c version])
 
 AC_CHECK_MEMBERS([struct xmlrpc_curl_xportparms.dont_advertise], [], [],
-	[#include <xmlrpc-c/client.h>
-	 #include <xmlrpc-c/transport.h>
-	])
+	[[#include <xmlrpc-c/client.h>
+	  #include <xmlrpc-c/transport.h>
+	]])
 
 XMLRPC_C_CLIENT_CFLAGS=`$XMLRPC_C_CONFIG client --cflags`
 XMLRPC_C_CLIENT_LDADD=`$XMLRPC_C_CONFIG client --ldadd`
