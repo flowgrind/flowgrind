@@ -337,7 +337,7 @@ static void usage_sockopt(void)
 		"repeatedly pass the same endpoint in order to specify multiple socket options\n\n"
 
 		"Standard socket options:\n", progname);
-#ifdef HAVE_TCP_CONGESTION
+#ifdef HAVE_SO_TCP_CONGESTION
 	FILE *fp;
 	char buf1[1024];
 
@@ -363,7 +363,7 @@ static void usage_sockopt(void)
 
 		pclose(fp);
 	}
-#endif /* HAVE_TCP_CONGESTION */
+#endif /* HAVE_SO_TCP_CONGESTION */
 	fprintf(stderr,
 		"  -O x=TCP_CORK\n"
 		"               set TCP_CORK on test socket\n"

@@ -152,9 +152,9 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port, str
 
 int add_flow_source(struct _request_add_flow_source *request)
 {
-#ifdef HAVE_TCP_CONGESTION
+#ifdef HAVE_SO_TCP_CONGESTION
 	socklen_t opt_len = 0;
-#endif /* HAVE_TCP_CONGESTION */
+#endif /* HAVE_SO_TCP_CONGESTION */
 	struct _flow *flow;
 
 	if (fg_list_size(&flows) >= MAX_FLOWS) {
@@ -209,7 +209,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 		return -1;
 	}
 
-#ifdef HAVE_TCP_CONGESTION
+#ifdef HAVE_SO_TCP_CONGESTION
 	opt_len = sizeof(request->cc_alg);
 	if (getsockopt(flow->fd, IPPROTO_TCP, TCP_CONGESTION,
 				request->cc_alg, &opt_len) == -1) {
@@ -218,7 +218,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 		uninit_flow(flow);
 		return -1;
 	}
-#endif /* HAVE_TCP_CONGESTION */
+#endif /* HAVE_SO_TCP_CONGESTION */
 
 #ifdef HAVE_LIBPCAP
 	fg_pcap_go(flow);

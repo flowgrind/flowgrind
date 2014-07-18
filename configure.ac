@@ -274,15 +274,15 @@ AC_TYPE_UNSIGNED_LONG_LONG_INT
 
 # Checking for declarations
 AC_CHECK_DECL([IP_MTU_DISCOVER],
-	[AC_DEFINE([HAVE_IP_MTU_DISCOVER], [1],
+	[AC_DEFINE([HAVE_SO_IP_MTU_DISCOVER], [1],
 		[Define to 1 if system has IP_MTU_DISCOVER as socket option.])],
 	[], [[#include <netinet/ip.h>]])
 AC_CHECK_DECL([TCP_CORK],
-	[AC_DEFINE([HAVE_TCP_CORK], [1],
+	[AC_DEFINE([HAVE_SO_TCP_CORK], [1],
 		[Define to 1 if system has TCP_CORK as socket option.])],
 	[], [[#include <netinet/tcp.h>]])
 AC_CHECK_DECL([TCP_CONGESTION],
-	[AC_DEFINE([HAVE_TCP_CONGESTION], [1],
+	[AC_DEFINE([HAVE_SO_TCP_CONGESTION], [1],
 		[Define to 1 if system has TCP_CONGESTION as socket option.])],
 	[], [[#include <netinet/tcp.h>]])
 
@@ -302,7 +302,7 @@ AC_LINK_IFELSE(
 	],
 	[have_cpuset_t=yes;
 	 AC_DEFINE([HAVE_CPUSET_T], [1],
-		[Define to 1 if the system has cpuset_t.])
+		[Define to 1 if the system has struct cpuset_t.])
 	],
 	[have_cpuset_t=no])
 AC_MSG_RESULT([$have_cpuset_t])
@@ -316,7 +316,7 @@ AC_LINK_IFELSE(
 	],
 	[have_tcp_ca_state=yes;
 	 AC_DEFINE([HAVE_TCP_CA_STATE], [1],
-		[Define to 1 if the system has tcp_ca_state.])
+		[Define to 1 if the system has enum tcp_ca_state.])
 	],
 	[have_tcp_ca_state=no])
 AC_MSG_RESULT([$have_tcp_ca_state])
