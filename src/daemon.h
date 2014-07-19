@@ -118,7 +118,7 @@ struct _flow
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
 		unsigned long long bytes_read;
 		unsigned long long bytes_written;
-#else
+#else /* HAVE_UNSIGNED_LONG_LONG_INT */
 		long bytes_read;
 		long bytes_written;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */

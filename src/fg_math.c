@@ -88,7 +88,7 @@ extern void init_math_functions (struct _flow *flow, unsigned long seed)
 	DEBUG_MSG(LOG_WARNING, "initalized local libgsl random functions for "
 		  "flow %d with seed %lu, gsl generator is: %s",
 		  flow->id,seed,gsl_rng_name (flow->r));
-#else
+#else /* HAVE_LIBGSL */
 	srand((unsigned int)seed);
 	DEBUG_MSG(LOG_WARNING, "initalized posix random functions with seed "
 		  "%u", (unsigned int)seed);
@@ -99,7 +99,7 @@ extern void free_math_functions (struct _flow *flow)
 {
 #ifdef HAVE_LIBGSL
 	gsl_rng_free(flow->r);
-#else
+#else /* HAVE_LIBGSL */
 	UNUSED_ARGUMENT(flow);
 #endif /* HAVE_LIBGSL */
 }
@@ -113,7 +113,7 @@ static inline double rn_uniform(struct _flow *flow)
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_rng_get(r);
-#else
+#else /* HAVE_LIBGSL */
 	return rand();
 #endif /* HAVE_LIBGSL */
 }
@@ -123,7 +123,7 @@ static inline double rn_uniform_zero_to_one(struct _flow *flow)
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_rng_uniform_pos(r);
-#else
+#else /* HAVE_LIBGSL */
 	return rn_uniform(flow)/(RAND_MAX+1.0);
 #endif /* HAVE_LIBGSL */
 }
@@ -140,7 +140,7 @@ extern double dist_exponential(struct _flow *flow, const double mu)
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_ran_exponential(r, mu);
-#else
+#else /* HAVE_LIBGSL */
 	return -log(rn_uniform(flow))+mu;
 #endif /* HAVE_LIBGSL */
 }
@@ -153,7 +153,7 @@ extern double dist_uniform(struct _flow *flow, const double minval,
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_ran_flat(r, minval, maxval);
-#else
+#else /* HAVE_LIBGSL */
 	const double x = rn_uniform_zero_to_one(flow);
 	return ((maxval-minval) * x) + minval;
 #endif /* HAVE_LIBGSL */
@@ -165,7 +165,7 @@ extern double dist_normal(struct _flow *flow, const double mu,
 #ifdef HAVE_LIBGSL
 	const gsl_rng * r = flow->r;
 	return gsl_ran_gaussian (r, sigma_square) + mu;
-#else
+#else /* HAVE_LIBGSL */
 	const double x = rn_uniform_minusone_to_one(flow);
 	return (1.0 / sqrt(2.0*M_PI*sigma_square)) *
 		exp((-pow ((x-mu),2)) / (2 * sigma_square));
@@ -178,7 +178,7 @@ extern double dist_lognormal(struct _flow *flow, const double zeta,
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_ran_lognormal (r, zeta, sigma);
-#else
+#else /* HAVE_LIBGSL */
 	/* not implemented */
 	UNUSED_ARGUMENT(flow);
 	UNUSED_ARGUMENT(zeta);
@@ -193,7 +193,7 @@ extern int dist_bernoulli(struct _flow *flow, const double p)
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_ran_bernoulli (r, p);
-#else
+#else /* HAVE_LIBGSL */
 	return rn_uniform_zero_to_one(flow) <= p;
 #endif /* HAVE_LIBGSL */
 }
@@ -204,7 +204,7 @@ extern double dist_pareto (struct _flow *flow, const double k,
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_ran_pareto (r, k, x_min);
-#else
+#else /* HAVE_LIBGSL */
 	const double x = rn_uniform(flow);
 	if (x < x_min)
 		return 0;
@@ -219,7 +219,7 @@ extern double dist_weibull (struct _flow *flow, const double alpha,
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_ran_weibull (r, alpha, beta);
-#else
+#else /* HAVE_LIBGSL */
 	const double x = rn_uniform_zero_to_one(flow);
 	return  alpha * beta * pow (x,beta-1.0) * exp(-alpha * pow(x,beta));
 #endif /* HAVE_LIBGSL */
@@ -230,7 +230,7 @@ extern double dist_chisq (struct _flow *flow, const double nu)
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
 	return gsl_ran_chisq(r, nu);
-#else
+#else /* HAVE_LIBGSL */
 	/* not implemented */
 	UNUSED_ARGUMENT(flow);
 	UNUSED_ARGUMENT(nu);

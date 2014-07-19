@@ -183,7 +183,7 @@ void uninit_flow(struct _flow *flow)
 			logging_log(LOG_WARNING, "failed to join dump "
 					"thread: %s", strerror(rc));
 	}
-#endif
+#endif /* HAVE_LIBPCAP */
 	free_all(flow->read_block, flow->write_block, flow->addr, flow->error);
 	free_math_functions(flow);
 }
@@ -345,9 +345,9 @@ static void start_flows(struct _request_start_flows *request)
 		start.tv_sec = request->start_timestamp;
 		start.tv_nsec = 0;
 	}
-#else
+#else /* 0 */
 	UNUSED_ARGUMENT(request);
-#endif
+#endif /* 0 */
 
 	const struct _list_node *node = fg_list_front(&flows);
 	while (node) {
@@ -657,7 +657,7 @@ int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
 	CPY_INFO_MEMBER(tcpi_fackets);
 	CPY_INFO_MEMBER(tcpi_reordering);
 #endif /* __LINUX__ */
-#else
+#else /* HAVE_TCP_INFO */
 	memset(info, 0, sizeof(struct _fg_tcp_info));
 #endif /* HAVE_TCP_INFO */
 	return 0;
@@ -1021,9 +1021,9 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 #ifdef DEBUG
 	char cbuf[512];
 	struct cmsghdr *cmsg;
-#else
+#else /* DEBUG */
 	char cbuf[16];
-#endif
+#endif /* DEBUG */
 	iov.iov_base = flow->read_block +
 		       flow->current_block_bytes_read;
 	iov.iov_len = bytes;
@@ -1066,7 +1066,7 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, "
 			  "len = %zu",
 		flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
-#endif
+#endif /* DEBUG */
 
 	return rc;
 }
@@ -1121,7 +1121,7 @@ static int read_data(struct _flow *flow)
 				  flow->current_read_block_size,
 				  requested_response_block_size);
 		}
-#endif
+#endif /* DEBUG */
 		/* read rest of block, if we have more to read */
 		if (flow->current_block_bytes_read <
 		    flow->current_read_block_size)
