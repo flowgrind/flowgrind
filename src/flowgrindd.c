@@ -120,8 +120,7 @@ static void usage(short status)
 		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
 		"                 increase the verbosity (no daemon, log to stderr)\n"
 #else
-		"  -d             don't fork into background, increase debugging verbosity.\n"
-		"                 Add option multiple times to increase the verbosity\n"
+		"  -d             don't fork into background, log to stderr\n"
 #endif /* DEBUG */
 		"  -h, --help     display this help and exit\n"
 		"  -p #           XML-RPC server port\n"
@@ -1026,6 +1025,8 @@ static void parse_cmdline(int argc, char *argv[])
 		{'c', 0, ap_yes, 0, 0},
 #ifdef DEBUG
 		{'d', "debug", ap_no, 0, 0},
+#else
+		{'d', 0, ap_no, 0, 0},
 #endif
 		{'h', "help", ap_no, 0, 0},
 		{'o', 0, ap_yes, 0, 0},
@@ -1065,7 +1066,9 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 		case 'd':
 			log_type = LOGTYPE_STDERR;
+#ifdef DEBUG
 			increase_debuglevel();
+#endif /* DEBUG */
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
