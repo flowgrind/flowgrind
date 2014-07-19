@@ -119,7 +119,7 @@ static void usage(short status)
 #ifdef DEBUG
 		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
 		"                 increase the verbosity (no daemon, log to stderr)\n"
-#else
+#else /* DEBUG */
 		"  -d             don't fork into background, log to stderr\n"
 #endif /* DEBUG */
 		"  -h, --help     display this help and exit\n"
@@ -1010,7 +1010,7 @@ int process_dump_dir() {
 
 	return 1;
 }
-#endif
+#endif /* HAVE_LIBPCAP */
 
 /**
  * Parse command line options to initialize global options
@@ -1025,7 +1025,7 @@ static void parse_cmdline(int argc, char *argv[])
 		{'c', 0, ap_yes, 0, 0},
 #ifdef DEBUG
 		{'d', "debug", ap_no, 0, 0},
-#else
+#else /* DEBUG */
 		{'d', 0, ap_no, 0, 0},
 #endif
 		{'h', "help", ap_no, 0, 0},
@@ -1034,7 +1034,7 @@ static void parse_cmdline(int argc, char *argv[])
 		{'v', "version", ap_no, 0, 0},
 #ifdef HAVE_LIBPCAP
 		{'w', 0, ap_yes, 0, 0},
-#endif
+#endif /* HAVE_LIBPCAP */
 		{0, 0, ap_no, 0, 0}
 	};
 

@@ -231,7 +231,7 @@ static void usage(short status)
 		"                 'iat', 'kernel' (all show per default), and 'blocks', 'rtt',\n"
 #ifdef DEBUG
 		"                 'delay', 'status' (optional)\n"
-#else
+#else /* DEBUG */
 		"                 'delay' (optional)\n"
 #endif /* DEBUG */
 #ifdef DEBUG
@@ -275,7 +275,7 @@ static void usage(short status)
 		"                 to the second flow. With -1 all flow are refered\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
-#else
+#else /* HAVE_LIBGSL */
 		"  -G x=(q|p|g):(C|U):#1:[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"                 activate stochastic traffic generation and set parameters\n"
@@ -411,7 +411,7 @@ static void usage_trafgenopt(void)
 		"Stochastic traffic generation:\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
-#else
+#else /* HAVE_LIBGSL */
 		"  -G x=(q|p|g):(C|U):#1:[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"               Flow parameter:\n"
@@ -428,7 +428,7 @@ static void usage_trafgenopt(void)
 		"                 L = lognormal (#1: zeta - mean, #2: sigma - std dev)\n"
 		"                 P = pareto (#1: k - shape, #2 x_min - scale)\n"
 		"                 W = weibull (#1: lambda - scale, #2: k - shape)\n"
-#else
+#else /* HAVE_LIBGSL */
 		"               advanced distributions are only available if compiled with libgsl\n"
 #endif /* HAVE_LIBGSL */
 		"  -U #         specify a cap for the calculated values for request and response\n"
@@ -1182,7 +1182,7 @@ has_more_reports:
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
 				report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
 				report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
-#else
+#else /* HAVE_UNSIGNED_LONG_LONG_INT */
 				report.bytes_read = (uint32_t)bytes_read_low;
 				report.bytes_written = (uint32_t)bytes_written_low;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */
@@ -1672,7 +1672,7 @@ static char *create_output(char hash, int id, int type, double begin, double end
 #ifdef DEBUG
 	create_column_str(headerString1, headerString2, dataString, COL_STATUS,
 			  status, &columnWidthChanged);
-#else
+#else /* DEBUG */
 	UNUSED_ARGUMENT(status);
 #endif /* DEBUG */
 
@@ -2855,7 +2855,7 @@ static void parse_cmdline(int argc, char *argv[])
 		option->optlen = sizeof(v);
 		memcpy(option->optval, &v, sizeof(v));
 	}
-#endif
+#endif /* 0 */
 
 	for (int id = 0; id < copt.num_flows; id++) {
 		cflow[id].settings[SOURCE].duration[READ] = cflow[id].settings[DESTINATION].duration[WRITE];
