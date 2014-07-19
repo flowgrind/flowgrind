@@ -2562,14 +2562,16 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 	case 'c':
 		parse_colon_option(arg);
 		break;
+#ifdef DEBUG
 	case 'd':
 		increase_debuglevel();
 		break;
-	#ifdef HAVE_LIBPCAP
+#endif /* DEBUG */
+#ifdef HAVE_LIBPCAP
 	case 'e':
 		copt.dump_prefix = strdup(arg);
 		break;
-	#endif /* HAVE_LIBPCAP */
+#endif /* HAVE_LIBPCAP */
 	case 'i':
 		if (sscanf(arg, "%lf", &copt.reporting_interval) != 1 ||
 					copt.reporting_interval <= 0)
