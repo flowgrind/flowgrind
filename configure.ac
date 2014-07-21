@@ -59,6 +59,7 @@ AS_CASE([$host],
 AC_PROG_CC([cc gcc clang])
 AM_PROG_CC_C_O
 AC_PROG_CPP
+AC_LANG([C])
 AC_USE_SYSTEM_EXTENSIONS
 AC_C_CONST
 AC_C_INLINE
@@ -203,66 +204,6 @@ AS_IF([test "x$have_gsl" = "xyes"],
 AM_CONDITIONAL([USE_LIBGSL],
 	[test "x$with_gsl" != "xno" -a "x$have_gsl" = "xyes"])
 
-# Checking for functions
-AC_FUNC_ERROR_AT_LINE
-AC_FUNC_FORK
-AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
-AC_FUNC_SELECT_ARGTYPES
-AC_FUNC_STRFTIME
-AC_CHECK_FUNCS(
-	[bzero \
-	 memset \
-	 pselect \
-	 socket \
-	 strchr \
-	 strerror \
-	 uname \
-	 asprintf \
-	 strdup \
-	], [], [AC_MSG_ERROR([required function not found])])
-
-AC_CHECK_FUNC([clock_gettime],
-	[have_clock_gettime=yes;
-	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-		[Define to 1 if the system has clock_gettime.])
-	],
-	[AC_SEARCH_LIBS([clock_gettime], [rt],
-		[have_clock_gettime=yes;
-		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-			[Define to 1 if the system has clock_gettime.])
-		])
-	])
-AS_IF([test "x$have_clock_gettime" != "xyes"],
-	[AC_MSG_CHECKING([for clock_get_time])
-	 AC_TRY_LINK(
-		[#include <mach/mach.h>],
-		[clock_serv_t cclock; mach_timespec_t mts;
-		 host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &cclock);
-		 clock_get_time(cclock, &mts);
-		],
-		[have_clock_get_time=yes;
-		 AC_DEFINE([HAVE_CLOCK_GET_TIME], [1],
-			[Define to 1 if the system has clock_get_time.])
-		],
-		[have_clock_get_time=no])
-	 AC_MSG_RESULT([$have_clock_get_time])
-	])
-AS_IF([test "x$have_clock_gettime" != "xyes" -a "x$have_clock_get_time" != "xyes"],
-	[AC_MSG_ERROR([required function not found])])
-
-# Checking for structures
-AC_STRUCT_TM
-
-# Checking for types
-AC_TYPE_SIGNAL
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_TYPE_INT8_T
-AC_TYPE_UINT32_T
-AC_TYPE_INT32_T
-AC_TYPE_UNSIGNED_LONG_LONG_INT
-
 # Checking fot header files
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
@@ -290,30 +231,222 @@ AC_CHECK_HEADERS(
 	 sys/utsname.h \
 	], [], [AC_MSG_ERROR([required header not found])])
 
-AC_CHECK_HEADERS([sys/socket.h])
+AC_CHECK_HEADERS(
+	[sys/socket.h \
+	 pthread_np.h \
+	])
+
+AC_CHECK_HEADERS(
+	[sys/cpuset.h], [], [],
+	[[#include <sys/param.h>]])
 
 AC_CHECK_HEADERS([net/if.h], [],
 	[AC_MSG_ERROR([required header not found])],
-	[#include <stdio.h>
-	 #include <stdlib.h>
-	 #include <stddef.h>
-	 #include <sys/socket.h>
-	])
+	[[#include <stdio.h>
+	  #include <stdlib.h>
+	  #include <stddef.h>
+	  #include <sys/socket.h>
+	]])
 
 AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 	[AC_MSG_ERROR([required header not found])],
-	[#include <stdio.h>
-	 #include <stdlib.h>
-	 #include <stddef.h>
-	 #include <sys/types.h>
-	 #include <sys/socket.h>
-	 #include <netinet/in.h>
-	 #include <netinet/in_systm.h>
-	])
+	[[#include <stdio.h>
+	  #include <stdlib.h>
+	  #include <stddef.h>
+	  #include <sys/types.h>
+	  #include <sys/socket.h>
+	  #include <netinet/in.h>
+	  #include <netinet/in_systm.h>
+	]])
 
 # Checking for libraries
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
+
+# Checking for types
+AC_TYPE_SIGNAL
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_INT8_T
+AC_TYPE_UINT32_T
+AC_TYPE_INT32_T
+AC_TYPE_UNSIGNED_LONG_LONG_INT
+
+# Checking for declarations
+AC_CHECK_DECL([IP_MTU_DISCOVER],
+	[AC_DEFINE([HAVE_SO_IP_MTU_DISCOVER], [1],
+		[Define to 1 if system has IP_MTU_DISCOVER as socket option.])],
+	[], [[#include <netinet/ip.h>]])
+AC_CHECK_DECL([TCP_CORK],
+	[AC_DEFINE([HAVE_SO_TCP_CORK], [1],
+		[Define to 1 if system has TCP_CORK as socket option.])],
+	[], [[#include <netinet/tcp.h>]])
+AC_CHECK_DECL([TCP_CONGESTION],
+	[AC_DEFINE([HAVE_SO_TCP_CONGESTION], [1],
+		[Define to 1 if system has TCP_CONGESTION as socket option.])],
+	[], [[#include <netinet/tcp.h>]])
+AC_CHECK_DECL([TCP_INFO],
+	[AC_DEFINE([HAVE_SO_TCP_INFO], [1],
+		[Define to 1 if system has TCP_INFO as socket option.])],
+	[], [[#include <netinet/tcp.h>]])
+
+# Checking for structures
+AC_STRUCT_TM
+
+# Checking for struct cpuset_t
+AC_MSG_CHECKING([for struct cpuset_t])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#if HAVE_SYS_CPUSET_H
+		  #include <sys/param.h>
+		  #include <sys/cpuset.h>
+		  #endif
+		]],
+		[[cpuset_t cpuset;]])
+	],
+	[have_cpuset_t=yes;
+	 AC_DEFINE([HAVE_CPUSET_T], [1],
+		[Define to 1 if the system has struct cpuset_t.])
+	],
+	[have_cpuset_t=no])
+AC_MSG_RESULT([$have_cpuset_t])
+
+# Checking for struct tcp_info
+AC_MSG_CHECKING([for struct tcp_info])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#include <netinet/tcp.h>]],
+		[[struct tcp_info ti;]])
+	],
+	[have_tcp_info=yes;
+	 AC_DEFINE([HAVE_TCP_INFO], [1],
+		[Define to 1 if the system has struct tcp_info.])
+	],
+	[have_tcp_info=no])
+AC_MSG_RESULT([$have_tcp_info])
+
+# Checking for enum tcp_ca_state
+AC_MSG_CHECKING([for enum tcp_ca_state])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#include <netinet/tcp.h>]],
+		[[enum tcp_ca_state state;]])
+	],
+	[have_tcp_ca_state=yes;
+	 AC_DEFINE([HAVE_TCP_CA_STATE], [1],
+		[Define to 1 if the system has enum tcp_ca_state.])
+	],
+	[have_tcp_ca_state=no])
+AC_MSG_RESULT([$have_tcp_ca_state])
+
+# Checking for functions
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_FUNC_MEMCMP
+AC_FUNC_SELECT_ARGTYPES
+AC_FUNC_STRFTIME
+AC_CHECK_FUNCS(
+	[bzero \
+	 memset \
+	 pselect \
+	 socket \
+	 strchr \
+	 strerror \
+	 uname \
+	 asprintf \
+	 strdup \
+	], [], [AC_MSG_ERROR([required function not found])])
+
+# Checking for function clock_gettime & clock_get_time
+AC_CHECK_FUNC([clock_gettime],
+	[have_clock_gettime=yes;
+	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+		[Define to 1 if the system has clock_gettime.])
+	],
+	[AC_SEARCH_LIBS([clock_gettime], [rt],
+		[have_clock_gettime=yes;
+		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+			[Define to 1 if the system has clock_gettime.])
+		])
+	])
+
+AS_IF([test "x$have_clock_gettime" != "xyes"],
+	[AC_MSG_CHECKING([for clock_get_time])
+	 AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM(
+			[[#include <mach/mach.h>
+			  #include <mach/clock.h>
+			]],
+			[[clock_serv_t cclock; mach_timespec_t mts;
+			  host_get_clock_service(mach_host_self(), REALTIME_CLOCK, &cclock);
+			  clock_get_time(cclock, &mts);
+			]])
+		],
+		[have_clock_get_time=yes;
+		 AC_DEFINE([HAVE_CLOCK_GET_TIME], [1],
+			[Define to 1 if the system has clock_get_time.])
+		],
+		[have_clock_get_time=no])
+	 AC_MSG_RESULT([$have_clock_get_time])
+	])
+
+AS_IF([test "x$have_clock_gettime" != "xyes" -a \
+			"x$have_clock_get_time" != "xyes"],
+	[AC_MSG_ERROR([required function not found])])
+
+# Checking for function pthread_getaffinity_np & thread_policy_get
+AC_MSG_CHECKING([for pthread_getaffinity_np])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#include <pthread.h>
+		  #if HAVE_PTHREAD_NP_H
+		  #include <pthread_np.h>
+		  #endif
+		  #if HAVE_SYS_CPUSET_H
+		  #include <sys/param.h>
+		  #include <sys/cpuset.h>
+		  #endif
+		  #if HAVE_CPUSET_T
+		  typedef cpuset_t cpu_set_t;
+		  #endif
+		]],
+		[[cpu_set_t cpuset; CPU_ZERO(&cpuset);
+		  pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+		]])
+	],
+	[have_pthread_getaffinity_np=yes;
+	 AC_DEFINE([HAVE_PTHREAD_AFFINITY_NP], [1],
+		[Define to 1 if the system has pthread_getaffinity_np.])
+	],
+	[have_pthread_getaffinity_np=no])
+AC_MSG_RESULT([$have_pthread_getaffinity_np])
+
+AS_IF([test "x$have_pthread_getaffinity_np" != "xyes"],
+	[AC_MSG_CHECKING([for thread_policy_get])
+	 AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM(
+			[[#include <mach/mach.h>
+			  #include <mach/mach_time.h>
+			]],
+			[[thread_affinity_policy_data_t policy;
+			  mach_msg_type_number_t count = THREAD_AFFINITY_POLICY_COUNT;
+			  boolean_t	get_default = FALSE;
+			  thread_policy_get(mach_thread_self(), THREAD_AFFINITY_POLICY,
+								(thread_policy_t) &policy, &count, &get_default);
+			]])
+		],
+		[have_thread_policy_get=yes;
+		 AC_DEFINE([HAVE_THREAD_POLICY], [1],
+			[Define to 1 if the system has thread_policy_get.])
+		],
+		[have_thread_policy_get=no])
+	 AC_MSG_RESULT([$have_thread_policy_get])
+	])
+
+AS_IF([test "x$have_pthread_getaffinity_np" != "xyes" -a \
+			"x$have_thread_policy_get" != "xyes"],
+	[AC_MSG_ERROR([required function not found])])
 
 # Checking for CURL library
 AS_IF([test -z "$CURL_CONFIG"],
@@ -347,9 +480,9 @@ AC_DEFINE_UNQUOTED([XMLRPC_C_VERSION],
 	[$XMLRPC_C_VERSION], [the current xmlrpc-c version])
 
 AC_CHECK_MEMBERS([struct xmlrpc_curl_xportparms.dont_advertise], [], [],
-	[#include <xmlrpc-c/client.h>
-	 #include <xmlrpc-c/transport.h>
-	])
+	[[#include <xmlrpc-c/client.h>
+	  #include <xmlrpc-c/transport.h>
+	]])
 
 XMLRPC_C_CLIENT_CFLAGS=`$XMLRPC_C_CONFIG client --cflags`
 XMLRPC_C_CLIENT_LDADD=`$XMLRPC_C_CONFIG client --ldadd`

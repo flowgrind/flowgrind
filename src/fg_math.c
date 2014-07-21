@@ -55,16 +55,6 @@
 #include <gsl/gsl_errno.h>
 #endif /* HAVE_LIBGSL */
 
-#ifndef HAVE_LIBGSL
-/* RANDOM_MAX only needed for POSIX math functions */
-#ifdef __DARWIN__
-#define RANDOM_MAX LONG_MAX        /* Darwin */
-#else
-#define RANDOM_MAX RAND_MAX        /* Linux, FreeBSD */
-#endif /* __SOLARIS__ */
-
-#endif /* HAVE_LIBGSL */
-
 extern void init_math_functions (struct _flow *flow, unsigned long seed)
 {
 	int rc;
@@ -134,14 +124,14 @@ static inline double rn_uniform_zero_to_one(struct _flow *flow)
 	gsl_rng * r = flow->r;
 	return gsl_rng_uniform_pos(r);
 #else
-	return rn_uniform(flow)/(RANDOM_MAX+1.0);
+	return rn_uniform(flow)/(RAND_MAX+1.0);
 #endif /* HAVE_LIBGSL */
 }
 
 #ifndef HAVE_LIBGSL
 static inline double rn_uniform_minusone_to_one(struct _flow *flow)
 {
-	return (rn_uniform(flow)/(RANDOM_MAX/2.0) - 1.0);
+	return (rn_uniform(flow)/(RAND_MAX/2.0) - 1.0);
 }
 #endif /* HAVE_LIBGSL */
 
