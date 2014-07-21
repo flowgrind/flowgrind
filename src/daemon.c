@@ -80,12 +80,6 @@
 #define SOL_IP IPPROTO_IP
 #endif /* SOL_IP */
 
-#ifdef __DARWIN__
-#define RANDOM_MAX  LONG_MAX        /* Darwin */
-#else
-#define RANDOM_MAX  RAND_MAX        /* Linux, FreeBSD */
-#endif /* __SOLARIS__ */
-
 #define CONGESTION_LIMIT 10000
 
 int daemon_pipe[2];
@@ -633,7 +627,7 @@ static void report_flow(struct _flow* flow, int type)
  * returns 0 on success */
 int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
 {
-#if (defined __LINUX__ || defined __FreeBSD__)
+#ifdef HAVE_TCP_INFO
 	struct tcp_info tmp_info;
 	socklen_t info_len = sizeof(tmp_info);
 	int rc;
@@ -652,7 +646,8 @@ int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
 	CPY_INFO_MEMBER(tcpi_rto);
 	CPY_INFO_MEMBER(tcpi_snd_mss);
 
-	/* FreeBSD 9.1 doesn't fill these members */
+	/* TODO FreeBSD 9.1 doesn't fill these members, but maybe FreeBSD 10.0
+	 * will fill it, so get rid of this ifdef */
 #ifdef __LINUX__
 	CPY_INFO_MEMBER(tcpi_backoff);
 	CPY_INFO_MEMBER(tcpi_unacked);
@@ -664,7 +659,7 @@ int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
 #endif /* __LINUX__ */
 #else
 	memset(info, 0, sizeof(struct _fg_tcp_info));
-#endif /* (defined __LINUX__ || defined __FreeBSD__) */
+#endif /* HAVE_TCP_INFO */
 	return 0;
 }
 
@@ -1365,11 +1360,9 @@ int apply_extra_socket_options(struct _flow *flow)
 		case level_ipproto_ip:
 			level = IPPROTO_IP;
 			break;
-#ifndef __DARWIN__
 		case level_ipproto_sctp:
 			level = IPPROTO_SCTP;
 			break;
-#endif /* __DARWIN__ */
 		case level_ipproto_tcp:
 			level = IPPROTO_TCP;
 			break;
