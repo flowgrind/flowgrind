@@ -102,9 +102,6 @@ static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
 
-/** Command line option parser */
-static struct _arg_parser parser;
-
 /** Controller options */
 static struct _controller_options copt;
 
@@ -2191,7 +2188,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 	if (optdouble > 5e9)
 		warnx("rate of flow %d too high", flow_id);
 
-	cflow[flow_id].settings[endpoint_id].write_rate_str = arg;
+	cflow[flow_id].settings[endpoint_id].write_rate_str = strdup(arg);
 	cflow[flow_id].settings[endpoint_id].write_rate = optdouble;
 }
 
@@ -2570,7 +2567,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	#ifdef HAVE_LIBPCAP
 	case 'e':
-		copt.dump_prefix = arg;
+		copt.dump_prefix = strdup(arg);
 		break;
 	#endif /* HAVE_LIBPCAP */
 	case 'i':
@@ -2623,6 +2620,37 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 }
 
 /**
+ * Wrapper function for mutex checking and error message printing.
+ *
+ * Defines the cmdline options and distinguishes option types (flow, general, ...)
+ * and tokenizes flow options which can have several endpoints
+ *
+ * @param[in] mm Pointer to mutex manager
+ * @param[in] ms Array of mutex states (of size 3)
+ * @param[in] endpoint The endpoint of this option (see enum #flow_endpoint)
+ * @param[in] argind The option record index
+ * @param[in] flow_id ID of the flow to show in error message
+ */
+static void check_mutex(const struct _arg_parser *const parser, 
+			struct _ap_Mutex_state ms[], 
+			const enum mutex_contexts context,
+			const int argind, int flow_id)
+{
+	int mutex_index;
+	if (context == MUTEX_CONTEXT_CONTROLLER){
+		if (ap_set_check_mutex(parser, &ms[context], argind, &mutex_index))
+			PARSE_ERR("Option %s conflicts with option %s", 
+				ap_opt_string(parser, argind), 
+				ap_opt_string(parser, mutex_index));
+	} else {
+		if (ap_set_check_mutex(parser, &ms[context], argind, &mutex_index))
+			PARSE_ERR("In flow %i: option %s conflicts with option %s", 
+				flow_id, ap_opt_string(parser, argind), 
+				ap_opt_string(parser, mutex_index));
+	}
+}
+
+/**
  * The main commandline argument parsing function
  *
  * Defines the cmdline options and distinguishes option types (flow, general,
@@ -2640,53 +2668,62 @@ static void parse_cmdline(int argc, char *argv[])
 	int optint = 0;
 
 	const struct _ap_Option options[] = {
-		{'c', "show-colon", ap_yes, OPT_CONTROLLER},
+		{'c', "show-colon", ap_yes, OPT_CONTROLLER, 0},
 #ifdef DEBUG
-		{'d', "debug", ap_no, OPT_CONTROLLER},
+		{'d', "debug", ap_no, OPT_CONTROLLER, 0},
 #endif /* DEBUG */
 #ifdef HAVE_LIBPCAP
-		{'e', "dump-prefix", ap_yes, OPT_CONTROLLER},
+		{'e', "dump-prefix", ap_yes, OPT_CONTROLLER, 0},
 #endif /* HAVE_LIBPCAP */
-		{'h', "help", ap_maybe, OPT_CONTROLLER},
-		{'i', "report-interval", ap_yes, OPT_CONTROLLER},
-		{LOG_FILE_OPTION, "log-file", ap_maybe, OPT_CONTROLLER},
-		{'m', 0, ap_no, OPT_CONTROLLER},
-		{'n', "flows", ap_yes, OPT_CONTROLLER},
-		{'o', 0, ap_no, OPT_CONTROLLER},
-		{'p', 0, ap_no, OPT_CONTROLLER},
-		{'q', "quiet", ap_no, OPT_CONTROLLER},
-		{'s', "tcp-stack", ap_yes, OPT_CONTROLLER},
-		{'v', "version", ap_no, OPT_CONTROLLER},
-		{'w', 0, ap_no, OPT_CONTROLLER},
-		{'A', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'B', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'C', 0, ap_no, OPT_FLOW_ENDPOINT},
-		{'D', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'E', 0, ap_no, OPT_FLOW},
-		{'F', 0, ap_yes, OPT_SELECTOR},
-		{'G', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'H', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'I', 0, ap_no, OPT_FLOW},
-		{'J', 0, ap_yes, OPT_FLOW},
-		{'L', 0, ap_no, OPT_FLOW},
-		{'M', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'N', 0, ap_no, OPT_FLOW},
-		{'O', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'P', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'Q', 0, ap_no, OPT_FLOW},
-		{'R', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'S', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'T', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'U', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'W', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT},
-		{0, 0, ap_no, 0}
+		{'h', "help", ap_maybe, OPT_CONTROLLER, 0},
+		{'i', "report-interval", ap_yes, OPT_CONTROLLER, 0},
+		{LOG_FILE_OPTION, "log-file", ap_maybe, OPT_CONTROLLER, 0},
+		{'m', 0, ap_no, OPT_CONTROLLER, 0},
+		{'n', "flows", ap_yes, OPT_CONTROLLER, 0},
+		{'o', 0, ap_no, OPT_CONTROLLER, 0},
+		{'p', 0, ap_no, OPT_CONTROLLER, 0},
+		{'q', "quiet", ap_no, OPT_CONTROLLER, 0},
+		{'s', "tcp-stack", ap_yes, OPT_CONTROLLER, 0},
+		{'v', "version", ap_no, OPT_CONTROLLER, 0},
+		{'w', 0, ap_no, OPT_CONTROLLER, 0},
+		{'A', 0, ap_yes, OPT_FLOW_ENDPOINT, (int[]){1,0}},
+		{'B', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'C', 0, ap_no, OPT_FLOW_ENDPOINT, 0},
+		{'D', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'E', 0, ap_no, OPT_FLOW, 0},
+		{'F', 0, ap_yes, OPT_SELECTOR, 0},
+		{'G', 0, ap_yes, OPT_FLOW_ENDPOINT, (int[]){1,2,3,0}},
+		{'H', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'I', 0, ap_no, OPT_FLOW, 0},
+		{'J', 0, ap_yes, OPT_FLOW, 0},
+		{'L', 0, ap_no, OPT_FLOW, 0},
+		{'M', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'N', 0, ap_no, OPT_FLOW, 0},
+		{'O', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'P', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'Q', 0, ap_no, OPT_FLOW, 0},
+		{'R', 0, ap_yes, OPT_FLOW_ENDPOINT, (int[]){2,0}},
+		{'S', 0, ap_yes, OPT_FLOW_ENDPOINT, (int[]){3,0}},
+		{'T', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'U', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'W', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{0, 0, ap_no, 0, 0}
 	};
+
+	struct _arg_parser parser;
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser))
 		PARSE_ERR("%s", ap_error(&parser));
+
+	/* initialize 4 mutex contexts (for SOURCE+DESTINATION+CONTROLLER+BOTH ENDPOINTS) */
+  	struct _ap_Mutex_state ms[4];
+	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_CONTROLLER]);
+	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_TWO_SIDED]);
+	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_SOURCE]);
+	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_DESTINATION]);
 
 	/* if no option -F is given, configure all flows*/
 	for (int i = 0; i < MAX_FLOWS; i++)
@@ -2704,6 +2741,8 @@ static void parse_cmdline(int argc, char *argv[])
 		/* distinguish option types by tag first */
 		switch (tag) {
 		case OPT_CONTROLLER:
+			check_mutex(&parser, ms, MUTEX_CONTEXT_CONTROLLER, 
+				    argind, 0);
 			parse_general_option(code, arg, opt_string);
 			break;
 		case OPT_SELECTOR:
@@ -2725,8 +2764,14 @@ static void parse_cmdline(int argc, char *argv[])
 				current_flow_ids[cur_num_flows++] = optint;
 				ASSIGN_MAX(max_flow_specifier, optint);
 			}
+			/* reset mutex for each new flow */
+			ap_reset_mutex(&ms[MUTEX_CONTEXT_SOURCE]);
+			ap_reset_mutex(&ms[MUTEX_CONTEXT_DESTINATION]);
+			ap_reset_mutex(&ms[MUTEX_CONTEXT_TWO_SIDED]);
 			break;
 		case OPT_FLOW:
+			check_mutex(&parser, ms, MUTEX_CONTEXT_TWO_SIDED, 
+					argind, current_flow_ids[0]);
 			for (int i = 0; i < cur_num_flows; i++)
 				parse_flow_option(code, arg, opt_string,
 						current_flow_ids[i]);
@@ -2747,6 +2792,16 @@ static void parse_cmdline(int argc, char *argv[])
 				if (type != 's' && type != 'd' && type != 'b')
 					PARSE_ERR("Invalid enpoint specifier"
 						  " in Option %s", opt_string);
+
+				/* check mutex in context of current endpoint */
+				if (type == 's' || type == 'b')
+					check_mutex(&parser, ms, 
+						    MUTEX_CONTEXT_SOURCE, argind, 
+						    current_flow_ids[0]);
+				if (type == 'd' || type == 'b')
+					check_mutex(&parser, ms, 
+						    MUTEX_CONTEXT_DESTINATION, 
+						    argind, current_flow_ids[0]);		
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
@@ -2814,6 +2869,12 @@ static void parse_cmdline(int argc, char *argv[])
 			}
 		}
 	}
+
+	ap_free(&parser);
+	ap_free_mutex_state(&ms[MUTEX_CONTEXT_CONTROLLER]);
+	ap_free_mutex_state(&ms[MUTEX_CONTEXT_TWO_SIDED]);
+	ap_free_mutex_state(&ms[MUTEX_CONTEXT_SOURCE]);
+	ap_free_mutex_state(&ms[MUTEX_CONTEXT_DESTINATION]);
 }
 
 /**
@@ -2918,7 +2979,5 @@ int main(int argc, char *argv[])
 	xmlrpc_env_clean(&rpc_env);
 
 	xmlrpc_client_teardown_global_const();
-
-	ap_free(&parser);
 	DEBUG_MSG(LOG_WARNING, "bye");
 }
