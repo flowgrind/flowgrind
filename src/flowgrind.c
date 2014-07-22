@@ -231,7 +231,7 @@ static void usage(short status)
 		"                 'iat', 'kernel' (all show per default), and 'blocks', 'rtt',\n"
 #ifdef DEBUG
 		"                 'delay', 'status' (optional)\n"
-#else
+#else /* DEBUG */
 		"                 'delay' (optional)\n"
 #endif /* DEBUG */
 #ifdef DEBUG
@@ -275,7 +275,7 @@ static void usage(short status)
 		"                 to the second flow. With -1 all flow are refered\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
-#else
+#else /* HAVE_LIBGSL */
 		"  -G x=(q|p|g):(C|U):#1:[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"                 activate stochastic traffic generation and set parameters\n"
@@ -411,7 +411,7 @@ static void usage_trafgenopt(void)
 		"Stochastic traffic generation:\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
-#else
+#else /* HAVE_LIBGSL */
 		"  -G x=(q|p|g):(C|U):#1:[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"               Flow parameter:\n"
@@ -428,7 +428,7 @@ static void usage_trafgenopt(void)
 		"                 L = lognormal (#1: zeta - mean, #2: sigma - std dev)\n"
 		"                 P = pareto (#1: k - shape, #2 x_min - scale)\n"
 		"                 W = weibull (#1: lambda - scale, #2: k - shape)\n"
-#else
+#else /* HAVE_LIBGSL */
 		"               advanced distributions are only available if compiled with libgsl\n"
 #endif /* HAVE_LIBGSL */
 		"  -U #         specify a cap for the calculated values for request and response\n"
@@ -1182,7 +1182,7 @@ has_more_reports:
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
 				report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
 				report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
-#else
+#else /* HAVE_UNSIGNED_LONG_LONG_INT */
 				report.bytes_read = (uint32_t)bytes_read_low;
 				report.bytes_written = (uint32_t)bytes_written_low;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */
@@ -1672,7 +1672,7 @@ static char *create_output(char hash, int id, int type, double begin, double end
 #ifdef DEBUG
 	create_column_str(headerString1, headerString2, dataString, COL_STATUS,
 			  status, &columnWidthChanged);
-#else
+#else /* DEBUG */
 	UNUSED_ARGUMENT(status);
 #endif /* DEBUG */
 
@@ -2562,14 +2562,16 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 	case 'c':
 		parse_colon_option(arg);
 		break;
+#ifdef DEBUG
 	case 'd':
 		increase_debuglevel();
 		break;
-	#ifdef HAVE_LIBPCAP
+#endif /* DEBUG */
+#ifdef HAVE_LIBPCAP
 	case 'e':
 		copt.dump_prefix = strdup(arg);
 		break;
-	#endif /* HAVE_LIBPCAP */
+#endif /* HAVE_LIBPCAP */
 	case 'i':
 		if (sscanf(arg, "%lf", &copt.reporting_interval) != 1 ||
 					copt.reporting_interval <= 0)
@@ -2631,21 +2633,21 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * @param[in] argind The option record index
  * @param[in] flow_id ID of the flow to show in error message
  */
-static void check_mutex(const struct _arg_parser *const parser, 
-			struct _ap_Mutex_state ms[], 
+static void check_mutex(const struct _arg_parser *const parser,
+			struct _ap_Mutex_state ms[],
 			const enum mutex_contexts context,
 			const int argind, int flow_id)
 {
 	int mutex_index;
 	if (context == MUTEX_CONTEXT_CONTROLLER){
 		if (ap_set_check_mutex(parser, &ms[context], argind, &mutex_index))
-			PARSE_ERR("Option %s conflicts with option %s", 
-				ap_opt_string(parser, argind), 
+			PARSE_ERR("Option %s conflicts with option %s",
+				ap_opt_string(parser, argind),
 				ap_opt_string(parser, mutex_index));
 	} else {
 		if (ap_set_check_mutex(parser, &ms[context], argind, &mutex_index))
-			PARSE_ERR("In flow %i: option %s conflicts with option %s", 
-				flow_id, ap_opt_string(parser, argind), 
+			PARSE_ERR("In flow %i: option %s conflicts with option %s",
+				flow_id, ap_opt_string(parser, argind),
 				ap_opt_string(parser, mutex_index));
 	}
 }
@@ -2719,7 +2721,7 @@ static void parse_cmdline(int argc, char *argv[])
 		PARSE_ERR("%s", ap_error(&parser));
 
 	/* initialize 4 mutex contexts (for SOURCE+DESTINATION+CONTROLLER+BOTH ENDPOINTS) */
-  	struct _ap_Mutex_state ms[4];
+	struct _ap_Mutex_state ms[4];
 	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_CONTROLLER]);
 	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_TWO_SIDED]);
 	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_SOURCE]);
@@ -2741,7 +2743,7 @@ static void parse_cmdline(int argc, char *argv[])
 		/* distinguish option types by tag first */
 		switch (tag) {
 		case OPT_CONTROLLER:
-			check_mutex(&parser, ms, MUTEX_CONTEXT_CONTROLLER, 
+			check_mutex(&parser, ms, MUTEX_CONTEXT_CONTROLLER,
 				    argind, 0);
 			parse_general_option(code, arg, opt_string);
 			break;
@@ -2770,7 +2772,7 @@ static void parse_cmdline(int argc, char *argv[])
 			ap_reset_mutex(&ms[MUTEX_CONTEXT_TWO_SIDED]);
 			break;
 		case OPT_FLOW:
-			check_mutex(&parser, ms, MUTEX_CONTEXT_TWO_SIDED, 
+			check_mutex(&parser, ms, MUTEX_CONTEXT_TWO_SIDED,
 					argind, current_flow_ids[0]);
 			for (int i = 0; i < cur_num_flows; i++)
 				parse_flow_option(code, arg, opt_string,
@@ -2795,13 +2797,13 @@ static void parse_cmdline(int argc, char *argv[])
 
 				/* check mutex in context of current endpoint */
 				if (type == 's' || type == 'b')
-					check_mutex(&parser, ms, 
-						    MUTEX_CONTEXT_SOURCE, argind, 
+					check_mutex(&parser, ms,
+						    MUTEX_CONTEXT_SOURCE, argind,
 						    current_flow_ids[0]);
 				if (type == 'd' || type == 'b')
-					check_mutex(&parser, ms, 
-						    MUTEX_CONTEXT_DESTINATION, 
-						    argind, current_flow_ids[0]);		
+					check_mutex(&parser, ms,
+						    MUTEX_CONTEXT_DESTINATION,
+						    argind, current_flow_ids[0]);
 
 				for (int i = 0; i < cur_num_flows; i++) {
 					if (type == 's' || type == 'b')
@@ -2853,7 +2855,7 @@ static void parse_cmdline(int argc, char *argv[])
 		option->optlen = sizeof(v);
 		memcpy(option->optval, &v, sizeof(v));
 	}
-#endif
+#endif /* 0 */
 
 	for (int id = 0; id < copt.num_flows; id++) {
 		cflow[id].settings[SOURCE].duration[READ] = cflow[id].settings[DESTINATION].duration[WRITE];
@@ -2888,23 +2890,23 @@ static void sanity_check(void)
 		    cflow[id].late_connect &&
 		    cflow[id].settings[DESTINATION].delay[WRITE] <
 		    cflow[id].settings[SOURCE].delay[WRITE]) {
-			warnx("server flow %d starts earlier than client "
+			errx("server flow %d starts earlier than client "
 			      "flow while late connecting", id);
 			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[SOURCE].delay[WRITE] > 0 &&
 		    cflow[id].settings[SOURCE].duration[WRITE] == 0) {
-			warnx("client flow %d has a delay but no runtime", id);
+			errx("client flow %d has a delay but no runtime", id);
 			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[DESTINATION].delay[WRITE] > 0 &&
 		    cflow[id].settings[DESTINATION].duration[WRITE] == 0) {
-			warnx("server flow %d has a delay but no runtime", id);
+			errx("server flow %d has a delay but no runtime", id);
 			exit(EXIT_FAILURE);
 		}
 		if (!cflow[id].settings[DESTINATION].duration[WRITE] &&
 		    !cflow[id].settings[SOURCE].duration[WRITE]) {
-			warnx("server and client flow have both zero runtime "
+			errx("server and client flow have both zero runtime "
 			      "for flow %d", id);
 			exit(EXIT_FAILURE);
 		}
@@ -2912,7 +2914,7 @@ static void sanity_check(void)
 		for (unsigned i = 0; i < 2; i++) {
 			if (cflow[id].settings[i].flow_control &&
 			    !cflow[id].settings[i].write_rate_str) {
-				warnx("flow %d has flow control enabled but no "
+				errx("flow %d has flow control enabled but no "
 				      "rate", id);
 				exit(EXIT_FAILURE);
 			}
@@ -2920,7 +2922,7 @@ static void sanity_check(void)
 			if (cflow[id].settings[i].write_rate &&
 			    cflow[id].settings[i].write_rate /
 				cflow[id].settings[i].maximum_block_size < 1) {
-				warnx("client block size for flow %u is too big for "
+				errx("client block size for flow %u is too big for "
 				      "specified rate", id);
 				exit(EXIT_FAILURE);
 			}

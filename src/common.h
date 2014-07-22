@@ -40,7 +40,7 @@
 #define FLOWGRIND_VERSION GITVERSION
 #elif defined PACKAGE_VERSION
 #define FLOWGRIND_VERSION PACKAGE_VERSION
-#else
+#else /* GITVERSION */
 #define FLOWGRIND_VERSION "(n/a)"
 #endif /* GITVERSION */
 
@@ -278,7 +278,7 @@ struct _report {
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
 	unsigned long long bytes_read;
 	unsigned long long bytes_written;
-#else
+#else /* HAVE_UNSIGNED_LONG_LONG_INT */
 	long bytes_read;
 	long bytes_written;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */

@@ -73,9 +73,4 @@ const char *debug_timestamp()
 	return buf;
 }
 
-#else /* DEBUG */
-
-void decrease_debuglevel() { }
-void increase_debuglevel() { }
-
 #endif /* DEBUG */
