@@ -8,7 +8,7 @@ for PACKAGE in $PACKAGES; do
             EXTRA_PKGS="gsl $EXTRA_PKGS"
             ;;
         libpcap)
-            EXTRA_PKGS="libpcap $EXTRA_PKGS"
+            # Apple distributes libpcap with OS X, no action needed
             ;;
     esac
 done
