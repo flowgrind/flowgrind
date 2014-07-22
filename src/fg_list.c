@@ -97,10 +97,10 @@ int fg_list_remove(struct _linked_list * const list, const void * const data)
  * the list between elements pointed to by @p previous and @p next. The data of
  * the newly created element will point to the same memory location as @p data
  *
- * @param[in] data of newly created element
- * @param[in] existing list element the new element is going to be inserted after
- * @param[in] existing list element the new element is going to be inserted before
- * @return a pointer to the newly created list element or NULL on failure
+ * @param[in] data data of newly created element
+ * @param[in] previous existing list element the new element will be inserted after
+ * @param[in] next existing list element the new element will be inserted before
+ * @return pointer to the newly created list element or NULL on failure
  */
 static struct _list_node* create_node(void * const data,
 				      struct _list_node * const previous,

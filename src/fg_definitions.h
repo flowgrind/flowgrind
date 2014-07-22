@@ -1,5 +1,5 @@
 /**
- * @file fg_defintions.h
+ * @file fg_definitions.h
  * @brief Common definitions used by the Flowgrind daemon, controller, and libs
  */
 
