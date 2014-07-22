@@ -32,7 +32,7 @@
     In case of error, 'ap_error' returns a non-null pointer to an error
     message.
 
-    'options' is an array of 'struct _ap_Option' terminated by an element
+    'options' is an array of 'struct ap_Option' terminated by an element
     containing a code which is zero. A null name means a short-only
     option. A code value outside the unsigned char range means a
     long-only option.
@@ -66,7 +66,7 @@ enum ap_Has_arg {
 };
 
 /** Defines a valid command line option */
-struct _ap_Option {
+struct ap_Option {
 	/** Short option letter or code (code != 0) */
 	int code;
 	/** Long option name (maybe null) */
@@ -85,7 +85,7 @@ struct _ap_Option {
 };
 
 /** Holds a parsed command line option and its argument */
-struct _ap_Record {
+struct ap_Record {
 	/** Observed opt string (maybe the long or the short version) */
 	char *opt_string;
 	/** Argument string (may be empty) */
@@ -95,11 +95,11 @@ struct _ap_Record {
 };
 
 /** Internal state of the argument parser */
-struct _arg_parser {
+struct arg_parser {
 	/** Pointer for user defined options */
-	const struct _ap_Option *options;
+	const struct ap_Option *options;
 	/** Container for parsed cmdline options */
-	struct _ap_Record *data;
+	struct ap_Record *data;
 	/** Contains errors encountered during parsing */
 	char *error;
 	/** Number of known options */
@@ -113,7 +113,7 @@ struct _arg_parser {
 };
 
 /** Contains the state of all mutex */
-struct _ap_Mutex_state {
+struct ap_Mutex_state {
 	/** A table containing for each mutex the last seen option record */
 	int *seen_records;
 	/** The number of defined mutex */
@@ -130,16 +130,16 @@ struct _ap_Mutex_state {
  * @param[in] in_order if set to true, arguments are stored in the order in
  * which they appear. If false, non-option arguments are stored after options
  */
-char ap_init(struct _arg_parser *const ap,
+char ap_init(struct arg_parser *const ap,
 	     const int argc, const char *const argv[],
-	     const struct _ap_Option options[], const char in_order);
+	     const struct ap_Option options[], const char in_order);
 
 /**
  * Free internal state of arg parser
  *
  * @param[in] ap pointer to arg parser state
  */
-void ap_free(struct _arg_parser *const ap);
+void ap_free(struct arg_parser *const ap);
 
 /**
  * Get the string containing errors encountered during parsing. If no errors
@@ -147,14 +147,14 @@ void ap_free(struct _arg_parser *const ap);
  *
  * @param[in] ap pointer to arg parser state
  */
-const char *ap_error(const struct _arg_parser *const ap);
+const char *ap_error(const struct arg_parser *const ap);
 
 /**
  * Number of arguments parsed (may be different from argc)
  *
  * @param[in] ap pointer to arg parser state
  */
-int ap_arguments(const struct _arg_parser *const ap);
+int ap_arguments(const struct arg_parser *const ap);
 
 /**
  * Returns the code of a parsed option with given index. It returns 0 for
@@ -163,7 +163,7 @@ int ap_arguments(const struct _arg_parser *const ap);
  * @param[in] ap pointer to arg parser state
  * @param[in] i index of the parsed option
  */
-int ap_code(const struct _arg_parser *const ap, const int i);
+int ap_code(const struct arg_parser *const ap, const int i);
 
 /**
  * Returns the argument of a parsed option. If the corresponding code returned
@@ -172,7 +172,7 @@ int ap_code(const struct _arg_parser *const ap, const int i);
  * @param[in] ap pointer to arg parser state
  * @param[in] i index of the parsed option
  */
-const char *ap_argument(const struct _arg_parser *const ap, const int i);
+const char *ap_argument(const struct arg_parser *const ap, const int i);
 
 /**
  * Returns a pointer to the #_ap_Option struct of the parsed option as defined
@@ -181,7 +181,7 @@ const char *ap_argument(const struct _arg_parser *const ap, const int i);
  * @param[in] ap pointer to arg parser state
  * @param[in] i index of the parsed option
  */
-const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int i);
+const struct ap_Option *ap_option(const struct arg_parser *const ap, const int i);
 
 /**
  * Returns the real command line option string (may be the short or long version)
@@ -189,7 +189,7 @@ const struct _ap_Option *ap_option(const struct _arg_parser *const ap, const int
  * @param[in] ap pointer to arg parser state
  * @param[in] i index of the parsed option
  */
-const char *ap_opt_string(const struct _arg_parser *const ap, const int i);
+const char *ap_opt_string(const struct arg_parser *const ap, const int i);
 
 /**
  * Returns true if the option specified by @p code was given at least once
@@ -197,7 +197,7 @@ const char *ap_opt_string(const struct _arg_parser *const ap, const int i);
  * @param[in] ap pointer to arg parser state
  * @param[in] code code of the option to check
  */
-bool ap_is_used(const struct _arg_parser *const ap, int code);
+bool ap_is_used(const struct arg_parser *const ap, int code);
 
 /**
 * Initialize a new mutex state table. This can be seen as a separate context for checking mutex.
@@ -209,8 +209,8 @@ bool ap_is_used(const struct _arg_parser *const ap, int code);
 * to check and set mutex
 * @return true iff successful.
 */
-bool ap_init_mutex_state(const struct _arg_parser *const ap, 
-			 struct _ap_Mutex_state *const ms);
+bool ap_init_mutex_state(const struct arg_parser *const ap, 
+			 struct ap_Mutex_state *const ms);
 
 /**
 * Check a new option record for mutex.
@@ -223,8 +223,8 @@ bool ap_init_mutex_state(const struct _arg_parser *const ap,
 * record position, iff a conflict has been found.
 * @return true iff conflict according to the state given by @p ms has occurred.
 */
-bool ap_check_mutex(const struct _arg_parser *const ap,
-		    const struct _ap_Mutex_state *const ms,
+bool ap_check_mutex(const struct arg_parser *const ap,
+		    const struct ap_Mutex_state *const ms,
 		    const int i, int *conflict);
 
 /**
@@ -235,8 +235,8 @@ bool ap_check_mutex(const struct _arg_parser *const ap,
 * @param[in] i index of the option to register in the mutex state @p ms
 * @return true iff successful.
 */
-bool ap_set_mutex(const struct _arg_parser *const ap, 
-		  struct _ap_Mutex_state *const ms, const int i);
+bool ap_set_mutex(const struct arg_parser *const ap, 
+		  struct ap_Mutex_state *const ms, const int i);
 
 /**
 * Check a new option record for mutex and register it at the same time.
@@ -248,8 +248,8 @@ bool ap_set_mutex(const struct _arg_parser *const ap,
 * record position, iff a conflict has been found.
 * @return true iff conflict according to the state given by @p ms has occurred.
 */
-bool ap_set_check_mutex(const struct _arg_parser *const ap, 
-			struct _ap_Mutex_state *const ms,
+bool ap_set_check_mutex(const struct arg_parser *const ap, 
+			struct ap_Mutex_state *const ms,
 			const int i, int *conflict);
 
 /**
@@ -257,13 +257,13 @@ bool ap_set_check_mutex(const struct _arg_parser *const ap,
 *
 * @param[in] ms pointer to an initialized mutex context
 */
-void ap_reset_mutex(struct _ap_Mutex_state *const ms);
+void ap_reset_mutex(struct ap_Mutex_state *const ms);
 
 /**
 * Free a mutex context.
 *
 * @param[in] ms pointer to an initialized mutex context
 */
-void ap_free_mutex_state(struct _ap_Mutex_state *const ms);
+void ap_free_mutex_state(struct ap_Mutex_state *const ms);
 
 #endif /* _ARG_PARSER_H_ */

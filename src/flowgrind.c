@@ -97,16 +97,16 @@ static bool sigint_caught = false;
 static xmlrpc_env rpc_env;
 
 /** Unique (by URL) flowgrind daemons */
-static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
+static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
 
 /** Controller options */
-static struct _controller_options copt;
+static struct controller_options copt;
 
 /** Infos about all flows including flow options */
-static struct _cflow cflow[MAX_FLOWS];
+static struct cflow cflow[MAX_FLOWS];
 
 /** Number of currently active flows */
 static int active_flows = 0;
@@ -115,7 +115,7 @@ static int active_flows = 0;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /** Infos about the intermediated interval report columns */
-static struct _column column_info[] = {
+static struct column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
 	 .header.unit = "#   ", .state.visible = true},
 	{.type = COL_BEGIN, .header.name = " begin",
@@ -198,8 +198,8 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void fetch_reports(xmlrpc_client *);
 static void set_column_visibility(bool visibility, unsigned int nargs, ...);
 static void set_column_unit(const char *unit, unsigned int nargs, ...);
-static void report_flow(const struct _daemon* daemon, struct _report* report);
-static void print_report(int id, int endpoint, struct _report* report);
+static void report_flow(const struct daemon* daemon, struct report* report);
+static void print_report(int id, int endpoint, struct report* report);
 
 /**
  * Print flowgrind usage and exit
@@ -1095,7 +1095,7 @@ has_more_reports:
 
 			xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
 			if (rv) {
-				struct _report report;
+				struct report report;
 				int begin_sec, begin_nsec, end_sec, end_nsec;
 				int tcpi_snd_cwnd;
 				int tcpi_snd_ssthresh;
@@ -1225,12 +1225,12 @@ has_more_reports:
 
 /* This function allots an report received from one daemon (identified
  * by server_url)  to the proper flow */
-static void report_flow(const struct _daemon* daemon, struct _report* report)
+static void report_flow(const struct daemon* daemon, struct report* report)
 {
 	const char* server_url = daemon->server_url;
 	int endpoint;
 	int id;
-	struct _cflow *f = NULL;
+	struct cflow *f = NULL;
 
 	/* Get matching flow for report */
 	/* TODO Maybe just use compare daemon pointers? */
@@ -1252,7 +1252,7 @@ exit_outer_loop:
 		DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);
 		/* Final report, keep it for later */
 		free(f->final_report[endpoint]);
-		f->final_report[endpoint] = malloc(sizeof(struct _report));
+		f->final_report[endpoint] = malloc(sizeof(struct report));
 		*f->final_report[endpoint] = *report;
 
 		if (!f->finished[endpoint]) {
@@ -1391,7 +1391,7 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
 	char tempBuffer[50];
-	struct _column *column = &column_info[column_id];
+	struct column *column = &column_info[column_id];
 	char* number_formatstring;
 
 	if (!column->state.visible)
@@ -1507,7 +1507,7 @@ static void create_column_str(char *strHead1Row, char *strHead2Row,
 	int lengthData = 0;
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
-	struct _column *column = &column_info[column_id];
+	struct column *column = &column_info[column_id];
 
 	if (!column->state.visible)
 		return;
@@ -1700,7 +1700,7 @@ inline static double scale_thruput(double thruput)
         return thruput / 1e6 * (1<<3);
 }
 
-static void print_report(int id, int endpoint, struct _report* r)
+static void print_report(int id, int endpoint, struct report* r)
 {
 
 	double min_rtt = r->rtt_min;
@@ -1822,12 +1822,12 @@ static void print_report(int id, int endpoint, struct _report* r)
 static char *guess_topology (int mtu)
 {
 	/* Mapping of common MTU sizes to network technologies */
-	struct _mtu_hint {
+	struct mtu_hint {
 		int mtu;
 		char *topology;
 	};
 
-	static const struct _mtu_hint mtu_hints[] = {
+	static const struct mtu_hint mtu_hints[] = {
 		{65535,	"Hyperchannel"},		/* RFC1374 */
 		{17914, "16 MB/s Token Ring"},
 		{16436, "Linux Loopback device"},
@@ -1847,7 +1847,7 @@ static char *guess_topology (int mtu)
 	};
 
 	for (unsigned int i = 0;
-	     i < sizeof(mtu_hints) / sizeof(struct _mtu_hint); i++)
+	     i < sizeof(mtu_hints) / sizeof(struct mtu_hint); i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
 	return "unknown";
@@ -2023,7 +2023,7 @@ static void report_final(void)
 
 /* Finds the daemon (or creating a new one) for a given server_url,
  * uses global static unique_servers variable for storage */
-static struct _daemon * get_daemon_by_url(const char* server_url,
+static struct daemon * get_daemon_by_url(const char* server_url,
 					  const char* server_name,
 					  unsigned short server_port)
 {
@@ -2033,7 +2033,7 @@ static struct _daemon * get_daemon_by_url(const char* server_url,
 			return &unique_servers[i];
 	}
 	/* didn't find anything, seems to be a new one */
-	memset(&unique_servers[num_unique_servers], 0, sizeof(struct _daemon));
+	memset(&unique_servers[num_unique_servers], 0, sizeof(struct daemon));
 	strcpy(unique_servers[num_unique_servers].server_url, server_url);
 	strcpy(unique_servers[num_unique_servers].server_name, server_name);
 	unique_servers[num_unique_servers].server_port = server_port;
@@ -2243,14 +2243,14 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 {
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
-	struct _daemon* daemon;
+	struct daemon* daemon;
 	char url[1000];
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
 	char *rpc_address, *sepptr = 0;
 	char *arg = strdup(hostarg);
-	struct _flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
+	struct flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
 
 	/* extra RPC address ? */
 	sepptr = strchr(arg, '/');
@@ -2312,7 +2312,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 	int optint = 0;
 	double optdouble = 0.0;
 
-	struct _flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
+	struct flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
 
 	switch (code) {
 	case 'G':
@@ -2633,8 +2633,8 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * @param[in] argind The option record index
  * @param[in] flow_id ID of the flow to show in error message
  */
-static void check_mutex(const struct _arg_parser *const parser,
-			struct _ap_Mutex_state ms[],
+static void check_mutex(const struct arg_parser *const parser,
+			struct ap_Mutex_state ms[],
 			const enum mutex_contexts context,
 			const int argind, int flow_id)
 {
@@ -2669,7 +2669,7 @@ static void parse_cmdline(int argc, char *argv[])
 	int max_flow_specifier = 0;
 	int optint = 0;
 
-	const struct _ap_Option options[] = {
+	const struct ap_Option options[] = {
 		{'c', "show-colon", ap_yes, OPT_CONTROLLER, 0},
 #ifdef DEBUG
 		{'d', "debug", ap_no, OPT_CONTROLLER, 0},
@@ -2713,7 +2713,7 @@ static void parse_cmdline(int argc, char *argv[])
 		{0, 0, ap_no, 0, 0}
 	};
 
-	struct _arg_parser parser;
+	struct arg_parser parser;
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
@@ -2721,7 +2721,7 @@ static void parse_cmdline(int argc, char *argv[])
 		PARSE_ERR("%s", ap_error(&parser));
 
 	/* initialize 4 mutex contexts (for SOURCE+DESTINATION+CONTROLLER+BOTH ENDPOINTS) */
-	struct _ap_Mutex_state ms[4];
+	struct ap_Mutex_state ms[4];
 	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_CONTROLLER]);
 	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_TWO_SIDED]);
 	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_SOURCE]);
@@ -2838,7 +2838,7 @@ static void parse_cmdline(int argc, char *argv[])
 	 */
 	{
 		assert(cflow[0].settings[SOURCE].num_extra_socket_options < MAX_EXTRA_SOCKET_OPTIONS);
-		struct _extra_socket_options *option = &cflow[0].settings[SOURCE].extra_socket_options[cflow[0].settings[SOURCE].num_extra_socket_options++];
+		struct extra_socket_options *option = &cflow[0].settings[SOURCE].extra_socket_options[cflow[0].settings[SOURCE].num_extra_socket_options++];
 		int v;
 
 		/* The value of the TCP_NODELAY constant gets passed to the daemons.
@@ -2846,7 +2846,7 @@ static void parse_cmdline(int argc, char *argv[])
 		 * a value that matches the daemons'. */
 		option->optname = TCP_NODELAY; /* or option->optname = 12345; as explained above */
 
-		option->level = level_ipproto_tcp; /* See _extra_socket_option_level enum in common.h */
+		option->level = level_ipproto_tcp; /* See extra_socket_option_level enum in common.h */
 
 		/* Again, value needs to be of correct size for the daemons.
 		 * Particular pitfalls can be differences in integer sizes or endianess.

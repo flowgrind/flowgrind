@@ -32,7 +32,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-void add_flow_destination(struct _request_add_flow_destination *request);
-int accept_data(struct _flow *flow);
+void add_flow_destination(struct request_add_flow_destination *request);
+int accept_data(struct flow *flow);
 
 #endif /* _DESTINATION_H_ */

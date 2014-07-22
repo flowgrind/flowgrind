@@ -68,14 +68,14 @@
 void remove_flow(unsigned int i);
 
 #ifdef HAVE_TCP_INFO
-int get_tcp_info(struct _flow *flow, struct tcp_info *info);
+int get_tcp_info(struct flow *flow, struct tcp_info *info);
 #endif /* HAVE_TCP_INFO */
 
-void init_flow(struct _flow* flow, int is_source);
-void uninit_flow(struct _flow *flow);
+void init_flow(struct flow* flow, int is_source);
+void uninit_flow(struct flow *flow);
 
 /* listen_port will receive the port of the created socket */
-static int create_listen_socket(struct _flow *flow, char *bind_addr,
+static int create_listen_socket(struct flow *flow, char *bind_addr,
 				unsigned short *listen_port)
 {
 	int port;
@@ -147,9 +147,9 @@ static int create_listen_socket(struct _flow *flow, char *bind_addr,
 	return fd;
 }
 
-void add_flow_destination(struct _request_add_flow_destination *request)
+void add_flow_destination(struct request_add_flow_destination *request)
 {
-	struct _flow *flow;
+	struct flow *flow;
 	unsigned short server_data_port;
 
 	if (fg_list_size(&flows) >= MAX_FLOWS) {
@@ -160,7 +160,7 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		return;
 	}
 
-	flow = malloc(sizeof(struct _flow));
+	flow = malloc(sizeof(struct flow));
 	if (!flow) {
 		logging_log(LOG_ALERT, "could not allocate memory for flow");
 		return;
@@ -227,7 +227,7 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 	return;
 }
 
-int accept_data(struct _flow *flow)
+int accept_data(struct flow *flow)
 {
 	struct sockaddr_storage caddr;
 	socklen_t addrlen = sizeof(caddr);

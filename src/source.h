@@ -32,6 +32,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-int add_flow_source(struct _request_add_flow_source *request);
+int add_flow_source(struct request_add_flow_source *request);
 
 #endif /* _SOURCE_H_ */

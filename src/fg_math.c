@@ -55,7 +55,7 @@
 #include <gsl/gsl_errno.h>
 #endif /* HAVE_LIBGSL */
 
-extern void init_math_functions (struct _flow *flow, unsigned long seed)
+extern void init_math_functions (struct flow *flow, unsigned long seed)
 {
 	int rc;
 #ifndef HAVE_LIBGSL
@@ -95,7 +95,7 @@ extern void init_math_functions (struct _flow *flow, unsigned long seed)
 #endif /* HAVE_LIBGSL */
 }
 
-extern void free_math_functions (struct _flow *flow)
+extern void free_math_functions (struct flow *flow)
 {
 #ifdef HAVE_LIBGSL
 	gsl_rng_free(flow->r);
@@ -121,7 +121,7 @@ static inline double rn_uniform_minusone_to_one(void)
 }
 #endif /* HAVE_LIBGSL */
 
-extern double dist_exponential(struct _flow *flow, const double mu)
+extern double dist_exponential(struct flow *flow, const double mu)
 {
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
@@ -134,7 +134,7 @@ extern double dist_exponential(struct _flow *flow, const double mu)
 
 /* source for naive implementation english wikipedia articles */
 
-extern double dist_uniform(struct _flow *flow, const double minval,
+extern double dist_uniform(struct flow *flow, const double minval,
 			   const double maxval)
 {
 #ifdef HAVE_LIBGSL
@@ -147,7 +147,7 @@ extern double dist_uniform(struct _flow *flow, const double minval,
 #endif /* HAVE_LIBGSL */
 }
 
-extern double dist_normal(struct _flow *flow, const double mu,
+extern double dist_normal(struct flow *flow, const double mu,
 			  const double sigma_square)
 {
 #ifdef HAVE_LIBGSL
@@ -161,7 +161,7 @@ extern double dist_normal(struct _flow *flow, const double mu,
 #endif /* HAVE_LIBGSL */
 }
 
-extern double dist_lognormal(struct _flow *flow, const double zeta,
+extern double dist_lognormal(struct flow *flow, const double zeta,
 			     const double sigma)
 {
 #ifdef HAVE_LIBGSL
@@ -177,7 +177,7 @@ extern double dist_lognormal(struct _flow *flow, const double zeta,
 }
 
 
-extern int dist_bernoulli(struct _flow *flow, const double p)
+extern int dist_bernoulli(struct flow *flow, const double p)
 {
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
@@ -188,7 +188,7 @@ extern int dist_bernoulli(struct _flow *flow, const double p)
 #endif /* HAVE_LIBGSL */
 }
 
-extern double dist_pareto (struct _flow *flow, const double k,
+extern double dist_pareto (struct flow *flow, const double k,
 			   const double x_min)
 {
 #ifdef HAVE_LIBGSL
@@ -204,7 +204,7 @@ extern double dist_pareto (struct _flow *flow, const double k,
 #endif /* HAVE_LIBGSL */
 }
 
-extern double dist_weibull (struct _flow *flow, const double alpha,
+extern double dist_weibull (struct flow *flow, const double alpha,
 			    const double beta)
 {
 #ifdef HAVE_LIBGSL
@@ -217,7 +217,7 @@ extern double dist_weibull (struct _flow *flow, const double alpha,
 #endif /* HAVE_LIBGSL */
 }
 
-extern double dist_chisq (struct _flow *flow, const double nu)
+extern double dist_chisq (struct flow *flow, const double nu)
 {
 #ifdef HAVE_LIBGSL
 	gsl_rng * r = flow->r;
