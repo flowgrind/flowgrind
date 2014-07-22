@@ -92,6 +92,9 @@ static char *rpc_bind_addr = NULL;
 /* XXX add a brief description doxygen */
 static int cpu = -1;				    /* No CPU affinity */
 
+/** Command line option parser */
+static struct _arg_parser parser;
+
 /* External global variables */
 extern const char *progname;
 
@@ -1041,14 +1044,10 @@ static void parse_cmdline(int argc, char *argv[])
 		{0, 0, ap_no, 0, 0}
 	};
 
-	struct _arg_parser parser;
-
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser))
 		PARSE_ERR("%s", ap_error(&parser));
-
-	bool dump_dir_specified = false;
 
 	/* parse command line */
 	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
@@ -1083,7 +1082,6 @@ static void parse_cmdline(int argc, char *argv[])
 #ifdef HAVE_LIBPCAP
 		case 'w':
 			dump_dir = strdup(arg);
-			dump_dir_specified = true;
 			break;
 #endif /* HAVE_LIBPCAP */
 		case 'v':
@@ -1100,7 +1098,7 @@ static void parse_cmdline(int argc, char *argv[])
 
 #ifdef HAVE_LIBPCAP
 	if (!process_dump_dir()) {
-		if(dump_dir_specified)
+		if (ap_is_used(&parser, 'w'))
 			PARSE_ERR("the dump directory %s for tcpdumps does "
 				  "either not exist or you have insufficient "
 				  "permissions to write to it", dump_dir);
@@ -1111,7 +1109,6 @@ static void parse_cmdline(int argc, char *argv[])
 	}
 #endif /* HAVE_LIBPCAP */
 
-	ap_free(&parser);
 	// TODO more sanity checks... (e.g. if port is in valid range)
 }
 
@@ -1152,8 +1149,9 @@ int main(int argc, char *argv[])
 	create_daemon_thread();
 
 	xmlrpc_env_init(&env);
-
 	run_rpc_server(&env, port);
+
+	ap_free(&parser);
 
 	critx("control should never reach end of main()");
 }
