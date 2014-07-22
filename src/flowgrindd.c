@@ -990,17 +990,20 @@ int process_dump_dir() {
 	struct stat dirstats;
 
 	if (stat(dump_dir, &dirstats) == -1) {
-		DEBUG_MSG(LOG_WARNING, "Unable to stat %s: %s", dump_dir, strerror(errno));
+		DEBUG_MSG(LOG_WARNING, "Unable to stat %s: %s",
+			  dump_dir, strerror(errno));
 		return 0;
 	}
 
 	if (!S_ISDIR(dirstats.st_mode)) {
-		DEBUG_MSG(LOG_ERR, "Provided path %s is not a directory", dump_dir);
+		DEBUG_MSG(LOG_ERR, "Provided path %s is not a directory",
+			  dump_dir);
 		return 0;
 	}
 
 	if (access(dump_dir, W_OK | X_OK) == -1) {
-		DEBUG_MSG(LOG_ERR, "Insufficent permissions to access %s: %s", dump_dir, strerror(errno));
+		DEBUG_MSG(LOG_ERR, "Insufficent permissions to access %s: %s",
+			  dump_dir, strerror(errno));
 		return 0;
 	}
 
