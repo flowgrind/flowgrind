@@ -33,12 +33,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-/** Decrease debug level */
-void decrease_debuglevel(void);
-
-/** Decrease debug level */
-void increase_debuglevel(void);
-
 #ifdef DEBUG
 
 #include <limits.h>
@@ -61,6 +55,12 @@ void increase_debuglevel(void);
 
 /** Global debug level for flowgrind controller and daemon */
 unsigned int debug_level;
+
+/** Decrease debug level */
+void decrease_debuglevel(void);
+
+/** Decrease debug level */
+void increase_debuglevel(void);
 
 /**
  * Helper function for DEBUG_MSG macro

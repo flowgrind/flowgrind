@@ -119,9 +119,8 @@ static void usage(short status)
 #ifdef DEBUG
 		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
 		"                 increase the verbosity (no daemon, log to stderr)\n"
-#else
-		"  -d             don't fork into background, increase debugging verbosity.\n"
-		"                 Add option multiple times to increase the verbosity\n"
+#else /* DEBUG */
+		"  -d             don't fork into background, log to stderr\n"
 #endif /* DEBUG */
 		"  -h, --help     display this help and exit\n"
 		"  -p #           XML-RPC server port\n"
@@ -991,17 +990,20 @@ int process_dump_dir() {
 	struct stat dirstats;
 
 	if (stat(dump_dir, &dirstats) == -1) {
-		DEBUG_MSG(LOG_WARNING, "Unable to stat %s: %s", dump_dir, strerror(errno));
+		DEBUG_MSG(LOG_WARNING, "Unable to stat %s: %s",
+			  dump_dir, strerror(errno));
 		return 0;
 	}
 
 	if (!S_ISDIR(dirstats.st_mode)) {
-		DEBUG_MSG(LOG_ERR, "Provided path %s is not a directory", dump_dir);
+		DEBUG_MSG(LOG_ERR, "Provided path %s is not a directory",
+			  dump_dir);
 		return 0;
 	}
 
 	if (access(dump_dir, W_OK | X_OK) == -1) {
-		DEBUG_MSG(LOG_ERR, "Insufficent permissions to access %s: %s", dump_dir, strerror(errno));
+		DEBUG_MSG(LOG_ERR, "Insufficent permissions to access %s: %s",
+			  dump_dir, strerror(errno));
 		return 0;
 	}
 
@@ -1011,7 +1013,7 @@ int process_dump_dir() {
 
 	return 1;
 }
-#endif
+#endif /* HAVE_LIBPCAP */
 
 /**
  * Parse command line options to initialize global options
@@ -1026,6 +1028,8 @@ static void parse_cmdline(int argc, char *argv[])
 		{'c', 0, ap_yes, 0, 0},
 #ifdef DEBUG
 		{'d', "debug", ap_no, 0, 0},
+#else /* DEBUG */
+		{'d', 0, ap_no, 0, 0},
 #endif
 		{'h', "help", ap_no, 0, 0},
 		{'o', 0, ap_yes, 0, 0},
@@ -1033,7 +1037,7 @@ static void parse_cmdline(int argc, char *argv[])
 		{'v', "version", ap_no, 0, 0},
 #ifdef HAVE_LIBPCAP
 		{'w', 0, ap_yes, 0, 0},
-#endif
+#endif /* HAVE_LIBPCAP */
 		{0, 0, ap_no, 0, 0}
 	};
 
@@ -1065,7 +1069,9 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 		case 'd':
 			log_type = LOGTYPE_STDERR;
+#ifdef DEBUG
 			increase_debuglevel();
+#endif /* DEBUG */
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
