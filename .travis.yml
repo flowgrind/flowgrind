@@ -39,11 +39,11 @@ matrix:
      # Covertiy scan should only run once
      - os: linux
        compiler: gcc
-       env: COVERITY_SCAN=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug --enable-assert"
+       env: COVERITY_SCAN=1 PACKAGES="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug --enable-assert"
 
   allow_failures:
      # Covertiy scan might fail
-     - env: COVERITY_SCAN=1 EXTRA_PKGS="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug --enable-assert"
+     - env: COVERITY_SCAN=1 PACKAGES="libgsl0-dev libpcap-dev" EXTRA_CONFIG="--enable-debug --enable-assert"
      # For now ignore every OS X build since flowgrind is not ready for OS X
      - os: osx
 
