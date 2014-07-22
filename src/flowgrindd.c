@@ -47,14 +47,6 @@
 #include <netdb.h>
 #include <sys/stat.h>
 
-/* CPU affinity */
-#ifdef __LINUX__
-#include <sched.h>
-#elif __FreeBSD__
-#include <sys/param.h>
-#include <sys/cpuset.h>
-#endif /* __LINUX__ */
-
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
@@ -64,6 +56,7 @@
 #include "common.h"
 #include "daemon.h"
 #include "log.h"
+#include "fg_affinity.h"
 #include "fg_error.h"
 #include "fg_math.h"
 #include "fg_progname.h"
@@ -89,8 +82,8 @@ static unsigned port = DEFAULT_LISTEN_PORT;
 /* XXX add a brief description doxygen */
 static char *rpc_bind_addr = NULL;
 
-/* XXX add a brief description doxygen */
-static int cpu = -1;				    /* No CPU affinity */
+/** CPU core to which flowgrindd should bind to */
+static int core;
 
 /** Command line option parser */
 static struct _arg_parser parser;
@@ -950,39 +943,17 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	/* xmlrpc_server_abyss() never returns */
 }
 
-void set_affinity(int cpu)
+void bind_daemon_to_core(void)
 {
-#ifdef __LINUX__
-	typedef cpu_set_t fg_cpuset;
-#elif __FreeBSD__
-	typedef cpuset_t fg_cpuset;
-#endif /* __LINUX__ */
-	int rc = 0;
-	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);   /* number of cores */
-	fg_cpuset cpuset;			    /* define cpu_set bit mask */
+	pthread_t thread = pthread_self();
+	int rc = pthread_setaffinity(thread, core);
 
-	/* sanity check */
-	if (cpu > ncpu) {
-		logging_log(LOG_WARNING, "CPU binding failed. Given cpu number "
-			    "is higher then the available cores");
-		return;
-	}
-
-	CPU_ZERO(&cpuset);	/* initialize to 0, i.e. no CPUs selected. */
-	CPU_SET(cpu, &cpuset);	/* set bit that represents the given core */
-
-#ifdef __LINUX__
-	rc = sched_setaffinity(getpid(), sizeof(cpuset), &cpuset);
-#elif __FreeBSD__
-	rc = cpuset_setaffinity(CPU_LEVEL_WHICH, CPU_WHICH_TID, -1,
-				sizeof(cpuset), &cpuset);
-#endif /* __LINUX__ */
 	if (rc)
 		logging_log(LOG_WARNING, "failed to bind %s (PID %d) to "
-			    "CPU %i\n", progname, getpid(), cpu);
+			    "CPU core %i", progname, thread, core);
 	else
-		DEBUG_MSG(LOG_WARNING, "bind %s (PID %d) to CPU %i\n",
-			  progname, getpid(), cpu);
+		DEBUG_MSG(LOG_INFO, "bind %s (PID %d) to CPU core %i",
+			  progname, getpid(), core);
 }
 
 #ifdef HAVE_LIBPCAP
@@ -1063,7 +1034,7 @@ static void parse_cmdline(int argc, char *argv[])
 				PARSE_ERR("failed to parse bind address");
 			break;
 		case 'c':
-			if (sscanf(arg, "%i", &cpu) != 1)
+			if (sscanf(arg, "%u", &core) != 1)
 				PARSE_ERR("failed to parse CPU number");
 			break;
 		case 'd':
@@ -1108,8 +1079,22 @@ static void parse_cmdline(int argc, char *argv[])
 			      "%s", dump_dir);
 	}
 #endif /* HAVE_LIBPCAP */
+}
 
-	// TODO more sanity checks... (e.g. if port is in valid range)
+static void sanity_check(void)
+{
+	if (core < 0) {
+		errx("CPU binding failed. Given CPU ID is negative");
+		exit(EXIT_FAILURE);
+	}
+
+	if (core > get_ncores(NCORE_CURRENT)) {
+		errx("CPU binding failed. Given CPU ID is higher then "
+		     "available CPU cores");
+		exit(EXIT_FAILURE);
+	}
+
+	/* TODO more sanity checks... (e.g. if port is in valid range) */
 }
 
 int main(int argc, char *argv[])
@@ -1131,10 +1116,13 @@ int main(int argc, char *argv[])
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
 	logging_init();
+	sanity_check();
 	fg_list_init(&flows);
 #ifdef HAVE_LIBPCAP
 	fg_pcap_init();
 #endif /* HAVE_LIBPCAP */
+
+	/* Push flowgrindd into the background */
 	if (log_type == LOGTYPE_SYSLOG) {
 		/* Need to call daemon() before creating the thread because
 		 * it internally calls fork() which does not copy threads. */
@@ -1143,8 +1131,8 @@ int main(int argc, char *argv[])
 		logging_log(LOG_NOTICE, "flowgrindd daemonized");
 	}
 
-	if (cpu >= 0)
-		set_affinity(cpu);
+	if (ap_is_used(&parser, 'c'))
+		bind_daemon_to_core();
 
 	create_daemon_thread();
 
