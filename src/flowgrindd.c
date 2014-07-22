@@ -86,7 +86,7 @@ static char *rpc_bind_addr = NULL;
 static int core;
 
 /** Command line option parser */
-static struct _arg_parser parser;
+static struct arg_parser parser;
 
 /* External global variables */
 extern const char *progname;
@@ -157,7 +157,7 @@ static void sighandler(int sig)
 	}
 }
 
-static int dispatch_request(struct _request *request, int type)
+static int dispatch_request(struct request *request, int type)
 {
 	pthread_cond_t cond;
 
@@ -207,10 +207,10 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	char* bind_address = 0;
 	xmlrpc_value* extra_options = 0;
 
-	struct _flow_settings settings;
-	struct _flow_source_settings source_settings;
+	struct flow_settings settings;
+	struct flow_source_settings source_settings;
 
-	struct _request_add_flow_source* request = 0;
+	struct request_add_flow_source* request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method add_flow_source called");
 
@@ -357,10 +357,10 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	strcpy(settings.cc_alg, cc_alg);
 	strcpy(settings.bind_address, bind_address);
 
-	request = malloc(sizeof(struct _request_add_flow_source));
+	request = malloc(sizeof(struct request_add_flow_source));
 	request->settings = settings;
 	request->source_settings = source_settings;
-	rc = dispatch_request((struct _request*)request, REQUEST_ADD_SOURCE);
+	rc = dispatch_request((struct request*)request, REQUEST_ADD_SOURCE);
 
 	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
@@ -400,9 +400,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	char* bind_address = 0;
 	xmlrpc_value* extra_options = 0;
 
-	struct _flow_settings settings;
+	struct flow_settings settings;
 
-	struct _request_add_flow_destination* request = 0;
+	struct request_add_flow_destination* request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method add_flow_destination called");
 
@@ -538,9 +538,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	strcpy(settings.cc_alg, cc_alg);
 	strcpy(settings.bind_address, bind_address);
 	DEBUG_MSG(LOG_WARNING, "bind_address=%s", bind_address);
-	request = malloc(sizeof(struct _request_add_flow_destination));
+	request = malloc(sizeof(struct request_add_flow_destination));
 	request->settings = settings;
-	rc = dispatch_request((struct _request*)request, REQUEST_ADD_DESTINATION);
+	rc = dispatch_request((struct request*)request, REQUEST_ADD_DESTINATION);
 
 	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
@@ -577,7 +577,7 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	int rc;
 	xmlrpc_value *ret = 0;
 	int start_timestamp;
-	struct _request_start_flows *request = 0;
+	struct request_start_flows *request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method start_flows called");
 
@@ -590,9 +590,9 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	if (env->fault_occurred)
 		goto cleanup;
 
-	request = malloc(sizeof(struct _request_start_flows));
+	request = malloc(sizeof(struct request_start_flows));
 	request->start_timestamp = start_timestamp;
-	rc = dispatch_request((struct _request*)request, REQUEST_START_FLOWS);
+	rc = dispatch_request((struct request*)request, REQUEST_START_FLOWS);
 
 	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
@@ -624,7 +624,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 	DEBUG_MSG(LOG_NOTICE, "Method get_reports called");
 
-	struct _report *report = get_reports(&has_more);
+	struct report *report = get_reports(&has_more);
 
 	ret = xmlrpc_array_new(env);
 
@@ -702,7 +702,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 		xmlrpc_DECREF(rv);
 
-		struct _report *next = report->next;
+		struct report *next = report->next;
 		free(report);
 		report = next;
 	}
@@ -724,7 +724,7 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	int rc;
 	xmlrpc_value *ret = 0;
 	int flow_id;
-	struct _request_stop_flow *request = 0;
+	struct request_stop_flow *request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method stop_flow called");
 
@@ -737,9 +737,9 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	if (env->fault_occurred)
 		goto cleanup;
 
-	request = malloc(sizeof(struct _request_stop_flow));
+	request = malloc(sizeof(struct request_stop_flow));
 	request->flow_id = flow_id;
-	rc = dispatch_request((struct _request*)request, REQUEST_STOP_FLOW);
+	rc = dispatch_request((struct request*)request, REQUEST_STOP_FLOW);
 
 	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
@@ -801,12 +801,12 @@ static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 
 	int rc;
 	xmlrpc_value *ret = 0;
-	struct _request_get_status *request = 0;
+	struct request_get_status *request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method get_status called");
 
-	request = malloc(sizeof(struct _request_get_status));
-	rc = dispatch_request((struct _request*)request, REQUEST_GET_STATUS);
+	request = malloc(sizeof(struct request_get_status));
+	rc = dispatch_request((struct request*)request, REQUEST_GET_STATUS);
 
 	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
@@ -997,7 +997,7 @@ int process_dump_dir() {
  */
 static void parse_cmdline(int argc, char *argv[])
 {
-	const struct _ap_Option options[] = {
+	const struct ap_Option options[] = {
 		{'b', 0, ap_yes, 0, 0},
 		{'c', 0, ap_yes, 0, 0},
 #ifdef DEBUG

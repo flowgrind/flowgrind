@@ -65,7 +65,7 @@
 #endif /* TCP_CA_NAME_MAX */
 
 /** Minium block (message) size we can send */
-#define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
+#define MIN_BLOCK_SIZE (signed) sizeof (struct block)
 
 /** Flowgrind's copyright year */
 #define FLOWGRIND_COPYRIGHT "Copyright (C) 2007 - 2014 Flowgrind authors."
@@ -81,8 +81,8 @@
 	"Written by Arnd Hannemann, Tim Kosse, Christian Samsel, Daniel Schaffrath\n"	    \
 	"and Alexander Zimmermann."
 
-/** Flow endpoint */
-enum flow_endpoint {
+/** Flow endpoint types */
+enum flow_endpoint_type {
 	/** Endpoint that opens the connection */
 	SOURCE = 0,
 	/** Endpoint that accepts the connection */
@@ -105,8 +105,8 @@ enum interval_type {
 	FINAL
 };
 
-/* XXX add a brief description doxygen (no underscore for enum) */
-enum _extra_socket_option_level {
+/* XXX add a brief description doxygen */
+enum extra_socket_option_level {
 	level_sol_socket,
 	level_sol_tcp,
 	level_ipproto_ip,
@@ -134,7 +134,7 @@ enum distributions {
 };
 
 /** Flowgrind's data block layout */
-struct _block {
+struct block {
 	/** Size of our request or response block */
 	int32_t this_block_size;
 
@@ -152,7 +152,7 @@ struct _block {
 };
 
 /** Options for stochastic traffic generation */
-struct _trafgen_options {
+struct trafgen_options {
 	/** The stochastic distribution to draw values from */
 	enum distributions distribution;
 	/** First mathemathical parameter of the distribution */
@@ -166,7 +166,7 @@ struct _trafgen_options {
  * Settings that describe a flow between two endpoints. These options can be
  * specified for each of the two endpoints
  */
-struct _flow_settings {
+struct flow_settings {
 	/** The interface address for the flow (used by daemon) */
 	char bind_address[1000];
 
@@ -232,14 +232,14 @@ struct _flow_settings {
 	int ipmtudiscover;
 
 	/** Stochastic traffic generation settings for the request size */
-	struct _trafgen_options request_trafgen_options;
+	struct trafgen_options request_trafgen_options;
 	/** Stochastic traffic generation settings for the response size */
-	struct _trafgen_options response_trafgen_options;
+	struct trafgen_options response_trafgen_options;
 	/** Stochastic traffic generation settings for the interpacket gap */
-	struct _trafgen_options interpacket_gap_trafgen_options;
+	struct trafgen_options interpacket_gap_trafgen_options;
 
 	/* XXX add a brief description doxygen + is this obsolete? */
-	struct _extra_socket_options {
+	struct extra_socket_options {
 		int level;
 		int optname;
 		int optlen;
@@ -250,7 +250,7 @@ struct _flow_settings {
 
 /* Flowgrinds view on the tcp_info struct for
  * serialization / deserialization */
-struct _fg_tcp_info {
+struct fg_tcp_info {
 	int tcpi_snd_cwnd;
 	int tcpi_snd_ssthresh;
 	int tcpi_unacked;
@@ -269,7 +269,7 @@ struct _fg_tcp_info {
 };
 
 /* Report (measurement sample) of a flow */
-struct _report {
+struct report {
 	int id;
 	/* Is this an INTERVAL or FINAL report? */
 	int type;
@@ -310,14 +310,14 @@ struct _report {
 
 	/* on the Daemon this is filled from the os specific
 	 * tcp_info struct */
-	struct _fg_tcp_info tcp_info;
+	struct fg_tcp_info tcp_info;
 
 	int pmtu;
 	int imtu;
 
 	int status;
 
-	struct _report* next;
+	struct report* next;
 };
 
 #endif /* _COMMON_H_*/

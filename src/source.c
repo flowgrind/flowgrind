@@ -67,13 +67,13 @@
 void remove_flow(unsigned int i);
 
 #ifdef HAVE_TCP_INFO
-int get_tcp_info(struct _flow *flow, struct tcp_info *info);
+int get_tcp_info(struct flow *flow, struct tcp_info *info);
 #endif /* HAVE_TCP_INFO */
 
-void init_flow(struct _flow* flow, int is_source);
-void uninit_flow(struct _flow *flow);
+void init_flow(struct flow* flow, int is_source);
+void uninit_flow(struct flow *flow);
 
-static int name2socket(struct _flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
+static int name2socket(struct flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
 		socklen_t *lenp, char do_connect,
 		const int read_buffer_size_req, int *read_buffer_size,
 		const int send_buffer_size_req, int *send_buffer_size)
@@ -150,12 +150,12 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port, str
 	return fd;
 }
 
-int add_flow_source(struct _request_add_flow_source *request)
+int add_flow_source(struct request_add_flow_source *request)
 {
 #ifdef HAVE_SO_TCP_CONGESTION
 	socklen_t opt_len = 0;
 #endif /* HAVE_SO_TCP_CONGESTION */
-	struct _flow *flow;
+	struct flow *flow;
 
 	if (fg_list_size(&flows) >= MAX_FLOWS) {
 		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
@@ -163,7 +163,7 @@ int add_flow_source(struct _request_add_flow_source *request)
 		return -1;
 	}
 
-	flow = malloc(sizeof(struct _flow));
+	flow = malloc(sizeof(struct flow));
 	if (!flow) {
 		logging_log(LOG_ALERT, "could not allocate memory for flow");
 		return -1;

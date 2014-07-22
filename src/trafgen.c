@@ -47,7 +47,7 @@
 
 #define MAX_RUNS_PER_DISTRIBUTION 10
 
-inline static double calculate(struct _flow *flow, enum distributions type, double param_one, double param_two) {
+inline static double calculate(struct flow *flow, enum distributions type, double param_one, double param_two) {
 
 	double val = 0;
 
@@ -93,7 +93,7 @@ inline static double calculate(struct _flow *flow, enum distributions type, doub
 	return val;
 
 }
-int next_request_block_size(struct _flow *flow)
+int next_request_block_size(struct flow *flow)
 {
 	int bs = 0;
 	int i = 0;
@@ -126,7 +126,7 @@ int next_request_block_size(struct _flow *flow)
 	return bs;
 }
 
-int next_response_block_size(struct _flow *flow)
+int next_response_block_size(struct flow *flow)
 {
 	int bs = round(calculate(
 			   flow,
@@ -153,7 +153,7 @@ int next_response_block_size(struct _flow *flow)
 
 }
 
-double next_interpacket_gap(struct _flow *flow) {
+double next_interpacket_gap(struct flow *flow) {
 
 	double gap = 0.0;
 	if (flow->settings.write_rate)

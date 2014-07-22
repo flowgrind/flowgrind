@@ -158,7 +158,7 @@ enum long_opt_only {
 };
 
 /** Controller options */
-struct _controller_options {
+struct controller_options {
 	/** Number of test flows (option -n) */
 	unsigned short num_flows;
 	/** Length of reporting interval, in seconds (option -i) */
@@ -182,7 +182,7 @@ struct _controller_options {
 };
 
 /** Infos about a flowgrind daemon */
-struct _daemon {
+struct daemon {
 /* Note: a daemon can potentially managing multiple flows */
 	/** XMLRPC URL for this daemon */
 	char server_url[1000];
@@ -199,20 +199,20 @@ struct _daemon {
 };
 
 /** Infos about the flow endpoint */
-struct _flow_endpoint {
+struct flow_endpoint {
 	/** Sending buffer (SO_SNDBUF) */
 	int send_buffer_size_real;
 	/** Receiver buffer (SO_RCVBUF) */
 	int receive_buffer_size_real;
 
 	/** Pointer to the daemon managing this endpoint */
-	struct _daemon* daemon;
+	struct daemon* daemon;
 	/** network address where the actual test connection goes to */
 	char test_address[1000];
 };
 
 /** Infos about the flow including flow options */
-struct _cflow {
+struct cflow {
 	/** Used transport protocol */
 	enum protocol proto;
 
@@ -238,17 +238,17 @@ struct _cflow {
 	/** Timestamp set just before starting flow */
 	struct timespec start_timestamp[2];
 	/** Infos about flow endpoint */
-	struct _flow_endpoint endpoint[2];
+	struct flow_endpoint endpoint[2];
 	/** Flow specific options */
-	struct _flow_settings settings[2];
+	struct flow_settings settings[2];
 	/** Flag if final report for the flow is received  */
 	char finished[2];
 	/** Final report from the daemon */
-	struct _report *final_report[2];
+	struct report *final_report[2];
 };
 
 /** Header of an intermediated interval report column */
-struct _column_header {
+struct column_header {
         /** First header row: name of the column */
         const char* name;
         /** Second header row: unit of the column */
@@ -256,7 +256,7 @@ struct _column_header {
 };
 
 /** State of an intermediated interval report column */
-struct _column_state {
+struct column_state {
         /** Dynamically turn an column on/off */
         bool visible;
         /** How often the current column width was too high */
@@ -266,13 +266,13 @@ struct _column_state {
 };
 
 /** Intermediated interval report column */
-struct _column {
+struct column {
         /** Unique column identifier */
         enum column_id type;
         /** Column header (name and unit) */
-        struct _column_header header;
+        struct column_header header;
         /** State of the column */
-        struct _column_state state;
+        struct column_state state;
 };
 
 #endif /* _FLOWGRIND_H_ */

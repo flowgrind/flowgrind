@@ -136,12 +136,12 @@ int main(int argc, char *argv[])
 	/* update progname from argv[0] */
 	set_progname(argv[0]);
 
-	const struct _ap_Option options[] = {
+	const struct ap_Option options[] = {
 		{'h', "help", ap_no, 0, 0},
 		{'v', "version", ap_no, 0, 0},
 		{0, 0, ap_no, 0, 0}
 	};
-	struct _arg_parser parser;
+	struct arg_parser parser;
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");

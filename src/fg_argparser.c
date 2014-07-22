@@ -61,16 +61,16 @@ static void *ap_resize_buffer(void *buf, const int min_size)
  * @param[in] long_opt true if this option was a long option
  * @param[in] argument argument string for this option (may be empty)
  */
-static char push_back_record(struct _arg_parser *const ap, const int option_index,
+static char push_back_record(struct arg_parser *const ap, const int option_index,
 			     bool long_opt, const char *const argument)
 {
 	const int len = strlen(argument);
-	struct _ap_Record *p;
+	struct ap_Record *p;
 	void *tmp = ap_resize_buffer(ap->data,
-				     (ap->data_size + 1) * sizeof(struct _ap_Record));
+				     (ap->data_size + 1) * sizeof(struct ap_Record));
 	if (!tmp)
 		return 0;
-	ap->data = (struct _ap_Record *)tmp;
+	ap->data = (struct ap_Record *)tmp;
 	p = &(ap->data[ap->data_size]);
 	p->option_index = option_index;
 	p->argument = 0;
@@ -98,7 +98,7 @@ static char push_back_record(struct _arg_parser *const ap, const int option_inde
  * @param[in] ap pointer to the arg parser state
  * @param[in] msg error string
  */
-static char add_error(struct _arg_parser *const ap, const char *const msg)
+static char add_error(struct arg_parser *const ap, const char *const msg)
 {
 	const int len = strlen(msg);
 	void *tmp = ap_resize_buffer(ap->error, ap->error_size + len + 1);
@@ -116,7 +116,7 @@ static char add_error(struct _arg_parser *const ap, const char *const msg)
  *
  * @param[in] ap Pointer to the arg parser state
  */
-static void free_data(struct _arg_parser *const ap)
+static void free_data(struct arg_parser *const ap)
 {
 	for (int i = 0; i < ap->data_size; ++i) {
 		free(ap->data[i].argument);
@@ -139,9 +139,9 @@ static void free_data(struct _arg_parser *const ap)
  * @param[in] argindp pointer to the index in the command line argument array.
  * The value will be automatically updated
  */
-static char parse_long_option(struct _arg_parser *const ap,
+static char parse_long_option(struct arg_parser *const ap,
 			      const char *const opt, const char *const arg,
-			      const struct _ap_Option options[],
+			      const struct ap_Option options[],
 			      int *const argindp)
 {
 	unsigned len;
@@ -227,9 +227,9 @@ static char parse_long_option(struct _arg_parser *const ap,
  * @param[in] argindp pointer to the index in the command line argument array.
  * The value will be automatically updated
  */
-static char parse_short_option(struct _arg_parser *const ap,
+static char parse_short_option(struct arg_parser *const ap,
 			       const char *const opt, const char *const arg,
-			       const struct _ap_Option options[],
+			       const struct ap_Option options[],
 			       int *const argindp)
 {
 	int cind = 1;	/* character index in opt */
@@ -290,7 +290,7 @@ static char parse_short_option(struct _arg_parser *const ap,
  * @param[in] options array of user-defined options
  * @return number of options in @p options
  */
-static int get_num_options(const struct _ap_Option options[])
+static int get_num_options(const struct ap_Option options[])
 {
 	int i;
 	for (i=0; options[i].code; i++){}
@@ -304,7 +304,7 @@ static int get_num_options(const struct _ap_Option options[])
  * @param[in] options Array of user-defined options
  * @return Number of mutex in the option definitions
  */
-static int get_mutex_count(const struct _ap_Option options[])
+static int get_mutex_count(const struct ap_Option options[])
 {
 	int num = 0;
 
@@ -315,9 +315,9 @@ static int get_mutex_count(const struct _ap_Option options[])
 	return num;
 }
 
-char ap_init(struct _arg_parser *const ap,
+char ap_init(struct arg_parser *const ap,
 	     const int argc, const char *const argv[],
-	     const struct _ap_Option options[], const char in_order)
+	     const struct ap_Option options[], const char in_order)
 {
 	const char **non_options = 0;	/* skipped non-options */
 	int non_options_size = 0;	/* number of skipped non-options */
@@ -391,7 +391,7 @@ char ap_init(struct _arg_parser *const ap,
 	return 1;
 }
 
-void ap_free(struct _arg_parser *const ap)
+void ap_free(struct arg_parser *const ap)
 {
 	free_data(ap);
 	if (ap->error) {
@@ -401,17 +401,17 @@ void ap_free(struct _arg_parser *const ap)
 	ap->error_size = 0;
 }
 
-const char *ap_error(const struct _arg_parser *const ap)
+const char *ap_error(const struct arg_parser *const ap)
 {
 	return ap->error;
 }
 
-int ap_arguments(const struct _arg_parser *const ap)
+int ap_arguments(const struct arg_parser *const ap)
 {
 	return ap->data_size;
 }
 
-int ap_code(const struct _arg_parser *const ap, const int i)
+int ap_code(const struct arg_parser *const ap, const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap)) {
 		int index = ap->data[i].option_index;
@@ -421,7 +421,7 @@ int ap_code(const struct _arg_parser *const ap, const int i)
 	}
 }
 
-const char *ap_argument(const struct _arg_parser *const ap, const int i)
+const char *ap_argument(const struct arg_parser *const ap, const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].argument;
@@ -429,7 +429,7 @@ const char *ap_argument(const struct _arg_parser *const ap, const int i)
 		return "";
 }
 
-const char *ap_opt_string(const struct _arg_parser *const ap, const int i)
+const char *ap_opt_string(const struct arg_parser *const ap, const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
 		return ap->data[i].opt_string;
@@ -437,7 +437,7 @@ const char *ap_opt_string(const struct _arg_parser *const ap, const int i)
 		return "";
 }
 
-const struct _ap_Option *ap_option(const struct _arg_parser *const ap,
+const struct ap_Option *ap_option(const struct arg_parser *const ap,
 				   const int i)
 {
 	if (i >= 0 && i < ap_arguments(ap))
@@ -446,7 +446,7 @@ const struct _ap_Option *ap_option(const struct _arg_parser *const ap,
 		return 0;
 }
 
-bool ap_is_used(const struct _arg_parser *const ap, int code)
+bool ap_is_used(const struct arg_parser *const ap, int code)
 {
 	bool ret = false;
 
@@ -459,8 +459,8 @@ bool ap_is_used(const struct _arg_parser *const ap, int code)
 	return ret;
 }
 
-bool ap_init_mutex_state(const struct _arg_parser *const ap, 
-			 struct _ap_Mutex_state *const ms)
+bool ap_init_mutex_state(const struct arg_parser *const ap, 
+			 struct ap_Mutex_state *const ms)
 {
 	ms->seen_records = malloc(sizeof(int)*ap->num_mutex);
 	if(!ap->num_mutex || !ms->seen_records)
@@ -470,8 +470,8 @@ bool ap_init_mutex_state(const struct _arg_parser *const ap,
 	return true;
 }
 
-bool ap_check_mutex(const struct _arg_parser *const ap, 
-		    const struct _ap_Mutex_state *const ms, 
+bool ap_check_mutex(const struct arg_parser *const ap, 
+		    const struct ap_Mutex_state *const ms, 
 		    const int i, int *conflict)
 {
 	if(ap->num_mutex != ms->num_mutex)
@@ -496,8 +496,8 @@ bool ap_check_mutex(const struct _arg_parser *const ap,
 	return false;
 }
 
-bool ap_set_mutex(const struct _arg_parser *const ap, 
-		  struct _ap_Mutex_state *const ms, const int i)
+bool ap_set_mutex(const struct arg_parser *const ap, 
+		  struct ap_Mutex_state *const ms, const int i)
 {
 	if(ap->num_mutex != ms->num_mutex)
 		return false;
@@ -512,8 +512,8 @@ bool ap_set_mutex(const struct _arg_parser *const ap,
 	return true;
 }
 
-bool ap_set_check_mutex(const struct _arg_parser *const ap, 
-			struct _ap_Mutex_state *const ms, const int i, 
+bool ap_set_check_mutex(const struct arg_parser *const ap, 
+			struct ap_Mutex_state *const ms, const int i, 
 			int *conflict)
 {
 	bool ret = ap_check_mutex(ap, ms, i, conflict);
@@ -521,12 +521,12 @@ bool ap_set_check_mutex(const struct _arg_parser *const ap,
 	return ret;
 }
 
-void ap_reset_mutex(struct _ap_Mutex_state *const ms)
+void ap_reset_mutex(struct ap_Mutex_state *const ms)
 {
 	memset(ms->seen_records,0,sizeof(int)*ms->num_mutex);
 }
 
-void ap_free_mutex_state(struct _ap_Mutex_state *const ms)
+void ap_free_mutex_state(struct ap_Mutex_state *const ms)
 {
 	if (ms->seen_records) {
 		free(ms->seen_records);

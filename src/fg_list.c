@@ -31,7 +31,7 @@
 
 #include "fg_list.h"
 
-int fg_list_init(struct _linked_list * const list)
+int fg_list_init(struct linked_list * const list)
 {
 	if (!list)
 		return -1;
@@ -46,7 +46,7 @@ int fg_list_init(struct _linked_list * const list)
 	return 0;
 }
 
-const struct _list_node* fg_list_front(struct _linked_list * const list)
+const struct list_node* fg_list_front(struct linked_list * const list)
 {
 	if (!list)
 		return NULL;
@@ -54,7 +54,7 @@ const struct _list_node* fg_list_front(struct _linked_list * const list)
 	return list->head;
 }
 
-const struct _list_node* fg_list_back(struct _linked_list * const list)
+const struct list_node* fg_list_back(struct linked_list * const list)
 {
 	if (!list)
 		return NULL;
@@ -62,14 +62,14 @@ const struct _list_node* fg_list_back(struct _linked_list * const list)
 	return list->tail;
 }
 
-int fg_list_remove(struct _linked_list * const list, const void * const data)
+int fg_list_remove(struct linked_list * const list, const void * const data)
 {
 	if (!list)
 		return -1;
 	if (!list->head)
 		return -3;
 
-	struct _list_node *node = list->head;
+	struct list_node *node = list->head;
 
 	while (node->data != data) {
 		node = node->next;
@@ -102,11 +102,11 @@ int fg_list_remove(struct _linked_list * const list, const void * const data)
  * @param[in] next existing list element the new element will be inserted before
  * @return pointer to the newly created list element or NULL on failure
  */
-static struct _list_node* create_node(void * const data,
-				      struct _list_node * const previous,
-				      struct _list_node * const next)
+static struct list_node* create_node(void * const data,
+				      struct list_node * const previous,
+				      struct list_node * const next)
 {
-	struct _list_node *new_node = (struct _list_node*)malloc(sizeof(struct _list_node));
+	struct list_node *new_node = (struct list_node*)malloc(sizeof(struct list_node));
 
 	if (!new_node)
 		return NULL;
@@ -118,12 +118,12 @@ static struct _list_node* create_node(void * const data,
 	return new_node;
 }
 
-int fg_list_push_front(struct _linked_list * const list, void * const data)
+int fg_list_push_front(struct linked_list * const list, void * const data)
 {
 	if (!list)
 		return -1;
 
-	struct _list_node *new_node = create_node(data, NULL, list->head);
+	struct list_node *new_node = create_node(data, NULL, list->head);
 
 	if (!new_node)
 		return -5;
@@ -139,14 +139,14 @@ int fg_list_push_front(struct _linked_list * const list, void * const data)
 	return 0;
 }
 
-void* fg_list_pop_front(struct _linked_list * const list)
+void* fg_list_pop_front(struct linked_list * const list)
 {
 	if (!list)
 		return NULL;
 	if (!list->head)
 		return NULL;
 
-	struct _list_node *head = list->head;
+	struct list_node *head = list->head;
 
 	if (list->head == list->tail)
 		list->tail = NULL;
@@ -162,12 +162,12 @@ void* fg_list_pop_front(struct _linked_list * const list)
 	return data;
 }
 
-int fg_list_push_back(struct _linked_list * const list, void * const data)
+int fg_list_push_back(struct linked_list * const list, void * const data)
 {
 	if (!list)
 		return -1;
 
-	struct _list_node *new_node = create_node(data, list->tail, NULL);
+	struct list_node *new_node = create_node(data, list->tail, NULL);
 
 	if (!new_node)
 		return -5;
@@ -183,14 +183,14 @@ int fg_list_push_back(struct _linked_list * const list, void * const data)
 	return 0;
 }
 
-void* fg_list_pop_back(struct _linked_list * const list)
+void* fg_list_pop_back(struct linked_list * const list)
 {
 	if (!list)
 		return NULL;
 	if (!list->tail)
 		return NULL;
 
-	struct _list_node *tail = list->tail;
+	struct list_node *tail = list->tail;
 	void *data = tail->data;
 
 	if (tail->previous)
@@ -206,7 +206,7 @@ void* fg_list_pop_back(struct _linked_list * const list)
 	return data;
 }
 
-size_t fg_list_size(struct _linked_list * const list)
+size_t fg_list_size(struct linked_list * const list)
 {
 	if (!list)
 		return -1;
@@ -214,7 +214,7 @@ size_t fg_list_size(struct _linked_list * const list)
 	return list->size;
 }
 
-int fg_list_clear(struct _linked_list * const list)
+int fg_list_clear(struct linked_list * const list)
 {
 	if (!list)
 		return -1;

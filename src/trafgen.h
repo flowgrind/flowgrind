@@ -30,8 +30,8 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-extern int next_request_block_size(struct _flow *);
-extern int next_response_block_size(struct _flow *);
-extern double next_interpacket_gap(struct _flow *);
+extern int next_request_block_size(struct flow *);
+extern int next_response_block_size(struct flow *);
+extern double next_interpacket_gap(struct flow *);
 
 #endif /* _TRAFGEN_H_ */

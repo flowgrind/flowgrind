@@ -95,8 +95,8 @@ void fg_pcap_init()
 
 void fg_pcap_cleanup(void* arg)
 {
-	struct _flow * flow;
-	flow = (struct _flow *) arg;
+	struct flow * flow;
+	flow = (struct flow *) arg;
 	if (!dumping)
 		return;
 	DEBUG_MSG(LOG_DEBUG, "fg_pcap_cleanup() called for flow %d", flow->id);
@@ -120,8 +120,8 @@ static void* fg_pcap_work(void* arg)
 	struct pcap_stat p_stats;
 #endif /* DEBUG */
 	int rc;
-	struct _flow * flow;
-	flow = (struct _flow *) arg;
+	struct flow * flow;
+	flow = (struct flow *) arg;
 	pcap_if_t *d;
 	struct sockaddr_storage sa;
 	socklen_t sl = sizeof(sa);
@@ -302,7 +302,7 @@ remove:
 
 }
 
-void fg_pcap_go(struct _flow *flow)
+void fg_pcap_go(struct flow *flow)
 {
 	int rc;
 	if (!flow->settings.traffic_dump)
