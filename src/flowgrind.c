@@ -2890,23 +2890,23 @@ static void sanity_check(void)
 		    cflow[id].late_connect &&
 		    cflow[id].settings[DESTINATION].delay[WRITE] <
 		    cflow[id].settings[SOURCE].delay[WRITE]) {
-			warnx("server flow %d starts earlier than client "
+			errx("server flow %d starts earlier than client "
 			      "flow while late connecting", id);
 			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[SOURCE].delay[WRITE] > 0 &&
 		    cflow[id].settings[SOURCE].duration[WRITE] == 0) {
-			warnx("client flow %d has a delay but no runtime", id);
+			errx("client flow %d has a delay but no runtime", id);
 			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[DESTINATION].delay[WRITE] > 0 &&
 		    cflow[id].settings[DESTINATION].duration[WRITE] == 0) {
-			warnx("server flow %d has a delay but no runtime", id);
+			errx("server flow %d has a delay but no runtime", id);
 			exit(EXIT_FAILURE);
 		}
 		if (!cflow[id].settings[DESTINATION].duration[WRITE] &&
 		    !cflow[id].settings[SOURCE].duration[WRITE]) {
-			warnx("server and client flow have both zero runtime "
+			errx("server and client flow have both zero runtime "
 			      "for flow %d", id);
 			exit(EXIT_FAILURE);
 		}
@@ -2914,7 +2914,7 @@ static void sanity_check(void)
 		for (unsigned i = 0; i < 2; i++) {
 			if (cflow[id].settings[i].flow_control &&
 			    !cflow[id].settings[i].write_rate_str) {
-				warnx("flow %d has flow control enabled but no "
+				errx("flow %d has flow control enabled but no "
 				      "rate", id);
 				exit(EXIT_FAILURE);
 			}
@@ -2922,7 +2922,7 @@ static void sanity_check(void)
 			if (cflow[id].settings[i].write_rate &&
 			    cflow[id].settings[i].write_rate /
 				cflow[id].settings[i].maximum_block_size < 1) {
-				warnx("client block size for flow %u is too big for "
+				errx("client block size for flow %u is too big for "
 				      "specified rate", id);
 				exit(EXIT_FAILURE);
 			}
