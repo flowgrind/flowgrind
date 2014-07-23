@@ -3,14 +3,14 @@
 # parse packages in $PACKAGES
 EXTRA_PKGS=
 for PACKAGE in $PACKAGES; do
-    case $PACKAGE in
-        gsl)
-            EXTRA_PKGS="libgsl0-dev $EXTRA_PKGS"
-            ;;
-        libpcap)
-            EXTRA_PKGS="libpcap-dev $EXTRA_PKGS"
-            ;;
-    esac
+	case $PACKAGE in
+		gsl)
+			EXTRA_PKGS="libgsl0-dev $EXTRA_PKGS"
+			;;
+		libpcap)
+			EXTRA_PKGS="libpcap-dev $EXTRA_PKGS"
+			;;
+	esac
 done
 
 set -x
