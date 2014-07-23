@@ -108,6 +108,9 @@ static struct controller_options copt;
 /** Infos about all flows including flow options */
 static struct cflow cflow[MAX_FLOWS];
 
+/** Command line option parser */
+static struct arg_parser parser;
+
 /** Number of currently active flows */
 static int active_flows = 0;
 
@@ -2713,8 +2716,6 @@ static void parse_cmdline(int argc, char *argv[])
 		{0, 0, ap_no, 0, 0}
 	};
 
-	struct arg_parser parser;
-
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser))
@@ -2872,7 +2873,6 @@ static void parse_cmdline(int argc, char *argv[])
 		}
 	}
 
-	ap_free(&parser);
 	ap_free_mutex_state(&ms[MUTEX_CONTEXT_CONTROLLER]);
 	ap_free_mutex_state(&ms[MUTEX_CONTEXT_TWO_SIDED]);
 	ap_free_mutex_state(&ms[MUTEX_CONTEXT_SOURCE]);
@@ -2979,7 +2979,9 @@ int main(int argc, char *argv[])
 
 	xmlrpc_client_destroy(rpc_client);
 	xmlrpc_env_clean(&rpc_env);
-
 	xmlrpc_client_teardown_global_const();
+
+	ap_free(&parser);
+
 	DEBUG_MSG(LOG_WARNING, "bye");
 }
