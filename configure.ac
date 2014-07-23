@@ -395,6 +395,12 @@ AS_IF([test "x$have_clock_gettime" != "xyes" -a \
 			"x$have_clock_get_time" != "xyes"],
 	[AC_MSG_ERROR([required function not found])])
 
+# Checking for pthread_barrier
+AC_CHECK_FUNCS(
+	[pthread_barrier_init \
+	 pthread_barrier_wait \
+	 pthread_barrier_destroy])
+
 # Checking for function pthread_getaffinity_np & thread_policy_get
 AC_MSG_CHECKING([for pthread_getaffinity_np])
 AC_LINK_IFELSE(
