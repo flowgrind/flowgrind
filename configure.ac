@@ -262,6 +262,7 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 # Checking for libraries
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
+AC_SEARCH_LIBS([clock_gettime], [rt])
 
 # Checking for types
 AC_TYPE_SIGNAL
@@ -363,12 +364,6 @@ AC_CHECK_FUNC([clock_gettime],
 	[have_clock_gettime=yes;
 	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
 		[Define to 1 if the system has clock_gettime.])
-	],
-	[AC_SEARCH_LIBS([clock_gettime], [rt],
-		[have_clock_gettime=yes;
-		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-			[Define to 1 if the system has clock_gettime.])
-		])
 	])
 
 AS_IF([test "x$have_clock_gettime" != "xyes"],
