@@ -31,6 +31,11 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#ifdef __DARWIN__
+/** Temporarily renaming daemon() so compiler does not see the warning on OS X */
+#define daemon fake_daemon_function
+#endif /* __DARWIN__ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -69,6 +74,12 @@
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
+
+#ifdef __DARWIN__
+/** Remap daemon() function */
+#undef daemon
+extern int daemon(int, int);
+#endif /* __DARWIN__ */
 
 /** Print error message, usage string and exit. Used for cmdline parsing errors */
 #define PARSE_ERR(err_msg, ...) do {	\
