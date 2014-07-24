@@ -394,7 +394,11 @@ AS_IF([test "x$have_clock_gettime" != "xyes" -a \
 AC_CHECK_FUNCS(
 	[pthread_barrier_init \
 	 pthread_barrier_wait \
-	 pthread_barrier_destroy])
+	 pthread_barrier_destroy \
+	],
+	[AC_DEFINE([HAVE_PTHREAD_BARRIER], [1],
+		[Define to 1 if the system has pthread_barrier.])
+	])
 
 # Checking for function pthread_getaffinity_np & thread_policy_get
 AC_MSG_CHECKING([for pthread_getaffinity_np])
