@@ -396,9 +396,12 @@ AC_CHECK_FUNCS(
 	 pthread_barrier_wait \
 	 pthread_barrier_destroy \
 	],
-	[AC_DEFINE([HAVE_PTHREAD_BARRIER], [1],
+	[have_pthread_barrier=yes;
+	 AC_DEFINE([HAVE_PTHREAD_BARRIER], [1],
 		[Define to 1 if the system has pthread_barrier.])
 	])
+AM_CONDITIONAL([USE_FG_PTHREAD_BARRIER],
+	[test "x$have_pthread_barrier" != "xyes"])
 
 # Checking for function pthread_getaffinity_np & thread_policy_get
 AC_MSG_CHECKING([for pthread_getaffinity_np])

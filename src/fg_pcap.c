@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
+#include <pcap.h>
 
 #include "debug.h"
 #include "fg_socket.h"
@@ -47,15 +48,20 @@
 #include "daemon.h"
 #include "fg_pcap.h"
 
-#ifdef HAVE_LIBPCAP
-
-#include <pcap.h>
+/* OS X hasn't defined pthread_barrier */
+#ifndef HAVE_PTHREAD_BARRIER
+#include "fg_barrier.h"
+#endif
 
 #define PCAP_SNAPLEN 130
 #define PCAP_FILTER "tcp"
 #define PCAP_PROMISC 0
 
 static char errbuf[PCAP_ERRBUF_SIZE];
+
+static pthread_barrier_t pcap_barrier;
+
+static pcap_if_t * alldevs;
 
 void fg_pcap_init()
 {
@@ -87,9 +93,7 @@ void fg_pcap_init()
 	}
 #endif /* DEBUG*/
 
-#ifndef __DARWIN__
 	pthread_barrier_init(&pcap_barrier, NULL, 2);
-#endif /* __DARWIN__ */
 	return;
 }
 
@@ -262,9 +266,8 @@ static void* fg_pcap_work(void* arg)
 	}
 
 	/* barrier: dump is ready */
-#ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
-#endif /* __DARWIN__ */
+
 	for (;;) {
 		rc = pcap_dispatch((pcap_t *)flow->pcap_handle, -1,
 				   &pcap_dump, (u_char *)flow->pcap_dumper);
@@ -291,13 +294,11 @@ static void* fg_pcap_work(void* arg)
 			pthread_testcancel();
 	}
 
-remove:
-	;
+remove: ;
+
 	pthread_cleanup_pop(1);
 
-#ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
-#endif /* __DARWIN__ */
 	return 0;
 
 }
@@ -318,14 +319,13 @@ void fg_pcap_go(struct flow *flow)
 	dumping = 1;
 	rc = pthread_create(&flow->pcap_thread, NULL, fg_pcap_work,
 			    (void*)flow);
+
 	/* barrier: dump thread is ready (or aborted) */
-#ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
-#endif /* __DARWIN__ */
+
 	if (rc)
 		logging_log(LOG_WARNING, "Could not start pcap thread: %s",
 			    strerror(rc) );
 	return;
 }
 
-#endif /* HAVE_LIBPCAP */

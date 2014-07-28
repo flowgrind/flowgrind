@@ -70,6 +70,9 @@ if USE_LIBPCAP
 flowgrindd_SOURCES += src/fg_pcap.h src/fg_pcap.c
 flowgrindd_LDADD += $(PCAP_LDADD)
 flowgrindd_CFLAGS += $(PCAP_CFLAGS)
+if USE_FG_PTHREAD_BARRIER
+flowgrindd_SOURCES += src/fg_barrier.h src/fg_barrier.c
+endif
 endif
 
 .PHONY: gitversion.h mrproper html.timestamp clean-local
