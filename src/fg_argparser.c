@@ -127,6 +127,13 @@ static void free_data(struct arg_parser *const ap)
 		ap->data = 0;
 	}
 	ap->data_size = 0;
+
+	for (int i = 0; i < ap->num_options; ++i) {
+		free(ap->options[i].name);
+		free(ap->options[i].mutex);
+	}
+	free(ap->options);
+	ap->num_options = 0;
 }
 
 /**
@@ -315,6 +322,47 @@ static int get_mutex_count(const struct ap_Option options[])
 	return num;
 }
 
+/**
+ * Copy @p options into the arg parser @p ap.
+ * This is a deep copy including strings and arrays.
+ *
+ * @param[in] ap arg parser
+ * @param[in] options options struct to copy
+ * @return true iff successful
+ */
+static bool copy_options(struct arg_parser *const ap, 
+			 const struct ap_Option options[])
+{
+
+	ap->num_options = get_num_options(options);
+	if (!ap->num_options)
+		return false;
+	ap->options = malloc(sizeof(struct ap_Option)*ap->num_options);
+	if (!ap->options)
+		return false;	
+	
+	for (int i=0; i < ap->num_options; i++) {
+		ap->options[i] = options[i];
+		if (options[i].name)
+			ap->options[i].name = strdup(options[i].name);
+
+		if (options[i].mutex) {
+			/* get number of mutex items */
+			int num;
+			for (num = 0; options[i].mutex[num]; num++);
+
+			/* now copy into new array */
+			ap->options[i].mutex = malloc(sizeof(int)*
+						(num+1));
+			if (!ap->options[i].mutex)
+				return false;
+			for (int e=0; e<=num; e++)
+				ap->options[i].mutex[e] = options[i].mutex[e];
+		}
+	}
+	return true;
+}
+
 char ap_init(struct arg_parser *const ap,
 	     const int argc, const char *const argv[],
 	     const struct ap_Option options[], const char in_order)
@@ -323,10 +371,8 @@ char ap_init(struct arg_parser *const ap,
 	int non_options_size = 0;	/* number of skipped non-options */
 	int argind = 1;			/* index in argv */
 
-	ap->num_options = get_num_options(options);
-	if (!ap->num_options)
-		return 1;
-	ap->options = options;
+	if (!copy_options(ap,options))
+		return 0;
 
 	ap->num_mutex = get_mutex_count(options);
 

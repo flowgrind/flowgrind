@@ -102,6 +102,9 @@ static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
 
+/** Command line option parser */
+static struct arg_parser parser;
+
 /** Controller options */
 static struct controller_options copt;
 
@@ -2713,8 +2716,6 @@ static void parse_cmdline(int argc, char *argv[])
 		{0, 0, ap_no, 0, 0}
 	};
 
-	struct arg_parser parser;
-
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");
 	if (ap_error(&parser))
@@ -2872,7 +2873,6 @@ static void parse_cmdline(int argc, char *argv[])
 		}
 	}
 
-	ap_free(&parser);
 	ap_free_mutex_state(&ms[MUTEX_CONTEXT_CONTROLLER]);
 	ap_free_mutex_state(&ms[MUTEX_CONTEXT_TWO_SIDED]);
 	ap_free_mutex_state(&ms[MUTEX_CONTEXT_SOURCE]);
@@ -2981,5 +2981,6 @@ int main(int argc, char *argv[])
 	xmlrpc_env_clean(&rpc_env);
 
 	xmlrpc_client_teardown_global_const();
+	ap_free(&parser);
 	DEBUG_MSG(LOG_WARNING, "bye");
 }
