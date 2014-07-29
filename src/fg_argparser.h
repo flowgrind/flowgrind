@@ -70,7 +70,7 @@ struct ap_Option {
 	/** Short option letter or code (code != 0) */
 	int code;
 	/** Long option name (maybe null) */
-	const char *name;
+	char *name;
 	/** Argument specifier */
 	enum ap_Has_arg has_arg;
 	/** User tag for distinction of options */
@@ -97,7 +97,7 @@ struct ap_Record {
 /** Internal state of the argument parser */
 struct arg_parser {
 	/** Pointer for user defined options */
-	const struct ap_Option *options;
+	struct ap_Option *options;
 	/** Container for parsed cmdline options */
 	struct ap_Record *data;
 	/** Contains errors encountered during parsing */

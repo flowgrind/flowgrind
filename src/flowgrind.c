@@ -102,6 +102,9 @@ static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
 
+/** Command line option parser */
+static struct arg_parser parser;
+
 /** Controller options */
 static struct controller_options copt;
 
