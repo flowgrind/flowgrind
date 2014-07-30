@@ -111,6 +111,9 @@ static struct controller_options copt;
 /** Infos about all flows including flow options */
 static struct cflow cflow[MAX_FLOWS];
 
+/** Command line option parser */
+static struct arg_parser parser;
+
 /** Number of currently active flows */
 static int active_flows = 0;
 
@@ -2979,8 +2982,9 @@ int main(int argc, char *argv[])
 
 	xmlrpc_client_destroy(rpc_client);
 	xmlrpc_env_clean(&rpc_env);
-
 	xmlrpc_client_teardown_global_const();
+
 	ap_free(&parser);
+
 	DEBUG_MSG(LOG_WARNING, "bye");
 }

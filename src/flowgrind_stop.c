@@ -43,6 +43,9 @@
 #include "fg_progname.h"
 #include "fg_argparser.h"
 
+/** Command line option parser */
+static struct arg_parser parser;
+
 /* External global variables */
 extern const char *progname;
 
@@ -141,7 +144,6 @@ int main(int argc, char *argv[])
 		{'v', "version", ap_no, 0, 0},
 		{0, 0, ap_no, 0, 0}
 	};
-	struct arg_parser parser;
 
 	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
 		critx("could not allocate memory for option parser");

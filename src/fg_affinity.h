@@ -32,8 +32,7 @@
 
 #include <pthread.h>
 
-/** Query type for get_ncores()
- * @enum ncore_query */
+/** Query type for get_ncores()  */
 enum ncore_query {
 	/** Total number of processors configured */
 	NCORE_CONFIG = 0,

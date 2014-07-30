@@ -262,6 +262,7 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 # Checking for libraries
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
+AC_SEARCH_LIBS([clock_gettime], [rt])
 
 # Checking for types
 AC_TYPE_SIGNAL
@@ -363,12 +364,6 @@ AC_CHECK_FUNC([clock_gettime],
 	[have_clock_gettime=yes;
 	 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
 		[Define to 1 if the system has clock_gettime.])
-	],
-	[AC_SEARCH_LIBS([clock_gettime], [rt],
-		[have_clock_gettime=yes;
-		 AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-			[Define to 1 if the system has clock_gettime.])
-		])
 	])
 
 AS_IF([test "x$have_clock_gettime" != "xyes"],
@@ -394,6 +389,19 @@ AS_IF([test "x$have_clock_gettime" != "xyes"],
 AS_IF([test "x$have_clock_gettime" != "xyes" -a \
 			"x$have_clock_get_time" != "xyes"],
 	[AC_MSG_ERROR([required function not found])])
+
+# Checking for pthread_barrier
+AC_CHECK_FUNCS(
+	[pthread_barrier_init \
+	 pthread_barrier_wait \
+	 pthread_barrier_destroy \
+	],
+	[have_pthread_barrier=yes;
+	 AC_DEFINE([HAVE_PTHREAD_BARRIER], [1],
+		[Define to 1 if the system has pthread_barrier.])
+	])
+AM_CONDITIONAL([USE_FG_PTHREAD_BARRIER],
+	[test "x$have_pthread_barrier" != "xyes"])
 
 # Checking for function pthread_getaffinity_np & thread_policy_get
 AC_MSG_CHECKING([for pthread_getaffinity_np])

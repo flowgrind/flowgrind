@@ -270,7 +270,8 @@ static int prepare_rfds(struct timespec *now, struct flow *flow, fd_set *rfds)
 
 static int prepare_fds() {
 
-	DEBUG_MSG(LOG_DEBUG, "prepare_fds() called, number of flows: %d", fg_list_size(&flows));
+	DEBUG_MSG(LOG_DEBUG, "prepare_fds() called, number of flows: %zu",
+		  fg_list_size(&flows));
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
@@ -1065,7 +1066,7 @@ static inline int try_read_n_bytes(struct flow *flow, int bytes)
 #ifdef DEBUG
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg))
 		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, "
-			  "len = %zu",
+			  "len = %u",
 		flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
 #endif /* DEBUG */
 
