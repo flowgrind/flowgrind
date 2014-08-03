@@ -2633,10 +2633,10 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * Defines the cmdline options and distinguishes option types (flow, general, ...)
  * and tokenizes flow options which can have several endpoints
  *
- * @param[in] mm Pointer to mutex manager
- * @param[in] ms Array of mutex states (of size 3)
- * @param[in] endpoint The endpoint of this option (see enum #flow_endpoint)
- * @param[in] argind The option record index
+ * @param[in] parser pointer to arg-parser state
+ * @param[in] ms array of mutex states
+ * @param[in] context the mutex context of this option (see enum #mutex_contexts)
+ * @param[in] argind option record index
  * @param[in] flow_id ID of the flow to show in error message
  */
 static void check_mutex(const struct arg_parser *const parser,
