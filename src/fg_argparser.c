@@ -61,7 +61,7 @@ static void *ap_resize_buffer(void *buf, const int min_size)
  * @param[in] long_opt true if this option was a long option
  * @param[in] argument argument string for this option (may be empty)
  */
-static char push_back_record(struct arg_parser *const ap, const int option_index,
+static bool push_back_record(struct arg_parser *const ap, const int option_index,
 			     bool long_opt, const char *const argument)
 {
 	const int len = strlen(argument);
@@ -69,27 +69,27 @@ static char push_back_record(struct arg_parser *const ap, const int option_index
 	void *tmp = ap_resize_buffer(ap->data,
 				     (ap->data_size + 1) * sizeof(struct ap_Record));
 	if (!tmp)
-		return 0;
+		return false;
 	ap->data = (struct ap_Record *)tmp;
 	p = &(ap->data[ap->data_size]);
 	p->option_index = option_index;
 	p->argument = 0;
 	tmp = ap_resize_buffer(p->argument, len + 1);
 	if (!tmp)
-		return 0;
+		return false;
 	p->argument = (char *)tmp;
 	strncpy(p->argument, argument, len + 1);
 
 	if (long_opt) {
 		if (!asprintf(&p->opt_string, "--%s", ap->options[option_index].name))
-			return 0;
+			return false;
 	} else {
 		if (!asprintf(&p->opt_string, "-%c", ap->options[option_index].code))
-			return 0;
+			return false;
 	}
 
 	++ap->data_size;
-	return 1;
+	return true;
 }
 
 /**
@@ -98,17 +98,17 @@ static char push_back_record(struct arg_parser *const ap, const int option_index
  * @param[in] ap pointer to the arg parser state
  * @param[in] msg error string
  */
-static char add_error(struct arg_parser *const ap, const char *const msg)
+static bool add_error(struct arg_parser *const ap, const char *const msg)
 {
 	const int len = strlen(msg);
 	void *tmp = ap_resize_buffer(ap->error, ap->error_size + len + 1);
 	if (!tmp)
-		return 0;
+		return false;
 	ap->error = (char *)tmp;
 	strncpy(ap->error + ap->error_size, msg, len + 1);
 	ap->error_size += len;
 
-	return 1;
+	return true;
 }
 
 /**
@@ -146,7 +146,7 @@ static void free_data(struct arg_parser *const ap)
  * @param[in] argindp pointer to the index in the command line argument array.
  * The value will be automatically updated
  */
-static char parse_long_option(struct arg_parser *const ap,
+static bool parse_long_option(struct arg_parser *const ap,
 			      const char *const opt, const char *const arg,
 			      const struct ap_Option options[],
 			      int *const argindp)
@@ -180,7 +180,7 @@ static char parse_long_option(struct arg_parser *const ap,
 		add_error(ap, "option '");
 		add_error(ap, opt);
 		add_error(ap, "' is ambiguous");
-		return 1;
+		return true;
 	}
 
 	/* nothing found */
@@ -188,7 +188,7 @@ static char parse_long_option(struct arg_parser *const ap,
 		add_error(ap, "unrecognized option '");
 		add_error(ap, opt);
 		add_error(ap, "'");
-		return 1;
+		return true;
 	}
 
 	++*argindp;
@@ -199,13 +199,13 @@ static char parse_long_option(struct arg_parser *const ap,
 			add_error(ap, "option '--");
 			add_error(ap, options[index].name);
 			add_error(ap, "' doesn't allow an argument");
-			return 1;
+			return true;
 		}
 		if (options[index].has_arg == ap_yes && !opt[len + 3]) {
 			add_error(ap, "option '--");
 			add_error(ap, options[index].name);
 			add_error(ap, "' requires an argument");
-			return 1;
+			return true;
 		}
 		return push_back_record(ap, index, true, &opt[len + 3]);
 	}
@@ -215,7 +215,7 @@ static char parse_long_option(struct arg_parser *const ap,
 			add_error(ap, "option '--");
 			add_error(ap, options[index].name);
 			add_error(ap, "' requires an argument");
-			return 1;
+			return true;
 		}
 		++*argindp;
 		return push_back_record(ap, index, true, arg);
@@ -234,7 +234,7 @@ static char parse_long_option(struct arg_parser *const ap,
  * @param[in] argindp pointer to the index in the command line argument array.
  * The value will be automatically updated
  */
-static char parse_short_option(struct arg_parser *const ap,
+static bool parse_short_option(struct arg_parser *const ap,
 			       const char *const opt, const char *const arg,
 			       const struct ap_Option options[],
 			       int *const argindp)
@@ -258,7 +258,7 @@ static char parse_short_option(struct arg_parser *const ap,
 		if (index < 0) {
 			add_error(ap, "invalid option -- ");
 			add_error(ap, code_str);
-			return 1;
+			return true;
 		}
 
 		/* opt finished */
@@ -269,25 +269,25 @@ static char parse_short_option(struct arg_parser *const ap,
 
 		if (options[index].has_arg != ap_no && cind > 0 && opt[cind]) {
 			if (!push_back_record(ap, index, false, &opt[cind]))
-				return 0;
+				return false;
 			++*argindp;
 			cind = 0;
 		} else if (options[index].has_arg == ap_yes) {
 			if (!arg || !arg[0]) {
 				add_error(ap, "option requires an argument -- ");
 				add_error(ap, code_str);
-				return 1;
+				return true;
 			}
 			++*argindp;
 			cind = 0;
 			if (!push_back_record(ap, index, false, arg))
-				return 0;
+				return false;
 		} else if (!push_back_record(ap, index, false, "")) {
-			return 0;
+			return false;
 		}
 	}
 
-	return 1;
+	return true;
 }
 
 /**
@@ -363,7 +363,7 @@ static bool copy_options(struct arg_parser *const ap,
 	return true;
 }
 
-char ap_init(struct arg_parser *const ap,
+bool ap_init(struct arg_parser *const ap,
 	     const int argc, const char *const argv[],
 	     const struct ap_Option options[], const char in_order)
 {
@@ -372,7 +372,7 @@ char ap_init(struct arg_parser *const ap,
 	int argind = 1;			/* index in argv */
 
 	if (!copy_options(ap,options))
-		return 0;
+		return false;
 
 	ap->num_mutex = get_mutex_count(options);
 
@@ -381,7 +381,7 @@ char ap_init(struct arg_parser *const ap,
 	ap->data_size = 0;
 	ap->error_size = 0;
 	if (argc < 2 || !argv || !options)
-		return 1;
+		return true;
 
 	while (argind < argc) {
 		const unsigned char ch1 = argv[argind][0];
@@ -398,12 +398,12 @@ char ap_init(struct arg_parser *const ap,
 				} else {
 				    if (!parse_long_option
 					(ap, opt, arg, options, &argind))
-					return 0;
+					return false;
 				}
 			} else {
 			    if (!parse_short_option
 				(ap, opt, arg, options, &argind))
-				return 0;
+				return false;
 			}
 			if (ap->error)
 				break;
@@ -412,11 +412,11 @@ char ap_init(struct arg_parser *const ap,
 				void *tmp = ap_resize_buffer(non_options, (non_options_size + 1) *
 							     sizeof *non_options);
 				if (!tmp)
-					return 0;
+					return false;
 				non_options = (const char **)tmp;
 				non_options[non_options_size++] = argv[argind++];
 			} else if (!push_back_record(ap, ap->num_options, false, argv[argind++])) {
-				return 0;
+				return false;
 			}
 		}
 	}
@@ -426,15 +426,15 @@ char ap_init(struct arg_parser *const ap,
 	} else {
 		for (int i = 0; i < non_options_size; ++i)
 			if (!push_back_record(ap, ap->num_options, false, non_options[i]))
-				return 0;
+				return false;
 		while (argind < argc)
 			if (!push_back_record(ap, ap->num_options, false, argv[argind++]))
-				return 0;
+				return false;
 	}
 
 	if (non_options)
 		free(non_options);
-	return 1;
+	return true;
 }
 
 void ap_free(struct arg_parser *const ap)
@@ -463,7 +463,7 @@ int ap_code(const struct arg_parser *const ap, const int i)
 		int index = ap->data[i].option_index;
 		return ap->options[index].code;
 	} else {
-		return 0;
+		return false;
 	}
 }
 
@@ -489,7 +489,7 @@ const struct ap_Option *ap_option(const struct arg_parser *const ap,
 	if (i >= 0 && i < ap_arguments(ap))
 		return &ap->options[ap->data[i].option_index];
 	else
-		return 0;
+		return false;
 }
 
 bool ap_is_used(const struct arg_parser *const ap, int code)

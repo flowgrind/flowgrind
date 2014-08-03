@@ -130,7 +130,7 @@ struct ap_Mutex_state {
  * @param[in] in_order if set to true, arguments are stored in the order in
  * which they appear. If false, non-option arguments are stored after options
  */
-char ap_init(struct arg_parser *const ap,
+bool ap_init(struct arg_parser *const ap,
 	     const int argc, const char *const argv[],
 	     const struct ap_Option options[], const char in_order);
 
