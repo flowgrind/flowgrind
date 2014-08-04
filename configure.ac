@@ -19,7 +19,7 @@
 
 # Initialization & setup
 AC_INIT([Flowgrind], [0.7.1], [https://github.com/flowgrind/flowgrind/issues],
-	[flowgrind], [https://www.flowgrind.net])
+	[flowgrind], [http://www.flowgrind.net])
 AC_COPYRIGHT([Copyright (C) 2007 - 2014 Flowgrind authors])
 
 AC_PREREQ([2.61])
