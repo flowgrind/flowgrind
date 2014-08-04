@@ -26,30 +26,6 @@
  *
  */
 
-/*  _arg_parser reads the arguments in 'argv' and creates a number of
-    option codes, option arguments and non-option arguments.
-
-    In case of error, 'ap_error' returns a non-null pointer to an error
-    message.
-
-    'options' is an array of 'struct ap_Option' terminated by an element
-    containing a code which is zero. A null name means a short-only
-    option. A code value outside the unsigned char range means a
-    long-only option.
-
-    _arg_parser normally makes it appear as if all the option arguments
-    were specified before all the non-option arguments for the purposes
-    of parsing, even if the user of your program intermixed option and
-    non-option arguments. If you want the arguments in the exact order
-    the user typed them, call 'ap_init' with 'in_order' = true.
-
-    The argument '--' terminates all options; any following arguments are
-    treated as non-option arguments, even if they begin with a hyphen.
-
-    The syntax for optional option arguments is '-<short_option><argument>'
-    (without whitespace), or '--<long_option>=<argument>'.
-*/
-
 #ifndef _ARG_PARSER_H_
 #define _ARG_PARSER_H_
 
@@ -96,7 +72,7 @@ struct ap_Record {
 
 /** Internal state of the argument parser */
 struct arg_parser {
-	/** Pointer for user defined options */
+	/** Array containing user-defined options */
 	struct ap_Option *options;
 	/** Container for parsed cmdline options */
 	struct ap_Record *data;
@@ -121,148 +97,157 @@ struct ap_Mutex_state {
 };
 
 /**
- * Initialize the arg parser given command line options
+ * Initialize the arg-parser given command line and user-defined options
  *
- * @param[in] ap pointer to arg parser state
+ * @param[in] ap pointer to arg-parser state
  * @param[in] argc number of command line arguments
  * @param[in] argv array of command line argument strings
- * @param[in] options defines the options to parse for
+ * @param[in] options array of user-defined options to parse for. 
+ * The last entry of the array needs to have '0' members.
+ * This array will be copied over to the arg-parser state @p ap.
  * @param[in] in_order if set to true, arguments are stored in the order in
  * which they appear. If false, non-option arguments are stored after options
+ * @return true iff successful
  */
-char ap_init(struct arg_parser *const ap,
+bool ap_init(struct arg_parser *const ap,
 	     const int argc, const char *const argv[],
 	     const struct ap_Option options[], const char in_order);
 
 /**
- * Free internal state of arg parser
+ * Free internal state of arg-parser
  *
- * @param[in] ap pointer to arg parser state
+ * @param[in] ap pointer to arg-parser state
  */
 void ap_free(struct arg_parser *const ap);
 
 /**
- * Get the string containing errors encountered during parsing. If no errors
- * occurred, this returns null.
+ * Get the string containing errors encountered during parsing
  *
- * @param[in] ap pointer to arg parser state
+ * @param[in] ap pointer to arg-parser state
+ * @return error string. If no errors
+ * occurred, this returns null
  */
 const char *ap_error(const struct arg_parser *const ap);
 
 /**
  * Number of arguments parsed (may be different from argc)
  *
- * @param[in] ap pointer to arg parser state
+ * @param[in] ap pointer to arg-parser state
+ * @return number of parsed arguments
  */
 int ap_arguments(const struct arg_parser *const ap);
 
 /**
- * Returns the code of a parsed option with given index. It returns 0 for
- * non-options
+ * Returns the code of a parsed option with given index
  *
- * @param[in] ap pointer to arg parser state
+ * @param[in] ap pointer to arg-parser state
  * @param[in] i index of the parsed option
+ * @return code of parsed option at index @p i. If this is a non-option, it returns 0
  */
 int ap_code(const struct arg_parser *const ap, const int i);
 
 /**
- * Returns the argument of a parsed option. If the corresponding code returned
- * by ap_code() is 0, it returns the non-option.
+ * Returns the argument of a parsed option
  *
- * @param[in] ap pointer to arg parser state
+ * @param[in] ap pointer to arg-parser state
  * @param[in] i index of the parsed option
+ * @return argument of parsed option at index @p i. If this option has code 0 (non-option), 
+ * the non-option string is returned
  */
 const char *ap_argument(const struct arg_parser *const ap, const int i);
 
 /**
- * Returns a pointer to the #_ap_Option struct of the parsed option as defined
- * during ap_init()
+ * Get the user-defined option for a given record position
  *
- * @param[in] ap pointer to arg parser state
+ * @param[in] ap pointer to arg-parser state
  * @param[in] i index of the parsed option
+ * @return pointer to the #ap_Option struct of the parsed option at index @p i
  */
 const struct ap_Option *ap_option(const struct arg_parser *const ap, const int i);
 
 /**
- * Returns the real command line option string (may be the short or long version)
+ * Get the real command line option string (may be the short or long version)
  *
- * @param[in] ap pointer to arg parser state
+ * @param[in] ap pointer to arg-parser state
  * @param[in] i index of the parsed option
+ * @return raw option string as seen on cmdline
  */
 const char *ap_opt_string(const struct arg_parser *const ap, const int i);
 
 /**
  * Returns true if the option specified by @p code was given at least once
  *
- * @param[in] ap pointer to arg parser state
+ * @param[in] ap pointer to arg-parser state
  * @param[in] code code of the option to check
+ * return true iff the option specified by @p code has been parsed
  */
 bool ap_is_used(const struct arg_parser *const ap, int code);
 
 /**
-* Initialize a new mutex state table. This can be seen as a separate context for checking mutex.
-* Thus, by initializing more than one mutex state, mutual exclusions of options may be evaluated
-* in independent contexts.
-*
-* @param[in] ap pointer to arg parser state
-* @param[in] ms pointer to a new mutex context. It can be used in the following
-* to check and set mutex
-* @return true iff successful.
-*/
+ * Initialize a new mutex state table. 
+ * This can be seen as a separate context for checking mutex.
+ * Thus, by initializing more than one mutex state, mutual exclusions of options may be evaluated
+ * in independent contexts
+ *
+ * @param[in] ap pointer to arg-parser state
+ * @param[in] ms pointer to a new mutex context. It can be used in the following
+ * to check and set mutual exclusions
+ * @return true iff successful
+ */
 bool ap_init_mutex_state(const struct arg_parser *const ap, 
 			 struct ap_Mutex_state *const ms);
 
 /**
-* Check a new option record for mutex.
-*
-* @param[in] ap pointer to arg parser state
-* @param[in] ms pointer to an initialized mutex context
-* @param[in] i index of the option to check for previous occurrences of mutexed
-* options
-* @param[in] conflict pointer to a single integer value. This will contain the conflicting
-* record position, iff a conflict has been found.
-* @return true iff conflict according to the state given by @p ms has occurred.
+ * Check a new option record for mutex
+ *
+ * @param[in] ap pointer to arg-parser state
+ * @param[in] ms pointer to an initialized mutex context
+ * @param[in] i index of the option to check for previous occurrences of mutexed
+ * options
+ * @param[in] conflict pointer to a single integer value. This will contain the conflicting
+ * record position, iff a conflict has been found.
+ * @return true iff conflict according to the state given by @p ms has occurred
 */
 bool ap_check_mutex(const struct arg_parser *const ap,
 		    const struct ap_Mutex_state *const ms,
 		    const int i, int *conflict);
 
 /**
-* Register an option record in a mutex context.
-*
-* @param[in] ap pointer to arg parser state
-* @param[in] ms pointer to an initialized mutex context
-* @param[in] i index of the option to register in the mutex state @p ms
-* @return true iff successful.
+ * Register an option record in a mutex context
+ *
+ * @param[in] ap pointer to arg-parser state
+ * @param[in] ms pointer to an initialized mutex context
+ * @param[in] i index of the option to register in the mutex state @p ms
+ * @return true iff successful
 */
 bool ap_set_mutex(const struct arg_parser *const ap, 
 		  struct ap_Mutex_state *const ms, const int i);
 
 /**
-* Check a new option record for mutex and register it at the same time.
-*
-* @param[in] ap pointer to arg parser state
-* @param[in] ms pointer to an initialized mutex context
-* @param[in] i index of the option to register in the mutex state @p ms
-* @param[in] conflict pointer to a single integer value. This will contain the conflicting
-* record position, iff a conflict has been found.
-* @return true iff conflict according to the state given by @p ms has occurred.
+ * Check a new option record for mutex and register it at the same time
+ *
+ * @param[in] ap pointer to arg-parser state
+ * @param[in] ms pointer to an initialized mutex context
+ * @param[in] i index of the option to register in the mutex state @p ms
+ * @param[in] conflict pointer to a single integer value. This will contain the conflicting
+ * record position, iff a conflict has been found.
+ * @return true iff conflict according to the state given by @p ms has occurred
 */
 bool ap_set_check_mutex(const struct arg_parser *const ap, 
 			struct ap_Mutex_state *const ms,
 			const int i, int *conflict);
 
 /**
-* Reset a mutex context.
-*
-* @param[in] ms pointer to an initialized mutex context
+ * Reset a mutex context
+ *
+ * @param[in] ms pointer to an initialized mutex context
 */
 void ap_reset_mutex(struct ap_Mutex_state *const ms);
 
 /**
-* Free a mutex context.
-*
-* @param[in] ms pointer to an initialized mutex context
+ * Free a mutex context
+ *
+ * @param[in] ms pointer to an initialized mutex context
 */
 void ap_free_mutex_state(struct ap_Mutex_state *const ms);
 
