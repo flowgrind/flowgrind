@@ -48,8 +48,8 @@
 
 #include "fg_affinity.h"
 
-#ifdef HAVE_CPUSET_T
-/** FreeBSD defines cpu_set_t instead of cpuset_t  */
+#if (!(HAVE_CPU_SET_T) && HAVE_CPUSET_T)
+/** FreeBSD might define cpuset_t instead of cpu_set_t  */
 typedef cpuset_t cpu_set_t;
 #endif /* HAVE_CPUSET_T */
 
