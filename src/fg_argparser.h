@@ -52,10 +52,9 @@ struct ap_Option {
 	/** User tag for distinction of options */
 	int tag;
 	/** 
-	 * Null-terminated array of mutex IDs (greater zero) this option belongs to.
-	 * If two options share a mutex ID, they exclude each other.
-	 * If this pointer is set to zero, this means no mutex are defined for 
-	 * this option
+	 * Null-terminated array of mutex IDs (greater zero) this option
+	 * belongs to. If two options share a mutex ID, they exclude each
+	 * other. If the pointer is zero, no mutex is defined for this option
 	 */	
 	int *mutex;	
 };
@@ -107,7 +106,7 @@ struct ap_Mutex_state {
  * This array will be copied over to the arg-parser state @p ap.
  * @param[in] in_order if set to true, arguments are stored in the order in
  * which they appear. If false, non-option arguments are stored after options
- * @return true iff successful
+ * @return return true for success, or false for failure
  */
 bool ap_init(struct arg_parser *const ap,
 	     const int argc, const char *const argv[],
@@ -142,7 +141,8 @@ int ap_arguments(const struct arg_parser *const ap);
  *
  * @param[in] ap pointer to arg-parser state
  * @param[in] i index of the parsed option
- * @return code of parsed option at index @p i. If this is a non-option, it returns 0
+ * @return code of parsed option at index @p i. If this is a non-option, it
+ * returns 0
  */
 int ap_code(const struct arg_parser *const ap, const int i);
 
@@ -151,8 +151,8 @@ int ap_code(const struct arg_parser *const ap, const int i);
  *
  * @param[in] ap pointer to arg-parser state
  * @param[in] i index of the parsed option
- * @return argument of parsed option at index @p i. If this option has code 0 (non-option), 
- * the non-option string is returned
+ * @return argument of parsed option at index @p i. If this option has code 0
+ * (non-option), the non-option string is returned
  */
 const char *ap_argument(const struct arg_parser *const ap, const int i);
 
@@ -179,20 +179,21 @@ const char *ap_opt_string(const struct arg_parser *const ap, const int i);
  *
  * @param[in] ap pointer to arg-parser state
  * @param[in] code code of the option to check
- * return true iff the option specified by @p code has been parsed
+ * return return true if the option specified by @p code has been parsed,
+ * otherwise false
  */
 bool ap_is_used(const struct arg_parser *const ap, int code);
 
 /**
  * Initialize a new mutex state table. 
  * This can be seen as a separate context for checking mutex.
- * Thus, by initializing more than one mutex state, mutual exclusions of options may be evaluated
- * in independent contexts
+ * Thus, by initializing more than one mutex state, mutual exclusions of
+ * options may be evaluated in independent contexts
  *
  * @param[in] ap pointer to arg-parser state
  * @param[in] ms pointer to a new mutex context. It can be used in the following
  * to check and set mutual exclusions
- * @return true iff successful
+ * @return return true for success, or false for failure
  */
 bool ap_init_mutex_state(const struct arg_parser *const ap, 
 			 struct ap_Mutex_state *const ms);
@@ -202,11 +203,12 @@ bool ap_init_mutex_state(const struct arg_parser *const ap,
  *
  * @param[in] ap pointer to arg-parser state
  * @param[in] ms pointer to an initialized mutex context
- * @param[in] i index of the option to check for previous occurrences of mutexed
- * options
- * @param[in] conflict pointer to a single integer value. This will contain the conflicting
- * record position, iff a conflict has been found.
- * @return true iff conflict according to the state given by @p ms has occurred
+ * @param[in] i index of the option to check for previous occurrences of
+ * mutexed options
+ * @param[in] conflict pointer to a single integer value. This will contain the
+ * conflicting record position, if a conflict has been found
+ * @return retrun true if conflict according to the state given by @p ms has
+ * occurred, otherwise flase
 */
 bool ap_check_mutex(const struct arg_parser *const ap,
 		    const struct ap_Mutex_state *const ms,
@@ -218,7 +220,7 @@ bool ap_check_mutex(const struct arg_parser *const ap,
  * @param[in] ap pointer to arg-parser state
  * @param[in] ms pointer to an initialized mutex context
  * @param[in] i index of the option to register in the mutex state @p ms
- * @return true iff successful
+ * @return return true for success, or false for failure
 */
 bool ap_set_mutex(const struct arg_parser *const ap, 
 		  struct ap_Mutex_state *const ms, const int i);
@@ -229,9 +231,10 @@ bool ap_set_mutex(const struct arg_parser *const ap,
  * @param[in] ap pointer to arg-parser state
  * @param[in] ms pointer to an initialized mutex context
  * @param[in] i index of the option to register in the mutex state @p ms
- * @param[in] conflict pointer to a single integer value. This will contain the conflicting
- * record position, iff a conflict has been found.
- * @return true iff conflict according to the state given by @p ms has occurred
+ * @param[in] conflict pointer to a single integer value. This will contain the
+ * conflicting record position, if a conflict has been found
+ * @return return true if conflict according to the state given by @p ms has
+ * occurred, otherwise false
 */
 bool ap_set_check_mutex(const struct arg_parser *const ap, 
 			struct ap_Mutex_state *const ms,

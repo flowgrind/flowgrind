@@ -61,7 +61,7 @@ static void *ap_resize_buffer(void *buf, const int min_size)
  * @param[in] option_index index of the option to store
  * @param[in] long_opt true if this option was a long option
  * @param[in] argument argument string for this option (may be empty)
- * @return true iff successful
+ * @return return true for success, or false for failure
  */
 static bool push_back_record(struct arg_parser *const ap, const int option_index,
 			     bool long_opt, const char *const argument)
@@ -99,7 +99,7 @@ static bool push_back_record(struct arg_parser *const ap, const int option_index
  *
  * @param[in] ap pointer to the arg-parser state
  * @param[in] msg error string
- * @return true iff successful
+ * @return return true for success, or false for failure
  */
 static bool add_error(struct arg_parser *const ap, const char *const msg)
 {
@@ -148,7 +148,7 @@ static void free_data(struct arg_parser *const ap)
  * @param[in] options array containing all defined options which may be parsed
  * @param[in] argindp pointer to the index in the command line argument array.
  * The value will be automatically updated
- * @return true iff successful
+ * @return return true for success, or false for failure
  */
 static bool parse_long_option(struct arg_parser *const ap,
 			      const char *const opt, const char *const arg,
@@ -237,7 +237,7 @@ static bool parse_long_option(struct arg_parser *const ap,
  * @param[in] options array containing all defined options which may be parsed
  * @param[in] argindp pointer to the index in the command line argument array.
  * The value will be automatically updated
- * @return true iff successful
+ * @return return true for success, or false for failure
  */
 static bool parse_short_option(struct arg_parser *const ap,
 			       const char *const opt, const char *const arg,
@@ -310,8 +310,8 @@ static int get_num_options(const struct ap_Option options[])
 }
 
 /**
- * Get the number of mutex in the option definitions.
- * This is done by searching for the greatest mutex ID in all options
+ * Get the number of mutex in the option definitions. This is done by searching
+ * for the greatest mutex ID in all options
  *
  * @param[in] options array of user-defined options
  * @return number of mutex in the option definitions
@@ -328,12 +328,12 @@ static int get_mutex_count(const struct ap_Option options[])
 }
 
 /**
- * Copy @p options into the arg-parser @p ap.
- * This is a deep copy including strings and arrays
+ * Copy @p options into the arg-parser @p ap. This is a deep copy including
+ * strings and arrays
  *
  * @param[in] ap arg-parser
  * @param[in] options options struct to copy
- * @return true iff successful
+ * @return return true for success, or false for failure
  */
 static bool copy_options(struct arg_parser *const ap, 
 			 const struct ap_Option options[])
