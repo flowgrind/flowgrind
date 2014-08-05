@@ -71,7 +71,7 @@ int get_ncores(enum ncore_query query)
 }
 
 /* Linux and FreeBSD have pthread_[set|get]affinity_np */
-#if defined HAVE_PTHREAD_AFFINITY_NP
+#if HAVE_PTHREAD_AFFINITY_NP
 int pthread_setaffinity(pthread_t thread, unsigned int core)
 {
 	cpu_set_t cpuset;
