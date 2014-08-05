@@ -335,7 +335,7 @@ static int get_mutex_count(const struct ap_Option options[])
  * @param[in] options options struct to copy
  * @return return true for success, or false for failure
  */
-static bool copy_options(struct arg_parser *const ap, 
+static bool copy_options(struct arg_parser *const ap,
 			 const struct ap_Option options[])
 {
 
@@ -344,8 +344,8 @@ static bool copy_options(struct arg_parser *const ap,
 		return false;
 	ap->options = malloc(sizeof(struct ap_Option)*ap->num_options);
 	if (!ap->options)
-		return false;	
-	
+		return false;
+
 	for (int i=0; i < ap->num_options; i++) {
 		ap->options[i] = options[i];
 		if (options[i].name)
@@ -510,7 +510,7 @@ bool ap_is_used(const struct arg_parser *const ap, int code)
 	return ret;
 }
 
-bool ap_init_mutex_state(const struct arg_parser *const ap, 
+bool ap_init_mutex_state(const struct arg_parser *const ap,
 			 struct ap_Mutex_state *const ms)
 {
 	ms->seen_records = malloc(sizeof(int)*ap->num_mutex);
@@ -521,8 +521,8 @@ bool ap_init_mutex_state(const struct arg_parser *const ap,
 	return true;
 }
 
-bool ap_check_mutex(const struct arg_parser *const ap, 
-		    const struct ap_Mutex_state *const ms, 
+bool ap_check_mutex(const struct arg_parser *const ap,
+		    const struct ap_Mutex_state *const ms,
 		    const int i, int *conflict)
 {
 	if(ap->num_mutex != ms->num_mutex)
@@ -543,11 +543,11 @@ bool ap_check_mutex(const struct arg_parser *const ap,
 				*conflict = 0;
 		}
 	}
-	
+
 	return false;
 }
 
-bool ap_set_mutex(const struct arg_parser *const ap, 
+bool ap_set_mutex(const struct arg_parser *const ap,
 		  struct ap_Mutex_state *const ms, const int i)
 {
 	if(ap->num_mutex != ms->num_mutex)
@@ -559,12 +559,12 @@ bool ap_set_mutex(const struct arg_parser *const ap,
 	int index = ap->data[i].option_index;
 	for (int *mutex = ap->options[index].mutex; mutex && *mutex; mutex++)
 		ms->seen_records[*mutex-1] = i+1;
-	
+
 	return true;
 }
 
-bool ap_set_check_mutex(const struct arg_parser *const ap, 
-			struct ap_Mutex_state *const ms, const int i, 
+bool ap_set_check_mutex(const struct arg_parser *const ap,
+			struct ap_Mutex_state *const ms, const int i,
 			int *conflict)
 {
 	bool ret = ap_check_mutex(ap, ms, i, conflict);
