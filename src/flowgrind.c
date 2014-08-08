@@ -2633,28 +2633,26 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * Defines the cmdline options and distinguishes option types (flow, general, ...)
  * and tokenizes flow options which can have several endpoints
  *
- * @param[in] parser pointer to arg-parser state
  * @param[in] ms array of mutex states
  * @param[in] context the mutex context of this option (see enum #mutex_contexts)
  * @param[in] argind option record index
  * @param[in] flow_id ID of the flow to show in error message
  */
-static void check_mutex(const struct arg_parser *const parser,
-			struct ap_Mutex_state ms[],
+static void check_mutex(struct ap_Mutex_state ms[],
 			const enum mutex_contexts context,
 			const int argind, int flow_id)
 {
 	int mutex_index;
 	if (context == MUTEX_CONTEXT_CONTROLLER){
-		if (ap_set_check_mutex(parser, &ms[context], argind, &mutex_index))
+		if (ap_set_check_mutex(&parser, &ms[context], argind, &mutex_index))
 			PARSE_ERR("Option %s conflicts with option %s",
-				ap_opt_string(parser, argind),
-				ap_opt_string(parser, mutex_index));
+				ap_opt_string(&parser, argind),
+				ap_opt_string(&parser, mutex_index));
 	} else {
-		if (ap_set_check_mutex(parser, &ms[context], argind, &mutex_index))
+		if (ap_set_check_mutex(&parser, &ms[context], argind, &mutex_index))
 			PARSE_ERR("In flow %i: option %s conflicts with option %s",
-				flow_id, ap_opt_string(parser, argind),
-				ap_opt_string(parser, mutex_index));
+				flow_id, ap_opt_string(&parser, argind),
+				ap_opt_string(&parser, mutex_index));
 	}
 }
 
@@ -2693,14 +2691,12 @@ static void parse_multi_endpoint_option(int code, const char* arg,
 
 		/* check mutex in context of current endpoint */
 		if (type == 's' || type == 'b') {
-			check_mutex(&parser, ms, MUTEX_CONTEXT_SOURCE, argind,
-				    flow_id);
+			check_mutex(ms, MUTEX_CONTEXT_SOURCE, argind, flow_id);
 			parse_flow_option_endpoint(code, arg, opt_string, 
 						   flow_id, SOURCE);
 		}
 		if (type == 'd' || type == 'b') {
-			check_mutex(&parser, ms, MUTEX_CONTEXT_DESTINATION, 
-				    argind, flow_id);
+			check_mutex(ms, MUTEX_CONTEXT_DESTINATION, argind, flow_id);
 			parse_flow_option_endpoint(code, arg, opt_string, 
 						   flow_id, DESTINATION);
 		}
@@ -2796,8 +2792,7 @@ static void parse_cmdline(int argc, char *argv[])
 		/* distinguish option types by tag first */
 		switch (tag) {
 		case OPT_CONTROLLER:
-			check_mutex(&parser, ms, MUTEX_CONTEXT_CONTROLLER,
-				    argind, 0);
+			check_mutex(ms, MUTEX_CONTEXT_CONTROLLER, argind, 0);
 			parse_general_option(code, arg, opt_string);
 			break;
 		case OPT_SELECTOR:
@@ -2827,8 +2822,8 @@ static void parse_cmdline(int argc, char *argv[])
 			ap_reset_mutex(&ms[MUTEX_CONTEXT_TWO_SIDED]);
 			break;
 		case OPT_FLOW:
-			check_mutex(&parser, ms, MUTEX_CONTEXT_TWO_SIDED,
-					argind, current_flow_ids[0]);
+			check_mutex(ms, MUTEX_CONTEXT_TWO_SIDED, argind, 
+				    current_flow_ids[0]);
 			for (int i = 0; i < cur_num_flows; i++)
 				parse_flow_option(code, arg, opt_string,
 						current_flow_ids[i]);
