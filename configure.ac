@@ -47,8 +47,11 @@ AS_CASE([$host],
 
 	[*freebsd*],
 	[AC_DEFINE([__FREEBSD__], [1], [This is a FreeBSD system.])
-	 LDFLAGS="${LDFLAGS} -L/usr/local/lib"
-	 CPPFLAGS="${CPPFLAGS} -I/usr/local/include"
+
+	 AS_IF([test -d /usr/local/lib],
+		[LDFLAGS="${LDFLAGS} -L/usr/local/lib"])
+	 AS_IF([test -d /usr/local/include],
+		[CPPFLAGS="${CPPFLAGS} -I/usr/local/include"])
 	],
 
 	[*linux*],
