@@ -2659,6 +2659,56 @@ static void check_mutex(const struct arg_parser *const parser,
 }
 
 /**
+ * Parse flow options for multiple endpoints
+ *
+ * This iterates through the endpoints given in the argument string (e.g. s=#,d=# or b=#)
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the multi-endpoint flow option
+ * @param[in] opt_string contains the real cmdline option string
+ * @param[in] ms array of mutex states
+ * @param[in] argind index of the option
+ * @param[in] flow_id ID of flow to apply option to
+ */
+static void parse_multi_endpoint_option(int code, const char* arg,
+				    	const char* opt_string, 
+					struct ap_Mutex_state ms[], 
+					int argind, int flow_id)
+{
+	char *argcpy = strdup(arg);
+	for (char *token = strtok(argcpy, ","); token; 
+	     token = strtok(NULL, ",")) {
+
+		char type = token[0];
+		char* arg;
+
+		if (token[1] == '=')
+			arg = token + 2;
+		else
+			arg = token + 1;
+
+		if (type != 's' && type != 'd' && type != 'b')
+			PARSE_ERR("Invalid enpoint specifier in Option %s", 
+				  opt_string);
+
+		/* check mutex in context of current endpoint */
+		if (type == 's' || type == 'b') {
+			check_mutex(&parser, ms, MUTEX_CONTEXT_SOURCE, argind,
+				    flow_id);
+			parse_flow_option_endpoint(code, arg, opt_string, 
+						   flow_id, SOURCE);
+		}
+		if (type == 'd' || type == 'b') {
+			check_mutex(&parser, ms, MUTEX_CONTEXT_DESTINATION, 
+				    argind, flow_id);
+			parse_flow_option_endpoint(code, arg, opt_string, 
+						   flow_id, DESTINATION);
+		}
+	}
+	free(argcpy);
+}
+
+/**
  * The main commandline argument parsing function
  *
  * Defines the cmdline options and distinguishes option types (flow, general,
@@ -2740,7 +2790,6 @@ static void parse_cmdline(int argc, char *argv[])
 	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
 		const int code = ap_code(&parser, argind);
 		const char *arg = ap_argument(&parser, argind);
-		char *argcpy = strdup(arg);
 		const char *opt_string = ap_opt_string(&parser, argind);
 		int tag = ap_option(&parser, argind)->tag;
 
@@ -2753,6 +2802,7 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 		case OPT_SELECTOR:
 			cur_num_flows = 0;
+			char *argcpy = strdup(arg);
 			for (char *token = strtok(argcpy, ","); token;
 			     token = strtok(NULL, ",")) {
 				rc = sscanf(token, "%d", &optint);
@@ -2770,6 +2820,7 @@ static void parse_cmdline(int argc, char *argv[])
 				current_flow_ids[cur_num_flows++] = optint;
 				ASSIGN_MAX(max_flow_specifier, optint);
 			}
+			free(argcpy);
 			/* reset mutex for each new flow */
 			ap_reset_mutex(&ms[MUTEX_CONTEXT_SOURCE]);
 			ap_reset_mutex(&ms[MUTEX_CONTEXT_DESTINATION]);
@@ -2783,51 +2834,15 @@ static void parse_cmdline(int argc, char *argv[])
 						current_flow_ids[i]);
 			break;
 		case OPT_FLOW_ENDPOINT:
-			/* pre-parse flow option for endpoints */
-			for (char *token = strtok(argcpy, ","); token;
-			     token = strtok(NULL, ",")) {
-
-				char type = token[0];
-				char* arg;
-
-				if (token[1] == '=')
-					arg = token + 2;
-				else
-					arg = token + 1;
-
-				if (type != 's' && type != 'd' && type != 'b')
-					PARSE_ERR("Invalid enpoint specifier"
-						  " in Option %s", opt_string);
-
-				/* check mutex in context of current endpoint */
-				if (type == 's' || type == 'b')
-					check_mutex(&parser, ms,
-						    MUTEX_CONTEXT_SOURCE, argind,
-						    current_flow_ids[0]);
-				if (type == 'd' || type == 'b')
-					check_mutex(&parser, ms,
-						    MUTEX_CONTEXT_DESTINATION,
-						    argind, current_flow_ids[0]);
-
-				for (int i = 0; i < cur_num_flows; i++) {
-					if (type == 's' || type == 'b')
-						parse_flow_option_endpoint(code,
-							arg, opt_string,
-							current_flow_ids[i],
-							SOURCE);
-					if (type == 'd' || type == 'b')
-						parse_flow_option_endpoint(code,
-							arg, opt_string,
-							current_flow_ids[i],
-							DESTINATION);
-				}
-			}
+			for (int i = 0; i < cur_num_flows; i++)	
+				parse_multi_endpoint_option(code, arg, 
+							    opt_string, ms, argind,
+							    current_flow_ids[i]);
 			break;
 		default:
 			PARSE_ERR("%s", "uncaught option tag!");
 			break;
 		}
-		free(argcpy);
 	}
 
 	if (copt.num_flows <= max_flow_specifier)
