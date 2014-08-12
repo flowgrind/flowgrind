@@ -315,16 +315,11 @@ AC_LINK_IFELSE(
 	[have_cpuset_t=no])
 AC_MSG_RESULT([$have_cpuset_t])
 
-# Checking for struct cpuset_t
+# Checking for struct cpu_set_t
 AC_MSG_CHECKING([for struct cpu_set_t])
 AC_LINK_IFELSE(
 	[AC_LANG_PROGRAM(
-		[[#if HAVE_SYS_CPUSET_H
-		  #include <sys/param.h>
-		  #include <sys/cpuset.h>
-		  #endif
-		  #include <sched.h>
-		]],
+		[[#include <sched.h>]],
 		[[cpu_set_t cpuset;]])
 	],
 	[have_cpu_set_t=yes;
