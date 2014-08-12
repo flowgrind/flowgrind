@@ -47,8 +47,11 @@ AS_CASE([$host],
 
 	[*freebsd*],
 	[AC_DEFINE([__FREEBSD__], [1], [This is a FreeBSD system.])
-	 LDFLAGS="${LDFLAGS} -L/usr/local/lib"
-	 CPPFLAGS="${CPPFLAGS} -I/usr/local/include"
+
+	 AS_IF([test -d /usr/local/lib],
+		[LDFLAGS="${LDFLAGS} -L/usr/local/lib"])
+	 AS_IF([test -d /usr/local/include],
+		[CPPFLAGS="${CPPFLAGS} -I/usr/local/include"])
 	],
 
 	[*linux*],
@@ -298,7 +301,7 @@ AC_STRUCT_TM
 AC_MSG_CHECKING([for struct cpuset_t])
 AC_LINK_IFELSE(
 	[AC_LANG_PROGRAM(
-		[[#if HAVE_SYS_CPUSET_H
+		[[#if defined HAVE_SYS_CPUSET_H
 		  #include <sys/param.h>
 		  #include <sys/cpuset.h>
 		  #endif
@@ -311,6 +314,20 @@ AC_LINK_IFELSE(
 	],
 	[have_cpuset_t=no])
 AC_MSG_RESULT([$have_cpuset_t])
+
+# Checking for struct cpu_set_t
+AC_MSG_CHECKING([for struct cpu_set_t])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[#include <sched.h>]],
+		[[cpu_set_t cpuset;]])
+	],
+	[have_cpu_set_t=yes;
+	 AC_DEFINE([HAVE_CPU_SET_T], [1],
+		[Define to 1 if the system has struct cpu_set_t.])
+	],
+	[have_cpu_set_t=no])
+AC_MSG_RESULT([$have_cpu_set_t])
 
 # Checking for struct tcp_info
 AC_MSG_CHECKING([for struct tcp_info])
@@ -408,14 +425,14 @@ AC_MSG_CHECKING([for pthread_getaffinity_np])
 AC_LINK_IFELSE(
 	[AC_LANG_PROGRAM(
 		[[#include <pthread.h>
-		  #if HAVE_PTHREAD_NP_H
+		  #if defined HAVE_PTHREAD_NP_H
 		  #include <pthread_np.h>
 		  #endif
-		  #if HAVE_SYS_CPUSET_H
+		  #if defined HAVE_SYS_CPUSET_H
 		  #include <sys/param.h>
 		  #include <sys/cpuset.h>
 		  #endif
-		  #if HAVE_CPUSET_T
+		  #if !defined(HAVE_CPU_SET_T)
 		  typedef cpuset_t cpu_set_t;
 		  #endif
 		]],

@@ -37,10 +37,10 @@
 #endif /* HAVE_SYS_CPUSET */
 
 /* OS X hasn't defined pthread_[set|get]affinity_np */
-#if (!defined HAVE_PTHREAD_AFFINITY_NP && defined HAVE_THREAD_POLICY)
+#if !defined(HAVE_PTHREAD_AFFINITY_NP) && defined HAVE_THREAD_POLICY
 #include <mach/mach.h>
 #include <mach/thread_policy.h>
-#endif /* (!defined HAVE_PTHREAD_AFFINITY_NP && defined HAVE_THREAD_POLICY) */
+#endif /* !defined(HAVE_PTHREAD_AFFINITY_NP) && defined HAVE_THREAD_POLICY */
 
 #include <stdbool.h>
 #include <errno.h>
@@ -48,8 +48,8 @@
 
 #include "fg_affinity.h"
 
-#ifdef HAVE_CPUSET_T
-/** FreeBSD defines cpuset_t instead of cpu_set_t  */
+#if (!(HAVE_CPU_SET_T) && HAVE_CPUSET_T)
+/** FreeBSD defines cpuset_t instead of cpu_set_t. Note kFreeBSD defines both */
 typedef cpuset_t cpu_set_t;
 #endif /* HAVE_CPUSET_T */
 
