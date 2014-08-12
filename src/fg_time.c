@@ -36,10 +36,10 @@
 #include <stdbool.h>
 
 /* OS X hasn't defined POSIX clocks */
-#if (!defined HAVE_CLOCK_GETTIME && defined HAVE_CLOCK_GET_TIME)
+#if !defined(HAVE_CLOCK_GETTIME) && defined HAVE_CLOCK_GET_TIME
 #include <mach/clock.h>
 #include <mach/mach.h>
-#endif /* (!defined HAVE_CLOCK_GETTIME && defined HAVE_CLOCK_GET_TIME) */
+#endif /* !defined(HAVE_CLOCK_GETTIME) && defined HAVE_CLOCK_GET_TIME */
 
 #include "fg_time.h"
 

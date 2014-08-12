@@ -37,10 +37,10 @@
 #endif /* HAVE_SYS_CPUSET */
 
 /* OS X hasn't defined pthread_[set|get]affinity_np */
-#if (!defined HAVE_PTHREAD_AFFINITY_NP && defined HAVE_THREAD_POLICY)
+#if !defined(HAVE_PTHREAD_AFFINITY_NP) && defined HAVE_THREAD_POLICY
 #include <mach/mach.h>
 #include <mach/thread_policy.h>
-#endif /* (!defined HAVE_PTHREAD_AFFINITY_NP && defined HAVE_THREAD_POLICY) */
+#endif /* !defined(HAVE_PTHREAD_AFFINITY_NP) && defined HAVE_THREAD_POLICY */
 
 #include <stdbool.h>
 #include <errno.h>

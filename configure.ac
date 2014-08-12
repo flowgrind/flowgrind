@@ -301,7 +301,7 @@ AC_STRUCT_TM
 AC_MSG_CHECKING([for struct cpuset_t])
 AC_LINK_IFELSE(
 	[AC_LANG_PROGRAM(
-		[[#if HAVE_SYS_CPUSET_H
+		[[#if defined HAVE_SYS_CPUSET_H
 		  #include <sys/param.h>
 		  #include <sys/cpuset.h>
 		  #endif
@@ -425,14 +425,14 @@ AC_MSG_CHECKING([for pthread_getaffinity_np])
 AC_LINK_IFELSE(
 	[AC_LANG_PROGRAM(
 		[[#include <pthread.h>
-		  #if HAVE_PTHREAD_NP_H
+		  #if defined HAVE_PTHREAD_NP_H
 		  #include <pthread_np.h>
 		  #endif
-		  #if HAVE_SYS_CPUSET_H
+		  #if defined HAVE_SYS_CPUSET_H
 		  #include <sys/param.h>
 		  #include <sys/cpuset.h>
 		  #endif
-		  #if !(HAVE_CPU_SET_T)
+		  #if !defined(HAVE_CPU_SET_T)
 		  typedef cpuset_t cpu_set_t;
 		  #endif
 		]],
