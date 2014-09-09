@@ -9,10 +9,9 @@ inherit eutils
 DESCRIPTION="network performance measurement tool"
 HOMEPAGE="http://www.flowgrind.net"
 if [[ ${PV} == "9999" ]] ; then
-	inherit git-2 autotools
+	inherit git-r3 autotools
 	EGIT_REPO_URI="git://github.com/${PN}/${PN}.git 
 				   http://github.com/${PN}/${PN}.git"
-	EGIT_BRANCH="master"
 	SLOT="git"
 	KEYWORDS=""
 else
@@ -25,7 +24,7 @@ IUSE="debug gsl pcap"
 
 RDEPEND="gsl?  ( sci-libs/gsl )
          pcap? ( net-libs/libpcap )
-         dev-libs/xmlrpc-c[curl]"
+         dev-libs/xmlrpc-c[abyss,curl]"
 DEPEND="${RDEPEND}"
 
 if [[ ${PV} == "9999" ]] ; then
@@ -49,5 +48,5 @@ src_install() {
 	emake DESTDIR="${D}" install || die
 	prepalldocs
 	doman man/*.1 || die
-	dodoc AUTHORS NEWS README TODO || die
+	dodoc AUTHORS NEWS README.md COPYING INSTALL.Gentoo || die
 }

@@ -23,3 +23,9 @@ Copying ebuild files into local portage overlay (e.g. /usr/local/portage)
 Unmask and emerge:
   echo "net-analyzer/flowgrind ** > /etc/portage/package.keywords/flowgrind 
   emerge flowgrind
+
+Hint: you can select a different git branch (e.g., next) by setting the enviroment 
+for the ebuild like this: 
+  mkdir -p /etc/portage/env/
+  echo 'EGIT_BRANCH="next"' > /etc/portage/env/flowgrind-git-branch
+  echo "net-analyzer/flowgrind flowgrind-git-branch" >>/etc/portage/package.env
