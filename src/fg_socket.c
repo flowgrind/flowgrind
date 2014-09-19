@@ -48,6 +48,7 @@
 #include <syslog.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <ifaddrs.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -453,4 +454,72 @@ int get_port(int fd)
 		return -1;
 
 	return atoi(service);
+}
+
+int get_interface(const char * const address, char * const interface, const size_t buffer_size)
+{
+	struct ifaddrs *if_list, *ifa;
+	struct sockaddr_in *sa;
+	char if_addr[NI_MAXHOST];
+
+	if(!address | !interface) {
+		DEBUG_MSG(LOG_ERR, "Invalid parameter passed to get_interface");
+		return -1;
+	}
+
+	if(getifaddrs(&if_list)) {
+		DEBUG_MSG(LOG_ERR, "Failed to list interfaces: %s", strerror(errno));
+		return -1;
+	}
+
+	for (ifa = if_list; ifa != NULL; ifa = ifa->ifa_next) {
+		if (!ifa->ifa_addr)
+			continue;
+
+		if((ifa->ifa_flags & IFF_UP) == 0)
+			continue;
+
+		if(ifa->ifa_addr->sa_family != AF_INET)
+			continue;
+
+		sa = (struct sockaddr_in *)(ifa->ifa_addr);
+		if (!inet_ntop(ifa->ifa_addr->sa_family, (void *)&(sa->sin_addr), if_addr, sizeof(if_addr))) {
+			DEBUG_MSG(LOG_ERR, "Could not get interface address: %s", strerror(errno));
+			freeifaddrs(if_list);
+			return -1;
+		}
+
+		if (strcmp(address, if_addr)) {
+			continue;
+		}
+
+		DEBUG_MSG(LOG_DEBUG, "Interface with address '%s' is %s", address, ifa->ifa_name);
+		strncpy(interface, ifa->ifa_name, buffer_size);
+		interface[buffer_size] = '\0'; /* strncpy does not append a null-character if the buffer was too small */
+		freeifaddrs(if_list);
+		return 0;
+	}
+
+	DEBUG_MSG(LOG_ERR, "No device with address '%s' found", address);
+	freeifaddrs(if_list);
+	return -1;
+}
+
+int bind_to_if(int fd, const char * const if_name)
+{
+	struct ifreq interface;
+
+	if(!if_name) {
+		DEBUG_MSG(LOG_ERR, "Invalid parameter passed to bind_to_if");
+		return -1;
+	}
+
+	memset(&interface, 0, sizeof(interface));
+	strncpy(interface.ifr_name, if_name, IFNAMSIZ);
+	if(setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &interface, sizeof(struct ifreq))) {
+		DEBUG_MSG(LOG_ERR, "Could not bind socket to interface '%s': %s", if_name, strerror(errno));
+		return -1;
+	}
+
+	return 0;
 }
