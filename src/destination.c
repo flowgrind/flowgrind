@@ -52,6 +52,7 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <float.h>
+#include <net/if.h>
 
 #include "common.h"
 #include "debug.h"
@@ -82,6 +83,7 @@ static int create_listen_socket(struct flow *flow, char *bind_addr,
 	int rc;
 	int fd;
 	struct addrinfo hints, *res, *ressave;
+	char if_name[IFNAMSIZ];
 
 	bzero(&hints, sizeof(struct addrinfo));
 	hints.ai_flags = bind_addr ? 0 : AI_PASSIVE;
@@ -134,6 +136,24 @@ static int create_listen_socket(struct flow *flow, char *bind_addr,
 	}
 
 	set_non_blocking(fd);
+
+	/* get interface name by IP address */
+	if(get_interface(bind_addr, if_name, sizeof(if_name))) {
+		logging_log(LOG_ALERT, "Faild to determine interface with address '%s'",
+			    flow->settings.bind_address);
+		flow_error(flow, "Faild to determine interface with address '%s'",
+			   flow->settings.bind_address);
+		return -1;
+	}
+
+	/* bind socket to interface to ensure packet capturing works correctly */
+	if(bind_to_if(fd, if_name)) {
+		logging_log(LOG_ALERT, "Could not bind listen socket to interface '%s': %s",
+			    if_name, strerror(errno));
+		flow_error(flow, "Could not bind listen socket to interface '%s': %s",
+			   if_name, strerror(errno));
+		return -1;
+	}
 
 	port = get_port(fd);
 	if (port < 0) {

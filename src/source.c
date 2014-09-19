@@ -52,6 +52,7 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <float.h>
+#include <net/if.h>
 
 #include "debug.h"
 #include "fg_error.h"
@@ -156,6 +157,7 @@ int add_flow_source(struct request_add_flow_source *request)
 	socklen_t opt_len = 0;
 #endif /* HAVE_SO_TCP_CONGESTION */
 	struct flow *flow;
+	char if_name[IFNAMSIZ];
 
 	if (fg_list_size(&flows) >= MAX_FLOWS) {
 		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
@@ -198,6 +200,26 @@ int add_flow_source(struct request_add_flow_source *request)
 	if (flow->fd == -1) {
 		logging_log(LOG_ALERT, "Could not create data socket: %s", flow->error);
 		request_error(&request->r, "Could not create data socket: %s", flow->error);
+		uninit_flow(flow);
+		return -1;
+	}
+
+	/* get interface name by IP address */
+	if(get_interface(flow->settings.bind_address, if_name, sizeof(if_name))) {
+		logging_log(LOG_ALERT, "Faild to determine interface with address '%s'",
+			flow->settings.bind_address);
+		request_error(&request->r, "Faild to determine interface with address '%s'",
+			flow->settings.bind_address);
+		uninit_flow(flow);
+		return -1;
+	}
+
+	/* bind socket to interface to ensure packet capturing works correctly */
+	if(bind_to_if(flow->fd, if_name)) {
+		logging_log(LOG_ALERT, "Could not bind data socket to interface '%s': %s",
+			if_name, strerror(errno));
+		request_error(&request->r, "Could not bind data socket to interface '%s': %s",
+			if_name, strerror(errno));
 		uninit_flow(flow);
 		return -1;
 	}

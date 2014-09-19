@@ -61,4 +61,24 @@ char sockaddr_compare(const struct sockaddr *a, const struct sockaddr *b);
 
 int get_port(int fd);
 
+/**
+ * Gets the name of the interface to which the given IP address is currently assigned
+ *
+ * @param[in] address address for which to look up the corresponding interface name
+ * @param[out] interface a pre-allocated buffer that will receive the name of the interface
+ * @param[in] buffer_size available size of the buffer
+ * @return On success zero is returned. On error, -1 is returned
+ */
+int get_interface(const char * const address, char * const interface, const size_t buffer_size);
+
+/**
+ * Sets the SO_BINDTODEVICE socket option on the given device with the interface name specified
+ *
+ * @param[in] fd socket descriptor of the socket for which to set the option
+ * @param[in] if_name null-terminated interface name string with the maximum size of IFNAMSIZ.
+ * Pass an empty string to remove the device binding.
+ * @return On success zero is returned. On error, -1 is returned
+ */
+int bind_to_if(int fd, const char * const if_name);
+
 #endif /* _FG_SOCKET_H_ */
