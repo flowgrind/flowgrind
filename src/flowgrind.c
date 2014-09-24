@@ -2616,6 +2616,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		else
 			PARSE_ERR("invalid argument '%s' for option %s",
 				  arg, opt_string);
+		break;
 	case 'w':
 		copt.log_to_file = true;
 		break;
