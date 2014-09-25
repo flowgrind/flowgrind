@@ -763,7 +763,7 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 	log_output(headline);
 
 	/* prepare column visibility based on involved OSes */
-	bool has_linux, has_freebsd;
+	bool has_linux = false, has_freebsd = false;
 	for (unsigned int j = 0; j < num_unique_servers; j++)
 		if (!strcmp(unique_servers[j].os_name, "Linux"))
 			has_linux = true;
@@ -2616,6 +2616,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		else
 			PARSE_ERR("invalid argument '%s' for option %s",
 				  arg, opt_string);
+		break;
 	case 'w':
 		copt.log_to_file = true;
 		break;

@@ -1047,7 +1047,7 @@ static inline int try_read_n_bytes(struct flow *flow, int bytes)
 		if (errno == EAGAIN)
 			flow_error(flow, "Premature end of test: %s",
 				   strerror(errno));
-			return -1;
+		return -1;
 	}
 
 	if (rc == 0) {
@@ -1055,8 +1055,8 @@ static inline int try_read_n_bytes(struct flow *flow, int bytes)
 			  "flow %d", flow->id);
 		if (!flow->finished[READ] || !flow->settings.shutdown)
 			warnx("premature shutdown of server flow");
-			flow->finished[READ] = 1;
-			return -1;
+		flow->finished[READ] = 1;
+		return -1;
 	}
 
 	DEBUG_MSG(LOG_DEBUG, "flow %d received %u bytes", flow->id, rc);
