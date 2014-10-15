@@ -1,3 +1,9 @@
+flowgrind (0.7.1-2) unstable; urgency=medium
+
+  * Drop dependency to transitional package libxmlrpc-c3-dev, closes: #765139
+
+ -- Arnd Hannemann <arnd.hannemann@credativ.de>  Tue, 14 Oct 2014 11:58:51 +0200
+
 flowgrind (0.7.1-1) unstable; urgency=medium
 
   Release 0.7.1 (2014-05-27)
