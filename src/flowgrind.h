@@ -167,10 +167,8 @@ struct controller_options {
 	bool log_to_stdout;
 	/** Write output to logfile (option -w) */
 	bool log_to_file;
-#ifdef HAVE_LIBPCAP
 	/** Prefix for dumpfile (option -e) */
 	const char *dump_prefix;
-#endif /* HAVE_LIBPCAP */
 	/** Overwrite existing log files (option -o) */
 	bool clobber;
 	/** Report in MByte/s instead of MBit/s (option -m) */

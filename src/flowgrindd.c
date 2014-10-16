@@ -240,9 +240,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"{s:b,s:b,s:i,s:i,*}"
 		"{s:s,*}"
 		"{s:i,s:i,s:i,s:i,s:i,*}"
-#ifdef HAVE_LIBPCAP
-		"{s:s,*}"
-#endif /* HAVE_LIBPCAP */
+		"{s:s,*}" /* for LIBPCAP dumps */
 		"{s:i,s:A,*}"
 		"{s:s,s:i,s:i,*}"
 		")",
@@ -294,9 +292,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"mtcp", &settings.mtcp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
-#ifdef HAVE_LIBPCAP
 		"dump_prefix", &dump_prefix,
-#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options,
 
@@ -307,6 +303,11 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 	if (env->fault_occurred)
 		goto cleanup;
+
+#ifndef HAVE_LIBPCAP
+	if (settings.traffic_dump)
+		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Daemon was asked to dump traffic, but wasn't compiled with libpcap support");
+#endif
 
 	/* Check for sanity */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
@@ -432,9 +433,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"{s:b,s:b,s:i,s:i,*}"
 		"{s:s,*}"
 		"{s:i,s:i,s:i,s:i,s:i,*}"
-#ifdef HAVE_LIBPCAP
-		"{s:s,*}"
-#endif /* HAVE_LIBPCAP */
+		"{s:s,*}" /* For libpcap dumps */
 		"{s:i,s:A,*}"
 		")",
 
@@ -485,14 +484,19 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"mtcp", &settings.mtcp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
-#ifdef HAVE_LIBPCAP
 		"dump_prefix", &dump_prefix,
-#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options);
 
 	if (env->fault_occurred)
 		goto cleanup;
+
+#ifndef HAVE_LIBPCAP
+	if (settings.traffic_dump) {
+		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Daemon was asked to dump traffic, but wasn't compiled with libpcap support");
+		goto cleanup;
+	}
+#endif
 
 	/* Check for sanity */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
