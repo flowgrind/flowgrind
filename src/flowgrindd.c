@@ -877,7 +877,7 @@ static int bind_rpc_server(char *bind_addr, unsigned int port) {
 
 	if ((rc = getaddrinfo(bind_addr, tmp_port,
 				&hints, &res)) != 0) {
-		logging_log(LOG_ALERT, "Failed to find address to bind rpc_server: %s\n",
+		critx( "Failed to find address to bind rpc_server: %s\n",
 			gai_strerror(rc));
 		return -1;
 	}
@@ -904,7 +904,7 @@ static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
-		logging_log(LOG_ALERT, "failed to bind RPC listen socket: %s\n", strerror(errno));
+		crit("failed to bind RPC listen socket");
 		freeaddrinfo(ressave);
 		return -1;
 	}
@@ -912,12 +912,13 @@ static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	return fd;
 }
 
-static void run_rpc_server(xmlrpc_env *env, unsigned int port)
+static void init_rpc_server(struct fg_rpc_server *server, unsigned int port)
 {
-	xmlrpc_server_abyss_parms serverparm;
 	xmlrpc_registry * registryP;
-	memset(&serverparm, 0, sizeof(serverparm));
+	xmlrpc_env *env = &(server->env);
+	memset(&(server->parms), 0, sizeof(server->parms));
 
+	xmlrpc_env_init(env);
 	registryP = xmlrpc_registry_new(env);
 
 	xmlrpc_registry_add_method(env, registryP, NULL, "add_flow_destination", &add_flow_destination, NULL);
@@ -932,25 +933,30 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	   like a normal API.  We select the modern form by setting
 	   config_file_name to NULL:
 	*/
-	serverparm.config_file_name	= NULL;
-	serverparm.registryP		= registryP;
-	serverparm.socket_bound		= 1;
-	serverparm.log_file_name        = NULL; /*"/tmp/xmlrpc_log";*/
+	server->parms.config_file_name	= NULL;
+	server->parms.registryP		= registryP;
+	server->parms.socket_bound		= 1;
+	server->parms.log_file_name        = NULL; /*"/tmp/xmlrpc_log";*/
 
 	/* Increase HTTP keep-alive duration. Using defaults the amount of
 	 * sockets in TIME_WAIT state would become too high.
 	 */
-	serverparm.keepalive_timeout = 60;
-	serverparm.keepalive_max_conn = 1000;
+	server->parms.keepalive_timeout = 60;
+	server->parms.keepalive_max_conn = 1000;
 
 	/* Disable introspection */
-	serverparm.dont_advertise = 1;
+	server->parms.dont_advertise = 1;
 
 	logging_log(LOG_NOTICE, "Running XML-RPC server on port %u", port);
 	printf("Running XML-RPC server...\n");
 
-	serverparm.socket_handle = bind_rpc_server(rpc_bind_addr, port);
-	xmlrpc_server_abyss(env, &serverparm, XMLRPC_APSIZE(socket_handle));
+	server->parms.socket_handle = bind_rpc_server(rpc_bind_addr, port);
+}
+
+void run_rpc_server(struct fg_rpc_server *server)
+{
+	xmlrpc_env *env = &(server->env);
+	xmlrpc_server_abyss(env, &(server->parms), XMLRPC_APSIZE(socket_handle));
 
 	if (env->fault_occurred)
 		logging_log(LOG_ALERT, "XML-RPC Fault: %s (%d)\n",
@@ -1115,8 +1121,8 @@ static void sanity_check(void)
 int main(int argc, char *argv[])
 {
 	struct sigaction sa;
-
-	xmlrpc_env env;
+	/* Info about the xmlrpc server */
+	struct fg_rpc_server server;
 
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		crit("could not ignore SIGPIPE");
@@ -1137,6 +1143,8 @@ int main(int argc, char *argv[])
 	fg_pcap_init();
 #endif /* HAVE_LIBPCAP */
 
+	init_rpc_server(&server, port);
+
 	/* Push flowgrindd into the background */
 	if (log_type == LOGTYPE_SYSLOG) {
 		/* Need to call daemon() before creating the thread because
@@ -1151,8 +1159,8 @@ int main(int argc, char *argv[])
 
 	create_daemon_thread();
 
-	xmlrpc_env_init(&env);
-	run_rpc_server(&env, port);
+	/* This will block */
+	run_rpc_server(&server);
 
 	ap_free(&parser);
 
