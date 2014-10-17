@@ -250,10 +250,9 @@ extern unsigned int pending_reports;
  * large a reply can get */
 struct report* get_reports(int *has_more);
 
-#ifdef HAVE_LIBPCAP
+/* FIXME: shouldn't be global? */
 char *dump_prefix;
 char *dump_dir;
-#endif /* HAVE_LIBPCAP */
 
 void *daemon_main(void* ptr);
 void add_report(struct report* report);

@@ -165,7 +165,7 @@ void add_flow_destination(struct request_add_flow_destination *request)
 		logging_log(LOG_ALERT, "could not allocate memory for flow");
 		return;
 	}
-	
+
 	init_flow(flow, 0);
 
 	flow->settings = request->settings;

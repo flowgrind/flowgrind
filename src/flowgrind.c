@@ -244,10 +244,8 @@ static void usage(short status)
 		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
 		"                 increase the verbosity\n"
 #endif /* DEBUG */
-#ifdef HAVE_LIBPCAP
 		"  -e, --dump-prefix=PRE\n"
-		"                 prepend prefix PRE to dump filename (default: \"%3$s\")\n"
-#endif /* HAVE_LIBPCAP */
+		"                 prepend prefix PRE to pcap dump filename (default: \"%3$s\")\n"
 		"  -i, --report-interval=#.#\n"
 		"                 reporting interval, in seconds (default: 0.05s)\n"
 		"      --log-file[=FILE]\n"
@@ -296,9 +294,7 @@ static void usage(short status)
 		"  -L             call connect() on test socket immediately before starting to\n"
 		"                 send data (late connect). If not specified the test connection\n"
 		"                 is established in the preparation phase before the test starts\n"
-#ifdef HAVE_LIBPCAP
 		"  -M x           dump traffic using libpcap. flowgrindd must be run as root\n"
-#endif /* HAVE_LIBPCAP */
 		"  -N             shutdown() each socket direction after test flow\n"
 		"  -O x=OPT       set socket option OPT on test socket. For additional information\n"
 		"                 see 'flowgrind --help=socket'\n"
@@ -318,9 +314,7 @@ static void usage(short status)
 /*		"  -Z x=#.#       set amount of data to be send, in bytes (instead of -t)\n"*/,
 		progname,
 		MIN_BLOCK_SIZE
-#ifdef HAVE_LIBPCAP
 		, copt.dump_prefix
-#endif /* HAVE_LIBPCAP */
 		);
 	exit(EXIT_SUCCESS);
 }
@@ -484,9 +478,7 @@ static void init_controller_options(void)
 	copt.reporting_interval = 0.05;
 	copt.log_to_stdout = true;
 	copt.log_to_file = false;
-#ifdef HAVE_LIBPCAP
 	copt.dump_prefix = "flowgrind-";
-#endif /* HAVE_LIBPCAP */
 	copt.clobber = false;
 	copt.mbyte = false;
 	copt.symbolic = true;
@@ -827,9 +819,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:b,s:b,s:i,s:i}"
 		"{s:s}"
 		"{s:i,s:i,s:i,s:i,s:i}"
-#ifdef HAVE_LIBPCAP
 		"{s:s}"
-#endif /* HAVE_LIBPCAP */
 		"{s:i,s:A}"
 		")",
 
@@ -880,9 +870,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"mtcp", cflow[id].settings[DESTINATION].mtcp,
 		"dscp", (int)cflow[id].settings[DESTINATION].dscp,
 		"ipmtudiscover", cflow[id].settings[DESTINATION].ipmtudiscover,
-#ifdef HAVE_LIBPCAP
 		"dump_prefix", copt.dump_prefix,
-#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", cflow[id].settings[DESTINATION].num_extra_socket_options,
 		"extra_socket_options", extra_options);
 
@@ -933,9 +921,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:b,s:b,s:i,s:i}"
 		"{s:s}"
 		"{s:i,s:i,s:i,s:i,s:i}"
-#ifdef HAVE_LIBPCAP
 		"{s:s}"
-#endif /* HAVE_LIBPCAP */
 		"{s:i,s:A}"
 		"{s:s,s:i,s:i}"
 		")",
@@ -988,9 +974,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"mtcp", cflow[id].settings[SOURCE].mtcp,
 		"dscp", (int)cflow[id].settings[SOURCE].dscp,
 		"ipmtudiscover", cflow[id].settings[SOURCE].ipmtudiscover,
-#ifdef HAVE_LIBPCAP
 		"dump_prefix", copt.dump_prefix,
-#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", cflow[id].settings[SOURCE].num_extra_socket_options,
 		"extra_socket_options", extra_options,
 
@@ -2573,11 +2557,9 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		increase_debuglevel();
 		break;
 #endif /* DEBUG */
-#ifdef HAVE_LIBPCAP
 	case 'e':
 		copt.dump_prefix = strdup(arg);
 		break;
-#endif /* HAVE_LIBPCAP */
 	case 'i':
 		if (sscanf(arg, "%lf", &copt.reporting_interval) != 1 ||
 					copt.reporting_interval <= 0)
@@ -2727,9 +2709,7 @@ static void parse_cmdline(int argc, char *argv[])
 #ifdef DEBUG
 		{'d', "debug", ap_no, OPT_CONTROLLER, 0},
 #endif /* DEBUG */
-#ifdef HAVE_LIBPCAP
 		{'e', "dump-prefix", ap_yes, OPT_CONTROLLER, 0},
-#endif /* HAVE_LIBPCAP */
 		{'h', "help", ap_maybe, OPT_CONTROLLER, 0},
 		{'i', "report-interval", ap_yes, OPT_CONTROLLER, 0},
 		{LOG_FILE_OPTION, "log-file", ap_maybe, OPT_CONTROLLER, 0},
