@@ -40,6 +40,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <pcap.h>
+#include <netdb.h>
 
 #include "debug.h"
 #include "fg_socket.h"
@@ -127,8 +128,7 @@ static void* fg_pcap_work(void* arg)
 	struct flow * flow;
 	flow = (struct flow *) arg;
 	pcap_if_t *d;
-	struct sockaddr_storage sa;
-	socklen_t sl = sizeof(sa);
+	struct addrinfo *ainf;
 	char found = 0;
 	uint32_t net = 0;
 	uint32_t mask = 0;
@@ -145,9 +145,9 @@ static void* fg_pcap_work(void* arg)
 	/* make sure all resources are released when finished */
 	pthread_cleanup_push(fg_pcap_cleanup, (void*) flow);
 
-	if (getsockname(flow->fd, (struct sockaddr *)&sa, &sl) == -1) {
-		logging_log(LOG_WARNING, "getsockname() failed. Eliding "
-			    "packet capture for flow.");
+	if ((rc = getaddrinfo(flow->settings.bind_address, NULL, NULL, &ainf))) {
+		logging_log(LOG_WARNING, "getaddrinfo() failed (%s). Eliding "
+			    "packet capture for flow.", gai_strerror(rc));
 		goto remove;
 	}
 
@@ -157,7 +157,7 @@ static void* fg_pcap_work(void* arg)
 		for (a = d->addresses; a; a = a->next) {
 			if (!a->addr)
 				continue;
-			if (sockaddr_compare(a->addr, (struct sockaddr *)&sa)) {
+			if (sockaddr_compare(a->addr, ainf->ai_addr)) {
 				DEBUG_MSG(LOG_NOTICE, "pcap: data connection "
 					  "inbound from %s (%s)", d->name,
 					  fg_nameinfo(a->addr,
