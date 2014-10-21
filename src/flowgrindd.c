@@ -492,10 +492,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		goto cleanup;
 
 #ifndef HAVE_LIBPCAP
-	if (settings.traffic_dump) {
+	if (settings.traffic_dump)
 		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Daemon was asked to dump traffic, but wasn't compiled with libpcap support");
-		goto cleanup;
-	}
 #endif
 
 	/* Check for sanity */
