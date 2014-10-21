@@ -34,6 +34,9 @@
 #include <stdio.h>
 #include <string.h>
 
+/* for inet_pton */
+#include <arpa/inet.h>
+
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -82,35 +85,34 @@ static void stop_flows(const char* address)
 	xmlrpc_env env;
 	xmlrpc_client *client = 0;
 	xmlrpc_value * resultP = 0;
-	char* p;
 	int port = DEFAULT_LISTEN_PORT;
-	char host[1000], url[1000];
+	bool is_ipv6 = false;
+	char url[1000];
+	char *arg;
+	char *rpc_address = arg = strdup(address);
+	struct sockaddr_in6 source_in6;
+	source_in6.sin6_family = AF_INET6;
 
 	if (strlen(address) > sizeof(url) - 50) {
 		errx("address too long: %s", address);
 		return;
 	}
 
-	/* Construct canonical address and URL */
-	strncpy(host, address, 1000);
+	parse_rpc_address(&rpc_address, &port, &is_ipv6);
 
-	p = strchr(host, ':');
-	if (p) {
-		if (p == host) {
-			errx("no address given: %s", address);
-			return;
-		}
-		port = atoi(p + 1);
-		if (port < 1 || port > 65535) {
-			errx("invalid port given: %s", address);
-			return;
-		}
-		*p = 0;
-	}
-	sprintf(url, "http://%s:%d/RPC2", host, port);
-	sprintf(host, "%s:%d", host, port);
+	if (is_ipv6 && (inet_pton(AF_INET6, rpc_address,
+		(char*)&source_in6.sin6_addr) <= 0))
+		errx("invalid IPv6 address '%s' for RPC",  rpc_address);
 
-	printf("Stopping all flows on %s\n", host);
+	if (port < 1 || port > 65535)
+		errx("invalid port for RPC");
+
+	if (is_ipv6)
+		sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
+	else
+		sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
+
+	printf("Stopping all flows on %s\n", url);
 
 	/* Stop the flows */
 	xmlrpc_env_init(&env);
@@ -126,12 +128,12 @@ static void stop_flows(const char* address)
 cleanup:
 	if (env.fault_occurred) {
 		warnx("could not stop flows on %s: %s (%d)",
-		      host, env.fault_string, env.fault_code);
+		      url, env.fault_string, env.fault_code);
 	}
 	if (client)
 		xmlrpc_client_destroy(client);
 	xmlrpc_env_clean(&env);
-
+	free(arg);
 }
 
 int main(int argc, char *argv[])
@@ -173,6 +175,11 @@ int main(int argc, char *argv[])
 			usage(EXIT_FAILURE);
 			break;
 		}
+	}
+
+	if (!ap_arguments(&parser)) {
+		errx("no address given");
+		usage(EXIT_FAILURE);
 	}
 
 	xmlrpc_env rpc_env;
