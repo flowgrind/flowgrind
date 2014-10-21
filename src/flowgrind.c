@@ -51,6 +51,9 @@
 #include <fcntl.h>
 #include <syslog.h>
 
+/* for CA States */
+#include <netinet/tcp.h>
+
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -61,7 +64,6 @@
 #include "fg_progname.h"
 #include "fg_time.h"
 #include "fg_definitions.h"
-#include "fg_socket.h"
 #include "fg_string.h"
 #include "debug.h"
 #include "fg_argparser.h"
