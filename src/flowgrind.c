@@ -2182,42 +2182,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 	cflow[flow_id].settings[endpoint_id].write_rate = optdouble;
 }
 
-/**
- * Parse RPC address for the xmlrpc control connection
- *
- * @param[in,out] rpc_address string in format CONTROL[:PORT]. It will be
- * truncated to CONTROL
- * @param[out] port port if the control address @p rpc_address contains a port
- * @param[out] is_ipv6 true if control address @p rpc_address is a numerical
-*/
-static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
-{
-	char* sepptr = 0;
 
-	/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
-	if ((sepptr = strchr(*rpc_address, ']'))) {
-		*is_ipv6 = true;
-		*sepptr = '\0';
-		if (*rpc_address[0] == '[')
-			(*rpc_address)++;
-		sepptr++;
-		if (sepptr != '\0' && *sepptr == ':')
-			sepptr++;
-		*port = atoi(sepptr);
-	} else if ((sepptr = strchr(*rpc_address, ':'))) {
-		/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
-		if (strchr(sepptr+1, ':')) {
-			*is_ipv6 = true;
-		} else {
-		/* 3rd case: IPv4 or name with port 1.2.3.4:5999 */
-			*sepptr = '\0';
-			sepptr++;
-			if ((*sepptr != '\0') && (*sepptr == ':'))
-					sepptr++;
-			*port = atoi(sepptr);
-		}
-	}
-}
 
 /**
  * Parse argument for option -H, which specifies the endpoints of a flow
