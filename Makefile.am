@@ -37,7 +37,7 @@ AM_CFLAGS = -Wall -Wextra -Werror=implicit -std=gnu99 -fgnu89-inline
 # flowgrind controller
 flowgrind_SOURCES = src/common.h src/debug.c src/fg_error.h src/fg_error.c \
 					src/fg_progname.h src/fg_progname.c src/fg_socket.h \
-					src/fg_socket.c src/fg_string.h src/fg_string.c \
+					src/fg_string.h src/fg_string.c \
 					fg_definitions.h src/fg_time.h src/fg_time.c \
 					src/flowgrind.h src/flowgrind.c src/fg_argparser.h \
 					src/fg_argparser.c
