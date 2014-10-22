@@ -87,16 +87,11 @@ static void stop_flows(const char* address)
 	xmlrpc_value * resultP = 0;
 	int port = DEFAULT_LISTEN_PORT;
 	bool is_ipv6 = false;
-	char url[1000];
-	char *arg;
+	char *arg, *url = 0;
+	int rc;
 	char *rpc_address = arg = strdup(address);
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
-
-	if (strlen(address) > sizeof(url) - 50) {
-		errx("address too long: %s", address);
-		return;
-	}
 
 	parse_rpc_address(&rpc_address, &port, &is_ipv6);
 
@@ -108,9 +103,12 @@ static void stop_flows(const char* address)
 		errx("invalid port for RPC");
 
 	if (is_ipv6)
-		sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
+		rc = asprintf(&url, "http://[%s]:%d/RPC2", rpc_address, port);
 	else
-		sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
+		rc = asprintf(&url, "http://%s:%d/RPC2", rpc_address, port);
+
+	if (rc==-1)
+		critx("failed to build RPC URL");
 
 	printf("Stopping all flows on %s\n", url);
 
@@ -134,6 +132,7 @@ cleanup:
 		xmlrpc_client_destroy(client);
 	xmlrpc_env_clean(&env);
 	free(arg);
+	free(url);
 }
 
 int main(int argc, char *argv[])

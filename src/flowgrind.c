@@ -2201,13 +2201,13 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
 	struct daemon* daemon;
-	char url[1000];
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
-	char *rpc_address, *sepptr = 0;
+	char *rpc_address, *url = 0, *sepptr = 0;
 	char *arg = strdup(hostarg);
 	struct flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
+	int rc;
 
 	/* extra RPC address ? */
 	sepptr = strchr(arg, '/');
@@ -2243,14 +2243,18 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	if (!*arg)
 		PARSE_ERR("flow %i: no test host given in argument", flow_id);
 	if (is_ipv6)
-		sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
+		rc = asprintf(&url, "http://[%s]:%d/RPC2", rpc_address, port);
 	else
-		sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
+		rc = asprintf(&url, "http://%s:%d/RPC2", rpc_address, port);
+
+	if (rc==-1)
+		critx("could not allocate memory for the RPC url");
 
 	daemon = get_daemon_by_url(url, rpc_address, port);
 	endpoint->daemon = daemon;
 	strcpy(endpoint->test_address, arg);
 	free(arg);
+	free(url);
 }
 
 /**
