@@ -51,7 +51,7 @@
 #include <fcntl.h>
 #include <syslog.h>
 
-/* for CA States on Linux/Freebsd */
+/* for CA states (on Linux only) */
 #include <netinet/tcp.h>
 
 /* xmlrpc-c */
