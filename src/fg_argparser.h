@@ -254,4 +254,14 @@ void ap_reset_mutex(struct ap_Mutex_state *const ms);
 */
 void ap_free_mutex_state(struct ap_Mutex_state *const ms);
 
+/**
+ * Parse RPC address for the xmlrpc control connection
+ *
+ * @param[in,out] rpc_address string in format CONTROL[:PORT]. It will be
+ * truncated to CONTROL
+ * @param[out] port port if the control address @p rpc_address contains a port
+ * @param[out] is_ipv6 true if control address @p rpc_address is a numerical
+*/
+void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6);
+
 #endif /* _ARG_PARSER_H_ */

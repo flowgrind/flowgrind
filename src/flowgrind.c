@@ -2184,42 +2184,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 	cflow[flow_id].settings[endpoint_id].write_rate = optdouble;
 }
 
-/**
- * Parse RPC address for the xmlrpc control connection
- *
- * @param[in,out] rpc_address string in format CONTROL[:PORT]. It will be
- * truncated to CONTROL
- * @param[out] port port if the control address @p rpc_address contains a port
- * @param[out] is_ipv6 true if control address @p rpc_address is a numerical
-*/
-static void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
-{
-	char* sepptr = 0;
 
-	/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
-	if ((sepptr = strchr(*rpc_address, ']'))) {
-		*is_ipv6 = true;
-		*sepptr = '\0';
-		if (*rpc_address[0] == '[')
-			(*rpc_address)++;
-		sepptr++;
-		if (sepptr != '\0' && *sepptr == ':')
-			sepptr++;
-		*port = atoi(sepptr);
-	} else if ((sepptr = strchr(*rpc_address, ':'))) {
-		/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
-		if (strchr(sepptr+1, ':')) {
-			*is_ipv6 = true;
-		} else {
-		/* 3rd case: IPv4 or name with port 1.2.3.4:5999 */
-			*sepptr = '\0';
-			sepptr++;
-			if ((*sepptr != '\0') && (*sepptr == ':'))
-					sepptr++;
-			*port = atoi(sepptr);
-		}
-	}
-}
 
 /**
  * Parse argument for option -H, which specifies the endpoints of a flow
@@ -2236,13 +2201,13 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
 	struct daemon* daemon;
-	char url[1000];
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
-	char *rpc_address, *sepptr = 0;
+	char *rpc_address, *url = 0, *sepptr = 0;
 	char *arg = strdup(hostarg);
 	struct flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
+	int rc;
 
 	/* extra RPC address ? */
 	sepptr = strchr(arg, '/');
@@ -2278,14 +2243,18 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	if (!*arg)
 		PARSE_ERR("flow %i: no test host given in argument", flow_id);
 	if (is_ipv6)
-		sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
+		rc = asprintf(&url, "http://[%s]:%d/RPC2", rpc_address, port);
 	else
-		sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
+		rc = asprintf(&url, "http://%s:%d/RPC2", rpc_address, port);
+
+	if (rc==-1)
+		critx("could not allocate memory for the RPC url");
 
 	daemon = get_daemon_by_url(url, rpc_address, port);
 	endpoint->daemon = daemon;
 	strcpy(endpoint->test_address, arg);
 	free(arg);
+	free(url);
 }
 
 /**
