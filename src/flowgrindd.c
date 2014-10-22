@@ -861,7 +861,7 @@ void create_daemon_thread()
 		critc(rc, "could not start thread");
 }
 
-/* creates listen socket for the xmlrpc server */
+/** Creates listen socket for the xmlrpc server. */
 static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	int rc;
 	int fd;
@@ -912,6 +912,7 @@ static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	return fd;
 }
 
+/** Initializes the xmlrpc server and registers exported methods. */
 static void init_rpc_server(struct fg_rpc_server *server, unsigned int port)
 {
 	xmlrpc_registry * registryP;
@@ -953,6 +954,7 @@ static void init_rpc_server(struct fg_rpc_server *server, unsigned int port)
 	server->parms.socket_handle = bind_rpc_server(rpc_bind_addr, port);
 }
 
+/** Enters the XMLRPC Server main loop. */
 void run_rpc_server(struct fg_rpc_server *server)
 {
 	xmlrpc_env *env = &(server->env);

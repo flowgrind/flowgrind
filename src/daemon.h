@@ -238,10 +238,14 @@ struct request_get_status
 	int num_flows;
 };
 
-/* Struct to hold information about the daemons XMLrpc server */
+/**
+ * Struct to hold information about the daemons XMLrpc server.
+ */
 struct fg_rpc_server
 {
+	/** Environment used by the Abyss Server. */
 	xmlrpc_env env;
+	/** Parameters of the XMLrpc Server. */
 	xmlrpc_server_abyss_parms parms;
 };
 
