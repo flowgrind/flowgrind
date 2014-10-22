@@ -61,7 +61,8 @@ flowgrindd_CFLAGS = $(AM_CFLAGS) $(XMLRPC_C_SERVER_CFLAGS) $(GSL_CFLAGS)
 # flowgrind-stop
 flowgrind_stop_SOURCES = src/fg_error.h src/fg_error.c src/fg_progname.h \
 						 src/fg_progname.c src/flowgrind_stop.c \
-						 src/fg_argparser.h src/fg_argparser.c
+						 src/fg_argparser.h src/fg_argparser.c \
+						 src/fg_definitions.h
 flowgrind_stop_LDADD = $(LIBS) $(CURL_LDADD) $(XMLRPC_C_CLIENT_LDADD)
 flowgrind_stop_CFLAGS = $(AM_CFLAGS) $(CURL_FLAGS) $(XMLRPC_C_CLIENT_CFLAGS)
 

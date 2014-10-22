@@ -42,6 +42,7 @@
 #include <xmlrpc-c/client.h>
 
 #include "common.h"
+#include "fg_definitions.h"
 #include "fg_error.h"
 #include "fg_progname.h"
 #include "fg_argparser.h"
@@ -131,8 +132,7 @@ cleanup:
 	if (client)
 		xmlrpc_client_destroy(client);
 	xmlrpc_env_clean(&env);
-	free(arg);
-	free(url);
+	free_all(arg, url);
 }
 
 int main(int argc, char *argv[])

@@ -2253,8 +2253,7 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	daemon = get_daemon_by_url(url, rpc_address, port);
 	endpoint->daemon = daemon;
 	strcpy(endpoint->test_address, arg);
-	free(arg);
-	free(url);
+	free_all(arg, url);
 }
 
 /**
