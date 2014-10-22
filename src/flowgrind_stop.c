@@ -36,6 +36,10 @@
 
 /* for inet_pton */
 #include <arpa/inet.h>
+/* for AF_INET6 */
+#include <sys/socket.h>
+/* for sockaddr_in6 */
+#include <netinet/in.h>
 
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>

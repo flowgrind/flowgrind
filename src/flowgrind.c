@@ -36,9 +36,13 @@
 #include <limits.h>
 #include <math.h>
 #include <sys/types.h>
+/* for AF_INET6 */
+#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+/* for CA states (on Linux only) */
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,9 +54,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
-
-/* for CA states (on Linux only) */
-#include <netinet/tcp.h>
 
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
