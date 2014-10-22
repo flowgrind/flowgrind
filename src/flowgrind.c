@@ -2623,12 +2623,12 @@ static void check_mutex(struct ap_Mutex_state ms[],
  * @param[in] flow_id ID of flow to apply option to
  */
 static void parse_multi_endpoint_option(int code, const char* arg,
-				    	const char* opt_string, 
-					struct ap_Mutex_state ms[], 
-					int argind, int flow_id)
+					const char* opt_string,
+					struct ap_Mutex_state ms[], int argind,
+					int flow_id)
 {
 	char *argcpy = strdup(arg);
-	for (char *token = strtok(argcpy, ","); token; 
+	for (char *token = strtok(argcpy, ","); token;
 	     token = strtok(NULL, ",")) {
 
 		char type = token[0];
@@ -2640,18 +2640,18 @@ static void parse_multi_endpoint_option(int code, const char* arg,
 			arg = token + 1;
 
 		if (type != 's' && type != 'd' && type != 'b')
-			PARSE_ERR("Invalid enpoint specifier in Option %s", 
+			PARSE_ERR("Invalid enpoint specifier in Option %s",
 				  opt_string);
 
 		/* check mutex in context of current endpoint */
 		if (type == 's' || type == 'b') {
 			check_mutex(ms, MUTEX_CONTEXT_SOURCE, argind, flow_id);
-			parse_flow_option_endpoint(code, arg, opt_string, 
+			parse_flow_option_endpoint(code, arg, opt_string,
 						   flow_id, SOURCE);
 		}
 		if (type == 'd' || type == 'b') {
 			check_mutex(ms, MUTEX_CONTEXT_DESTINATION, argind, flow_id);
-			parse_flow_option_endpoint(code, arg, opt_string, 
+			parse_flow_option_endpoint(code, arg, opt_string,
 						   flow_id, DESTINATION);
 		}
 	}
@@ -2774,15 +2774,15 @@ static void parse_cmdline(int argc, char *argv[])
 			ap_reset_mutex(&ms[MUTEX_CONTEXT_TWO_SIDED]);
 			break;
 		case OPT_FLOW:
-			check_mutex(ms, MUTEX_CONTEXT_TWO_SIDED, argind, 
+			check_mutex(ms, MUTEX_CONTEXT_TWO_SIDED, argind,
 				    current_flow_ids[0]);
 			for (int i = 0; i < cur_num_flows; i++)
 				parse_flow_option(code, arg, opt_string,
 						current_flow_ids[i]);
 			break;
 		case OPT_FLOW_ENDPOINT:
-			for (int i = 0; i < cur_num_flows; i++)	
-				parse_multi_endpoint_option(code, arg, 
+			for (int i = 0; i < cur_num_flows; i++)
+				parse_multi_endpoint_option(code, arg,
 							    opt_string, ms, argind,
 							    current_flow_ids[i]);
 			break;
