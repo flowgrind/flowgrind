@@ -859,7 +859,7 @@ void create_daemon_thread()
 		critc(rc, "could not start thread");
 }
 
-/** Creates listen socket for the xmlrpc server. */
+/** Creates listen socket for the xmlrpc server */
 static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	int rc;
 	int fd;
@@ -910,7 +910,7 @@ static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	return fd;
 }
 
-/** Initializes the xmlrpc server and registers exported methods. */
+/** Initializes the xmlrpc server and registers exported methods */
 static void init_rpc_server(struct fg_rpc_server *server, unsigned int port)
 {
 	xmlrpc_registry * registryP;
@@ -934,8 +934,8 @@ static void init_rpc_server(struct fg_rpc_server *server, unsigned int port)
 	*/
 	server->parms.config_file_name	= NULL;
 	server->parms.registryP		= registryP;
-	server->parms.socket_bound		= 1;
-	server->parms.log_file_name        = NULL; /*"/tmp/xmlrpc_log";*/
+	server->parms.socket_bound	= 1;
+	server->parms.log_file_name	= NULL; /*"/tmp/xmlrpc_log";*/
 
 	/* Increase HTTP keep-alive duration. Using defaults the amount of
 	 * sockets in TIME_WAIT state would become too high.
@@ -952,7 +952,7 @@ static void init_rpc_server(struct fg_rpc_server *server, unsigned int port)
 	server->parms.socket_handle = bind_rpc_server(rpc_bind_addr, port);
 }
 
-/** Enters the XMLRPC Server main loop. */
+/** Enters the XMLRPC Server main loop */
 void run_rpc_server(struct fg_rpc_server *server)
 {
 	xmlrpc_env *env = &(server->env);
