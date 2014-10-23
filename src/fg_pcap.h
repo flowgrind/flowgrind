@@ -39,6 +39,5 @@
 
 void fg_pcap_init(void);
 void fg_pcap_go(struct flow *);
-void fg_pcap_cleanup(void* arg);
 
 #endif /* _FG_PCAP_H_ */
