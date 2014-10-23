@@ -37,7 +37,22 @@
 
 #include "daemon.h"
 
+/**
+ * Initialize flowgrind's pcap library.
+ * This method fills internal structures on which other methods of this library depend.
+ * It is therefore crucial to call it before any call to other methods of this library.
+ */
 void fg_pcap_init(void);
+
+/**
+ * Start a tcp dump to capture the traffic of the provided flow.
+ * If the flow was not configured for tcp dumping or dumping is already in
+ * progress the method will do nothing and return immediately.
+ * Otherwise the method blocks until the actual capturing starts.
+ * In case an error occurs a log message is created.
+ *
+ * @param[in] flow the flow whose traffic should be captured
+ */
 void fg_pcap_go(struct flow *);
 
 #endif /* _FG_PCAP_H_ */

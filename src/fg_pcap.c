@@ -54,14 +54,22 @@
 #include "fg_barrier.h"
 #endif
 
+/* PCAP snapshot length */
 #define PCAP_SNAPLEN 130
+
+/* PCAP filter string */
 #define PCAP_FILTER "tcp"
+
+/* Flag whether to use promiscuous mode */
 #define PCAP_PROMISC 0
 
+/* A buffer filled with an error message by the pcap library in case of an error */
 static char errbuf[PCAP_ERRBUF_SIZE];
 
+/* A thread barrier used to block fg_pcap_go() until the worker thread reaches its main loop */
 static pthread_barrier_t pcap_barrier;
 
+/* A pointer to the first element in a list containing all 'pcapable' devices */
 static pcap_if_t * alldevs;
 
 void fg_pcap_init()
@@ -98,6 +106,13 @@ void fg_pcap_init()
 	return;
 }
 
+/**
+ * Cleanup method to be called after dumping of the specified flow has finished.
+ * It closes the handle to the ``savefile'' and the handle to the device
+ * whose traffic was captured.
+ *
+ * @param[in] arg pointer to the flow whose dumping finished
+ */
 void fg_pcap_cleanup(void* arg)
 {
 	struct flow * flow;
@@ -115,6 +130,14 @@ void fg_pcap_cleanup(void* arg)
 	dumping = 0;
 }
 
+/**
+ * Worker method performing actual packet capturing for the provided flow.
+ * Prepares the flow for packet capturing by figuring out the correct device,
+ * constructing the pcap filter, etc. and finally starts capturing.
+ * Synchronizes with fg_pcap_go() after initialization before starting capturing.
+ *
+ * @param[in] arg pointer to the flow whose traffic should be captured
+ */
 static void* fg_pcap_work(void* arg)
 {
 	/* note: all the wierd casts in this function are completely useless,
