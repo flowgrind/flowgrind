@@ -1,3 +1,12 @@
+Release 0.7.5 (2014-10-23)
+- (Re-)added Mac OS X support (Closes issue #96, #95, #43)
+- Includes a lot of bugfixes, to name a few:
+- Closes github issue #159 (flowgrind-stop does not complain, if there is no address given)
+- Closes github issue #70 (flowgrind-stop does not accept IPv6 addresses)
+- Closes github issue #154 (flowgrindd does not complain if it cannot bind socket
+- Closes github issue #148 (tcp ca state in flowlog doesn't seem to work )
+- Closes various pcap issues and crashes (thanks Marcel Nehring)
+
 Release 0.7.1 (2014-05-27)
 - Closes issue #80 reported and fixed by Felix Rietig
 - Change license to GPL3
