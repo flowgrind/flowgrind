@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('fg__time_8c_source.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -109,7 +109,7 @@ $(document).ready(function(){initNavTree('fg__time_8c_source.html','');});
 <div class="contents">
 <a href="fg__time_8c.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;</div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment">/*</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * Copyright (C) 2013 Alexander Zimmermann &lt;alexander.zimmermann@netapp.com&gt;</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * Copyright (C) 2014 Alexander Zimmermann &lt;alexander.zimmermann@netapp.com&gt;</span></div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"> * Copyright (C) 2010-2013 Christian Samsel &lt;christian.samsel@rwth-aachen.de&gt;</span></div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment"> * Copyright (C) 2007-2008 Daniel Schaffrath &lt;daniel.schaffrath@mac.com&gt;</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"> *</span></div>
@@ -131,121 +131,153 @@ $(document).ready(function(){initNavTree('fg__time_8c_source.html','');});
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#ifdef HAVE_CONFIG_H</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &quot;config.h&quot;</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &quot;<a class="code" href="config_8h.html">config.h</a>&quot;</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* HAVE_CONFIG_H */</span><span class="preprocessor"></span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#include &lt;string.h&gt;</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#include &lt;time.h&gt;</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#include &lt;stdbool.h&gt;</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="fg__error_8h.html">fg_error.h</a>&quot;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="fg__time_8h.html">fg_time.h</a>&quot;</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
-<div class="line"><a name="l00040"></a><span class="lineno"><a class="line" href="fg__time_8h.html#af56063ee3eea9ace1754c19ba3b5d206">   40</a></span>&#160;<span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp, <span class="keywordtype">char</span> *buf, <span class="keywordtype">size_t</span> size)</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;{</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;        <span class="keyword">struct </span>tm tm;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;        <span class="comment">/* Converts the calendar time to broken-down time representation,</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">         * expressed relative to the user&#39;s specified timezone */</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        tzset();</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;        localtime_r(&amp;tp-&gt;tv_sec, &amp;tm);</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="comment">/* Converts broken-down time representation into a string */</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <span class="keywordtype">size_t</span> len = strftime(buf, size, <span class="stringliteral">&quot;%F %T&quot;</span>, &amp;tm);</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <span class="comment">/* Append nanoseconds to string */</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        snprintf(buf+len, size-len, <span class="stringliteral">&quot;.%09ld&quot;</span>, tp-&gt;tv_nsec);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#include &lt;assert.h&gt;</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#include &lt;string.h&gt;</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#include &lt;time.h&gt;</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#include &lt;stdbool.h&gt;</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="comment">/* OS X hasn&#39;t defined POSIX clocks */</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#if !defined(HAVE_CLOCK_GETTIME) &amp;&amp; defined HAVE_CLOCK_GET_TIME</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &lt;mach/clock.h&gt;</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;mach/mach.h&gt;</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* !defined(HAVE_CLOCK_GETTIME) &amp;&amp; defined HAVE_CLOCK_GET_TIME */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="fg__time_8h.html">fg_time.h</a>&quot;</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
+<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="fg__time_8h.html#af56063ee3eea9ace1754c19ba3b5d206">   46</a></span>&#160;<span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp, <span class="keywordtype">char</span> *buf, <span class="keywordtype">size_t</span> size)</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;{</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;        <span class="keyword">struct </span>tm tm;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <span class="comment">/* Converts the calendar time to broken-down time representation,</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="comment">         * expressed relative to the user&#39;s specified timezone */</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        tzset();</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        localtime_r(&amp;tp-&gt;tv_sec, &amp;tm);</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">return</span> buf;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;}</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="comment">/* Converts broken-down time representation into a string */</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <span class="keywordtype">size_t</span> len = strftime(buf, size, <span class="stringliteral">&quot;%F %T&quot;</span>, &amp;tm);</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;</div>
-<div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a5405db8ca5e60b164698faa07ca19a1b">   58</a></span>&#160;<span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="fg__time_8c.html#a5405db8ca5e60b164698faa07ca19a1b">ctimespec</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp)</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;{</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <span class="keyword">static</span> <span class="keywordtype">char</span> buf[30];</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <a class="code" href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a>(tp, buf, <span class="keyword">sizeof</span>(buf));</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <span class="comment">/* Append nanoseconds to string */</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        snprintf(buf+len, size-len, <span class="stringliteral">&quot;.%09ld&quot;</span>, tp-&gt;tv_nsec);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;        <span class="keywordflow">return</span> buf;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;}</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordflow">return</span> buf;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;}</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;</div>
-<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a1ce08f00b1930420282aa6422ce66f24">   67</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp1, <span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp2)</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;{</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keywordflow">return</span> (<span class="keywordtype">double</span>) (tp2-&gt;tv_sec - tp1-&gt;tv_sec)</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                + (<span class="keywordtype">double</span>) (tp2-&gt;tv_nsec - tp1-&gt;tv_nsec) / <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>;</div>
+<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a5405db8ca5e60b164698faa07ca19a1b">   64</a></span>&#160;<span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="fg__time_8c.html#a5405db8ca5e60b164698faa07ca19a1b">ctimespec</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp)</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;{</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        <span class="keyword">static</span> <span class="keywordtype">char</span> buf[30];</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <a class="code" href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a>(tp, buf, <span class="keyword">sizeof</span>(buf));</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordflow">return</span> buf;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;}</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;</div>
-<div class="line"><a name="l00073"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a255d1a882171eae755af0936c3d78951">   73</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="fg__time_8c.html#a255d1a882171eae755af0936c3d78951">time_diff_now</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp)</div>
+<div class="line"><a name="l00073"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a1ce08f00b1930420282aa6422ce66f24">   73</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp1, <span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp2)</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;{</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keyword">struct </span>timespec now;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <a class="code" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a>(&amp;now);</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">return</span> (<span class="keywordtype">double</span>) (now.tv_sec - tp-&gt;tv_sec)</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                + (<span class="keywordtype">double</span>) (now.tv_nsec - tp-&gt;tv_nsec) / <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;}</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;</div>
-<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a801431f54cf89b9f658e3e29b2bba0fe">   82</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="fg__time_8c.html#a801431f54cf89b9f658e3e29b2bba0fe">time_is_after</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp1, <span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp2)</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;{</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <span class="keywordflow">if</span> (tp1-&gt;tv_sec &gt; tp2-&gt;tv_sec)</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordflow">if</span> (tp1-&gt;tv_sec &lt; tp2-&gt;tv_sec)</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;        <span class="keywordflow">return</span> tp1-&gt;tv_nsec &gt; tp2-&gt;tv_nsec;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;}</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;</div>
-<div class="line"><a name="l00091"></a><span class="lineno"><a class="line" href="fg__time_8h.html#abbfce1fdd51fb1cc83497fb85a021dc4">   91</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="fg__time_8c.html#abbfce1fdd51fb1cc83497fb85a021dc4">normalize_tp</a>(<span class="keyword">struct</span> timespec *tp)</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;{</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        <span class="keywordtype">bool</span> normalized = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">while</span> (tp-&gt;tv_nsec &gt;= <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>) {</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;                tp-&gt;tv_nsec -= <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>;</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;                tp-&gt;tv_sec++;</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                normalized = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        }</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <span class="keywordflow">while</span> (tp-&gt;tv_nsec &lt; 0) {</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                tp-&gt;tv_nsec += <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>;</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                tp-&gt;tv_sec--;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                normalized = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        }</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <span class="keywordflow">return</span> normalized;</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;}</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;</div>
-<div class="line"><a name="l00108"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a5017d8e7d42049ef923057b5a02404be">  108</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="fg__time_8c.html#a5017d8e7d42049ef923057b5a02404be">time_add</a>(<span class="keyword">struct</span> timespec *tp, <span class="keywordtype">double</span> seconds)</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;{</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        tp-&gt;tv_sec += (time_t)seconds;</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        tp-&gt;tv_nsec += (long)((seconds - (time_t)seconds) * <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>);</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <a class="code" href="fg__time_8c.html#abbfce1fdd51fb1cc83497fb85a021dc4">normalize_tp</a>(tp);</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;}</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;</div>
-<div class="line"><a name="l00115"></a><span class="lineno"><a class="line" href="fg__time_8h.html#ac2b9db9a31fa442023443d234787ef78">  115</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a>(<span class="keyword">struct</span> timespec *tp)</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;{</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <span class="keyword">static</span> <span class="keyword">struct </span>timespec res = {.tv_sec = 0, .tv_nsec = 0};</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        <span class="comment">/* Find out clock resolution. Will only be retrieved on first call */</span></div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        <span class="keywordflow">if</span> (!res.tv_sec &amp;&amp; !res.tv_nsec) {</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                <span class="keywordflow">if</span> (clock_getres(CLOCK_REALTIME, &amp;res) != 0)</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;                        <a class="code" href="fg__error_8h.html#ad25a1c617278c25cbcbb9b9a3a6b8024">err</a>(<span class="stringliteral">&quot;unable to determine clock resolution&quot;</span>);</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;                <span class="comment">/* Clock resolution is lower than expected (1ns) */</span></div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                <span class="keywordflow">if</span> (res.tv_nsec != 1)</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                        <a class="code" href="fg__error_8h.html#ae6cfebfa20e754bd09c394f8bd07f624">warnx</a>(<span class="stringliteral">&quot;low clock resolution: %ldns&quot;</span>, res.tv_nsec);</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        }</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <span class="comment">/* Get wall-clock time */</span></div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        <span class="keywordflow">return</span> clock_gettime(CLOCK_REALTIME, tp);</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;}</div>
-<div class="ttc" id="fg__time_8c_html_abbfce1fdd51fb1cc83497fb85a021dc4"><div class="ttname"><a href="fg__time_8c.html#abbfce1fdd51fb1cc83497fb85a021dc4">normalize_tp</a></div><div class="ttdeci">bool normalize_tp(struct timespec *tp)</div><div class="ttdoc">Normalizes timespec struct tp. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00091">fg_time.c:91</a></div></div>
-<div class="ttc" id="fg__time_8c_html_ac2b9db9a31fa442023443d234787ef78"><div class="ttname"><a href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a></div><div class="ttdeci">int gettime(struct timespec *tp)</div><div class="ttdoc">Returns wall-clock time with nanosecond precision. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00115">fg_time.c:115</a></div></div>
-<div class="ttc" id="fg__error_8h_html_ad25a1c617278c25cbcbb9b9a3a6b8024"><div class="ttname"><a href="fg__error_8h.html#ad25a1c617278c25cbcbb9b9a3a6b8024">err</a></div><div class="ttdeci">#define err(...)</div><div class="ttdoc">To report an error w/ the corresponding system error message. </div><div class="ttdef"><b>Definition:</b> <a href="fg__error_8h_source.html#l00043">fg_error.h:43</a></div></div>
-<div class="ttc" id="fg__error_8h_html"><div class="ttname"><a href="fg__error_8h.html">fg_error.h</a></div><div class="ttdoc">Error-reporting routines used by Flowgrind. </div></div>
-<div class="ttc" id="fg__time_8c_html_a1ce08f00b1930420282aa6422ce66f24"><div class="ttname"><a href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a></div><div class="ttdeci">double time_diff(const struct timespec *tp1, const struct timespec *tp2)</div><div class="ttdoc">Returns the time difference between two the specific points in time tp1 and tp2. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00067">fg_time.c:67</a></div></div>
-<div class="ttc" id="fg__error_8h_html_ae6cfebfa20e754bd09c394f8bd07f624"><div class="ttname"><a href="fg__error_8h.html#ae6cfebfa20e754bd09c394f8bd07f624">warnx</a></div><div class="ttdeci">#define warnx(...)</div><div class="ttdoc">To report a warning w/ a system error message. </div><div class="ttdef"><b>Definition:</b> <a href="fg__error_8h_source.html#l00054">fg_error.h:54</a></div></div>
-<div class="ttc" id="fg__time_8c_html_a5017d8e7d42049ef923057b5a02404be"><div class="ttname"><a href="fg__time_8c.html#a5017d8e7d42049ef923057b5a02404be">time_add</a></div><div class="ttdeci">void time_add(struct timespec *tp, double seconds)</div><div class="ttdoc">Add an amount of time seconds to a specific point in time tp. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00108">fg_time.c:108</a></div></div>
-<div class="ttc" id="fg__time_8h_html_a0501e82515b2bdf36453c4cc80f5e0cc"><div class="ttname"><a href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a></div><div class="ttdeci">#define NSEC_PER_SEC</div><div class="ttdoc">Number of nanoseconds per second. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8h_source.html#l00040">fg_time.h:40</a></div></div>
-<div class="ttc" id="fg__time_8c_html_af56063ee3eea9ace1754c19ba3b5d206"><div class="ttname"><a href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a></div><div class="ttdeci">const char * ctimespec_r(const struct timespec *tp, char *buf, size_t size)</div><div class="ttdoc">Converts timespec struct tp into a null-terminated string and stores the string in a user-supplied bu...</div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00040">fg_time.c:40</a></div></div>
-<div class="ttc" id="fg__time_8c_html_a5405db8ca5e60b164698faa07ca19a1b"><div class="ttname"><a href="fg__time_8c.html#a5405db8ca5e60b164698faa07ca19a1b">ctimespec</a></div><div class="ttdeci">const char * ctimespec(const struct timespec *tp)</div><div class="ttdoc">Converts timespec struct tp into a null-terminated string. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00058">fg_time.c:58</a></div></div>
-<div class="ttc" id="fg__time_8c_html_a801431f54cf89b9f658e3e29b2bba0fe"><div class="ttname"><a href="fg__time_8c.html#a801431f54cf89b9f658e3e29b2bba0fe">time_is_after</a></div><div class="ttdeci">bool time_is_after(const struct timespec *tp1, const struct timespec *tp2)</div><div class="ttdoc">Returns true if second point in time tp2 is chronologically after the first point in time tp1...</div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00082">fg_time.c:82</a></div></div>
-<div class="ttc" id="fg__time_8c_html_a255d1a882171eae755af0936c3d78951"><div class="ttname"><a href="fg__time_8c.html#a255d1a882171eae755af0936c3d78951">time_diff_now</a></div><div class="ttdeci">double time_diff_now(const struct timespec *tp)</div><div class="ttdoc">Returns time difference between now and the specific point in time tp. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00073">fg_time.c:73</a></div></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keywordflow">return</span> (<span class="keywordtype">double</span>) (tp2-&gt;tv_sec - tp1-&gt;tv_sec)</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;                + (<span class="keywordtype">double</span>) (tp2-&gt;tv_nsec - tp1-&gt;tv_nsec) / (<span class="keywordtype">long</span>) <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;}</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;</div>
+<div class="line"><a name="l00079"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a255d1a882171eae755af0936c3d78951">   79</a></span>&#160;<span class="keywordtype">double</span> <a class="code" href="fg__time_8c.html#a255d1a882171eae755af0936c3d78951">time_diff_now</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp)</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;{</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keyword">struct </span>timespec now;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <a class="code" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a>(&amp;now);</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <span class="keywordflow">return</span> (<span class="keywordtype">double</span>) (now.tv_sec - tp-&gt;tv_sec)</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                + (<span class="keywordtype">double</span>) (now.tv_nsec - tp-&gt;tv_nsec) / (<span class="keywordtype">long</span>) <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;}</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;</div>
+<div class="line"><a name="l00088"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a801431f54cf89b9f658e3e29b2bba0fe">   88</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="fg__time_8c.html#a801431f54cf89b9f658e3e29b2bba0fe">time_is_after</a>(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp1, <span class="keyword">const</span> <span class="keyword">struct</span> timespec *tp2)</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;{</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <span class="keywordflow">if</span> (tp1-&gt;tv_sec &gt; tp2-&gt;tv_sec)</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keywordflow">if</span> (tp1-&gt;tv_sec &lt; tp2-&gt;tv_sec)</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keywordflow">return</span> tp1-&gt;tv_nsec &gt; tp2-&gt;tv_nsec;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;}</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;</div>
+<div class="line"><a name="l00097"></a><span class="lineno"><a class="line" href="fg__time_8h.html#abbfce1fdd51fb1cc83497fb85a021dc4">   97</a></span>&#160;<span class="keywordtype">bool</span> <a class="code" href="fg__time_8c.html#abbfce1fdd51fb1cc83497fb85a021dc4">normalize_tp</a>(<span class="keyword">struct</span> timespec *tp)</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;{</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        <span class="keywordtype">bool</span> normalized = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <span class="keywordflow">while</span> (tp-&gt;tv_nsec &gt;= (<span class="keywordtype">long</span>) <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>) {</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;                tp-&gt;tv_nsec -= (long) NSEC_PER_SEC;</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;                tp-&gt;tv_sec++;</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                normalized = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        }</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;        <span class="keywordflow">while</span> (tp-&gt;tv_nsec &lt; 0) {</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;                tp-&gt;tv_nsec += (long) NSEC_PER_SEC;</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;                tp-&gt;tv_sec--;</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                normalized = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        }</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <span class="keywordflow">return</span> normalized;</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;}</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;</div>
+<div class="line"><a name="l00114"></a><span class="lineno"><a class="line" href="fg__time_8h.html#a5017d8e7d42049ef923057b5a02404be">  114</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="fg__time_8c.html#a5017d8e7d42049ef923057b5a02404be">time_add</a>(<span class="keyword">struct</span> timespec *tp, <span class="keywordtype">double</span> seconds)</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;{</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        tp-&gt;tv_sec += (time_t) seconds;</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        tp-&gt;tv_nsec += (long) ((seconds - (time_t) seconds) * (<span class="keywordtype">long</span>) <a class="code" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a>);</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;        <a class="code" href="fg__time_8c.html#abbfce1fdd51fb1cc83497fb85a021dc4">normalize_tp</a>(tp);</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;}</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="comment">/* Linux and FreeBSD have POSIX clocks */</span></div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="preprocessor">#if defined HAVE_CLOCK_GETTIME</span></div>
+<div class="line"><a name="l00123"></a><span class="lineno"><a class="line" href="fg__time_8h.html#ac2b9db9a31fa442023443d234787ef78">  123</a></span>&#160;<span class="preprocessor"></span><span class="keywordtype">int</span> <a class="code" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a>(<span class="keyword">struct</span> timespec *tp)</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;{</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <span class="keyword">static</span> <span class="keyword">struct </span>timespec res = {.tv_sec = 0, .tv_nsec = 0};</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <span class="comment">/* Find out clock resolution. Will only be retrieved on first call */</span></div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <span class="keywordflow">if</span> (!res.tv_sec &amp;&amp; !res.tv_nsec) {</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;                clock_getres(CLOCK_REALTIME, &amp;res);</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;                <span class="comment">/* Clock resolution is lower than expected (1ns) */</span></div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;                assert(res.tv_nsec &gt; 1);</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        }</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        <span class="comment">/* Get wall-clock time */</span></div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <span class="keywordflow">return</span> clock_gettime(CLOCK_REALTIME, tp);</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;}</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;<span class="comment">/* OS X hasn&#39;t defined POSIX clocks, but clock_get_time() */</span></div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;<span class="preprocessor">#elif defined HAVE_CLOCK_GET_TIME</span></div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;<span class="preprocessor"></span><span class="keywordtype">int</span> <a class="code" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a>(<span class="keyword">struct</span> timespec *tp)</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;{</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        <span class="keyword">static</span> <span class="keyword">struct </span>timespec res = {.tv_sec = 0, .tv_nsec = 0};</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        clock_serv_t cclock;</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;        mach_timespec_t mts;</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &amp;cclock);</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <span class="comment">/* Find out clock resolution. Will only be retrieved on first call */</span></div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <span class="keywordflow">if</span> (!res.tv_sec &amp;&amp; !res.tv_nsec) {</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;                natural_t attribute[4];</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;                mach_msg_type_number_t count = <span class="keyword">sizeof</span>(attribute)/<span class="keyword">sizeof</span>(natural_t);</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;                clock_get_attributes(cclock, CLOCK_GET_TIME_RES,</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;                                     (clock_attr_t) &amp;attribute, &amp;count);</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;                <span class="comment">/* Clock resolution is lower than expected (1ns) */</span></div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;                assert(attribute[0] &gt; 1);</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        }</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        kern_return_t rc = clock_get_time(cclock, &amp;mts);</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        mach_port_deallocate(mach_task_self(), cclock);</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        tp-&gt;tv_sec = mts.tv_sec;</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        tp-&gt;tv_nsec = mts.tv_nsec;</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        <span class="keywordflow">return</span> (rc == KERN_SUCCESS ? 0 : -1);</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;}</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* HAVE_CLOCK_GETTIME */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="fg__time_8c_html_abbfce1fdd51fb1cc83497fb85a021dc4"><div class="ttname"><a href="fg__time_8c.html#abbfce1fdd51fb1cc83497fb85a021dc4">normalize_tp</a></div><div class="ttdeci">bool normalize_tp(struct timespec *tp)</div><div class="ttdoc">Normalizes timespec struct tp. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00097">fg_time.c:97</a></div></div>
+<div class="ttc" id="fg__time_8c_html_ac2b9db9a31fa442023443d234787ef78"><div class="ttname"><a href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a></div><div class="ttdeci">int gettime(struct timespec *tp)</div><div class="ttdoc">Returns the current wall-clock time with nanosecond precision. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00123">fg_time.c:123</a></div></div>
+<div class="ttc" id="config_8h_html"><div class="ttname"><a href="config_8h.html">config.h</a></div></div>
+<div class="ttc" id="fg__time_8c_html_a1ce08f00b1930420282aa6422ce66f24"><div class="ttname"><a href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a></div><div class="ttdeci">double time_diff(const struct timespec *tp1, const struct timespec *tp2)</div><div class="ttdoc">Returns the time difference between two the specific points in time tp1 and tp2. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00073">fg_time.c:73</a></div></div>
+<div class="ttc" id="fg__time_8c_html_a5017d8e7d42049ef923057b5a02404be"><div class="ttname"><a href="fg__time_8c.html#a5017d8e7d42049ef923057b5a02404be">time_add</a></div><div class="ttdeci">void time_add(struct timespec *tp, double seconds)</div><div class="ttdoc">Add an amount of time seconds to a specific point in time tp. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00114">fg_time.c:114</a></div></div>
+<div class="ttc" id="fg__time_8h_html_a0501e82515b2bdf36453c4cc80f5e0cc"><div class="ttname"><a href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">NSEC_PER_SEC</a></div><div class="ttdeci">#define NSEC_PER_SEC</div><div class="ttdoc">Number of nanoseconds per second. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8h_source.html#l00041">fg_time.h:41</a></div></div>
+<div class="ttc" id="fg__time_8c_html_af56063ee3eea9ace1754c19ba3b5d206"><div class="ttname"><a href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a></div><div class="ttdeci">const char * ctimespec_r(const struct timespec *tp, char *buf, size_t size)</div><div class="ttdoc">Converts timespec struct tp into a null-terminated string and stores the string in a user-supplied bu...</div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00046">fg_time.c:46</a></div></div>
+<div class="ttc" id="fg__time_8c_html_a5405db8ca5e60b164698faa07ca19a1b"><div class="ttname"><a href="fg__time_8c.html#a5405db8ca5e60b164698faa07ca19a1b">ctimespec</a></div><div class="ttdeci">const char * ctimespec(const struct timespec *tp)</div><div class="ttdoc">Converts timespec struct tp into a null-terminated string. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00064">fg_time.c:64</a></div></div>
+<div class="ttc" id="fg__time_8c_html_a801431f54cf89b9f658e3e29b2bba0fe"><div class="ttname"><a href="fg__time_8c.html#a801431f54cf89b9f658e3e29b2bba0fe">time_is_after</a></div><div class="ttdeci">bool time_is_after(const struct timespec *tp1, const struct timespec *tp2)</div><div class="ttdoc">Returns true if second point in time tp2 is chronologically after the first point in time tp1...</div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00088">fg_time.c:88</a></div></div>
+<div class="ttc" id="fg__time_8c_html_a255d1a882171eae755af0936c3d78951"><div class="ttname"><a href="fg__time_8c.html#a255d1a882171eae755af0936c3d78951">time_diff_now</a></div><div class="ttdeci">double time_diff_now(const struct timespec *tp)</div><div class="ttdoc">Returns time difference between now and the specific point in time tp. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00079">fg_time.c:79</a></div></div>
 <div class="ttc" id="fg__time_8h_html"><div class="ttname"><a href="fg__time_8h.html">fg_time.h</a></div><div class="ttdoc">Timing related routines used by Flowgrind. </div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
@@ -253,7 +285,7 @@ $(document).ready(function(){initNavTree('fg__time_8c_source.html','');});
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="fg__time_8c.html">fg_time.c</a></li>
-    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:28 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -78,6 +78,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li class="current"><a href="globals.html"><span>All</span></a></li>
       <li><a href="globals_func.html"><span>Functions</span></a></li>
       <li><a href="globals_vars.html"><span>Variables</span></a></li>
+      <li><a href="globals_type.html"><span>Typedefs</span></a></li>
       <li><a href="globals_enum.html"><span>Enumerations</span></a></li>
       <li><a href="globals_eval.html"><span>Enumerator</span></a></li>
       <li><a href="globals_defs.html"><span>Macros</span></a></li>
@@ -106,6 +107,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="globals_u.html#index_u"><span>u</span></a></li>
       <li><a href="globals_v.html#index_v"><span>v</span></a></li>
       <li><a href="globals_w.html#index_w"><span>w</span></a></li>
+      <li><a href="globals_x.html#index_x"><span>x</span></a></li>
     </ul>
   </div>
 </div><!-- top -->
@@ -128,7 +130,7 @@ $(document).ready(function(){initNavTree('globals_o.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -144,13 +146,28 @@ $(document).ready(function(){initNavTree('globals_o.html','');});
 <li>open_logfile()
 : <a class="el" href="flowgrind_8c.html#aef538ef6102a51fc60034d1d6a60dae9">flowgrind.c</a>
 </li>
+<li>OPT_CONTROLLER
+: <a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada7abbca9a7d60d8f191414c88c87e2eee">flowgrind.h</a>
+</li>
+<li>OPT_FLOW
+: <a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29d8becf0391ae9c7d5653cf091cf728">flowgrind.h</a>
+</li>
+<li>OPT_FLOW_ENDPOINT
+: <a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29357690b8081d175548f693c32fcbb4">flowgrind.h</a>
+</li>
+<li>OPT_SELECTOR
+: <a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada49a9c1952e87b856c69a7fe858f59430">flowgrind.h</a>
+</li>
+<li>opt_types
+: <a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ad">flowgrind.h</a>
+</li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue May 27 2014 09:21:58 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

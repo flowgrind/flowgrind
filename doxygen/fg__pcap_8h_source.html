@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('fg__pcap_8h_source.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -134,7 +134,7 @@ $(document).ready(function(){initNavTree('fg__pcap_8h_source.html','');});
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define _FG_PCAP_H_</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#ifdef HAVE_CONFIG_H</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &quot;config.h&quot;</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &quot;<a class="code" href="config_8h.html">config.h</a>&quot;</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* HAVE_CONFIG_H */</span><span class="preprocessor"></span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#include &lt;pcap.h&gt;</span></div>
@@ -142,34 +142,24 @@ $(document).ready(function(){initNavTree('fg__pcap_8h_source.html','');});
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="daemon_8h.html">daemon.h</a>&quot;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keywordtype">void</span> <a class="code" href="fg__pcap_8h.html#a897cc734443bae995e2b1484a0627bbb">fg_pcap_init</a>();</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordtype">void</span> <a class="code" href="fg__pcap_8h.html#a2beef8c2d4fd1cd726557409ab783ef2">fg_pcap_go</a>(<span class="keyword">struct</span> <a class="code" href="struct__flow.html">_flow</a> *);</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keywordtype">void</span> <a class="code" href="fg__pcap_8h.html#ac223afaf9ceed2ce40119070706dc33b">fg_pcap_init</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordtype">void</span> <a class="code" href="fg__pcap_8h.html#a8796523ba67a80659b5a30b17a3e55e3">fg_pcap_go</a>(<span class="keyword">struct</span> <a class="code" href="structflow.html">flow</a> *);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keywordtype">void</span> <a class="code" href="fg__pcap_8h.html#ab986a493bb3fed05be028bf9c97fc8a4">fg_pcap_cleanup</a>(<span class="keywordtype">void</span>* arg);</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
-<div class="line"><a name="l00044"></a><span class="lineno"><a class="line" href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">   44</a></span>&#160;pthread_mutex_t <a class="code" href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a>;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">/* pthread barrier does not exists in Darwin */</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="preprocessor">#ifndef __DARWIN__</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor"></span>pthread_barrier_t pcap_barrier;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __DARWIN__ */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="fg__pcap_8h.html#a2be2f5d8859972dbfd0a842bf7946e61">   51</a></span>&#160;pcap_if_t * <a class="code" href="fg__pcap_8h.html#a2be2f5d8859972dbfd0a842bf7946e61">alldevs</a>;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _FG_PCAP_H_ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _FG_PCAP_H_ */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="daemon_8h_html"><div class="ttname"><a href="daemon_8h.html">daemon.h</a></div><div class="ttdoc">Routines used by the Flowgrind daemon. </div></div>
-<div class="ttc" id="fg__pcap_8h_html_ab986a493bb3fed05be028bf9c97fc8a4"><div class="ttname"><a href="fg__pcap_8h.html#ab986a493bb3fed05be028bf9c97fc8a4">fg_pcap_cleanup</a></div><div class="ttdeci">void fg_pcap_cleanup(void *arg)</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00096">fg_pcap.c:96</a></div></div>
-<div class="ttc" id="fg__pcap_8h_html_a2be2f5d8859972dbfd0a842bf7946e61"><div class="ttname"><a href="fg__pcap_8h.html#a2be2f5d8859972dbfd0a842bf7946e61">alldevs</a></div><div class="ttdeci">pcap_if_t * alldevs</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8h_source.html#l00051">fg_pcap.h:51</a></div></div>
-<div class="ttc" id="fg__pcap_8h_html_a22a42ba5def2fa1b526920d396eaee89"><div class="ttname"><a href="fg__pcap_8h.html#a22a42ba5def2fa1b526920d396eaee89">pcap_mutex</a></div><div class="ttdeci">pthread_mutex_t pcap_mutex</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8h_source.html#l00044">fg_pcap.h:44</a></div></div>
-<div class="ttc" id="fg__pcap_8h_html_a2beef8c2d4fd1cd726557409ab783ef2"><div class="ttname"><a href="fg__pcap_8h.html#a2beef8c2d4fd1cd726557409ab783ef2">fg_pcap_go</a></div><div class="ttdeci">void fg_pcap_go(struct _flow *)</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00306">fg_pcap.c:306</a></div></div>
-<div class="ttc" id="fg__pcap_8h_html_a897cc734443bae995e2b1484a0627bbb"><div class="ttname"><a href="fg__pcap_8h.html#a897cc734443bae995e2b1484a0627bbb">fg_pcap_init</a></div><div class="ttdeci">void fg_pcap_init()</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00060">fg_pcap.c:60</a></div></div>
-<div class="ttc" id="struct__flow_html"><div class="ttname"><a href="struct__flow.html">_flow</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00067">daemon.h:67</a></div></div>
+<div class="ttc" id="fg__pcap_8h_html_ab986a493bb3fed05be028bf9c97fc8a4"><div class="ttname"><a href="fg__pcap_8h.html#ab986a493bb3fed05be028bf9c97fc8a4">fg_pcap_cleanup</a></div><div class="ttdeci">void fg_pcap_cleanup(void *arg)</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00101">fg_pcap.c:101</a></div></div>
+<div class="ttc" id="config_8h_html"><div class="ttname"><a href="config_8h.html">config.h</a></div></div>
+<div class="ttc" id="fg__pcap_8h_html_ac223afaf9ceed2ce40119070706dc33b"><div class="ttname"><a href="fg__pcap_8h.html#ac223afaf9ceed2ce40119070706dc33b">fg_pcap_init</a></div><div class="ttdeci">void fg_pcap_init(void)</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00067">fg_pcap.c:67</a></div></div>
+<div class="ttc" id="fg__pcap_8h_html_a8796523ba67a80659b5a30b17a3e55e3"><div class="ttname"><a href="fg__pcap_8h.html#a8796523ba67a80659b5a30b17a3e55e3">fg_pcap_go</a></div><div class="ttdeci">void fg_pcap_go(struct flow *)</div><div class="ttdef"><b>Definition:</b> <a href="fg__pcap_8c_source.html#l00306">fg_pcap.c:306</a></div></div>
+<div class="ttc" id="structflow_html"><div class="ttname"><a href="structflow.html">flow</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00073">daemon.h:73</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="fg__pcap_8h.html">fg_pcap.h</a></li>
-    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:28 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

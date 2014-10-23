@@ -1,0 +1,27 @@
+var structreport =
+[
+    [ "begin", "structreport.html#ae81ba92c32db53c978e9367ea9d0ebba", null ],
+    [ "bytes_read", "structreport.html#aef54fe7e2baef46bb8e00977474ba566", null ],
+    [ "bytes_written", "structreport.html#a7330324173edbf9bb4f0efc9b7a534ab", null ],
+    [ "delay_max", "structreport.html#abdaec61f3f26be9d4361780367d73e3d", null ],
+    [ "delay_min", "structreport.html#a14340938e5747205d3833a5ae3d3b6c9", null ],
+    [ "delay_sum", "structreport.html#a6868860ad81a10e0bb9d842cb930b0ab", null ],
+    [ "end", "structreport.html#a4cced7e0a3c15aa25a0b1a095ad3e78e", null ],
+    [ "iat_max", "structreport.html#ab0b9886231083d13efdd5e0e01038cc3", null ],
+    [ "iat_min", "structreport.html#a8e77e60d692703b2273e058e0f879c11", null ],
+    [ "iat_sum", "structreport.html#af9381bd31155ddb60adfd66b0ed26ef2", null ],
+    [ "id", "structreport.html#a545b6df40c29e489ba5fe507d80b9042", null ],
+    [ "imtu", "structreport.html#a42947f37a24e5893bb44834213c46f92", null ],
+    [ "next", "structreport.html#a0a3773754225984337b3363320143e6e", null ],
+    [ "pmtu", "structreport.html#ae163ceb1db1be87498ee05e445ea8c90", null ],
+    [ "request_blocks_read", "structreport.html#a9b79be3a735b077124c2196660af0e45", null ],
+    [ "request_blocks_written", "structreport.html#a43b800cc4f91e9b9fd267146ba4399c9", null ],
+    [ "response_blocks_read", "structreport.html#a4b8e48dfc6ace673e53f85b0f815b0c1", null ],
+    [ "response_blocks_written", "structreport.html#aff05a56c932b71b917a3cd2cf5055ed8", null ],
+    [ "rtt_max", "structreport.html#a53022f1afe786c88882906d0f154fc72", null ],
+    [ "rtt_min", "structreport.html#a431ccdbe065dbfc7e641ddb7cfb71bd3", null ],
+    [ "rtt_sum", "structreport.html#a73a129ba9326de2855f317b55245e4e5", null ],
+    [ "status", "structreport.html#ac70e6c6ed639f5d93f9391e33e29a44f", null ],
+    [ "tcp_info", "structreport.html#a528c4587a08a4a415c7089932facd980", null ],
+    [ "type", "structreport.html#a074020436cc4e002737faa81d4d8758d", null ]
+];

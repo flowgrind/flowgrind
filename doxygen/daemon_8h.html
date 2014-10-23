@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('daemon_8h.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -116,39 +116,47 @@ $(document).ready(function(){initNavTree('daemon_8h.html','');});
 
 <p>Routines used by the Flowgrind daemon.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;config.h&quot;</code><br/>
+<div class="textblock"><code>#include &quot;<a class="el" href="config_8h_source.html">config.h</a>&quot;</code><br/>
 <code>#include &lt;sys/types.h&gt;</code><br/>
 <code>#include &lt;sys/socket.h&gt;</code><br/>
 <code>#include &lt;gsl/gsl_rng.h&gt;</code><br/>
 <code>#include &quot;<a class="el" href="common_8h_source.html">common.h</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="fg__list_8h_source.html">fg_list.h</a>&quot;</code><br/>
+<code>#include &lt;xmlrpc-c/base.h&gt;</code><br/>
+<code>#include &lt;xmlrpc-c/server.h&gt;</code><br/>
+<code>#include &lt;xmlrpc-c/server_abyss.h&gt;</code><br/>
+<code>#include &lt;xmlrpc-c/util.h&gt;</code><br/>
 </div>
 <p><a href="daemon_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__flow.html">_flow</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structfg__rpc__server.html">fg_rpc_server</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Information about the daemons XMLrpc server.  <a href="structfg__rpc__server.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__flow__source__settings.html">_flow_source_settings</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structflow.html">flow</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__request.html">_request</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structflow__source__settings.html">flow_source_settings</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__request__add__flow__destination.html">_request_add_flow_destination</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structrequest.html">request</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__request__add__flow__source.html">_request_add_flow_source</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structrequest__add__flow__destination.html">request_add_flow_destination</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__request__get__status.html">_request_get_status</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structrequest__add__flow__source.html">request_add_flow_source</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__request__start__flows.html">_request_start_flows</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structrequest__get__status.html">request_get_status</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__request__stop__flow.html">_request_stop_flow</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structrequest__start__flows.html">request_start_flows</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__flow_1_1__statistics.html">_flow::_statistics</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structrequest__stop__flow.html">request_stop_flow</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structflow_1_1statistics.html">flow::statistics</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a518951727d690b29538e702125381488"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a518951727d690b29538e702125381488">DEFAULT_SELECT_TIMEOUT</a>&#160;&#160;&#160;10000000</td></tr>
-<tr class="memdesc:a518951727d690b29538e702125381488"><td class="mdescLeft">&#160;</td><td class="mdescRight">time select() will block waiting for a file descriptor to become ready  <a href="#a518951727d690b29538e702125381488">More...</a><br/></td></tr>
+<tr class="memdesc:a518951727d690b29538e702125381488"><td class="mdescLeft">&#160;</td><td class="mdescRight">Time select() will block waiting for a file descriptor to become ready.  <a href="#a518951727d690b29538e702125381488">More...</a><br/></td></tr>
 <tr class="separator:a518951727d690b29538e702125381488"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1cb3dd3b58581d382be8492aba04511f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a1cb3dd3b58581d382be8492aba04511f">REQUEST_ADD_DESTINATION</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:a1cb3dd3b58581d382be8492aba04511f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -171,18 +179,18 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:af7b70b0f1a76b7084a553ca26263f169"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#af7b70b0f1a76b7084a553ca26263f169">add_report</a> (struct <a class="el" href="struct__report.html">_report</a> *report)</td></tr>
-<tr class="separator:af7b70b0f1a76b7084a553ca26263f169"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a01949c50bc8128d13198fce302a021"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a0a01949c50bc8128d13198fce302a021">add_report</a> (struct <a class="el" href="structreport.html">report</a> *<a class="el" href="structreport.html">report</a>)</td></tr>
+<tr class="separator:a0a01949c50bc8128d13198fce302a021"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab772e063b6500100f2a49a3c1cbc743e"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#ab772e063b6500100f2a49a3c1cbc743e">daemon_main</a> (void *ptr)</td></tr>
 <tr class="separator:ab772e063b6500100f2a49a3c1cbc743e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d06463f7f8d363aeca18aeb32d06f58"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a> (struct <a class="el" href="struct__flow.html">_flow</a> *flow, const char *fmt,...)</td></tr>
-<tr class="separator:a9d06463f7f8d363aeca18aeb32d06f58"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ada2b0940bebec0fff824ce27e8e39ba9"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="struct__report.html">_report</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#ada2b0940bebec0fff824ce27e8e39ba9">get_reports</a> (int *has_more)</td></tr>
-<tr class="separator:ada2b0940bebec0fff824ce27e8e39ba9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aed7d2a75e223ed2fc57330908d86cd8d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#aed7d2a75e223ed2fc57330908d86cd8d">request_error</a> (struct <a class="el" href="struct__request.html">_request</a> *request, const char *fmt,...)</td></tr>
-<tr class="separator:aed7d2a75e223ed2fc57330908d86cd8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8a6c09ac4e6e2d81e0a1be32fb2cf15"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#aa8a6c09ac4e6e2d81e0a1be32fb2cf15">set_flow_tcp_options</a> (struct <a class="el" href="struct__flow.html">_flow</a> *flow)</td></tr>
-<tr class="separator:aa8a6c09ac4e6e2d81e0a1be32fb2cf15"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b81f4cc8f5217b1d4ffa4a437377429"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a> (struct <a class="el" href="structflow.html">flow</a> *<a class="el" href="structflow.html">flow</a>, const char *fmt,...)</td></tr>
+<tr class="separator:a2b81f4cc8f5217b1d4ffa4a437377429"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1c880d68d8e730eaf7836e3883b6fbf"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structreport.html">report</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#ae1c880d68d8e730eaf7836e3883b6fbf">get_reports</a> (int *has_more)</td></tr>
+<tr class="separator:ae1c880d68d8e730eaf7836e3883b6fbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace116bed071948dc1f66acc55607feb3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#ace116bed071948dc1f66acc55607feb3">request_error</a> (struct <a class="el" href="structrequest.html">request</a> *<a class="el" href="structrequest.html">request</a>, const char *fmt,...)</td></tr>
+<tr class="separator:ace116bed071948dc1f66acc55607feb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa6483c8495b4df9665927f6ab4eaabb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#afa6483c8495b4df9665927f6ab4eaabb">set_flow_tcp_options</a> (struct <a class="el" href="structflow.html">flow</a> *<a class="el" href="structflow.html">flow</a>)</td></tr>
+<tr class="separator:afa6483c8495b4df9665927f6ab4eaabb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -196,22 +204,20 @@ Variables</h2></td></tr>
 <tr class="separator:a016095bb5b1fadba7bc57d2a0d1a75f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad745a31cb94e4f283fd2236ec2b29cf5"><td class="memItemLeft" align="right" valign="top">char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#ad745a31cb94e4f283fd2236ec2b29cf5">dumping</a></td></tr>
 <tr class="separator:ad745a31cb94e4f283fd2236ec2b29cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb56c507ff5f8562955628f1cb1b3ee3"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="struct__flow.html">_flow</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#abb56c507ff5f8562955628f1cb1b3ee3">flows</a> [<a class="el" href="common_8h.html#a83bb9b191106d3b490a77b4fbe74c974">MAX_FLOWS</a>]</td></tr>
-<tr class="separator:abb56c507ff5f8562955628f1cb1b3ee3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a404ebcfc5a80e668901703c46a807157"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structlinked__list.html">linked_list</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a404ebcfc5a80e668901703c46a807157">flows</a></td></tr>
+<tr class="separator:a404ebcfc5a80e668901703c46a807157"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4acff8232e4aec9cd5c6dc200ac55ef3"><td class="memItemLeft" align="right" valign="top">pthread_mutex_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a></td></tr>
 <tr class="separator:a4acff8232e4aec9cd5c6dc200ac55ef3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aceef2e3272c4b5f19fd23cf235a3f354"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#aceef2e3272c4b5f19fd23cf235a3f354">num_flows</a></td></tr>
-<tr class="separator:aceef2e3272c4b5f19fd23cf235a3f354"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab98e208f302658c71ec550fbdfb86d8"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a></td></tr>
 <tr class="separator:aab98e208f302658c71ec550fbdfb86d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a724dd147b042dd38a79a24feb58fd63e"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="struct__report.html">_report</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a724dd147b042dd38a79a24feb58fd63e">reports</a></td></tr>
-<tr class="separator:a724dd147b042dd38a79a24feb58fd63e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f3739ffa1f347bc28dfc4c4f9a30188"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="struct__report.html">_report</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a9f3739ffa1f347bc28dfc4c4f9a30188">reports_last</a></td></tr>
-<tr class="separator:a9f3739ffa1f347bc28dfc4c4f9a30188"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a29e2f10ac70ee83f6beceade5aa70e95"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="struct__request.html">_request</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a29e2f10ac70ee83f6beceade5aa70e95">requests</a></td></tr>
-<tr class="separator:a29e2f10ac70ee83f6beceade5aa70e95"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a50b8ed56147c68cbcf4efecbdf633664"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="struct__request.html">_request</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a50b8ed56147c68cbcf4efecbdf633664">requests_last</a></td></tr>
-<tr class="separator:a50b8ed56147c68cbcf4efecbdf633664"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5981029394ee67ad583f0319dc9468b5"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structreport.html">report</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a5981029394ee67ad583f0319dc9468b5">reports</a></td></tr>
+<tr class="separator:a5981029394ee67ad583f0319dc9468b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7dd776b27a8695d29a8f178ddb26a2eb"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structreport.html">report</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a7dd776b27a8695d29a8f178ddb26a2eb">reports_last</a></td></tr>
+<tr class="separator:a7dd776b27a8695d29a8f178ddb26a2eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa94c4a05963e33561e701944c82d645"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structrequest.html">request</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#aaa94c4a05963e33561e701944c82d645">requests</a></td></tr>
+<tr class="separator:aaa94c4a05963e33561e701944c82d645"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c8ad0b474e5da9a984f42d401e58d9c"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structrequest.html">request</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a5c8ad0b474e5da9a984f42d401e58d9c">requests_last</a></td></tr>
+<tr class="separator:a5c8ad0b474e5da9a984f42d401e58d9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22822755789d0770b81f031d467cd6e4"><td class="memItemLeft" align="right" valign="top">char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="daemon_8h.html#a22822755789d0770b81f031d467cd6e4">started</a></td></tr>
 <tr class="separator:a22822755789d0770b81f031d467cd6e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -230,9 +236,9 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>time select() will block waiting for a file descriptor to become ready </p>
+<p>Time select() will block waiting for a file descriptor to become ready. </p>
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00045">45</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00051">51</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
 
 </div>
 </div>
@@ -246,7 +252,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00170">170</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00173">173</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
 
 </div>
 </div>
@@ -260,7 +266,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00171">171</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00174">174</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
 
 </div>
 </div>
@@ -274,7 +280,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00174">174</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00177">177</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
 
 </div>
 </div>
@@ -288,7 +294,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00172">172</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00175">175</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
 
 </div>
 </div>
@@ -302,7 +308,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00173">173</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00176">176</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
 
 </div>
 </div>
@@ -325,69 +331,69 @@ Variables</h2></td></tr>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00047">47</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;{</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        <span class="comment">/* SOURCE */</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;        <a class="code" href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a775efd247fbb05a726a596cac1b2ad7c">GRIND_WAIT_CONNECT</a> = 0,</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <span class="comment">/* DESTINATION */</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        <a class="code" href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a30e50ffb173bb9b94042b020c00308a8">GRIND_WAIT_ACCEPT</a>,</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;        <span class="comment">/* RUN */</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <a class="code" href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a3ac693700b72f74b4434e2581a52e825">GRIND</a></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;};</div>
-<div class="ttc" id="daemon_8h_html_a455f2e47bd02e9f0642a549971281ac3a30e50ffb173bb9b94042b020c00308a8"><div class="ttname"><a href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a30e50ffb173bb9b94042b020c00308a8">GRIND_WAIT_ACCEPT</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00052">daemon.h:52</a></div></div>
-<div class="ttc" id="daemon_8h_html_a455f2e47bd02e9f0642a549971281ac3a775efd247fbb05a726a596cac1b2ad7c"><div class="ttname"><a href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a775efd247fbb05a726a596cac1b2ad7c">GRIND_WAIT_CONNECT</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00050">daemon.h:50</a></div></div>
-<div class="ttc" id="daemon_8h_html_a455f2e47bd02e9f0642a549971281ac3a3ac693700b72f74b4434e2581a52e825"><div class="ttname"><a href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a3ac693700b72f74b4434e2581a52e825">GRIND</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00054">daemon.h:54</a></div></div>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00053">53</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;{</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="comment">/* SOURCE */</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        <a class="code" href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a775efd247fbb05a726a596cac1b2ad7c">GRIND_WAIT_CONNECT</a> = 0,</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;        <span class="comment">/* DESTINATION */</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        <a class="code" href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a30e50ffb173bb9b94042b020c00308a8">GRIND_WAIT_ACCEPT</a>,</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <span class="comment">/* RUN */</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <a class="code" href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a3ac693700b72f74b4434e2581a52e825">GRIND</a></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;};</div>
+<div class="ttc" id="daemon_8h_html_a455f2e47bd02e9f0642a549971281ac3a30e50ffb173bb9b94042b020c00308a8"><div class="ttname"><a href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a30e50ffb173bb9b94042b020c00308a8">GRIND_WAIT_ACCEPT</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00058">daemon.h:58</a></div></div>
+<div class="ttc" id="daemon_8h_html_a455f2e47bd02e9f0642a549971281ac3a775efd247fbb05a726a596cac1b2ad7c"><div class="ttname"><a href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a775efd247fbb05a726a596cac1b2ad7c">GRIND_WAIT_CONNECT</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00056">daemon.h:56</a></div></div>
+<div class="ttc" id="daemon_8h_html_a455f2e47bd02e9f0642a549971281ac3a3ac693700b72f74b4434e2581a52e825"><div class="ttname"><a href="daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3a3ac693700b72f74b4434e2581a52e825">GRIND</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00060">daemon.h:60</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="af7b70b0f1a76b7084a553ca26263f169"></a>
+<a class="anchor" id="a0a01949c50bc8128d13198fce302a021"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void add_report </td>
           <td>(</td>
-          <td class="paramtype">struct <a class="el" href="struct__report.html">_report</a> *&#160;</td>
+          <td class="paramtype">struct <a class="el" href="structreport.html">report</a> *&#160;</td>
           <td class="paramname"><em>report</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00801">801</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;{</div>
-<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;add_report trying to lock mutex&quot;</span>);</div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;        pthread_mutex_lock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
-<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;add_report aquired mutex&quot;</span>);</div>
-<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;        <span class="comment">/* Do not keep too much data */</span></div>
-<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a> &gt;= 250 &amp;&amp; report-&gt;<a class="code" href="struct__report.html#a1e6b42452c7d8e3cc204437a8c2dcac5">type</a> != <a class="code" href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5">FINAL</a>) {</div>
-<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;                free(report);</div>
-<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;                pthread_mutex_unlock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
-<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;                <span class="keywordflow">return</span>;</div>
-<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;        }</div>
-<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;</div>
-<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;        report-&gt;<a class="code" href="struct__report.html#a60d12fdfe4eadeb9345a43bad7a742a1">next</a> = 0;</div>
-<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;</div>
-<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#a9f3739ffa1f347bc28dfc4c4f9a30188">reports_last</a>)</div>
-<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;                <a class="code" href="daemon_8c.html#a9f3739ffa1f347bc28dfc4c4f9a30188">reports_last</a>-&gt;<a class="code" href="struct__report.html#a60d12fdfe4eadeb9345a43bad7a742a1">next</a> = report;</div>
-<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;                <a class="code" href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a> = report;</div>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00806">806</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;{</div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;add_report trying to lock mutex&quot;</span>);</div>
+<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;        pthread_mutex_lock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
+<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;add_report aquired mutex&quot;</span>);</div>
+<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;        <span class="comment">/* Do not keep too much data */</span></div>
+<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a> &gt;= 250 &amp;&amp; report-&gt;<a class="code" href="structreport.html#a074020436cc4e002737faa81d4d8758d">type</a> != <a class="code" href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5">FINAL</a>) {</div>
+<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;                free(report);</div>
+<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;                pthread_mutex_unlock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
+<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;                <span class="keywordflow">return</span>;</div>
+<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;        }</div>
+<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;</div>
+<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;        report-&gt;<a class="code" href="structreport.html#a0a3773754225984337b3363320143e6e">next</a> = 0;</div>
 <div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;</div>
-<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;        <a class="code" href="daemon_8c.html#a9f3739ffa1f347bc28dfc4c4f9a30188">reports_last</a> = report;</div>
-<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;        <a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a>++;</div>
-<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;</div>
-<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;        pthread_mutex_unlock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
-<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;add_report unlocked mutex&quot;</span>);</div>
-<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;}</div>
-<div class="ttc" id="common_8h_html_af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5"><div class="ttname"><a href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5">FINAL</a></div><div class="ttdoc">Final report. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00091">common.h:91</a></div></div>
-<div class="ttc" id="daemon_8c_html_a724dd147b042dd38a79a24feb58fd63e"><div class="ttname"><a href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a></div><div class="ttdeci">struct _report * reports</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00104">daemon.c:104</a></div></div>
-<div class="ttc" id="daemon_8c_html_a4acff8232e4aec9cd5c6dc200ac55ef3"><div class="ttname"><a href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a></div><div class="ttdeci">pthread_mutex_t mutex</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00098">daemon.c:98</a></div></div>
-<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00055">debug.h:55</a></div></div>
-<div class="ttc" id="daemon_8c_html_a9f3739ffa1f347bc28dfc4c4f9a30188"><div class="ttname"><a href="daemon_8c.html#a9f3739ffa1f347bc28dfc4c4f9a30188">reports_last</a></div><div class="ttdeci">struct _report * reports_last</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00105">daemon.c:105</a></div></div>
-<div class="ttc" id="struct__report_html_a1e6b42452c7d8e3cc204437a8c2dcac5"><div class="ttname"><a href="struct__report.html#a1e6b42452c7d8e3cc204437a8c2dcac5">_report::type</a></div><div class="ttdeci">int type</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00225">common.h:225</a></div></div>
-<div class="ttc" id="struct__report_html_a60d12fdfe4eadeb9345a43bad7a742a1"><div class="ttname"><a href="struct__report.html#a60d12fdfe4eadeb9345a43bad7a742a1">_report::next</a></div><div class="ttdeci">struct _report * next</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00270">common.h:270</a></div></div>
-<div class="ttc" id="daemon_8c_html_aab98e208f302658c71ec550fbdfb86d8"><div class="ttname"><a href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a></div><div class="ttdeci">unsigned int pending_reports</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00106">daemon.c:106</a></div></div>
+<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#a7dd776b27a8695d29a8f178ddb26a2eb">reports_last</a>)</div>
+<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;                <a class="code" href="daemon_8c.html#a7dd776b27a8695d29a8f178ddb26a2eb">reports_last</a>-&gt;<a class="code" href="structreport.html#a0a3773754225984337b3363320143e6e">next</a> = report;</div>
+<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;                <a class="code" href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a> = report;</div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;</div>
+<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;        <a class="code" href="daemon_8c.html#a7dd776b27a8695d29a8f178ddb26a2eb">reports_last</a> = report;</div>
+<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;        <a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a>++;</div>
+<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;</div>
+<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;        pthread_mutex_unlock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
+<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;add_report unlocked mutex&quot;</span>);</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;}</div>
+<div class="ttc" id="daemon_8c_html_a5981029394ee67ad583f0319dc9468b5"><div class="ttname"><a href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a></div><div class="ttdeci">struct report * reports</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00095">daemon.c:95</a></div></div>
+<div class="ttc" id="common_8h_html_af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5"><div class="ttname"><a href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5">FINAL</a></div><div class="ttdoc">Final report. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00105">common.h:105</a></div></div>
+<div class="ttc" id="structreport_html_a0a3773754225984337b3363320143e6e"><div class="ttname"><a href="structreport.html#a0a3773754225984337b3363320143e6e">report::next</a></div><div class="ttdeci">struct report * next</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00320">common.h:320</a></div></div>
+<div class="ttc" id="daemon_8c_html_a4acff8232e4aec9cd5c6dc200ac55ef3"><div class="ttname"><a href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a></div><div class="ttdeci">pthread_mutex_t mutex</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00089">daemon.c:89</a></div></div>
+<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00049">debug.h:49</a></div></div>
+<div class="ttc" id="daemon_8c_html_a7dd776b27a8695d29a8f178ddb26a2eb"><div class="ttname"><a href="daemon_8c.html#a7dd776b27a8695d29a8f178ddb26a2eb">reports_last</a></div><div class="ttdeci">struct report * reports_last</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00096">daemon.c:96</a></div></div>
+<div class="ttc" id="structreport_html_a074020436cc4e002737faa81d4d8758d"><div class="ttname"><a href="structreport.html#a074020436cc4e002737faa81d4d8758d">report::type</a></div><div class="ttdeci">int type</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00275">common.h:275</a></div></div>
+<div class="ttc" id="daemon_8c_html_aab98e208f302658c71ec550fbdfb86d8"><div class="ttname"><a href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a></div><div class="ttdeci">unsigned int pending_reports</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00097">daemon.c:97</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -407,14 +413,14 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a9d06463f7f8d363aeca18aeb32d06f58"></a>
+<a class="anchor" id="a2b81f4cc8f5217b1d4ffa4a437377429"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void flow_error </td>
           <td>(</td>
-          <td class="paramtype">struct <a class="el" href="struct__flow.html">_flow</a> *&#160;</td>
+          <td class="paramtype">struct <a class="el" href="structflow.html">flow</a> *&#160;</td>
           <td class="paramname"><em>flow</em>, </td>
         </tr>
         <tr>
@@ -437,28 +443,28 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00129">129</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;{</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <span class="keywordtype">char</span> str[1000];</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        va_list ap;</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;</div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        va_start(ap, fmt);</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        vsnprintf(str, 1000, fmt, ap);</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        va_end(ap);</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        str[<span class="keyword">sizeof</span>(str) - 1] = 0;</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;        flow-&gt;<a class="code" href="struct__flow.html#a91fc78d8245c23e899210f7c666d6557">error</a> = malloc(strlen(str) + 1);</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;        strcpy(flow-&gt;<a class="code" href="struct__flow.html#a91fc78d8245c23e899210f7c666d6557">error</a>, str);</div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;}</div>
-<div class="ttc" id="struct__flow_html_a91fc78d8245c23e899210f7c666d6557"><div class="ttname"><a href="struct__flow.html#a91fc78d8245c23e899210f7c666d6557">_flow::error</a></div><div class="ttdeci">char * error</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00167">daemon.h:167</a></div></div>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00119">119</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;{</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        <span class="keywordtype">char</span> str[1000];</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;        va_list ap;</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        va_start(ap, fmt);</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        vsnprintf(str, 1000, fmt, ap);</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        va_end(ap);</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        str[<span class="keyword">sizeof</span>(str) - 1] = 0;</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        flow-&gt;<a class="code" href="structflow.html#a74df07d93cabc54a4b43f53fb90d7eb6">error</a> = malloc(strlen(str) + 1);</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        strcpy(flow-&gt;<a class="code" href="structflow.html#a74df07d93cabc54a4b43f53fb90d7eb6">error</a>, str);</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;}</div>
+<div class="ttc" id="structflow_html_a74df07d93cabc54a4b43f53fb90d7eb6"><div class="ttname"><a href="structflow.html#a74df07d93cabc54a4b43f53fb90d7eb6">flow::error</a></div><div class="ttdeci">char * error</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00170">daemon.h:170</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="ada2b0940bebec0fff824ce27e8e39ba9"></a>
+<a class="anchor" id="ae1c880d68d8e730eaf7836e3883b6fbf"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct <a class="el" href="struct__report.html">_report</a>* get_reports </td>
+          <td class="memname">struct <a class="el" href="structreport.html">report</a>* get_reports </td>
           <td>(</td>
           <td class="paramtype">int *&#160;</td>
           <td class="paramname"><em>has_more</em></td><td>)</td>
@@ -467,56 +473,56 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00827">827</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;{</div>
-<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> max_reports = 50;</div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;</div>
-<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;        <span class="keyword">struct </span><a class="code" href="struct__report.html">_report</a>* ret;</div>
-<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;get_reports trying to lock mutex&quot;</span>);</div>
-<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;        pthread_mutex_lock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
-<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;get_reports aquired mutex&quot;</span>);</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;        ret = <a class="code" href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a>;</div>
-<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;</div>
-<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a> &lt;= max_reports) {</div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;                *has_more = 0;</div>
-<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;                <a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a> = 0;</div>
-<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;                <a class="code" href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a> = NULL;</div>
-<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;                <a class="code" href="daemon_8c.html#a9f3739ffa1f347bc28dfc4c4f9a30188">reports_last</a> = 0;</div>
-<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;                <span class="comment">/* Split off first 50 items */</span></div>
-<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;                <span class="keyword">struct </span><a class="code" href="struct__report.html">_report</a>* tmp;</div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; max_reports - 1; i++)</div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;                        <a class="code" href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a> = <a class="code" href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a>-&gt;<a class="code" href="struct__report.html#a60d12fdfe4eadeb9345a43bad7a742a1">next</a>;</div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                tmp = <a class="code" href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a>-&gt;<a class="code" href="struct__report.html#a60d12fdfe4eadeb9345a43bad7a742a1">next</a>;</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;                <a class="code" href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a>-&gt;<a class="code" href="struct__report.html#a60d12fdfe4eadeb9345a43bad7a742a1">next</a> = 0;</div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;                <a class="code" href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a> = tmp;</div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;</div>
-<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;                <a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a> -= max_reports;</div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;                *has_more = 1;</div>
-<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;        }</div>
-<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;</div>
-<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;        pthread_mutex_unlock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
-<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;get_reports unlocked mutex&quot;</span>);</div>
-<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;        <span class="keywordflow">return</span> ret;</div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;}</div>
-<div class="ttc" id="daemon_8c_html_a724dd147b042dd38a79a24feb58fd63e"><div class="ttname"><a href="daemon_8c.html#a724dd147b042dd38a79a24feb58fd63e">reports</a></div><div class="ttdeci">struct _report * reports</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00104">daemon.c:104</a></div></div>
-<div class="ttc" id="daemon_8c_html_a4acff8232e4aec9cd5c6dc200ac55ef3"><div class="ttname"><a href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a></div><div class="ttdeci">pthread_mutex_t mutex</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00098">daemon.c:98</a></div></div>
-<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00055">debug.h:55</a></div></div>
-<div class="ttc" id="daemon_8c_html_a9f3739ffa1f347bc28dfc4c4f9a30188"><div class="ttname"><a href="daemon_8c.html#a9f3739ffa1f347bc28dfc4c4f9a30188">reports_last</a></div><div class="ttdeci">struct _report * reports_last</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00105">daemon.c:105</a></div></div>
-<div class="ttc" id="struct__report_html_a60d12fdfe4eadeb9345a43bad7a742a1"><div class="ttname"><a href="struct__report.html#a60d12fdfe4eadeb9345a43bad7a742a1">_report::next</a></div><div class="ttdeci">struct _report * next</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00270">common.h:270</a></div></div>
-<div class="ttc" id="daemon_8c_html_aab98e208f302658c71ec550fbdfb86d8"><div class="ttname"><a href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a></div><div class="ttdeci">unsigned int pending_reports</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00106">daemon.c:106</a></div></div>
-<div class="ttc" id="struct__report_html"><div class="ttname"><a href="struct__report.html">_report</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00222">common.h:222</a></div></div>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00832">832</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;{</div>
+<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;        <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> max_reports = 50;</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;</div>
+<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;        <span class="keyword">struct </span><a class="code" href="structreport.html">report</a>* ret;</div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;get_reports trying to lock mutex&quot;</span>);</div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;        pthread_mutex_lock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
+<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;get_reports aquired mutex&quot;</span>);</div>
+<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;        ret = <a class="code" href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a>;</div>
+<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;</div>
+<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a> &lt;= max_reports) {</div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;                *has_more = 0;</div>
+<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;                <a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a> = 0;</div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;                <a class="code" href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a> = NULL;</div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;                <a class="code" href="daemon_8c.html#a7dd776b27a8695d29a8f178ddb26a2eb">reports_last</a> = 0;</div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;                <span class="comment">/* Split off first 50 items */</span></div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;                <span class="keyword">struct </span><a class="code" href="structreport.html">report</a>* tmp;</div>
+<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;                <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> i = 0; i &lt; max_reports - 1; i++)</div>
+<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;                        <a class="code" href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a> = <a class="code" href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a>-&gt;<a class="code" href="structreport.html#a0a3773754225984337b3363320143e6e">next</a>;</div>
+<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;                tmp = <a class="code" href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a>-&gt;<a class="code" href="structreport.html#a0a3773754225984337b3363320143e6e">next</a>;</div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;                <a class="code" href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a>-&gt;<a class="code" href="structreport.html#a0a3773754225984337b3363320143e6e">next</a> = 0;</div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;                <a class="code" href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a> = tmp;</div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;                <a class="code" href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a> -= max_reports;</div>
+<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;                *has_more = 1;</div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;        }</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;</div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;        pthread_mutex_unlock(&amp;<a class="code" href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a>);</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;        <a class="code" href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a>(LOG_DEBUG, <span class="stringliteral">&quot;get_reports unlocked mutex&quot;</span>);</div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;        <span class="keywordflow">return</span> ret;</div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;}</div>
+<div class="ttc" id="daemon_8c_html_a5981029394ee67ad583f0319dc9468b5"><div class="ttname"><a href="daemon_8c.html#a5981029394ee67ad583f0319dc9468b5">reports</a></div><div class="ttdeci">struct report * reports</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00095">daemon.c:95</a></div></div>
+<div class="ttc" id="structreport_html_a0a3773754225984337b3363320143e6e"><div class="ttname"><a href="structreport.html#a0a3773754225984337b3363320143e6e">report::next</a></div><div class="ttdeci">struct report * next</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00320">common.h:320</a></div></div>
+<div class="ttc" id="structreport_html"><div class="ttname"><a href="structreport.html">report</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00272">common.h:272</a></div></div>
+<div class="ttc" id="daemon_8c_html_a4acff8232e4aec9cd5c6dc200ac55ef3"><div class="ttname"><a href="daemon_8c.html#a4acff8232e4aec9cd5c6dc200ac55ef3">mutex</a></div><div class="ttdeci">pthread_mutex_t mutex</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00089">daemon.c:89</a></div></div>
+<div class="ttc" id="debug_8h_html_ae420d5a1d63f99c6a2a386c4eea54250"><div class="ttname"><a href="debug_8h.html#ae420d5a1d63f99c6a2a386c4eea54250">DEBUG_MSG</a></div><div class="ttdeci">#define DEBUG_MSG(LVL, MSG,...)</div><div class="ttdoc">Print debug message to standard error. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00049">debug.h:49</a></div></div>
+<div class="ttc" id="daemon_8c_html_a7dd776b27a8695d29a8f178ddb26a2eb"><div class="ttname"><a href="daemon_8c.html#a7dd776b27a8695d29a8f178ddb26a2eb">reports_last</a></div><div class="ttdeci">struct report * reports_last</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00096">daemon.c:96</a></div></div>
+<div class="ttc" id="daemon_8c_html_aab98e208f302658c71ec550fbdfb86d8"><div class="ttname"><a href="daemon_8c.html#aab98e208f302658c71ec550fbdfb86d8">pending_reports</a></div><div class="ttdeci">unsigned int pending_reports</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00097">daemon.c:97</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="aed7d2a75e223ed2fc57330908d86cd8d"></a>
+<a class="anchor" id="ace116bed071948dc1f66acc55607feb3"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void request_error </td>
           <td>(</td>
-          <td class="paramtype">struct <a class="el" href="struct__request.html">_request</a> *&#160;</td>
+          <td class="paramtype">struct <a class="el" href="structrequest.html">request</a> *&#160;</td>
           <td class="paramname"><em>request</em>, </td>
         </tr>
         <tr>
@@ -539,124 +545,124 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00142">142</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;{</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        <span class="keywordtype">char</span> str[1000];</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        va_list ap;</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        va_start(ap, fmt);</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        vsnprintf(str, 1000, fmt, ap);</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        va_end(ap);</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        str[<span class="keyword">sizeof</span>(str) - 1] = 0;</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        request-&gt;<a class="code" href="struct__request.html#a840387ab1579426e1a43c15a8064ef51">error</a> = malloc(strlen(str) + 1);</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        strcpy(request-&gt;<a class="code" href="struct__request.html#a840387ab1579426e1a43c15a8064ef51">error</a>, str);</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;}</div>
-<div class="ttc" id="struct__request_html_a840387ab1579426e1a43c15a8064ef51"><div class="ttname"><a href="struct__request.html#a840387ab1579426e1a43c15a8064ef51">_request::error</a></div><div class="ttdeci">char * error</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00183">daemon.h:183</a></div></div>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00132">132</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;{</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        <span class="keywordtype">char</span> str[1000];</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        va_list ap;</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        va_start(ap, fmt);</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;        vsnprintf(str, 1000, fmt, ap);</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;        va_end(ap);</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;        str[<span class="keyword">sizeof</span>(str) - 1] = 0;</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        request-&gt;<a class="code" href="structrequest.html#acc214191f4fbfabdedf789adc862b393">error</a> = malloc(strlen(str) + 1);</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        strcpy(request-&gt;<a class="code" href="structrequest.html#acc214191f4fbfabdedf789adc862b393">error</a>, str);</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;}</div>
+<div class="ttc" id="structrequest_html_acc214191f4fbfabdedf789adc862b393"><div class="ttname"><a href="structrequest.html#acc214191f4fbfabdedf789adc862b393">request::error</a></div><div class="ttdeci">char * error</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00186">daemon.h:186</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="aa8a6c09ac4e6e2d81e0a1be32fb2cf15"></a>
+<a class="anchor" id="afa6483c8495b4df9665927f6ab4eaabb"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">int set_flow_tcp_options </td>
           <td>(</td>
-          <td class="paramtype">struct <a class="el" href="struct__flow.html">_flow</a> *&#160;</td>
+          <td class="paramtype">struct <a class="el" href="structflow.html">flow</a> *&#160;</td>
           <td class="paramname"><em>flow</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l01399">1399</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
-<div class="fragment"><div class="line"><a name="l01400"></a><span class="lineno"> 1400</span>&#160;{</div>
-<div class="line"><a name="l01401"></a><span class="lineno"> 1401</span>&#160;        <a class="code" href="fg__socket_8c.html#a02113c8824bad0f80c20102a1756634b">set_non_blocking</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>);</div>
-<div class="line"><a name="l01402"></a><span class="lineno"> 1402</span>&#160;</div>
-<div class="line"><a name="l01403"></a><span class="lineno"> 1403</span>&#160;        <span class="keywordflow">if</span> (*flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#a168b42b1f668901a9eb473eb57409509">cc_alg</a> &amp;&amp;</div>
-<div class="line"><a name="l01404"></a><span class="lineno"> 1404</span>&#160;            <a class="code" href="fg__socket_8c.html#acd5c2f8cbb01fc2c9aad7574fa2d7d63">set_congestion_control</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>, flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#a168b42b1f668901a9eb473eb57409509">cc_alg</a>) == -1) {</div>
-<div class="line"><a name="l01405"></a><span class="lineno"> 1405</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set congestion control &quot;</span></div>
-<div class="line"><a name="l01406"></a><span class="lineno"> 1406</span>&#160;                           <span class="stringliteral">&quot;algorithm: %s&quot;</span>, strerror(errno));</div>
-<div class="line"><a name="l01407"></a><span class="lineno"> 1407</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01408"></a><span class="lineno"> 1408</span>&#160;        }</div>
-<div class="line"><a name="l01409"></a><span class="lineno"> 1409</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#a2f8781deed605335bc966f3cb0ec4673">elcn</a> &amp;&amp;</div>
-<div class="line"><a name="l01410"></a><span class="lineno"> 1410</span>&#160;            <a class="code" href="fg__socket_8c.html#a82d86f7f3d35cb6f06c2cb9f57955d87">set_so_elcn</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>, flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#a2f8781deed605335bc966f3cb0ec4673">elcn</a>) == -1) {</div>
-<div class="line"><a name="l01411"></a><span class="lineno"> 1411</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_ELCN: %s&quot;</span>,</div>
-<div class="line"><a name="l01412"></a><span class="lineno"> 1412</span>&#160;                           strerror(errno));</div>
-<div class="line"><a name="l01413"></a><span class="lineno"> 1413</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01414"></a><span class="lineno"> 1414</span>&#160;        }</div>
-<div class="line"><a name="l01415"></a><span class="lineno"> 1415</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#a4b25a1ed063ef05dd4cb4d0d464b9be8">lcd</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#a9f03da778d202b26f33b7d463181856e">set_so_lcd</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>) == -1) {</div>
-<div class="line"><a name="l01416"></a><span class="lineno"> 1416</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_LCD: %s&quot;</span>,</div>
-<div class="line"><a name="l01417"></a><span class="lineno"> 1417</span>&#160;                           strerror(errno));</div>
-<div class="line"><a name="l01418"></a><span class="lineno"> 1418</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01419"></a><span class="lineno"> 1419</span>&#160;        }</div>
-<div class="line"><a name="l01420"></a><span class="lineno"> 1420</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#a5c892fe522cd769b667ec0e7c89249f3">cork</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#ab2053a8d245324b11d603cc43b327db5">set_tcp_cork</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>) == -1) {</div>
-<div class="line"><a name="l01421"></a><span class="lineno"> 1421</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_CORK: %s&quot;</span>,</div>
-<div class="line"><a name="l01422"></a><span class="lineno"> 1422</span>&#160;                           strerror(errno));</div>
-<div class="line"><a name="l01423"></a><span class="lineno"> 1423</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01424"></a><span class="lineno"> 1424</span>&#160;        }</div>
-<div class="line"><a name="l01425"></a><span class="lineno"> 1425</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#afcc712d53ca9c32afff323462b578e13">so_debug</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#a2c49d58f3483817990c8b7c732891ffd">set_so_debug</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>) == -1) {</div>
-<div class="line"><a name="l01426"></a><span class="lineno"> 1426</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set SO_DEBUG: %s&quot;</span>,</div>
-<div class="line"><a name="l01427"></a><span class="lineno"> 1427</span>&#160;                           strerror(errno));</div>
-<div class="line"><a name="l01428"></a><span class="lineno"> 1428</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01429"></a><span class="lineno"> 1429</span>&#160;        }</div>
-<div class="line"><a name="l01430"></a><span class="lineno"> 1430</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#aeb7946687b3f229c7b32ec461effa67c">mtcp</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#a3812672e43521addb0f94be5ec70a2c7">set_tcp_mtcp</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>) == -1) {</div>
-<div class="line"><a name="l01431"></a><span class="lineno"> 1431</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_MTCP: %s&quot;</span>,</div>
-<div class="line"><a name="l01432"></a><span class="lineno"> 1432</span>&#160;                           strerror(errno));</div>
-<div class="line"><a name="l01433"></a><span class="lineno"> 1433</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01434"></a><span class="lineno"> 1434</span>&#160;        }</div>
-<div class="line"><a name="l01435"></a><span class="lineno"> 1435</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#abec0d13973a8979ebc0336417e864832">nonagle</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#ac2ddd7ff0e28617a498b922b85ad9e29">set_tcp_nodelay</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>) == -1) {</div>
-<div class="line"><a name="l01436"></a><span class="lineno"> 1436</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_NODELAY: %s&quot;</span>,</div>
-<div class="line"><a name="l01437"></a><span class="lineno"> 1437</span>&#160;                           strerror(errno));</div>
-<div class="line"><a name="l01438"></a><span class="lineno"> 1438</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01439"></a><span class="lineno"> 1439</span>&#160;        }</div>
-<div class="line"><a name="l01440"></a><span class="lineno"> 1440</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#ac953a0a2db105af71dff872ab096755b">route_record</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#af08fd91d990fe9481090aaf7f5efabdb">set_route_record</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>) == -1) {</div>
-<div class="line"><a name="l01441"></a><span class="lineno"> 1441</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set route record option: %s&quot;</span>,</div>
-<div class="line"><a name="l01442"></a><span class="lineno"> 1442</span>&#160;                           strerror(errno));</div>
-<div class="line"><a name="l01443"></a><span class="lineno"> 1443</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01444"></a><span class="lineno"> 1444</span>&#160;        }</div>
-<div class="line"><a name="l01445"></a><span class="lineno"> 1445</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#a73eff175b8dd0d5958705c0278bc4857">dscp</a> &amp;&amp;</div>
-<div class="line"><a name="l01446"></a><span class="lineno"> 1446</span>&#160;            <a class="code" href="fg__socket_8c.html#a128d76deeb39f543de89cf0c52729101">set_dscp</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>, flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#a73eff175b8dd0d5958705c0278bc4857">dscp</a>) == -1) {</div>
-<div class="line"><a name="l01447"></a><span class="lineno"> 1447</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set DSCP value: %s&quot;</span>,</div>
-<div class="line"><a name="l01448"></a><span class="lineno"> 1448</span>&#160;                           strerror(errno));</div>
-<div class="line"><a name="l01449"></a><span class="lineno"> 1449</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01450"></a><span class="lineno"> 1450</span>&#160;        }</div>
-<div class="line"><a name="l01451"></a><span class="lineno"> 1451</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">settings</a>.<a class="code" href="struct__flow__settings.html#a7170f8fc6ce6118b4410b9162e6f7cb1">ipmtudiscover</a> &amp;&amp;</div>
-<div class="line"><a name="l01452"></a><span class="lineno"> 1452</span>&#160;            <a class="code" href="fg__socket_8c.html#a28705e5f3da83f4c8721e547c41687c4">set_ip_mtu_discover</a>(flow-&gt;<a class="code" href="struct__flow.html#a6d61570021c760d904b45af57e104004">fd</a>) == -1) {</div>
-<div class="line"><a name="l01453"></a><span class="lineno"> 1453</span>&#160;                <a class="code" href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set IP_MTU_DISCOVER value: %s&quot;</span>,</div>
-<div class="line"><a name="l01454"></a><span class="lineno"> 1454</span>&#160;                           strerror(errno));</div>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l01396">1396</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<div class="fragment"><div class="line"><a name="l01397"></a><span class="lineno"> 1397</span>&#160;{</div>
+<div class="line"><a name="l01398"></a><span class="lineno"> 1398</span>&#160;        <a class="code" href="fg__socket_8c.html#a02113c8824bad0f80c20102a1756634b">set_non_blocking</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>);</div>
+<div class="line"><a name="l01399"></a><span class="lineno"> 1399</span>&#160;</div>
+<div class="line"><a name="l01400"></a><span class="lineno"> 1400</span>&#160;        <span class="keywordflow">if</span> (*flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#a1206d0f66388f1f916f1ea237453a8db">cc_alg</a> &amp;&amp;</div>
+<div class="line"><a name="l01401"></a><span class="lineno"> 1401</span>&#160;            <a class="code" href="fg__socket_8c.html#acd5c2f8cbb01fc2c9aad7574fa2d7d63">set_congestion_control</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>, flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#a1206d0f66388f1f916f1ea237453a8db">cc_alg</a>) == -1) {</div>
+<div class="line"><a name="l01402"></a><span class="lineno"> 1402</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set congestion control &quot;</span></div>
+<div class="line"><a name="l01403"></a><span class="lineno"> 1403</span>&#160;                           <span class="stringliteral">&quot;algorithm: %s&quot;</span>, strerror(errno));</div>
+<div class="line"><a name="l01404"></a><span class="lineno"> 1404</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01405"></a><span class="lineno"> 1405</span>&#160;        }</div>
+<div class="line"><a name="l01406"></a><span class="lineno"> 1406</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#a773a21e329a31811844f9f26da458e62">elcn</a> &amp;&amp;</div>
+<div class="line"><a name="l01407"></a><span class="lineno"> 1407</span>&#160;            <a class="code" href="fg__socket_8c.html#a82d86f7f3d35cb6f06c2cb9f57955d87">set_so_elcn</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>, flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#a773a21e329a31811844f9f26da458e62">elcn</a>) == -1) {</div>
+<div class="line"><a name="l01408"></a><span class="lineno"> 1408</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_ELCN: %s&quot;</span>,</div>
+<div class="line"><a name="l01409"></a><span class="lineno"> 1409</span>&#160;                           strerror(errno));</div>
+<div class="line"><a name="l01410"></a><span class="lineno"> 1410</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01411"></a><span class="lineno"> 1411</span>&#160;        }</div>
+<div class="line"><a name="l01412"></a><span class="lineno"> 1412</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#aa16b93831301f5b6faf010158327cf67">lcd</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#a9f03da778d202b26f33b7d463181856e">set_so_lcd</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>) == -1) {</div>
+<div class="line"><a name="l01413"></a><span class="lineno"> 1413</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_LCD: %s&quot;</span>,</div>
+<div class="line"><a name="l01414"></a><span class="lineno"> 1414</span>&#160;                           strerror(errno));</div>
+<div class="line"><a name="l01415"></a><span class="lineno"> 1415</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01416"></a><span class="lineno"> 1416</span>&#160;        }</div>
+<div class="line"><a name="l01417"></a><span class="lineno"> 1417</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#ae229f5e5bd4c3689473dcb7b7debea6e">cork</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#ab2053a8d245324b11d603cc43b327db5">set_tcp_cork</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>) == -1) {</div>
+<div class="line"><a name="l01418"></a><span class="lineno"> 1418</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_CORK: %s&quot;</span>,</div>
+<div class="line"><a name="l01419"></a><span class="lineno"> 1419</span>&#160;                           strerror(errno));</div>
+<div class="line"><a name="l01420"></a><span class="lineno"> 1420</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01421"></a><span class="lineno"> 1421</span>&#160;        }</div>
+<div class="line"><a name="l01422"></a><span class="lineno"> 1422</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#ae1bb84bc89626d9c6950b41a7a124ee2">so_debug</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#a2c49d58f3483817990c8b7c732891ffd">set_so_debug</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>) == -1) {</div>
+<div class="line"><a name="l01423"></a><span class="lineno"> 1423</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set SO_DEBUG: %s&quot;</span>,</div>
+<div class="line"><a name="l01424"></a><span class="lineno"> 1424</span>&#160;                           strerror(errno));</div>
+<div class="line"><a name="l01425"></a><span class="lineno"> 1425</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01426"></a><span class="lineno"> 1426</span>&#160;        }</div>
+<div class="line"><a name="l01427"></a><span class="lineno"> 1427</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#aeebdd152f5d7d68a4435b31313550bad">mtcp</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#a3812672e43521addb0f94be5ec70a2c7">set_tcp_mtcp</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>) == -1) {</div>
+<div class="line"><a name="l01428"></a><span class="lineno"> 1428</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_MTCP: %s&quot;</span>,</div>
+<div class="line"><a name="l01429"></a><span class="lineno"> 1429</span>&#160;                           strerror(errno));</div>
+<div class="line"><a name="l01430"></a><span class="lineno"> 1430</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01431"></a><span class="lineno"> 1431</span>&#160;        }</div>
+<div class="line"><a name="l01432"></a><span class="lineno"> 1432</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#af1d11c3e1d43f04babc48c1c002a31ac">nonagle</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#ac2ddd7ff0e28617a498b922b85ad9e29">set_tcp_nodelay</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>) == -1) {</div>
+<div class="line"><a name="l01433"></a><span class="lineno"> 1433</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set TCP_NODELAY: %s&quot;</span>,</div>
+<div class="line"><a name="l01434"></a><span class="lineno"> 1434</span>&#160;                           strerror(errno));</div>
+<div class="line"><a name="l01435"></a><span class="lineno"> 1435</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01436"></a><span class="lineno"> 1436</span>&#160;        }</div>
+<div class="line"><a name="l01437"></a><span class="lineno"> 1437</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#aea33a5413dbace7b756f93afdea7963d">route_record</a> &amp;&amp; <a class="code" href="fg__socket_8c.html#af08fd91d990fe9481090aaf7f5efabdb">set_route_record</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>) == -1) {</div>
+<div class="line"><a name="l01438"></a><span class="lineno"> 1438</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set route record option: %s&quot;</span>,</div>
+<div class="line"><a name="l01439"></a><span class="lineno"> 1439</span>&#160;                           strerror(errno));</div>
+<div class="line"><a name="l01440"></a><span class="lineno"> 1440</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01441"></a><span class="lineno"> 1441</span>&#160;        }</div>
+<div class="line"><a name="l01442"></a><span class="lineno"> 1442</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#a06c29bb39cf7a6004178e5582949990a">dscp</a> &amp;&amp;</div>
+<div class="line"><a name="l01443"></a><span class="lineno"> 1443</span>&#160;            <a class="code" href="fg__socket_8c.html#a128d76deeb39f543de89cf0c52729101">set_dscp</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>, flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#a06c29bb39cf7a6004178e5582949990a">dscp</a>) == -1) {</div>
+<div class="line"><a name="l01444"></a><span class="lineno"> 1444</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set DSCP value: %s&quot;</span>,</div>
+<div class="line"><a name="l01445"></a><span class="lineno"> 1445</span>&#160;                           strerror(errno));</div>
+<div class="line"><a name="l01446"></a><span class="lineno"> 1446</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01447"></a><span class="lineno"> 1447</span>&#160;        }</div>
+<div class="line"><a name="l01448"></a><span class="lineno"> 1448</span>&#160;        <span class="keywordflow">if</span> (flow-&gt;<a class="code" href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">settings</a>.<a class="code" href="structflow__settings.html#a182d573decbb50a7691ab088dd630a54">ipmtudiscover</a> &amp;&amp;</div>
+<div class="line"><a name="l01449"></a><span class="lineno"> 1449</span>&#160;            <a class="code" href="fg__socket_8c.html#a28705e5f3da83f4c8721e547c41687c4">set_ip_mtu_discover</a>(flow-&gt;<a class="code" href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">fd</a>) == -1) {</div>
+<div class="line"><a name="l01450"></a><span class="lineno"> 1450</span>&#160;                <a class="code" href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a>(flow, <span class="stringliteral">&quot;Unable to set IP_MTU_DISCOVER value: %s&quot;</span>,</div>
+<div class="line"><a name="l01451"></a><span class="lineno"> 1451</span>&#160;                           strerror(errno));</div>
+<div class="line"><a name="l01452"></a><span class="lineno"> 1452</span>&#160;                <span class="keywordflow">return</span> -1;</div>
+<div class="line"><a name="l01453"></a><span class="lineno"> 1453</span>&#160;        }</div>
+<div class="line"><a name="l01454"></a><span class="lineno"> 1454</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#a66910f0d25743b5d85ddfb9069198aa4">apply_extra_socket_options</a>(flow) == -1)</div>
 <div class="line"><a name="l01455"></a><span class="lineno"> 1455</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01456"></a><span class="lineno"> 1456</span>&#160;        }</div>
-<div class="line"><a name="l01457"></a><span class="lineno"> 1457</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="daemon_8c.html#afc054f5da6b88d505bfaca633b3756bc">apply_extra_socket_options</a>(flow) == -1)</div>
-<div class="line"><a name="l01458"></a><span class="lineno"> 1458</span>&#160;                <span class="keywordflow">return</span> -1;</div>
-<div class="line"><a name="l01459"></a><span class="lineno"> 1459</span>&#160;</div>
-<div class="line"><a name="l01460"></a><span class="lineno"> 1460</span>&#160;        <span class="keywordflow">return</span> 0;</div>
-<div class="line"><a name="l01461"></a><span class="lineno"> 1461</span>&#160;}</div>
-<div class="ttc" id="struct__flow_html_a6880ff0fef3890fee3cd99d57fb379cd"><div class="ttname"><a href="struct__flow.html#a6880ff0fef3890fee3cd99d57fb379cd">_flow::settings</a></div><div class="ttdeci">struct _flow_settings settings</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00077">daemon.h:77</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_a2f8781deed605335bc966f3cb0ec4673"><div class="ttname"><a href="struct__flow__settings.html#a2f8781deed605335bc966f3cb0ec4673">_flow_settings::elcn</a></div><div class="ttdeci">int elcn</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00182">common.h:182</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_a2c49d58f3483817990c8b7c732891ffd"><div class="ttname"><a href="fg__socket_8c.html#a2c49d58f3483817990c8b7c732891ffd">set_so_debug</a></div><div class="ttdeci">int set_so_debug(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00370">fg_socket.c:370</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_a7170f8fc6ce6118b4410b9162e6f7cb1"><div class="ttname"><a href="struct__flow__settings.html#a7170f8fc6ce6118b4410b9162e6f7cb1">_flow_settings::ipmtudiscover</a></div><div class="ttdeci">int ipmtudiscover</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00186">common.h:186</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_a128d76deeb39f543de89cf0c52729101"><div class="ttname"><a href="fg__socket_8c.html#a128d76deeb39f543de89cf0c52729101">set_dscp</a></div><div class="ttdeci">int set_dscp(int fd, int dscp)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00135">fg_socket.c:135</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_a9f03da778d202b26f33b7d463181856e"><div class="ttname"><a href="fg__socket_8c.html#a9f03da778d202b26f33b7d463181856e">set_so_lcd</a></div><div class="ttdeci">int set_so_lcd(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00292">fg_socket.c:292</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_ac2ddd7ff0e28617a498b922b85ad9e29"><div class="ttname"><a href="fg__socket_8c.html#ac2ddd7ff0e28617a498b922b85ad9e29">set_tcp_nodelay</a></div><div class="ttdeci">int set_tcp_nodelay(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00362">fg_socket.c:362</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_a3812672e43521addb0f94be5ec70a2c7"><div class="ttname"><a href="fg__socket_8c.html#a3812672e43521addb0f94be5ec70a2c7">set_tcp_mtcp</a></div><div class="ttdeci">int set_tcp_mtcp(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00351">fg_socket.c:351</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_ab2053a8d245324b11d603cc43b327db5"><div class="ttname"><a href="fg__socket_8c.html#ab2053a8d245324b11d603cc43b327db5">set_tcp_cork</a></div><div class="ttdeci">int set_tcp_cork(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00321">fg_socket.c:321</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_af08fd91d990fe9481090aaf7f5efabdb"><div class="ttname"><a href="fg__socket_8c.html#af08fd91d990fe9481090aaf7f5efabdb">set_route_record</a></div><div class="ttdeci">int set_route_record(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00152">fg_socket.c:152</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_a4b25a1ed063ef05dd4cb4d0d464b9be8"><div class="ttname"><a href="struct__flow__settings.html#a4b25a1ed063ef05dd4cb4d0d464b9be8">_flow_settings::lcd</a></div><div class="ttdeci">int lcd</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00183">common.h:183</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_aeb7946687b3f229c7b32ec461effa67c"><div class="ttname"><a href="struct__flow__settings.html#aeb7946687b3f229c7b32ec461effa67c">_flow_settings::mtcp</a></div><div class="ttdeci">int mtcp</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00184">common.h:184</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_afcc712d53ca9c32afff323462b578e13"><div class="ttname"><a href="struct__flow__settings.html#afcc712d53ca9c32afff323462b578e13">_flow_settings::so_debug</a></div><div class="ttdeci">int so_debug</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00163">common.h:163</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_a5c892fe522cd769b667ec0e7c89249f3"><div class="ttname"><a href="struct__flow__settings.html#a5c892fe522cd769b667ec0e7c89249f3">_flow_settings::cork</a></div><div class="ttdeci">int cork</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00179">common.h:179</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_a73eff175b8dd0d5958705c0278bc4857"><div class="ttname"><a href="struct__flow__settings.html#a73eff175b8dd0d5958705c0278bc4857">_flow_settings::dscp</a></div><div class="ttdeci">int dscp</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00185">common.h:185</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_a28705e5f3da83f4c8721e547c41687c4"><div class="ttname"><a href="fg__socket_8c.html#a28705e5f3da83f4c8721e547c41687c4">set_ip_mtu_discover</a></div><div class="ttdeci">int set_ip_mtu_discover(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00304">fg_socket.c:304</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_a82d86f7f3d35cb6f06c2cb9f57955d87"><div class="ttname"><a href="fg__socket_8c.html#a82d86f7f3d35cb6f06c2cb9f57955d87">set_so_elcn</a></div><div class="ttdeci">int set_so_elcn(int fd, int val)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00282">fg_socket.c:282</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_acd5c2f8cbb01fc2c9aad7574fa2d7d63"><div class="ttname"><a href="fg__socket_8c.html#acd5c2f8cbb01fc2c9aad7574fa2d7d63">set_congestion_control</a></div><div class="ttdeci">int set_congestion_control(int fd, const char *cc_alg)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00269">fg_socket.c:269</a></div></div>
-<div class="ttc" id="daemon_8c_html_a9d06463f7f8d363aeca18aeb32d06f58"><div class="ttname"><a href="daemon_8c.html#a9d06463f7f8d363aeca18aeb32d06f58">flow_error</a></div><div class="ttdeci">void flow_error(struct _flow *flow, const char *fmt,...)</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00129">daemon.c:129</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_ac953a0a2db105af71dff872ab096755b"><div class="ttname"><a href="struct__flow__settings.html#ac953a0a2db105af71dff872ab096755b">_flow_settings::route_record</a></div><div class="ttdeci">int route_record</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00164">common.h:164</a></div></div>
-<div class="ttc" id="daemon_8c_html_afc054f5da6b88d505bfaca633b3756bc"><div class="ttname"><a href="daemon_8c.html#afc054f5da6b88d505bfaca633b3756bc">apply_extra_socket_options</a></div><div class="ttdeci">int apply_extra_socket_options(struct _flow *flow)</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l01351">daemon.c:1351</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_a168b42b1f668901a9eb473eb57409509"><div class="ttname"><a href="struct__flow__settings.html#a168b42b1f668901a9eb473eb57409509">_flow_settings::cc_alg</a></div><div class="ttdeci">char cc_alg[TCP_CA_NAME_MAX]</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00181">common.h:181</a></div></div>
-<div class="ttc" id="struct__flow__settings_html_abec0d13973a8979ebc0336417e864832"><div class="ttname"><a href="struct__flow__settings.html#abec0d13973a8979ebc0336417e864832">_flow_settings::nonagle</a></div><div class="ttdeci">int nonagle</div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00180">common.h:180</a></div></div>
-<div class="ttc" id="struct__flow_html_a6d61570021c760d904b45af57e104004"><div class="ttname"><a href="struct__flow.html#a6d61570021c760d904b45af57e104004">_flow::fd</a></div><div class="ttdeci">int fd</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00074">daemon.h:74</a></div></div>
-<div class="ttc" id="fg__socket_8c_html_a02113c8824bad0f80c20102a1756634b"><div class="ttname"><a href="fg__socket_8c.html#a02113c8824bad0f80c20102a1756634b">set_non_blocking</a></div><div class="ttdeci">int set_non_blocking(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00175">fg_socket.c:175</a></div></div>
+<div class="line"><a name="l01456"></a><span class="lineno"> 1456</span>&#160;</div>
+<div class="line"><a name="l01457"></a><span class="lineno"> 1457</span>&#160;        <span class="keywordflow">return</span> 0;</div>
+<div class="line"><a name="l01458"></a><span class="lineno"> 1458</span>&#160;}</div>
+<div class="ttc" id="structflow__settings_html_aeebdd152f5d7d68a4435b31313550bad"><div class="ttname"><a href="structflow__settings.html#aeebdd152f5d7d68a4435b31313550bad">flow_settings::mtcp</a></div><div class="ttdeci">int mtcp</div><div class="ttdoc">Set TCP_MTCP (15) on test socket (option -O) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00228">common.h:228</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_a2c49d58f3483817990c8b7c732891ffd"><div class="ttname"><a href="fg__socket_8c.html#a2c49d58f3483817990c8b7c732891ffd">set_so_debug</a></div><div class="ttdeci">int set_so_debug(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00367">fg_socket.c:367</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_a128d76deeb39f543de89cf0c52729101"><div class="ttname"><a href="fg__socket_8c.html#a128d76deeb39f543de89cf0c52729101">set_dscp</a></div><div class="ttdeci">int set_dscp(int fd, int dscp)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00132">fg_socket.c:132</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_a9f03da778d202b26f33b7d463181856e"><div class="ttname"><a href="fg__socket_8c.html#a9f03da778d202b26f33b7d463181856e">set_so_lcd</a></div><div class="ttdeci">int set_so_lcd(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00289">fg_socket.c:289</a></div></div>
+<div class="ttc" id="structflow__settings_html_aa16b93831301f5b6faf010158327cf67"><div class="ttname"><a href="structflow__settings.html#aa16b93831301f5b6faf010158327cf67">flow_settings::lcd</a></div><div class="ttdeci">int lcd</div><div class="ttdoc">Set TCP_LCD (21) on test socket (option -O) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00226">common.h:226</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_ac2ddd7ff0e28617a498b922b85ad9e29"><div class="ttname"><a href="fg__socket_8c.html#ac2ddd7ff0e28617a498b922b85ad9e29">set_tcp_nodelay</a></div><div class="ttdeci">int set_tcp_nodelay(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00359">fg_socket.c:359</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_a3812672e43521addb0f94be5ec70a2c7"><div class="ttname"><a href="fg__socket_8c.html#a3812672e43521addb0f94be5ec70a2c7">set_tcp_mtcp</a></div><div class="ttdeci">int set_tcp_mtcp(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00348">fg_socket.c:348</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_ab2053a8d245324b11d603cc43b327db5"><div class="ttname"><a href="fg__socket_8c.html#ab2053a8d245324b11d603cc43b327db5">set_tcp_cork</a></div><div class="ttdeci">int set_tcp_cork(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00318">fg_socket.c:318</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_af08fd91d990fe9481090aaf7f5efabdb"><div class="ttname"><a href="fg__socket_8c.html#af08fd91d990fe9481090aaf7f5efabdb">set_route_record</a></div><div class="ttdeci">int set_route_record(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00149">fg_socket.c:149</a></div></div>
+<div class="ttc" id="structflow_html_abf86c8f5e99971c55bee93782f3c06b4"><div class="ttname"><a href="structflow.html#abf86c8f5e99971c55bee93782f3c06b4">flow::settings</a></div><div class="ttdeci">struct flow_settings settings</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00083">daemon.h:83</a></div></div>
+<div class="ttc" id="structflow__settings_html_ae229f5e5bd4c3689473dcb7b7debea6e"><div class="ttname"><a href="structflow__settings.html#ae229f5e5bd4c3689473dcb7b7debea6e">flow_settings::cork</a></div><div class="ttdeci">int cork</div><div class="ttdoc">Sets SO_DEBUG on test socket (option -O) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00218">common.h:218</a></div></div>
+<div class="ttc" id="structflow__settings_html_a1206d0f66388f1f916f1ea237453a8db"><div class="ttname"><a href="structflow__settings.html#a1206d0f66388f1f916f1ea237453a8db">flow_settings::cc_alg</a></div><div class="ttdeci">char cc_alg[TCP_CA_NAME_MAX]</div><div class="ttdoc">Set congestion control algorithm ALG on test socket (option -O) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00222">common.h:222</a></div></div>
+<div class="ttc" id="structflow__settings_html_a182d573decbb50a7691ab088dd630a54"><div class="ttname"><a href="structflow__settings.html#a182d573decbb50a7691ab088dd630a54">flow_settings::ipmtudiscover</a></div><div class="ttdeci">int ipmtudiscover</div><div class="ttdoc">Set IP_MTU_DISCOVER on test socket (option -O) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00232">common.h:232</a></div></div>
+<div class="ttc" id="structflow__settings_html_a06c29bb39cf7a6004178e5582949990a"><div class="ttname"><a href="structflow__settings.html#a06c29bb39cf7a6004178e5582949990a">flow_settings::dscp</a></div><div class="ttdeci">int dscp</div><div class="ttdoc">DSCP value for TOS byte (option -D) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00230">common.h:230</a></div></div>
+<div class="ttc" id="structflow__settings_html_aea33a5413dbace7b756f93afdea7963d"><div class="ttname"><a href="structflow__settings.html#aea33a5413dbace7b756f93afdea7963d">flow_settings::route_record</a></div><div class="ttdeci">int route_record</div><div class="ttdoc">Sets ROUTE_RECORD on test socket (option -O) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00194">common.h:194</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_a28705e5f3da83f4c8721e547c41687c4"><div class="ttname"><a href="fg__socket_8c.html#a28705e5f3da83f4c8721e547c41687c4">set_ip_mtu_discover</a></div><div class="ttdeci">int set_ip_mtu_discover(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00301">fg_socket.c:301</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_a82d86f7f3d35cb6f06c2cb9f57955d87"><div class="ttname"><a href="fg__socket_8c.html#a82d86f7f3d35cb6f06c2cb9f57955d87">set_so_elcn</a></div><div class="ttdeci">int set_so_elcn(int fd, int val)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00279">fg_socket.c:279</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_acd5c2f8cbb01fc2c9aad7574fa2d7d63"><div class="ttname"><a href="fg__socket_8c.html#acd5c2f8cbb01fc2c9aad7574fa2d7d63">set_congestion_control</a></div><div class="ttdeci">int set_congestion_control(int fd, const char *cc_alg)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00266">fg_socket.c:266</a></div></div>
+<div class="ttc" id="structflow__settings_html_a773a21e329a31811844f9f26da458e62"><div class="ttname"><a href="structflow__settings.html#a773a21e329a31811844f9f26da458e62">flow_settings::elcn</a></div><div class="ttdeci">int elcn</div><div class="ttdoc">Set TCP_ELCN (20) on test socket (option -O) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00224">common.h:224</a></div></div>
+<div class="ttc" id="structflow_html_a8c89f7316d6e7fab40989f40ac8a972d"><div class="ttname"><a href="structflow.html#a8c89f7316d6e7fab40989f40ac8a972d">flow::fd</a></div><div class="ttdeci">int fd</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00080">daemon.h:80</a></div></div>
+<div class="ttc" id="structflow__settings_html_ae1bb84bc89626d9c6950b41a7a124ee2"><div class="ttname"><a href="structflow__settings.html#ae1bb84bc89626d9c6950b41a7a124ee2">flow_settings::so_debug</a></div><div class="ttdeci">int so_debug</div><div class="ttdoc">Sets SO_DEBUG on test socket (option -O) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00192">common.h:192</a></div></div>
+<div class="ttc" id="daemon_8c_html_a66910f0d25743b5d85ddfb9069198aa4"><div class="ttname"><a href="daemon_8c.html#a66910f0d25743b5d85ddfb9069198aa4">apply_extra_socket_options</a></div><div class="ttdeci">int apply_extra_socket_options(struct flow *flow)</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l01350">daemon.c:1350</a></div></div>
+<div class="ttc" id="structflow__settings_html_af1d11c3e1d43f04babc48c1c002a31ac"><div class="ttname"><a href="structflow__settings.html#af1d11c3e1d43f04babc48c1c002a31ac">flow_settings::nonagle</a></div><div class="ttdeci">int nonagle</div><div class="ttdoc">Disable nagle algorithm on test socket (option -O) </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00220">common.h:220</a></div></div>
+<div class="ttc" id="fg__socket_8c_html_a02113c8824bad0f80c20102a1756634b"><div class="ttname"><a href="fg__socket_8c.html#a02113c8824bad0f80c20102a1756634b">set_non_blocking</a></div><div class="ttdeci">int set_non_blocking(int fd)</div><div class="ttdef"><b>Definition:</b> <a href="fg__socket_8c_source.html#l00172">fg_socket.c:172</a></div></div>
+<div class="ttc" id="daemon_8c_html_a2b81f4cc8f5217b1d4ffa4a437377429"><div class="ttname"><a href="daemon_8c.html#a2b81f4cc8f5217b1d4ffa4a437377429">flow_error</a></div><div class="ttdeci">void flow_error(struct flow *flow, const char *fmt,...)</div><div class="ttdef"><b>Definition:</b> <a href="daemon_8c_source.html#l00119">daemon.c:119</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -671,7 +677,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00094">94</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00085">85</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
@@ -685,7 +691,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00238">238</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00250">250</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
 
 </div>
 </div>
@@ -699,7 +705,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00258">258</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00269">269</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
 
 </div>
 </div>
@@ -712,8 +718,9 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+<dl class="bug"><dt><b><a class="el" href="bug.html#_bug000001">Bug:</a></b></dt><dd>: shouldn't be global? </dd></dl>
 
-<p>Definition at line <a class="el" href="daemon_8h_source.html#l00257">257</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8h_source.html#l00268">268</a> of file <a class="el" href="daemon_8h_source.html">daemon.h</a>.</p>
 
 </div>
 </div>
@@ -727,21 +734,21 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00114">114</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00104">104</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="abb56c507ff5f8562955628f1cb1b3ee3"></a>
+<a class="anchor" id="a404ebcfc5a80e668901703c46a807157"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct <a class="el" href="struct__flow.html">_flow</a> flows[<a class="el" href="common_8h.html#a83bb9b191106d3b490a77b4fbe74c974">MAX_FLOWS</a>]</td>
+          <td class="memname">struct <a class="el" href="structlinked__list.html">linked_list</a> flows</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00108">108</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00099">99</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
@@ -755,21 +762,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00098">98</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="aceef2e3272c4b5f19fd23cf235a3f354"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">unsigned int num_flows</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00109">109</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00089">89</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
@@ -783,63 +776,63 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00106">106</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00097">97</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a724dd147b042dd38a79a24feb58fd63e"></a>
+<a class="anchor" id="a5981029394ee67ad583f0319dc9468b5"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct <a class="el" href="struct__report.html">_report</a>* reports</td>
+          <td class="memname">struct <a class="el" href="structreport.html">report</a>* reports</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00104">104</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00095">95</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a9f3739ffa1f347bc28dfc4c4f9a30188"></a>
+<a class="anchor" id="a7dd776b27a8695d29a8f178ddb26a2eb"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct <a class="el" href="struct__report.html">_report</a>* reports_last</td>
+          <td class="memname">struct <a class="el" href="structreport.html">report</a>* reports_last</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00105">105</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00096">96</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a29e2f10ac70ee83f6beceade5aa70e95"></a>
+<a class="anchor" id="aaa94c4a05963e33561e701944c82d645"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct <a class="el" href="struct__request.html">_request</a>* requests</td>
+          <td class="memname">struct <a class="el" href="structrequest.html">request</a>* requests</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00099">99</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00090">90</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a50b8ed56147c68cbcf4efecbdf633664"></a>
+<a class="anchor" id="a5c8ad0b474e5da9a984f42d401e58d9c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct <a class="el" href="struct__request.html">_request</a> * requests_last</td>
+          <td class="memname">struct <a class="el" href="structrequest.html">request</a> * requests_last</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00099">99</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00090">90</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
@@ -853,7 +846,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="daemon_8c_source.html#l00111">111</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
+<p>Definition at line <a class="el" href="daemon_8c_source.html#l00101">101</a> of file <a class="el" href="daemon_8c_source.html">daemon.c</a>.</p>
 
 </div>
 </div>
@@ -863,7 +856,7 @@ Variables</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="daemon_8h.html">daemon.h</a></li>
-    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

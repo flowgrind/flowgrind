@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('source_8h_source.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -134,21 +134,23 @@ $(document).ready(function(){initNavTree('source_8h_source.html','');});
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define _SOURCE_H_</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#ifdef HAVE_CONFIG_H</span></div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &quot;config.h&quot;</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#include &quot;<a class="code" href="config_8h.html">config.h</a>&quot;</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* HAVE_CONFIG_H */</span><span class="preprocessor"></span></div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keywordtype">int</span> <a class="code" href="source_8h.html#a966db65494e69be6ece9e1c13006779b">add_flow_source</a>(<span class="keyword">struct</span> <a class="code" href="struct__request__add__flow__source.html">_request_add_flow_source</a> *request);</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keywordtype">int</span> <a class="code" href="source_8h.html#a775335e0a04baa4925bb57dbec7d8b44">add_flow_source</a>(<span class="keyword">struct</span> <a class="code" href="structrequest__add__flow__source.html">request_add_flow_source</a> *<a class="code" href="structrequest.html">request</a>);</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _SOURCE_H_ */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="source_8h_html_a966db65494e69be6ece9e1c13006779b"><div class="ttname"><a href="source_8h.html#a966db65494e69be6ece9e1c13006779b">add_flow_source</a></div><div class="ttdeci">int add_flow_source(struct _request_add_flow_source *request)</div><div class="ttdef"><b>Definition:</b> <a href="source_8c_source.html#l00157">source.c:157</a></div></div>
-<div class="ttc" id="struct__request__add__flow__source_html"><div class="ttname"><a href="struct__request__add__flow__source.html">_request_add_flow_source</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00202">daemon.h:202</a></div></div>
+<div class="ttc" id="config_8h_html"><div class="ttname"><a href="config_8h.html">config.h</a></div></div>
+<div class="ttc" id="structrequest__add__flow__source_html"><div class="ttname"><a href="structrequest__add__flow__source.html">request_add_flow_source</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00205">daemon.h:205</a></div></div>
+<div class="ttc" id="source_8h_html_a775335e0a04baa4925bb57dbec7d8b44"><div class="ttname"><a href="source_8h.html#a775335e0a04baa4925bb57dbec7d8b44">add_flow_source</a></div><div class="ttdeci">int add_flow_source(struct request_add_flow_source *request)</div><div class="ttdef"><b>Definition:</b> <a href="source_8c_source.html#l00153">source.c:153</a></div></div>
+<div class="ttc" id="structrequest_html"><div class="ttname"><a href="structrequest.html">request</a></div><div class="ttdef"><b>Definition:</b> <a href="daemon_8h_source.html#l00178">daemon.h:178</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="source_8h.html">source.h</a></li>
-    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:28 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

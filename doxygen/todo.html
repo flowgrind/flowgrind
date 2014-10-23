@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -87,7 +87,7 @@ $(document).ready(function(){initNavTree('todo.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -102,25 +102,25 @@ $(document).ready(function(){initNavTree('todo.html','');});
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><dl class="reflist">
-<dt><a class="anchor" id="_todo000009"></a>Global <a class="el" href="struct__cflow.html#a50310ea027584fb7691fd5850c5e79a2">_cflow::late_connect</a>  </dt>
-<dd>Some of this flow option members are duplicates from the <a class="el" href="struct__flow__settings.html">_flow_settings</a> struct (see <a class="el" href="common_8h.html" title="Data structures used by the Flowgrind daemon and controller. ">common.h</a>). </dd>
-<dt><a class="anchor" id="_todo000003"></a>Global <a class="el" href="struct__flow_1_1__statistics.html#abec62e0eb426c20aab504099c3f8788b">_flow::_statistics::iat_min</a>  </dt>
+<dt><a class="anchor" id="_todo000009"></a>Global <a class="el" href="structcflow.html#a363343e128189b02573dc739aed34cd8">cflow::late_connect</a>  </dt>
+<dd>Some of this flow option members are duplicates from the _flow_settings struct (see <a class="el" href="common_8h.html" title="Data structures used by the Flowgrind daemon and controller. ">common.h</a>). </dd>
+<dt><a class="anchor" id="_todo000004"></a>Global <a class="el" href="structflow_1_1statistics.html#aaac45192612b658846d6a0307e6bce43">flow::statistics::iat_min</a>  </dt>
 <dd>Create an array for IAT / RTT and delay  </dd>
-<dt><a class="anchor" id="_todo000001"></a>Global <a class="el" href="struct__report.html#ac24d99ebd521c0fdbb5f14f1e927a7e3">_report::iat_min</a>  </dt>
-<dd>Create an array for IAT / RTT and delay  </dd>
-<dt><a class="anchor" id="_todo000005"></a>Global <a class="el" href="flowgrind_8c.html#aef538ef6102a51fc60034d1d6a60dae9">open_logfile</a>  (void)</dt>
+<dt><a class="anchor" id="_todo000002"></a>Global <a class="el" href="daemon_8c.html#ad037eac03b0881ffc9647c45daff87f5">get_tcp_info</a>  (struct flow *flow, struct <a class="el" href="structfg__tcp__info.html">fg_tcp_info</a> *info)</dt>
+<dd>FreeBSD 9.1 doesn't fill these members, but maybe FreeBSD 10.0 will fill it, so get rid of this ifdef  </dd>
+<dt><a class="anchor" id="_todo000006"></a>Global <a class="el" href="flowgrind_8c.html#aef538ef6102a51fc60034d1d6a60dae9">open_logfile</a>  (void)</dt>
 <dd>Do not call strftime(); use functions from <a class="el" href="fg__time_8h.html" title="Timing related routines used by Flowgrind. ">fg_time.h</a>  </dd>
-<dt><a class="anchor" id="_todo000008"></a>Global <a class="el" href="flowgrind_8c.html#a0b31ee974b8ccb9f5a0b0169ee1fc3d7">parse_cmdline</a>  (int argc, char *argv[])</dt>
-<dd><p class="startdd">Use a more elegant way to distinguish between long and short option </p>
-<p class="enddd">more sanity checks... (e.g. if port is in valid range)  </p>
-</dd>
-<dt><a class="anchor" id="_todo000006"></a>Global <a class="el" href="flowgrind_8c.html#a37a88cae9e0bba5b7c2ac9eda0330c76">prepare_grinding</a>  (xmlrpc_client *rpc_client)</dt>
+<dt><a class="anchor" id="_todo000007"></a>Global <a class="el" href="flowgrind_8c.html#a37a88cae9e0bba5b7c2ac9eda0330c76">prepare_grinding</a>  (xmlrpc_client *rpc_client)</dt>
 <dd>Use <a class="el" href="fg__time_8c.html" title="Timing related routines used by Flowgrind. ">fg_time.c</a> here  </dd>
-<dt><a class="anchor" id="_todo000002"></a>Global <a class="el" href="daemon_8c.html#ae6a392a40ac9154c081c8f57b76c7333">read_data</a>  (struct <a class="el" href="struct__flow.html">_flow</a> *flow)</dt>
-<dd><a class="el" href="daemon_8c.html#aece282f1f5d183c0b60d8e0a1dfedb2d">process_rtt()</a>, <a class="el" href="daemon_8c.html#a34beef5ddbe2e0dfec478bf2fa6dc3f9">process_iat()</a>, and process_delay () call all <a class="el" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78" title="Returns wall-clock time with nanosecond precision. ">gettime()</a>. Quite inefficient...  </dd>
-<dt><a class="anchor" id="_todo000007"></a>Global <a class="el" href="flowgrind_8c.html#a55b36e31ad1723a59989ecec37bb6dbc">report_flow</a>  (const struct <a class="el" href="struct__daemon.html" title="Infos about a flowgrind daemon. ">_daemon</a> *daemon, struct <a class="el" href="struct__report.html">_report</a> *report)</dt>
+<dt><a class="anchor" id="_todo000003"></a>Global <a class="el" href="daemon_8c.html#a2f0a3334efe08cf776194c1c394cdce2">read_data</a>  (struct flow *flow)</dt>
+<dd><a class="el" href="daemon_8c.html#a9f3ff8ee35a524d84af02768849f3673">process_rtt()</a>, <a class="el" href="daemon_8c.html#a54c3849a22e7bc35672dd1e04c34f5fc">process_iat()</a>, and process_delay () call all <a class="el" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78" title="Returns the current wall-clock time with nanosecond precision. ">gettime()</a>. Quite inefficient...  </dd>
+<dt><a class="anchor" id="_todo000001"></a>Global <a class="el" href="structreport.html#a8e77e60d692703b2273e058e0f879c11">report::iat_min</a>  </dt>
+<dd>Create an array for IAT / RTT and delay  </dd>
+<dt><a class="anchor" id="_todo000008"></a>Global <a class="el" href="flowgrind_8c.html#ac5693d93914a93a9d7c51c4f59c86000">report_flow</a>  (const struct daemon *daemon, struct report *report)</dt>
 <dd>Maybe just use compare daemon pointers?  </dd>
-<dt><a class="anchor" id="_todo000004"></a>Global <a class="el" href="flowgrind_8c.html#a37bdbd1ccb03c4080b4221de7954ea02">usage_sockopt</a>  (void)</dt>
+<dt><a class="anchor" id="_todo000010"></a>Global <a class="el" href="flowgrindd_8c.html#aecf3d6e643400d9a2fd67ac89048072c">sanity_check</a>  (void)</dt>
+<dd>more sanity checks... (e.g. if port is in valid range)  </dd>
+<dt><a class="anchor" id="_todo000005"></a>Global <a class="el" href="flowgrind_8c.html#a37bdbd1ccb03c4080b4221de7954ea02">usage_sockopt</a>  (void)</dt>
 <dd>Do not call /sbin/sysctl. Use /proc/sys instead. It seems that we have to use a system call on FreeBSD since they deprecate procfs </dd>
 </dl>
 </div></div><!-- contents -->
@@ -128,7 +128,7 @@ $(document).ready(function(){initNavTree('todo.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue May 27 2014 09:21:58 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

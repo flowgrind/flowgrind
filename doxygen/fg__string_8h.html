@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('fg__string_8h.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -112,7 +112,7 @@ $(document).ready(function(){initNavTree('fg__string_8h.html','');});
 
 <p>Functions to manipulate strings used by Flowgrind.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;config.h&quot;</code><br/>
+<div class="textblock"><code>#include &quot;<a class="el" href="config_8h_source.html">config.h</a>&quot;</code><br/>
 </div>
 <p><a href="fg__string_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -270,16 +270,16 @@ Functions</h2></td></tr>
 
 <p>Definition at line <a class="el" href="fg__string_8c_source.html#l00076">76</a> of file <a class="el" href="fg__string_8c_source.html">fg_string.c</a>.</p>
 <div class="fragment"><div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;{</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!s))</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__definitions_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!s))</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                <span class="keywordflow">return</span> strdup(a);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!a))</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__definitions_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!a))</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                <span class="keywordflow">return</span> s;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a>(s, strlen(s), a, strlen(a));</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;}</div>
+<div class="ttc" id="fg__definitions_8h_html_ac6c45889010c1bd68631771b64f18101"><div class="ttname"><a href="fg__definitions_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a></div><div class="ttdeci">#define unlikely(x)</div><div class="ttdoc">These macros gain us a few percent of speed. </div><div class="ttdef"><b>Definition:</b> <a href="fg__definitions_8h_source.html#l00035">fg_definitions.h:35</a></div></div>
 <div class="ttc" id="fg__string_8c_html_ad32db34b532f25c1826d5d7d51f09d70"><div class="ttname"><a href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a></div><div class="ttdeci">static char * strlendup_append(char *s, size_t slen, const char *a, size_t alen)</div><div class="ttdoc">Append the duplication of string a of length alen to the given string s at point slen. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00047">fg_string.c:47</a></div></div>
-<div class="ttc" id="fg__stdlib_8h_html_ac6c45889010c1bd68631771b64f18101"><div class="ttname"><a href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a></div><div class="ttdeci">#define unlikely(x)</div><div class="ttdoc">These macros gain us a few percent of speed. </div><div class="ttdef"><b>Definition:</b> <a href="fg__stdlib_8h_source.html#l00035">fg_stdlib.h:35</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -326,16 +326,16 @@ Functions</h2></td></tr>
 
 <p>Definition at line <a class="el" href="fg__string_8c_source.html#l00087">87</a> of file <a class="el" href="fg__string_8c_source.html">fg_string.c</a>.</p>
 <div class="fragment"><div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;{</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!s))</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__definitions_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!s))</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                <span class="keywordflow">return</span> strdup(a);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!a))</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="fg__definitions_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a>(!a))</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                <span class="keywordflow">return</span> s;</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a>(s, strlen(s), a, strnlen(a, n));</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;}</div>
+<div class="ttc" id="fg__definitions_8h_html_ac6c45889010c1bd68631771b64f18101"><div class="ttname"><a href="fg__definitions_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a></div><div class="ttdeci">#define unlikely(x)</div><div class="ttdoc">These macros gain us a few percent of speed. </div><div class="ttdef"><b>Definition:</b> <a href="fg__definitions_8h_source.html#l00035">fg_definitions.h:35</a></div></div>
 <div class="ttc" id="fg__string_8c_html_ad32db34b532f25c1826d5d7d51f09d70"><div class="ttname"><a href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">strlendup_append</a></div><div class="ttdeci">static char * strlendup_append(char *s, size_t slen, const char *a, size_t alen)</div><div class="ttdoc">Append the duplication of string a of length alen to the given string s at point slen. </div><div class="ttdef"><b>Definition:</b> <a href="fg__string_8c_source.html#l00047">fg_string.c:47</a></div></div>
-<div class="ttc" id="fg__stdlib_8h_html_ac6c45889010c1bd68631771b64f18101"><div class="ttname"><a href="fg__stdlib_8h.html#ac6c45889010c1bd68631771b64f18101">unlikely</a></div><div class="ttdeci">#define unlikely(x)</div><div class="ttdoc">These macros gain us a few percent of speed. </div><div class="ttdef"><b>Definition:</b> <a href="fg__stdlib_8h_source.html#l00035">fg_stdlib.h:35</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -389,7 +389,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="fg__string_8h.html">fg_string.h</a></li>
-    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

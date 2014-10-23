@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['pareto',['PARETO',['../common_8h.html#afe99a27e9d388ccb382ae15afca86804a44a09e0cde7c50152e01592e9ed8c34b',1,'common.h']]],
-  ['proto_5ftcp',['PROTO_TCP',['../flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cda44547a13166ee3f0220fb3c4fc60e544',1,'flowgrind.h']]],
-  ['proto_5fudp',['PROTO_UDP',['../flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cda2b277c40c006345a264777529561bf93',1,'flowgrind.h']]]
+  ['ncore_5fconfig',['NCORE_CONFIG',['../fg__affinity_8h.html#a19602dbf51429aacb43173deb6544feba648ba5f90c79792a66377e61a794ab0e',1,'fg_affinity.h']]],
+  ['ncore_5fcurrent',['NCORE_CURRENT',['../fg__affinity_8h.html#a19602dbf51429aacb43173deb6544febad139d2c535a749a5c3b64a1140d38b55',1,'fg_affinity.h']]],
+  ['normal',['NORMAL',['../common_8h.html#afe99a27e9d388ccb382ae15afca86804a50d1448013c6f17125caee18aa418af7',1,'common.h']]]
 ];

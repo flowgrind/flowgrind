@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['begin',['begin',['../struct__report.html#a5d81175f00c4a1c14a07e0bf3853c5a3',1,'_report']]],
-  ['bind_5faddress',['bind_address',['../struct__flow__settings.html#a6326a0e56950ac24bc5ebceaf8058c05',1,'_flow_settings']]],
-  ['byte_5fcounting',['byte_counting',['../struct__flow__settings.html#a687dfcbb96731f7d82bccde4cfac829b',1,'_flow_settings::byte_counting()'],['../struct__cflow.html#a122681cf8ff555a852ea1603b0c69605',1,'_cflow::byte_counting()']]],
-  ['bytes_5fread',['bytes_read',['../struct__report.html#a85f36c0945cd60b20d73d5ea4efb68a6',1,'_report::bytes_read()'],['../struct__flow_1_1__statistics.html#afe259175570a5b6a2ac77b7fbf8060f2',1,'_flow::_statistics::bytes_read()']]],
-  ['bytes_5fwritten',['bytes_written',['../struct__report.html#adb6fd303ecc9a8b15f7531d6159376cd',1,'_report::bytes_written()'],['../struct__flow_1_1__statistics.html#a68e54bd0d24a746164319d6049f0b5f2',1,'_flow::_statistics::bytes_written()']]]
+  ['begin',['begin',['../structreport.html#ae81ba92c32db53c978e9367ea9d0ebba',1,'report']]],
+  ['bind_5faddress',['bind_address',['../structflow__settings.html#afcde8c9da11b85204968beb70542dadb',1,'flow_settings']]],
+  ['byte_5fcounting',['byte_counting',['../structflow__settings.html#abc6728769659e18a72dd12549d4f6f94',1,'flow_settings::byte_counting()'],['../structcflow.html#a715a0c2fdd63cfff55c09d3e925a4742',1,'cflow::byte_counting()']]],
+  ['bytes_5fread',['bytes_read',['../structreport.html#aef54fe7e2baef46bb8e00977474ba566',1,'report::bytes_read()'],['../structflow_1_1statistics.html#a836b134622386d1fc94becbcc117cb32',1,'flow::statistics::bytes_read()']]],
+  ['bytes_5fwritten',['bytes_written',['../structreport.html#a7330324173edbf9bb4f0efc9b7a534ab',1,'report::bytes_written()'],['../structflow_1_1statistics.html#a80c710aaf10a41c6a467d34bd9bac81d',1,'flow::statistics::bytes_written()']]]
 ];

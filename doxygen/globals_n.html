@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -78,6 +78,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li class="current"><a href="globals.html"><span>All</span></a></li>
       <li><a href="globals_func.html"><span>Functions</span></a></li>
       <li><a href="globals_vars.html"><span>Variables</span></a></li>
+      <li><a href="globals_type.html"><span>Typedefs</span></a></li>
       <li><a href="globals_enum.html"><span>Enumerations</span></a></li>
       <li><a href="globals_eval.html"><span>Enumerator</span></a></li>
       <li><a href="globals_defs.html"><span>Macros</span></a></li>
@@ -106,6 +107,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="globals_u.html#index_u"><span>u</span></a></li>
       <li><a href="globals_v.html#index_v"><span>v</span></a></li>
       <li><a href="globals_w.html#index_w"><span>w</span></a></li>
+      <li><a href="globals_x.html#index_x"><span>x</span></a></li>
     </ul>
   </div>
 </div><!-- top -->
@@ -128,7 +130,7 @@ $(document).ready(function(){initNavTree('globals_n.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -142,25 +144,37 @@ $(document).ready(function(){initNavTree('globals_n.html','');});
 
 <h3><a class="anchor" id="index_n"></a>- n -</h3><ul>
 <li>name2socket()
-: <a class="el" href="source_8c.html#aa1fed2a0ff87ef4404a9665fcfcb013c">source.c</a>
+: <a class="el" href="source_8c.html#a2eaa19dc023c8f503b5e3baa4b4d016c">source.c</a>
 </li>
 <li>NARGS
-: <a class="el" href="fg__stdlib_8h.html#a2926846e60d0e98cb1c50defbbd6b48c">fg_stdlib.h</a>
+: <a class="el" href="fg__definitions_8h.html#a2926846e60d0e98cb1c50defbbd6b48c">fg_definitions.h</a>
+</li>
+<li>NCORE_CONFIG
+: <a class="el" href="fg__affinity_8h.html#a19602dbf51429aacb43173deb6544feba648ba5f90c79792a66377e61a794ab0e">fg_affinity.h</a>
+</li>
+<li>NCORE_CURRENT
+: <a class="el" href="fg__affinity_8h.html#a19602dbf51429aacb43173deb6544febad139d2c535a749a5c3b64a1140d38b55">fg_affinity.h</a>
+</li>
+<li>ncore_query
+: <a class="el" href="fg__affinity_8h.html#a19602dbf51429aacb43173deb6544feb">fg_affinity.h</a>
+</li>
+<li>NDEBUG
+: <a class="el" href="config_8h.html#a8de3ed741dadc9c979a4ff17c0a9116e">config.h</a>
 </li>
 <li>next_flow_id
 : <a class="el" href="daemon_8c.html#ac541951d97f17e4ddee74776dcbd6179">daemon.c</a>
 </li>
 <li>next_interpacket_gap()
-: <a class="el" href="trafgen_8c.html#a0c77954d92981af1a50dfd891658e75a">trafgen.c</a>
-, <a class="el" href="trafgen_8h.html#a977d7899c82b89813ec17e59c58639ad">trafgen.h</a>
+: <a class="el" href="trafgen_8c.html#ae3ebec7eeb55c6bfb03341576327e322">trafgen.c</a>
+, <a class="el" href="trafgen_8h.html#ae3204a7510cbed7d242f882e4e70dfd8">trafgen.h</a>
 </li>
 <li>next_request_block_size()
-: <a class="el" href="trafgen_8c.html#a21accfc16cef8d752a5701c7ac5efe2a">trafgen.c</a>
-, <a class="el" href="trafgen_8h.html#a321a8b580852b95cc55f603362d59914">trafgen.h</a>
+: <a class="el" href="trafgen_8c.html#adbe1cce2507b35cccf9f8941b152882c">trafgen.c</a>
+, <a class="el" href="trafgen_8h.html#a0dbfe44f6d4e7ab2d09ffda3c0b5a2a9">trafgen.h</a>
 </li>
 <li>next_response_block_size()
-: <a class="el" href="trafgen_8c.html#a6df6a5993724bdaf916cf7ffb0971255">trafgen.c</a>
-, <a class="el" href="trafgen_8h.html#a20851e5192bbde1b6296104960ad0778">trafgen.h</a>
+: <a class="el" href="trafgen_8c.html#ae5b2d6c86bbfe838e2168e2d19c9e06d">trafgen.c</a>
+, <a class="el" href="trafgen_8h.html#a4e2cfcedfc1a051b322ce5431b905b1c">trafgen.h</a>
 </li>
 <li>NORMAL
 : <a class="el" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a50d1448013c6f17125caee18aa418af7">common.h</a>
@@ -175,10 +189,6 @@ $(document).ready(function(){initNavTree('globals_n.html','');});
 <li>NSEC_PER_SEC
 : <a class="el" href="fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc">fg_time.h</a>
 </li>
-<li>num_flows
-: <a class="el" href="daemon_8h.html#aceef2e3272c4b5f19fd23cf235a3f354">daemon.h</a>
-, <a class="el" href="daemon_8c.html#aceef2e3272c4b5f19fd23cf235a3f354">daemon.c</a>
-</li>
 <li>num_unique_servers
 : <a class="el" href="flowgrind_8c.html#a1b9fdd98818052ef91ed58cc8557f257">flowgrind.c</a>
 </li>
@@ -188,7 +198,7 @@ $(document).ready(function(){initNavTree('globals_n.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue May 27 2014 09:21:58 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['visible',['visible',['../struct__column__state.html#ab90e7baa653e32645dbf44215952cf15',1,'_column_state']]]
+  ['visible',['visible',['../structcolumn__state.html#a15eb8176d875282073815b802248bd0b',1,'column_state']]]
 ];

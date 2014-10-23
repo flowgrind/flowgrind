@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('debug_8c.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -113,7 +113,7 @@ $(document).ready(function(){initNavTree('debug_8c.html','');});
 <p>Debugging routines for Flowgrind controller and daemon.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="debug_8h_source.html">debug.h</a>&quot;</code><br/>
-<code>#include &quot;config.h&quot;</code><br/>
+<code>#include &quot;<a class="el" href="config_8h_source.html">config.h</a>&quot;</code><br/>
 <code>#include &lt;stdio.h&gt;</code><br/>
 <code>#include &lt;time.h&gt;</code><br/>
 <code>#include &lt;string.h&gt;</code><br/>
@@ -175,9 +175,9 @@ Functions</h2></td></tr>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        last = now;</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <span class="keywordflow">return</span> buf;</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;}</div>
-<div class="ttc" id="fg__time_8c_html_ac2b9db9a31fa442023443d234787ef78"><div class="ttname"><a href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a></div><div class="ttdeci">int gettime(struct timespec *tp)</div><div class="ttdoc">Returns wall-clock time with nanosecond precision. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00115">fg_time.c:115</a></div></div>
-<div class="ttc" id="fg__time_8c_html_a1ce08f00b1930420282aa6422ce66f24"><div class="ttname"><a href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a></div><div class="ttdeci">double time_diff(const struct timespec *tp1, const struct timespec *tp2)</div><div class="ttdoc">Returns the time difference between two the specific points in time tp1 and tp2. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00067">fg_time.c:67</a></div></div>
-<div class="ttc" id="fg__time_8c_html_af56063ee3eea9ace1754c19ba3b5d206"><div class="ttname"><a href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a></div><div class="ttdeci">const char * ctimespec_r(const struct timespec *tp, char *buf, size_t size)</div><div class="ttdoc">Converts timespec struct tp into a null-terminated string and stores the string in a user-supplied bu...</div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00040">fg_time.c:40</a></div></div>
+<div class="ttc" id="fg__time_8c_html_ac2b9db9a31fa442023443d234787ef78"><div class="ttname"><a href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">gettime</a></div><div class="ttdeci">int gettime(struct timespec *tp)</div><div class="ttdoc">Returns the current wall-clock time with nanosecond precision. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00123">fg_time.c:123</a></div></div>
+<div class="ttc" id="fg__time_8c_html_a1ce08f00b1930420282aa6422ce66f24"><div class="ttname"><a href="fg__time_8c.html#a1ce08f00b1930420282aa6422ce66f24">time_diff</a></div><div class="ttdeci">double time_diff(const struct timespec *tp1, const struct timespec *tp2)</div><div class="ttdoc">Returns the time difference between two the specific points in time tp1 and tp2. </div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00073">fg_time.c:73</a></div></div>
+<div class="ttc" id="fg__time_8c_html_af56063ee3eea9ace1754c19ba3b5d206"><div class="ttname"><a href="fg__time_8c.html#af56063ee3eea9ace1754c19ba3b5d206">ctimespec_r</a></div><div class="ttdeci">const char * ctimespec_r(const struct timespec *tp, char *buf, size_t size)</div><div class="ttdoc">Converts timespec struct tp into a null-terminated string and stores the string in a user-supplied bu...</div><div class="ttdef"><b>Definition:</b> <a href="fg__time_8c_source.html#l00046">fg_time.c:46</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -208,9 +208,9 @@ Functions</h2></td></tr>
 <p>Definition at line <a class="el" href="debug_8c_source.html#l00043">43</a> of file <a class="el" href="debug_8c_source.html">debug.c</a>.</p>
 <div class="fragment"><div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;{</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;        <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>--;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        printf(<span class="stringliteral">&quot;DEBUG_LEVEL=%d&quot;</span>, <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>);</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;        printf(<span class="stringliteral">&quot;DEBUG_LEVEL=%u&quot;</span>, <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>);</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;}</div>
-<div class="ttc" id="debug_8h_html_aaa02d25ef5eac3392189e2fae80a6fad"><div class="ttname"><a href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a></div><div class="ttdeci">unsigned int debug_level</div><div class="ttdoc">Global debug level for flowgrind controller and daemon. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00063">debug.h:63</a></div></div>
+<div class="ttc" id="debug_8h_html_aaa02d25ef5eac3392189e2fae80a6fad"><div class="ttname"><a href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a></div><div class="ttdeci">unsigned int debug_level</div><div class="ttdoc">Global debug level for flowgrind controller and daemon. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00057">debug.h:57</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -241,9 +241,9 @@ Functions</h2></td></tr>
 <p>Definition at line <a class="el" href="debug_8c_source.html#l00049">49</a> of file <a class="el" href="debug_8c_source.html">debug.c</a>.</p>
 <div class="fragment"><div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;{</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;        <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>++;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        printf(<span class="stringliteral">&quot;DEBUG_LEVEL=%d\n&quot;</span>, <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;        printf(<span class="stringliteral">&quot;DEBUG_LEVEL=%u\n&quot;</span>, <a class="code" href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a>);</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;}</div>
-<div class="ttc" id="debug_8h_html_aaa02d25ef5eac3392189e2fae80a6fad"><div class="ttname"><a href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a></div><div class="ttdeci">unsigned int debug_level</div><div class="ttdoc">Global debug level for flowgrind controller and daemon. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00063">debug.h:63</a></div></div>
+<div class="ttc" id="debug_8h_html_aaa02d25ef5eac3392189e2fae80a6fad"><div class="ttname"><a href="debug_8h.html#aaa02d25ef5eac3392189e2fae80a6fad">debug_level</a></div><div class="ttdeci">unsigned int debug_level</div><div class="ttdoc">Global debug level for flowgrind controller and daemon. </div><div class="ttdef"><b>Definition:</b> <a href="debug_8h_source.html#l00057">debug.h:57</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -253,7 +253,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="debug_8c.html">debug.c</a></li>
-    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

@@ -7,8 +7,8 @@ var NAVTREE =
       [ "Data Structures", "annotated.html", "annotated" ],
       [ "Data Structure Index", "classes.html", null ],
       [ "Data Fields", "functions.html", [
-        [ "All", "functions.html", null ],
-        [ "Variables", "functions_vars.html", null ]
+        [ "All", "functions.html", "functions_dup" ],
+        [ "Variables", "functions_vars.html", "functions_vars" ]
       ] ]
     ] ],
     [ "Files", null, [
@@ -17,6 +17,7 @@ var NAVTREE =
         [ "All", "globals.html", "globals_dup" ],
         [ "Functions", "globals_func.html", "globals_func" ],
         [ "Variables", "globals_vars.html", null ],
+        [ "Typedefs", "globals_type.html", null ],
         [ "Enumerations", "globals_enum.html", null ],
         [ "Enumerator", "globals_eval.html", null ],
         [ "Macros", "globals_defs.html", null ]
@@ -28,9 +29,10 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"fg__socket_8h.html#a128d76deeb39f543de89cf0c52729101",
-"log_8c.html#a25b944869946ec9cc779773235b83c02",
-"struct__trafgen__options.html#a559f1bde2465b2c70f37261a46506fe0"
+"fg__affinity_8h.html#a62fedf32521ee5f1c85a9b46c5c7486e",
+"fg__time_8h.html#a801431f54cf89b9f658e3e29b2bba0fe",
+"log_8c.html",
+"structreport.html#ab0b9886231083d13efdd5e0e01038cc3"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['tcp_5fstack',['tcp_stack',['../flowgrind_8h.html#a815b8430f22a24a11d25db029a90baf7',1,'flowgrind.h']]]
+  ['ncore_5fquery',['ncore_query',['../fg__affinity_8h.html#a19602dbf51429aacb43173deb6544feb',1,'fg_affinity.h']]]
 ];

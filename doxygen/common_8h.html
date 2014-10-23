@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('common_8h.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -114,25 +114,27 @@ $(document).ready(function(){initNavTree('common_8h.html','');});
 
 <p>Data structures used by the Flowgrind daemon and controller.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;config.h&quot;</code><br/>
+<div class="textblock"><code>#include &quot;<a class="el" href="config_8h_source.html">config.h</a>&quot;</code><br/>
 <code>#include &quot;gitversion.h&quot;</code><br/>
 </div>
 <p><a href="common_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__block.html">_block</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flowgrind's data block layout.  <a href="struct__block.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structblock.html">block</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flowgrind's data block layout.  <a href="structblock.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__flow__settings_1_1__extra__socket__options.html">_flow_settings::_extra_socket_options</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structflow__settings_1_1extra__socket__options.html">flow_settings::extra_socket_options</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__fg__tcp__info.html">_fg_tcp_info</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structfg__tcp__info.html">fg_tcp_info</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__flow__settings.html">_flow_settings</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structflow__settings.html">flow_settings</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Settings that describe a flow between two endpoints.  <a href="structflow__settings.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__report.html">_report</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structreport.html">report</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__trafgen__options.html">_trafgen_options</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structtrafgen__options.html">trafgen_options</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options for stochastic traffic generation.  <a href="structtrafgen__options.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
@@ -143,35 +145,36 @@ Macros</h2></td></tr>
 <tr class="memitem:a6b7e8ee207cf41b6d54ec8ba365d2535"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a6b7e8ee207cf41b6d54ec8ba365d2535">FLOWGRIND_API_VERSION</a>&#160;&#160;&#160;3</td></tr>
 <tr class="memdesc:a6b7e8ee207cf41b6d54ec8ba365d2535"><td class="mdescLeft">&#160;</td><td class="mdescRight">XML-RPC API version in integer representation.  <a href="#a6b7e8ee207cf41b6d54ec8ba365d2535">More...</a><br/></td></tr>
 <tr class="separator:a6b7e8ee207cf41b6d54ec8ba365d2535"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaac969e1cc181f18608af5112510ea2c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#aaac969e1cc181f18608af5112510ea2c">FLOWGRIND_AUTHORS</a></td></tr>
+<tr class="memdesc:aaac969e1cc181f18608af5112510ea2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flowgrind's authors in a printable string.  <a href="#aaac969e1cc181f18608af5112510ea2c">More...</a><br/></td></tr>
+<tr class="separator:aaac969e1cc181f18608af5112510ea2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad581e7e550fd52f24f6b64e1469ae859"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#ad581e7e550fd52f24f6b64e1469ae859">FLOWGRIND_COPYING</a></td></tr>
+<tr class="memdesc:ad581e7e550fd52f24f6b64e1469ae859"><td class="mdescLeft">&#160;</td><td class="mdescRight">Standard GPL3 no warranty message.  <a href="#ad581e7e550fd52f24f6b64e1469ae859">More...</a><br/></td></tr>
+<tr class="separator:ad581e7e550fd52f24f6b64e1469ae859"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a987c6ce000336ba0760af735135d8cff"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a987c6ce000336ba0760af735135d8cff">FLOWGRIND_COPYRIGHT</a>&#160;&#160;&#160;&quot;Copyright (C) 2007 - 2014 Flowgrind authors.&quot;</td></tr>
+<tr class="memdesc:a987c6ce000336ba0760af735135d8cff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flowgrind's copyright year.  <a href="#a987c6ce000336ba0760af735135d8cff">More...</a><br/></td></tr>
+<tr class="separator:a987c6ce000336ba0760af735135d8cff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a67e3a5e6d1b103bd615c5de411177239"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a67e3a5e6d1b103bd615c5de411177239">FLOWGRIND_VERSION</a>&#160;&#160;&#160;GITVERSION</td></tr>
 <tr class="memdesc:a67e3a5e6d1b103bd615c5de411177239"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flowgrind version number.  <a href="#a67e3a5e6d1b103bd615c5de411177239">More...</a><br/></td></tr>
 <tr class="separator:a67e3a5e6d1b103bd615c5de411177239"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22d5973f37c892d2137175ec2fee19d5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a22d5973f37c892d2137175ec2fee19d5">MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH</a>&#160;&#160;&#160;100</td></tr>
+<tr class="memdesc:a22d5973f37c892d2137175ec2fee19d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ensures extra options are limited in length on both controller and deamon side.  <a href="#a22d5973f37c892d2137175ec2fee19d5">More...</a><br/></td></tr>
 <tr class="separator:a22d5973f37c892d2137175ec2fee19d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44290cfbe1b4727247d9fc624c6b5f74"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a44290cfbe1b4727247d9fc624c6b5f74">MAX_EXTRA_SOCKET_OPTIONS</a>&#160;&#160;&#160;10</td></tr>
+<tr class="memdesc:a44290cfbe1b4727247d9fc624c6b5f74"><td class="mdescLeft">&#160;</td><td class="mdescRight">Max number of arbitrary extra socket options which may be sent to the deamon.  <a href="#a44290cfbe1b4727247d9fc624c6b5f74">More...</a><br/></td></tr>
 <tr class="separator:a44290cfbe1b4727247d9fc624c6b5f74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a83bb9b191106d3b490a77b4fbe74c974"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a83bb9b191106d3b490a77b4fbe74c974">MAX_FLOWS</a>&#160;&#160;&#160;2048</td></tr>
 <tr class="memdesc:a83bb9b191106d3b490a77b4fbe74c974"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximal number of parallel flows.  <a href="#a83bb9b191106d3b490a77b4fbe74c974">More...</a><br/></td></tr>
 <tr class="separator:a83bb9b191106d3b490a77b4fbe74c974"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1f29ba54415975a2fa23e276fdf8a0f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#ac1f29ba54415975a2fa23e276fdf8a0f">MIN_BLOCK_SIZE</a>&#160;&#160;&#160;(signed) sizeof (struct <a class="el" href="struct__block.html">_block</a>)</td></tr>
+<tr class="memitem:ac1f29ba54415975a2fa23e276fdf8a0f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#ac1f29ba54415975a2fa23e276fdf8a0f">MIN_BLOCK_SIZE</a>&#160;&#160;&#160;(signed) sizeof (struct <a class="el" href="structblock.html">block</a>)</td></tr>
 <tr class="memdesc:ac1f29ba54415975a2fa23e276fdf8a0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minium block (message) size we can send.  <a href="#ac1f29ba54415975a2fa23e276fdf8a0f">More...</a><br/></td></tr>
 <tr class="separator:ac1f29ba54415975a2fa23e276fdf8a0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae1a783b83d4ba2bb4aa31daeabe67a40"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#ae1a783b83d4ba2bb4aa31daeabe67a40">TCP_CA_NAME_MAX</a>&#160;&#160;&#160;16</td></tr>
+<tr class="memdesc:ae1a783b83d4ba2bb4aa31daeabe67a40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Max size of the congestion control algorithm specifier string.  <a href="#ae1a783b83d4ba2bb4aa31daeabe67a40">More...</a><br/></td></tr>
 <tr class="separator:ae1a783b83d4ba2bb4aa31daeabe67a40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a69da082bcf8517bec204dc4a7e2237e7"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7">_extra_socket_option_level</a> { <br/>
-&#160;&#160;<a class="el" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a4408646d55b725feed6715de7902ebf4">level_sol_socket</a>, 
-<a class="el" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a091198499b13ce6a4672143fbea3527e">level_sol_tcp</a>, 
-<a class="el" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7acadbb25555e5ecf1657bd5fee1b41e66">level_ipproto_ip</a>, 
-<a class="el" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a36587752a2be3a063f382c0997e8f36e">level_ipproto_sctp</a>, 
-<br/>
-&#160;&#160;<a class="el" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7afa8fd18ddb40f762f6a278f50f0f8d50">level_ipproto_tcp</a>, 
-<a class="el" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a9e88880373e101d2c96f2beb55b72364">level_ipproto_udp</a>
-<br/>
- }</td></tr>
-<tr class="separator:a69da082bcf8517bec204dc4a7e2237e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afe99a27e9d388ccb382ae15afca86804"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804">distributions</a> { <br/>
 &#160;&#160;<a class="el" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a83972670b57415508523b5641bb46116">CONSTANT</a> = 0, 
 <a class="el" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a50d1448013c6f17125caee18aa418af7">NORMAL</a>, 
@@ -185,11 +188,22 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:afe99a27e9d388ccb382ae15afca86804"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stochastic distributions for traffic generation.  <a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804">More...</a><br/></td></tr>
 <tr class="separator:afe99a27e9d388ccb382ae15afca86804"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a36d949e26d4bc91bf3f97176c135fb5b"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5b">flow_endpoint</a> { <a class="el" href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5ba0159491ea913604389155db907e0d1c0">SOURCE</a> = 0, 
-<a class="el" href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5ba22f853bba9ebb23d90508dc6496b746c">DESTINATION</a>
+<tr class="memitem:a413eaa5f6866b1c5f00fc612e7afadc5"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5">extra_socket_option_level</a> { <br/>
+&#160;&#160;<a class="el" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a4408646d55b725feed6715de7902ebf4">level_sol_socket</a>, 
+<a class="el" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a091198499b13ce6a4672143fbea3527e">level_sol_tcp</a>, 
+<a class="el" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5acadbb25555e5ecf1657bd5fee1b41e66">level_ipproto_ip</a>, 
+<a class="el" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a36587752a2be3a063f382c0997e8f36e">level_ipproto_sctp</a>, 
+<br/>
+&#160;&#160;<a class="el" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5afa8fd18ddb40f762f6a278f50f0f8d50">level_ipproto_tcp</a>, 
+<a class="el" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a9e88880373e101d2c96f2beb55b72364">level_ipproto_udp</a>
+<br/>
  }</td></tr>
-<tr class="memdesc:a36d949e26d4bc91bf3f97176c135fb5b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flow endpoint.  <a href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5b">More...</a><br/></td></tr>
-<tr class="separator:a36d949e26d4bc91bf3f97176c135fb5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a413eaa5f6866b1c5f00fc612e7afadc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ce1128c4f31eb3b18469da81c255fdf"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdf">flow_endpoint_type</a> { <a class="el" href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdfa0159491ea913604389155db907e0d1c0">SOURCE</a> = 0, 
+<a class="el" href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdfa22f853bba9ebb23d90508dc6496b746c">DESTINATION</a>
+ }</td></tr>
+<tr class="memdesc:a8ce1128c4f31eb3b18469da81c255fdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flow endpoint types.  <a href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdf">More...</a><br/></td></tr>
+<tr class="separator:a8ce1128c4f31eb3b18469da81c255fdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af377beb7ca9bd4c4d525c8750d9a1da0"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0">interval_type</a> { <a class="el" href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0a15685f61e1f7ab09f7543d6ffbb51ac6">INTERVAL</a> = 0, 
 <a class="el" href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5">FINAL</a>
  }</td></tr>
@@ -238,6 +252,59 @@ Enumerations</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="aaac969e1cc181f18608af5112510ea2c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define FLOWGRIND_AUTHORS</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line"><span class="stringliteral">&quot;Written by Arnd Hannemann, Tim Kosse, Christian Samsel, Daniel Schaffrath\n&quot;</span>       \</div>
+<div class="line">        <span class="stringliteral">&quot;and Alexander Zimmermann.&quot;</span></div>
+</div><!-- fragment -->
+<p>Flowgrind's authors in a printable string. </p>
+
+<p>Definition at line <a class="el" href="common_8h_source.html#l00080">80</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="ad581e7e550fd52f24f6b64e1469ae859"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define FLOWGRIND_COPYING</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line"><span class="stringliteral">&quot;License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;.\n&quot;</span>  \</div>
+<div class="line">        <span class="stringliteral">&quot;This is free software: you are free to change and redistribute it.\n&quot;</span>              \</div>
+<div class="line">        <span class="stringliteral">&quot;There is NO WARRANTY, to the extent permitted by law.&quot;</span></div>
+</div><!-- fragment -->
+<p>Standard GPL3 no warranty message. </p>
+
+<p>Definition at line <a class="el" href="common_8h_source.html#l00074">74</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a987c6ce000336ba0760af735135d8cff"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define FLOWGRIND_COPYRIGHT&#160;&#160;&#160;&quot;Copyright (C) 2007 - 2014 Flowgrind authors.&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Flowgrind's copyright year. </p>
+
+<p>Definition at line <a class="el" href="common_8h_source.html#l00071">71</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
+
+</div>
+</div>
 <a class="anchor" id="a67e3a5e6d1b103bd615c5de411177239"></a>
 <div class="memitem">
 <div class="memproto">
@@ -264,6 +331,8 @@ Enumerations</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Ensures extra options are limited in length on both controller and deamon side. </p>
+
 <p>Definition at line <a class="el" href="common_8h_source.html#l00060">60</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
 
 </div>
@@ -277,6 +346,8 @@ Enumerations</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Max number of arbitrary extra socket options which may be sent to the deamon. </p>
 
 <p>Definition at line <a class="el" href="common_8h_source.html#l00057">57</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
 
@@ -303,7 +374,7 @@ Enumerations</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define MIN_BLOCK_SIZE&#160;&#160;&#160;(signed) sizeof (struct <a class="el" href="struct__block.html">_block</a>)</td>
+          <td class="memname">#define MIN_BLOCK_SIZE&#160;&#160;&#160;(signed) sizeof (struct <a class="el" href="structblock.html">block</a>)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -324,53 +395,13 @@ Enumerations</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Max size of the congestion control algorithm specifier string. </p>
+
 <p>Definition at line <a class="el" href="common_8h_source.html#l00064">64</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
-<a class="anchor" id="a69da082bcf8517bec204dc4a7e2237e7"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7">_extra_socket_option_level</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a69da082bcf8517bec204dc4a7e2237e7a4408646d55b725feed6715de7902ebf4"></a>level_sol_socket</em>&#160;</td><td class="fielddoc">
-</td></tr>
-<tr><td class="fieldname"><em><a class="anchor" id="a69da082bcf8517bec204dc4a7e2237e7a091198499b13ce6a4672143fbea3527e"></a>level_sol_tcp</em>&#160;</td><td class="fielddoc">
-</td></tr>
-<tr><td class="fieldname"><em><a class="anchor" id="a69da082bcf8517bec204dc4a7e2237e7acadbb25555e5ecf1657bd5fee1b41e66"></a>level_ipproto_ip</em>&#160;</td><td class="fielddoc">
-</td></tr>
-<tr><td class="fieldname"><em><a class="anchor" id="a69da082bcf8517bec204dc4a7e2237e7a36587752a2be3a063f382c0997e8f36e"></a>level_ipproto_sctp</em>&#160;</td><td class="fielddoc">
-</td></tr>
-<tr><td class="fieldname"><em><a class="anchor" id="a69da082bcf8517bec204dc4a7e2237e7afa8fd18ddb40f762f6a278f50f0f8d50"></a>level_ipproto_tcp</em>&#160;</td><td class="fielddoc">
-</td></tr>
-<tr><td class="fieldname"><em><a class="anchor" id="a69da082bcf8517bec204dc4a7e2237e7a9e88880373e101d2c96f2beb55b72364"></a>level_ipproto_udp</em>&#160;</td><td class="fielddoc">
-</td></tr>
-</table>
-
-<p>Definition at line <a class="el" href="common_8h_source.html#l00095">95</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;                                {</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        <a class="code" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a4408646d55b725feed6715de7902ebf4">level_sol_socket</a>,</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <a class="code" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a091198499b13ce6a4672143fbea3527e">level_sol_tcp</a>,</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <a class="code" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7acadbb25555e5ecf1657bd5fee1b41e66">level_ipproto_ip</a>,</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        <a class="code" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a36587752a2be3a063f382c0997e8f36e">level_ipproto_sctp</a>,</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;        <a class="code" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7afa8fd18ddb40f762f6a278f50f0f8d50">level_ipproto_tcp</a>,</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <a class="code" href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a9e88880373e101d2c96f2beb55b72364">level_ipproto_udp</a></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;};</div>
-<div class="ttc" id="common_8h_html_a69da082bcf8517bec204dc4a7e2237e7a36587752a2be3a063f382c0997e8f36e"><div class="ttname"><a href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a36587752a2be3a063f382c0997e8f36e">level_ipproto_sctp</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00099">common.h:99</a></div></div>
-<div class="ttc" id="common_8h_html_a69da082bcf8517bec204dc4a7e2237e7acadbb25555e5ecf1657bd5fee1b41e66"><div class="ttname"><a href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7acadbb25555e5ecf1657bd5fee1b41e66">level_ipproto_ip</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00098">common.h:98</a></div></div>
-<div class="ttc" id="common_8h_html_a69da082bcf8517bec204dc4a7e2237e7a9e88880373e101d2c96f2beb55b72364"><div class="ttname"><a href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a9e88880373e101d2c96f2beb55b72364">level_ipproto_udp</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00101">common.h:101</a></div></div>
-<div class="ttc" id="common_8h_html_a69da082bcf8517bec204dc4a7e2237e7a091198499b13ce6a4672143fbea3527e"><div class="ttname"><a href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a091198499b13ce6a4672143fbea3527e">level_sol_tcp</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00097">common.h:97</a></div></div>
-<div class="ttc" id="common_8h_html_a69da082bcf8517bec204dc4a7e2237e7afa8fd18ddb40f762f6a278f50f0f8d50"><div class="ttname"><a href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7afa8fd18ddb40f762f6a278f50f0f8d50">level_ipproto_tcp</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00100">common.h:100</a></div></div>
-<div class="ttc" id="common_8h_html_a69da082bcf8517bec204dc4a7e2237e7a4408646d55b725feed6715de7902ebf4"><div class="ttname"><a href="common_8h.html#a69da082bcf8517bec204dc4a7e2237e7a4408646d55b725feed6715de7902ebf4">level_sol_socket</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00096">common.h:96</a></div></div>
-</div><!-- fragment -->
-</div>
-</div>
 <a class="anchor" id="afe99a27e9d388ccb382ae15afca86804"></a>
 <div class="memitem">
 <div class="memproto">
@@ -406,53 +437,95 @@ Enumerations</h2></td></tr>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="common_8h_source.html#l00105">105</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                   {</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a83972670b57415508523b5641bb46116">CONSTANT</a> = 0,</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a50d1448013c6f17125caee18aa418af7">NORMAL</a>,</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a2ee5189a88174109162db9c85e4a60e6">WEIBULL</a>,</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a8f44784d154005a214e0fe94119d28ef">UNIFORM</a>,</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804aa6055a3a8ab1aed0594419b51d9ec15e">EXPONENTIAL</a>,</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a44a09e0cde7c50152e01592e9ed8c34b">PARETO</a>,</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804abcb6ca3c8a8db95947ea255012ebb440">LOGNORMAL</a></div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;};</div>
-<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a83972670b57415508523b5641bb46116"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a83972670b57415508523b5641bb46116">CONSTANT</a></div><div class="ttdoc">No stochastic distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00107">common.h:107</a></div></div>
-<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804abcb6ca3c8a8db95947ea255012ebb440"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804abcb6ca3c8a8db95947ea255012ebb440">LOGNORMAL</a></div><div class="ttdoc">Log Normal distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00119">common.h:119</a></div></div>
-<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a2ee5189a88174109162db9c85e4a60e6"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a2ee5189a88174109162db9c85e4a60e6">WEIBULL</a></div><div class="ttdoc">Weibull distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00111">common.h:111</a></div></div>
-<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804aa6055a3a8ab1aed0594419b51d9ec15e"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804aa6055a3a8ab1aed0594419b51d9ec15e">EXPONENTIAL</a></div><div class="ttdoc">Exponential distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00115">common.h:115</a></div></div>
-<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a8f44784d154005a214e0fe94119d28ef"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a8f44784d154005a214e0fe94119d28ef">UNIFORM</a></div><div class="ttdoc">Uniform distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00113">common.h:113</a></div></div>
-<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a44a09e0cde7c50152e01592e9ed8c34b"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a44a09e0cde7c50152e01592e9ed8c34b">PARETO</a></div><div class="ttdoc">Pareto distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00117">common.h:117</a></div></div>
-<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a50d1448013c6f17125caee18aa418af7"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a50d1448013c6f17125caee18aa418af7">NORMAL</a></div><div class="ttdoc">Normal distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00109">common.h:109</a></div></div>
+<p>Definition at line <a class="el" href="common_8h_source.html#l00119">119</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;                   {</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a83972670b57415508523b5641bb46116">CONSTANT</a> = 0,</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a50d1448013c6f17125caee18aa418af7">NORMAL</a>,</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a2ee5189a88174109162db9c85e4a60e6">WEIBULL</a>,</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a8f44784d154005a214e0fe94119d28ef">UNIFORM</a>,</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804aa6055a3a8ab1aed0594419b51d9ec15e">EXPONENTIAL</a>,</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a44a09e0cde7c50152e01592e9ed8c34b">PARETO</a>,</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        <a class="code" href="common_8h.html#afe99a27e9d388ccb382ae15afca86804abcb6ca3c8a8db95947ea255012ebb440">LOGNORMAL</a></div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;};</div>
+<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a83972670b57415508523b5641bb46116"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a83972670b57415508523b5641bb46116">CONSTANT</a></div><div class="ttdoc">No stochastic distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00121">common.h:121</a></div></div>
+<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804abcb6ca3c8a8db95947ea255012ebb440"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804abcb6ca3c8a8db95947ea255012ebb440">LOGNORMAL</a></div><div class="ttdoc">Log Normal distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00133">common.h:133</a></div></div>
+<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a2ee5189a88174109162db9c85e4a60e6"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a2ee5189a88174109162db9c85e4a60e6">WEIBULL</a></div><div class="ttdoc">Weibull distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00125">common.h:125</a></div></div>
+<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804aa6055a3a8ab1aed0594419b51d9ec15e"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804aa6055a3a8ab1aed0594419b51d9ec15e">EXPONENTIAL</a></div><div class="ttdoc">Exponential distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00129">common.h:129</a></div></div>
+<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a8f44784d154005a214e0fe94119d28ef"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a8f44784d154005a214e0fe94119d28ef">UNIFORM</a></div><div class="ttdoc">Uniform distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00127">common.h:127</a></div></div>
+<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a44a09e0cde7c50152e01592e9ed8c34b"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a44a09e0cde7c50152e01592e9ed8c34b">PARETO</a></div><div class="ttdoc">Pareto distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00131">common.h:131</a></div></div>
+<div class="ttc" id="common_8h_html_afe99a27e9d388ccb382ae15afca86804a50d1448013c6f17125caee18aa418af7"><div class="ttname"><a href="common_8h.html#afe99a27e9d388ccb382ae15afca86804a50d1448013c6f17125caee18aa418af7">NORMAL</a></div><div class="ttdoc">Normal distribution. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00123">common.h:123</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
-<a class="anchor" id="a36d949e26d4bc91bf3f97176c135fb5b"></a>
+<a class="anchor" id="a413eaa5f6866b1c5f00fc612e7afadc5"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">enum <a class="el" href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5b">flow_endpoint</a></td>
+          <td class="memname">enum <a class="el" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5">extra_socket_option_level</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a413eaa5f6866b1c5f00fc612e7afadc5a4408646d55b725feed6715de7902ebf4"></a>level_sol_socket</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a413eaa5f6866b1c5f00fc612e7afadc5a091198499b13ce6a4672143fbea3527e"></a>level_sol_tcp</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a413eaa5f6866b1c5f00fc612e7afadc5acadbb25555e5ecf1657bd5fee1b41e66"></a>level_ipproto_ip</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a413eaa5f6866b1c5f00fc612e7afadc5a36587752a2be3a063f382c0997e8f36e"></a>level_ipproto_sctp</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a413eaa5f6866b1c5f00fc612e7afadc5afa8fd18ddb40f762f6a278f50f0f8d50"></a>level_ipproto_tcp</em>&#160;</td><td class="fielddoc">
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a413eaa5f6866b1c5f00fc612e7afadc5a9e88880373e101d2c96f2beb55b72364"></a>level_ipproto_udp</em>&#160;</td><td class="fielddoc">
+</td></tr>
+</table>
+
+<p>Definition at line <a class="el" href="common_8h_source.html#l00109">109</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;                               {</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        <a class="code" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a4408646d55b725feed6715de7902ebf4">level_sol_socket</a>,</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <a class="code" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a091198499b13ce6a4672143fbea3527e">level_sol_tcp</a>,</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;        <a class="code" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5acadbb25555e5ecf1657bd5fee1b41e66">level_ipproto_ip</a>,</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;        <a class="code" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a36587752a2be3a063f382c0997e8f36e">level_ipproto_sctp</a>,</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;        <a class="code" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5afa8fd18ddb40f762f6a278f50f0f8d50">level_ipproto_tcp</a>,</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;        <a class="code" href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a9e88880373e101d2c96f2beb55b72364">level_ipproto_udp</a></div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;};</div>
+<div class="ttc" id="common_8h_html_a413eaa5f6866b1c5f00fc612e7afadc5afa8fd18ddb40f762f6a278f50f0f8d50"><div class="ttname"><a href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5afa8fd18ddb40f762f6a278f50f0f8d50">level_ipproto_tcp</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00114">common.h:114</a></div></div>
+<div class="ttc" id="common_8h_html_a413eaa5f6866b1c5f00fc612e7afadc5a4408646d55b725feed6715de7902ebf4"><div class="ttname"><a href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a4408646d55b725feed6715de7902ebf4">level_sol_socket</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00110">common.h:110</a></div></div>
+<div class="ttc" id="common_8h_html_a413eaa5f6866b1c5f00fc612e7afadc5a9e88880373e101d2c96f2beb55b72364"><div class="ttname"><a href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a9e88880373e101d2c96f2beb55b72364">level_ipproto_udp</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00115">common.h:115</a></div></div>
+<div class="ttc" id="common_8h_html_a413eaa5f6866b1c5f00fc612e7afadc5a36587752a2be3a063f382c0997e8f36e"><div class="ttname"><a href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a36587752a2be3a063f382c0997e8f36e">level_ipproto_sctp</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00113">common.h:113</a></div></div>
+<div class="ttc" id="common_8h_html_a413eaa5f6866b1c5f00fc612e7afadc5acadbb25555e5ecf1657bd5fee1b41e66"><div class="ttname"><a href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5acadbb25555e5ecf1657bd5fee1b41e66">level_ipproto_ip</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00112">common.h:112</a></div></div>
+<div class="ttc" id="common_8h_html_a413eaa5f6866b1c5f00fc612e7afadc5a091198499b13ce6a4672143fbea3527e"><div class="ttname"><a href="common_8h.html#a413eaa5f6866b1c5f00fc612e7afadc5a091198499b13ce6a4672143fbea3527e">level_sol_tcp</a></div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00111">common.h:111</a></div></div>
+</div><!-- fragment -->
+</div>
+</div>
+<a class="anchor" id="a8ce1128c4f31eb3b18469da81c255fdf"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdf">flow_endpoint_type</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Flow endpoint. </p>
+<p>Flow endpoint types. </p>
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a36d949e26d4bc91bf3f97176c135fb5ba0159491ea913604389155db907e0d1c0"></a>SOURCE</em>&#160;</td><td class="fielddoc">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a8ce1128c4f31eb3b18469da81c255fdfa0159491ea913604389155db907e0d1c0"></a>SOURCE</em>&#160;</td><td class="fielddoc">
 <p>Endpoint that opens the connection. </p>
 </td></tr>
-<tr><td class="fieldname"><em><a class="anchor" id="a36d949e26d4bc91bf3f97176c135fb5ba22f853bba9ebb23d90508dc6496b746c"></a>DESTINATION</em>&#160;</td><td class="fielddoc">
+<tr><td class="fieldname"><em><a class="anchor" id="a8ce1128c4f31eb3b18469da81c255fdfa22f853bba9ebb23d90508dc6496b746c"></a>DESTINATION</em>&#160;</td><td class="fielddoc">
 <p>Endpoint that accepts the connection. </p>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="common_8h_source.html#l00071">71</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;                   {</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <a class="code" href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5ba0159491ea913604389155db907e0d1c0">SOURCE</a> = 0,</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <a class="code" href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5ba22f853bba9ebb23d90508dc6496b746c">DESTINATION</a>,</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;};</div>
-<div class="ttc" id="common_8h_html_a36d949e26d4bc91bf3f97176c135fb5ba0159491ea913604389155db907e0d1c0"><div class="ttname"><a href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5ba0159491ea913604389155db907e0d1c0">SOURCE</a></div><div class="ttdoc">Endpoint that opens the connection. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00073">common.h:73</a></div></div>
-<div class="ttc" id="common_8h_html_a36d949e26d4bc91bf3f97176c135fb5ba22f853bba9ebb23d90508dc6496b746c"><div class="ttname"><a href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5ba22f853bba9ebb23d90508dc6496b746c">DESTINATION</a></div><div class="ttdoc">Endpoint that accepts the connection. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00075">common.h:75</a></div></div>
+<p>Definition at line <a class="el" href="common_8h_source.html#l00085">85</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;                        {</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <a class="code" href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdfa0159491ea913604389155db907e0d1c0">SOURCE</a> = 0,</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <a class="code" href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdfa22f853bba9ebb23d90508dc6496b746c">DESTINATION</a>,</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;};</div>
+<div class="ttc" id="common_8h_html_a8ce1128c4f31eb3b18469da81c255fdfa0159491ea913604389155db907e0d1c0"><div class="ttname"><a href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdfa0159491ea913604389155db907e0d1c0">SOURCE</a></div><div class="ttdoc">Endpoint that opens the connection. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00087">common.h:87</a></div></div>
+<div class="ttc" id="common_8h_html_a8ce1128c4f31eb3b18469da81c255fdfa22f853bba9ebb23d90508dc6496b746c"><div class="ttname"><a href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdfa22f853bba9ebb23d90508dc6496b746c">DESTINATION</a></div><div class="ttdoc">Endpoint that accepts the connection. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00089">common.h:89</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -476,13 +549,13 @@ Enumerations</h2></td></tr>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="common_8h_source.html#l00087">87</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;                   {</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <a class="code" href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0a15685f61e1f7ab09f7543d6ffbb51ac6">INTERVAL</a> = 0,</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <a class="code" href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5">FINAL</a></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;};</div>
-<div class="ttc" id="common_8h_html_af377beb7ca9bd4c4d525c8750d9a1da0a15685f61e1f7ab09f7543d6ffbb51ac6"><div class="ttname"><a href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0a15685f61e1f7ab09f7543d6ffbb51ac6">INTERVAL</a></div><div class="ttdoc">Intermediated interval report. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00089">common.h:89</a></div></div>
-<div class="ttc" id="common_8h_html_af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5"><div class="ttname"><a href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5">FINAL</a></div><div class="ttdoc">Final report. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00091">common.h:91</a></div></div>
+<p>Definition at line <a class="el" href="common_8h_source.html#l00101">101</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;                   {</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <a class="code" href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0a15685f61e1f7ab09f7543d6ffbb51ac6">INTERVAL</a> = 0,</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <a class="code" href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5">FINAL</a></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;};</div>
+<div class="ttc" id="common_8h_html_af377beb7ca9bd4c4d525c8750d9a1da0a15685f61e1f7ab09f7543d6ffbb51ac6"><div class="ttname"><a href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0a15685f61e1f7ab09f7543d6ffbb51ac6">INTERVAL</a></div><div class="ttdoc">Intermediated interval report. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00103">common.h:103</a></div></div>
+<div class="ttc" id="common_8h_html_af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5"><div class="ttname"><a href="common_8h.html#af377beb7ca9bd4c4d525c8750d9a1da0afb43b8264ea4d3dd9957ba1b3fd3f3d5">FINAL</a></div><div class="ttdoc">Final report. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00105">common.h:105</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -506,13 +579,13 @@ Enumerations</h2></td></tr>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="common_8h_source.html#l00079">79</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;            {</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;        <a class="code" href="common_8h.html#a293fc233ee9e66fddd4a3ed8a2c70108a61aa7ff70b76bff0fda378cf61d6afbc">WRITE</a> = 0,</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <a class="code" href="common_8h.html#a293fc233ee9e66fddd4a3ed8a2c70108acb9be765f361bb7efb9073730aac92c6">READ</a></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;};</div>
-<div class="ttc" id="common_8h_html_a293fc233ee9e66fddd4a3ed8a2c70108a61aa7ff70b76bff0fda378cf61d6afbc"><div class="ttname"><a href="common_8h.html#a293fc233ee9e66fddd4a3ed8a2c70108a61aa7ff70b76bff0fda378cf61d6afbc">WRITE</a></div><div class="ttdoc">Write operation. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00081">common.h:81</a></div></div>
-<div class="ttc" id="common_8h_html_a293fc233ee9e66fddd4a3ed8a2c70108acb9be765f361bb7efb9073730aac92c6"><div class="ttname"><a href="common_8h.html#a293fc233ee9e66fddd4a3ed8a2c70108acb9be765f361bb7efb9073730aac92c6">READ</a></div><div class="ttdoc">Read operation. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00083">common.h:83</a></div></div>
+<p>Definition at line <a class="el" href="common_8h_source.html#l00093">93</a> of file <a class="el" href="common_8h_source.html">common.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            {</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        <a class="code" href="common_8h.html#a293fc233ee9e66fddd4a3ed8a2c70108a61aa7ff70b76bff0fda378cf61d6afbc">WRITE</a> = 0,</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <a class="code" href="common_8h.html#a293fc233ee9e66fddd4a3ed8a2c70108acb9be765f361bb7efb9073730aac92c6">READ</a></div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;};</div>
+<div class="ttc" id="common_8h_html_a293fc233ee9e66fddd4a3ed8a2c70108a61aa7ff70b76bff0fda378cf61d6afbc"><div class="ttname"><a href="common_8h.html#a293fc233ee9e66fddd4a3ed8a2c70108a61aa7ff70b76bff0fda378cf61d6afbc">WRITE</a></div><div class="ttdoc">Write operation. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00095">common.h:95</a></div></div>
+<div class="ttc" id="common_8h_html_a293fc233ee9e66fddd4a3ed8a2c70108acb9be765f361bb7efb9073730aac92c6"><div class="ttname"><a href="common_8h.html#a293fc233ee9e66fddd4a3ed8a2c70108acb9be765f361bb7efb9073730aac92c6">READ</a></div><div class="ttdoc">Read operation. </div><div class="ttdef"><b>Definition:</b> <a href="common_8h_source.html#l00097">common.h:97</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -522,7 +595,7 @@ Enumerations</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="common_8h.html">common.h</a></li>
-    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:28 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

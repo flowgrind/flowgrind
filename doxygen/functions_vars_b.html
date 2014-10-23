@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -123,7 +123,7 @@ $(document).ready(function(){initNavTree('functions_vars_b.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -137,22 +137,22 @@ $(document).ready(function(){initNavTree('functions_vars_b.html','');});
 
 <h3><a class="anchor" id="index_b"></a>- b -</h3><ul>
 <li>begin
-: <a class="el" href="struct__report.html#a5d81175f00c4a1c14a07e0bf3853c5a3">_report</a>
+: <a class="el" href="structreport.html#ae81ba92c32db53c978e9367ea9d0ebba">report</a>
 </li>
 <li>bind_address
-: <a class="el" href="struct__flow__settings.html#a6326a0e56950ac24bc5ebceaf8058c05">_flow_settings</a>
+: <a class="el" href="structflow__settings.html#afcde8c9da11b85204968beb70542dadb">flow_settings</a>
 </li>
 <li>byte_counting
-: <a class="el" href="struct__cflow.html#a122681cf8ff555a852ea1603b0c69605">_cflow</a>
-, <a class="el" href="struct__flow__settings.html#a687dfcbb96731f7d82bccde4cfac829b">_flow_settings</a>
+: <a class="el" href="structcflow.html#a715a0c2fdd63cfff55c09d3e925a4742">cflow</a>
+, <a class="el" href="structflow__settings.html#abc6728769659e18a72dd12549d4f6f94">flow_settings</a>
 </li>
 <li>bytes_read
-: <a class="el" href="struct__flow_1_1__statistics.html#afe259175570a5b6a2ac77b7fbf8060f2">_flow::_statistics</a>
-, <a class="el" href="struct__report.html#a85f36c0945cd60b20d73d5ea4efb68a6">_report</a>
+: <a class="el" href="structflow_1_1statistics.html#a836b134622386d1fc94becbcc117cb32">flow::statistics</a>
+, <a class="el" href="structreport.html#aef54fe7e2baef46bb8e00977474ba566">report</a>
 </li>
 <li>bytes_written
-: <a class="el" href="struct__flow_1_1__statistics.html#a68e54bd0d24a746164319d6049f0b5f2">_flow::_statistics</a>
-, <a class="el" href="struct__report.html#adb6fd303ecc9a8b15f7531d6159376cd">_report</a>
+: <a class="el" href="structflow_1_1statistics.html#a80c710aaf10a41c6a467d34bd9bac81d">flow::statistics</a>
+, <a class="el" href="structreport.html#a7330324173edbf9bb4f0efc9b7a534ab">report</a>
 </li>
 </ul>
 </div><!-- contents -->
@@ -160,7 +160,7 @@ $(document).ready(function(){initNavTree('functions_vars_b.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Thu Apr 10 2014 14:28:23 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

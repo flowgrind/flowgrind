@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('flowgrind_8h.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -114,7 +114,7 @@ $(document).ready(function(){initNavTree('flowgrind_8h.html','');});
 
 <p>Flowgrind controller.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;config.h&quot;</code><br/>
+<div class="textblock"><code>#include &quot;<a class="el" href="config_8h_source.html">config.h</a>&quot;</code><br/>
 <code>#include &lt;stdbool.h&gt;</code><br/>
 <code>#include &lt;limits.h&gt;</code><br/>
 <code>#include &quot;<a class="el" href="common_8h_source.html">common.h</a>&quot;</code><br/>
@@ -123,26 +123,26 @@ $(document).ready(function(){initNavTree('flowgrind_8h.html','');});
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__cflow.html">_cflow</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Infos about the flow including flow options.  <a href="struct__cflow.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcflow.html">cflow</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Infos about the flow including flow options.  <a href="structcflow.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__column.html">_column</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intermediated interval report column.  <a href="struct__column.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcolumn.html">column</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intermediated interval report column.  <a href="structcolumn.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__column__header.html">_column_header</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Header of an intermediated interval report column.  <a href="struct__column__header.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcolumn__header.html">column_header</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Header of an intermediated interval report column.  <a href="structcolumn__header.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__column__state.html">_column_state</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">State of an intermediated interval report column.  <a href="struct__column__state.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcolumn__state.html">column_state</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">State of an intermediated interval report column.  <a href="structcolumn__state.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__controller__options.html">_controller_options</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Controller options.  <a href="struct__controller__options.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcontroller__options.html">controller_options</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Controller options.  <a href="structcontroller__options.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__daemon.html">_daemon</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Infos about a flowgrind daemon.  <a href="struct__daemon.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structdaemon.html">daemon</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Infos about a flowgrind daemon.  <a href="structdaemon.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__flow__endpoint.html">_flow_endpoint</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Infos about the flow endpoint.  <a href="struct__flow__endpoint.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structflow__endpoint.html">flow_endpoint</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Infos about the flow endpoint.  <a href="structflow__endpoint.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
@@ -199,11 +199,24 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:a012a3bb7e27a2d842441b4fbf4a71c3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">IDs to explicit address an intermediated interval report column.  <a href="flowgrind_8h.html#a012a3bb7e27a2d842441b4fbf4a71c3c">More...</a><br/></td></tr>
 <tr class="separator:a012a3bb7e27a2d842441b4fbf4a71c3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d29beb503cd27927990a55971956322"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322">long_opt_only</a> { <a class="el" href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322a026276ebc78eca67db6fbe1d7c044a7a">HELP_OPTION</a> = CHAR_MAX + 1, 
-<a class="el" href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d">LOG_FILE_OPTION</a>
+<tr class="memitem:a2d29beb503cd27927990a55971956322"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322">long_opt_only</a> { <a class="el" href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d">LOG_FILE_OPTION</a> = CHAR_MAX + 1
  }</td></tr>
 <tr class="memdesc:a2d29beb503cd27927990a55971956322"><td class="mdescLeft">&#160;</td><td class="mdescRight">For long options with no equivalent short option, use a pseudo short option.  <a href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322">More...</a><br/></td></tr>
 <tr class="separator:a2d29beb503cd27927990a55971956322"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac78d11830c319470167dd394edc0e8d0"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0">mutex_contexts</a> { <a class="el" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0ab0ae825d06311783b17382379fec8bc0">MUTEX_CONTEXT_CONTROLLER</a> = 0, 
+<a class="el" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0a15ec7755740ff89d770678038de2c075">MUTEX_CONTEXT_TWO_SIDED</a>, 
+<a class="el" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0aa0cf7859897335b91ffac48dc85c02bd">MUTEX_CONTEXT_SOURCE</a>, 
+<a class="el" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0a5c74f2afe887d5d550a53653ab49cb02">MUTEX_CONTEXT_DESTINATION</a>
+ }</td></tr>
+<tr class="memdesc:ac78d11830c319470167dd394edc0e8d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mutual exclusion contexts for options.  <a href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0">More...</a><br/></td></tr>
+<tr class="separator:ac78d11830c319470167dd394edc0e8d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:accacadfbbe7139089a7d26353f8756ad"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ad">opt_types</a> { <a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada7abbca9a7d60d8f191414c88c87e2eee">OPT_CONTROLLER</a>, 
+<a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada49a9c1952e87b856c69a7fe858f59430">OPT_SELECTOR</a>, 
+<a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29d8becf0391ae9c7d5653cf091cf728">OPT_FLOW</a>, 
+<a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29357690b8081d175548f693c32fcbb4">OPT_FLOW_ENDPOINT</a>
+ }</td></tr>
+<tr class="memdesc:accacadfbbe7139089a7d26353f8756ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Option types in flowgrind controller.  <a href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ad">More...</a><br/></td></tr>
+<tr class="separator:accacadfbbe7139089a7d26353f8756ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add2ec924c0f221790d7235ffb2e615cd"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cd">protocol</a> { <a class="el" href="flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cda44547a13166ee3f0220fb3c4fc60e544">PROTO_TCP</a> = 1, 
 <a class="el" href="flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cda2b277c40c006345a264777529561bf93">PROTO_UDP</a>
  }</td></tr>
@@ -437,21 +450,96 @@ Enumerations</h2></td></tr>
 
 <p>For long options with no equivalent short option, use a pseudo short option. </p>
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a2d29beb503cd27927990a55971956322a026276ebc78eca67db6fbe1d7c044a7a"></a>HELP_OPTION</em>&#160;</td><td class="fielddoc">
-<p>Pseudo short option for option &ndash;help. </p>
-</td></tr>
-<tr><td class="fieldname"><em><a class="anchor" id="a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d"></a>LOG_FILE_OPTION</em>&#160;</td><td class="fielddoc">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d"></a>LOG_FILE_OPTION</em>&#160;</td><td class="fielddoc">
 <p>Pseudo short option for option &ndash;log-file. </p>
 </td></tr>
 </table>
 
+<p>Definition at line <a class="el" href="flowgrind_8h_source.html#l00155">155</a> of file <a class="el" href="flowgrind_8h_source.html">flowgrind.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;                   {</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <a class="code" href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d">LOG_FILE_OPTION</a> = CHAR_MAX + 1,</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;};</div>
+<div class="ttc" id="flowgrind_8h_html_a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d"><div class="ttname"><a href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d">LOG_FILE_OPTION</a></div><div class="ttdoc">Pseudo short option for option –log-file. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00157">flowgrind.h:157</a></div></div>
+</div><!-- fragment -->
+</div>
+</div>
+<a class="anchor" id="ac78d11830c319470167dd394edc0e8d0"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0">mutex_contexts</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Mutual exclusion contexts for options. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="ac78d11830c319470167dd394edc0e8d0ab0ae825d06311783b17382379fec8bc0"></a>MUTEX_CONTEXT_CONTROLLER</em>&#160;</td><td class="fielddoc">
+<p>Context for controller options. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="ac78d11830c319470167dd394edc0e8d0a15ec7755740ff89d770678038de2c075"></a>MUTEX_CONTEXT_TWO_SIDED</em>&#160;</td><td class="fielddoc">
+<p>Context for flow options for both endpoints. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="ac78d11830c319470167dd394edc0e8d0aa0cf7859897335b91ffac48dc85c02bd"></a>MUTEX_CONTEXT_SOURCE</em>&#160;</td><td class="fielddoc">
+<p>Context for flow options on source side. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="ac78d11830c319470167dd394edc0e8d0a5c74f2afe887d5d550a53653ab49cb02"></a>MUTEX_CONTEXT_DESTINATION</em>&#160;</td><td class="fielddoc">
+<p>Context for flow options on destination side. </p>
+</td></tr>
+</table>
+
+<p>Definition at line <a class="el" href="flowgrind_8h_source.html#l00143">143</a> of file <a class="el" href="flowgrind_8h_source.html">flowgrind.h</a>.</p>
+<div class="fragment"><div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;                    {</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        <a class="code" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0ab0ae825d06311783b17382379fec8bc0">MUTEX_CONTEXT_CONTROLLER</a> = 0,</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <a class="code" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0a15ec7755740ff89d770678038de2c075">MUTEX_CONTEXT_TWO_SIDED</a>,</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <a class="code" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0aa0cf7859897335b91ffac48dc85c02bd">MUTEX_CONTEXT_SOURCE</a>,</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        <a class="code" href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0a5c74f2afe887d5d550a53653ab49cb02">MUTEX_CONTEXT_DESTINATION</a>,</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;};</div>
+<div class="ttc" id="flowgrind_8h_html_ac78d11830c319470167dd394edc0e8d0a5c74f2afe887d5d550a53653ab49cb02"><div class="ttname"><a href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0a5c74f2afe887d5d550a53653ab49cb02">MUTEX_CONTEXT_DESTINATION</a></div><div class="ttdoc">Context for flow options on destination side. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00151">flowgrind.h:151</a></div></div>
+<div class="ttc" id="flowgrind_8h_html_ac78d11830c319470167dd394edc0e8d0a15ec7755740ff89d770678038de2c075"><div class="ttname"><a href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0a15ec7755740ff89d770678038de2c075">MUTEX_CONTEXT_TWO_SIDED</a></div><div class="ttdoc">Context for flow options for both endpoints. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00147">flowgrind.h:147</a></div></div>
+<div class="ttc" id="flowgrind_8h_html_ac78d11830c319470167dd394edc0e8d0aa0cf7859897335b91ffac48dc85c02bd"><div class="ttname"><a href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0aa0cf7859897335b91ffac48dc85c02bd">MUTEX_CONTEXT_SOURCE</a></div><div class="ttdoc">Context for flow options on source side. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00149">flowgrind.h:149</a></div></div>
+<div class="ttc" id="flowgrind_8h_html_ac78d11830c319470167dd394edc0e8d0ab0ae825d06311783b17382379fec8bc0"><div class="ttname"><a href="flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0ab0ae825d06311783b17382379fec8bc0">MUTEX_CONTEXT_CONTROLLER</a></div><div class="ttdoc">Context for controller options. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00145">flowgrind.h:145</a></div></div>
+</div><!-- fragment -->
+</div>
+</div>
+<a class="anchor" id="accacadfbbe7139089a7d26353f8756ad"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ad">opt_types</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Option types in flowgrind controller. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="accacadfbbe7139089a7d26353f8756ada7abbca9a7d60d8f191414c88c87e2eee"></a>OPT_CONTROLLER</em>&#160;</td><td class="fielddoc">
+<p>General controller options. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="accacadfbbe7139089a7d26353f8756ada49a9c1952e87b856c69a7fe858f59430"></a>OPT_SELECTOR</em>&#160;</td><td class="fielddoc">
+<p>Selects a subset of flows to apply options to (-F) </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="accacadfbbe7139089a7d26353f8756ada29d8becf0391ae9c7d5653cf091cf728"></a>OPT_FLOW</em>&#160;</td><td class="fielddoc">
+<p>Flow option without endpoint string. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="accacadfbbe7139089a7d26353f8756ada29357690b8081d175548f693c32fcbb4"></a>OPT_FLOW_ENDPOINT</em>&#160;</td><td class="fielddoc">
+<p>Flow option with endpoint string. </p>
+</td></tr>
+</table>
+
 <p>Definition at line <a class="el" href="flowgrind_8h_source.html#l00131">131</a> of file <a class="el" href="flowgrind_8h_source.html">flowgrind.h</a>.</p>
-<div class="fragment"><div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;                   {</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        <a class="code" href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322a026276ebc78eca67db6fbe1d7c044a7a">HELP_OPTION</a> = CHAR_MAX + 1,</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <a class="code" href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d">LOG_FILE_OPTION</a></div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;};</div>
-<div class="ttc" id="flowgrind_8h_html_a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d"><div class="ttname"><a href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d">LOG_FILE_OPTION</a></div><div class="ttdoc">Pseudo short option for option –log-file. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00135">flowgrind.h:135</a></div></div>
-<div class="ttc" id="flowgrind_8h_html_a2d29beb503cd27927990a55971956322a026276ebc78eca67db6fbe1d7c044a7a"><div class="ttname"><a href="flowgrind_8h.html#a2d29beb503cd27927990a55971956322a026276ebc78eca67db6fbe1d7c044a7a">HELP_OPTION</a></div><div class="ttdoc">Pseudo short option for option –help. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00133">flowgrind.h:133</a></div></div>
+<div class="fragment"><div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;               {</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        <a class="code" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada7abbca9a7d60d8f191414c88c87e2eee">OPT_CONTROLLER</a>,</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <a class="code" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada49a9c1952e87b856c69a7fe858f59430">OPT_SELECTOR</a>,</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        <a class="code" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29d8becf0391ae9c7d5653cf091cf728">OPT_FLOW</a>,</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;        <a class="code" href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29357690b8081d175548f693c32fcbb4">OPT_FLOW_ENDPOINT</a>,</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;};</div>
+<div class="ttc" id="flowgrind_8h_html_accacadfbbe7139089a7d26353f8756ada29d8becf0391ae9c7d5653cf091cf728"><div class="ttname"><a href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29d8becf0391ae9c7d5653cf091cf728">OPT_FLOW</a></div><div class="ttdoc">Flow option without endpoint string. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00137">flowgrind.h:137</a></div></div>
+<div class="ttc" id="flowgrind_8h_html_accacadfbbe7139089a7d26353f8756ada49a9c1952e87b856c69a7fe858f59430"><div class="ttname"><a href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada49a9c1952e87b856c69a7fe858f59430">OPT_SELECTOR</a></div><div class="ttdoc">Selects a subset of flows to apply options to (-F) </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00135">flowgrind.h:135</a></div></div>
+<div class="ttc" id="flowgrind_8h_html_accacadfbbe7139089a7d26353f8756ada29357690b8081d175548f693c32fcbb4"><div class="ttname"><a href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29357690b8081d175548f693c32fcbb4">OPT_FLOW_ENDPOINT</a></div><div class="ttdoc">Flow option with endpoint string. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00139">flowgrind.h:139</a></div></div>
+<div class="ttc" id="flowgrind_8h_html_accacadfbbe7139089a7d26353f8756ada7abbca9a7d60d8f191414c88c87e2eee"><div class="ttname"><a href="flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada7abbca9a7d60d8f191414c88c87e2eee">OPT_CONTROLLER</a></div><div class="ttdoc">General controller options. </div><div class="ttdef"><b>Definition:</b> <a href="flowgrind_8h_source.html#l00133">flowgrind.h:133</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -521,7 +609,7 @@ Enumerations</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="flowgrind_8h.html">flowgrind.h</a></li>
-    <li class="footer">Generated on Tue May 27 2014 09:21:57 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -78,6 +78,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="globals.html"><span>All</span></a></li>
       <li class="current"><a href="globals_func.html"><span>Functions</span></a></li>
       <li><a href="globals_vars.html"><span>Variables</span></a></li>
+      <li><a href="globals_type.html"><span>Typedefs</span></a></li>
       <li><a href="globals_enum.html"><span>Enumerations</span></a></li>
       <li><a href="globals_eval.html"><span>Enumerator</span></a></li>
       <li><a href="globals_defs.html"><span>Macros</span></a></li>
@@ -126,7 +127,7 @@ $(document).ready(function(){initNavTree('globals_func_g.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -140,11 +141,21 @@ $(document).ready(function(){initNavTree('globals_func_g.html','');});
 
 <h3><a class="anchor" id="index_g"></a>- g -</h3><ul>
 <li>get_daemon_by_url()
-: <a class="el" href="flowgrind_8c.html#a1ba42020629674b93551854787b2db78">flowgrind.c</a>
+: <a class="el" href="flowgrind_8c.html#a7c7a53dfde78a593ed3447555e75f2b6">flowgrind.c</a>
 </li>
 <li>get_imtu()
 : <a class="el" href="fg__socket_8c.html#a5c7f422f6d53d7f12b6aeba065bb94f2">fg_socket.c</a>
 , <a class="el" href="fg__socket_8h.html#a5c7f422f6d53d7f12b6aeba065bb94f2">fg_socket.h</a>
+</li>
+<li>get_mutex_count()
+: <a class="el" href="fg__argparser_8c.html#a3681b09e0c787f6a120cfad107b3d331">fg_argparser.c</a>
+</li>
+<li>get_ncores()
+: <a class="el" href="fg__affinity_8c.html#ad8d67c3125dc31eb93fd6018d895d706">fg_affinity.c</a>
+, <a class="el" href="fg__affinity_8h.html#ad8d67c3125dc31eb93fd6018d895d706">fg_affinity.h</a>
+</li>
+<li>get_num_options()
+: <a class="el" href="fg__argparser_8c.html#a5c4a71b20e2beb2cd5f1ea7af85607a0">fg_argparser.c</a>
 </li>
 <li>get_pmtu()
 : <a class="el" href="fg__socket_8c.html#abeb6cde31aa19f818745d2bffed938b4">fg_socket.c</a>
@@ -155,13 +166,13 @@ $(document).ready(function(){initNavTree('globals_func_g.html','');});
 , <a class="el" href="fg__socket_8h.html#ad87f00d48467011aa89b3bf1ee1d1c2e">fg_socket.h</a>
 </li>
 <li>get_reports()
-: <a class="el" href="daemon_8c.html#ada2b0940bebec0fff824ce27e8e39ba9">daemon.c</a>
-, <a class="el" href="daemon_8h.html#ada2b0940bebec0fff824ce27e8e39ba9">daemon.h</a>
+: <a class="el" href="daemon_8c.html#ae1c880d68d8e730eaf7836e3883b6fbf">daemon.c</a>
+, <a class="el" href="daemon_8h.html#ae1c880d68d8e730eaf7836e3883b6fbf">daemon.h</a>
 </li>
 <li>get_tcp_info()
-: <a class="el" href="daemon_8c.html#a3e9bf860c006548835394f1626ed3f4f">daemon.c</a>
-, <a class="el" href="destination_8c.html#a213f14b8d9b91bfd57bead3b652b0a41">destination.c</a>
-, <a class="el" href="source_8c.html#a213f14b8d9b91bfd57bead3b652b0a41">source.c</a>
+: <a class="el" href="source_8c.html#a110ebf97cc359da68146d839abafc78d">source.c</a>
+, <a class="el" href="destination_8c.html#a110ebf97cc359da68146d839abafc78d">destination.c</a>
+, <a class="el" href="daemon_8c.html#ad037eac03b0881ffc9647c45daff87f5">daemon.c</a>
 </li>
 <li>gettime()
 : <a class="el" href="fg__time_8c.html#ac2b9db9a31fa442023443d234787ef78">fg_time.c</a>
@@ -179,7 +190,7 @@ $(document).ready(function(){initNavTree('globals_func_g.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue May 27 2014 09:21:58 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

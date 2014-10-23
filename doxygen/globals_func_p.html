@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -78,6 +78,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="globals.html"><span>All</span></a></li>
       <li class="current"><a href="globals_func.html"><span>Functions</span></a></li>
       <li><a href="globals_vars.html"><span>Variables</span></a></li>
+      <li><a href="globals_type.html"><span>Typedefs</span></a></li>
       <li><a href="globals_enum.html"><span>Enumerations</span></a></li>
       <li><a href="globals_eval.html"><span>Enumerator</span></a></li>
       <li><a href="globals_defs.html"><span>Macros</span></a></li>
@@ -126,7 +127,7 @@ $(document).ready(function(){initNavTree('globals_func_p.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -144,19 +145,38 @@ $(document).ready(function(){initNavTree('globals_func_p.html','');});
 , <a class="el" href="flowgrindd_8c.html#a0b31ee974b8ccb9f5a0b0169ee1fc3d7">flowgrindd.c</a>
 </li>
 <li>parse_colon_option()
-: <a class="el" href="flowgrind_8c.html#aa90e6e458d196721b19839706d143512">flowgrind.c</a>
+: <a class="el" href="flowgrind_8c.html#a0ccc9f2a57d2a5e85c96b3bbb39554e3">flowgrind.c</a>
 </li>
 <li>parse_flow_option()
-: <a class="el" href="flowgrind_8c.html#a869390cb0f3804de04c276079ac85bb6">flowgrind.c</a>
+: <a class="el" href="flowgrind_8c.html#ae779be287351e4c5231024a2679e1b9d">flowgrind.c</a>
+</li>
+<li>parse_flow_option_endpoint()
+: <a class="el" href="flowgrind_8c.html#ad334b826d29774cac61924a9087ea14a">flowgrind.c</a>
+</li>
+<li>parse_general_option()
+: <a class="el" href="flowgrind_8c.html#a4576abe587c0bc51c1d8c1877d894b19">flowgrind.c</a>
 </li>
 <li>parse_host_option()
-: <a class="el" href="flowgrind_8c.html#a9753eb076f74787c6f387ce00e395448">flowgrind.c</a>
+: <a class="el" href="flowgrind_8c.html#ab5ed519ac34d4c14a1c26029ebc4b482">flowgrind.c</a>
+</li>
+<li>parse_long_option()
+: <a class="el" href="fg__argparser_8c.html#af1cb3b09a7e811950ddf71ec72e5affd">fg_argparser.c</a>
+</li>
+<li>parse_multi_endpoint_option()
+: <a class="el" href="flowgrind_8c.html#a151bd56ff24757d23b5058687ac3c16b">flowgrind.c</a>
 </li>
 <li>parse_rate_option()
-: <a class="el" href="flowgrind_8c.html#a17889013314d2cd3a48741ae3dc44525">flowgrind.c</a>
+: <a class="el" href="flowgrind_8c.html#a94e212e6b34bb143ed8832d8c6bd2950">flowgrind.c</a>
+</li>
+<li>parse_rpc_address()
+: <a class="el" href="fg__argparser_8c.html#a123ab1426a1aa4d600b9b01ef55106de">fg_argparser.c</a>
+, <a class="el" href="fg__argparser_8h.html#a123ab1426a1aa4d600b9b01ef55106de">fg_argparser.h</a>
+</li>
+<li>parse_short_option()
+: <a class="el" href="fg__argparser_8c.html#a03a0bc54d6e3fb94c7f5fc6dd7bf117f">fg_argparser.c</a>
 </li>
 <li>parse_trafgen_option()
-: <a class="el" href="flowgrind_8c.html#a7e2f329345da0a7015b1f09236e9b3a7">flowgrind.c</a>
+: <a class="el" href="flowgrind_8c.html#a5ee8d00447d717eda4df13ca4e8130b6">flowgrind.c</a>
 </li>
 <li>prepare_fds()
 : <a class="el" href="daemon_8c.html#a69bcdf37a6bd08046dc8f0fd3fee8d6a">daemon.c</a>
@@ -168,31 +188,57 @@ $(document).ready(function(){initNavTree('globals_func_p.html','');});
 : <a class="el" href="flowgrind_8c.html#a37a88cae9e0bba5b7c2ac9eda0330c76">flowgrind.c</a>
 </li>
 <li>prepare_rfds()
-: <a class="el" href="daemon_8c.html#a6ec2c4e5e7ae504d2e583f20b5bdc35a">daemon.c</a>
+: <a class="el" href="daemon_8c.html#a0ceff22a02b22f3826a753ad12b102e7">daemon.c</a>
 </li>
 <li>prepare_wfds()
-: <a class="el" href="daemon_8c.html#a4bfe46d34ea1e1253965d79b3ff00476">daemon.c</a>
+: <a class="el" href="daemon_8c.html#a74a8247c715e328e3bc0b2d781c5a6b1">daemon.c</a>
 </li>
 <li>prepare_xmlrpc_client()
 : <a class="el" href="flowgrind_8c.html#a517d5409e0d5db0026a64b8c97bb2ae8">flowgrind.c</a>
 </li>
 <li>print_report()
-: <a class="el" href="flowgrind_8c.html#a1654483171af65e5b252d771fd3792f0">flowgrind.c</a>
+: <a class="el" href="flowgrind_8c.html#a20516385726b2312ccd1d62b4a05700b">flowgrind.c</a>
 </li>
 <li>process_delay()
-: <a class="el" href="daemon_8c.html#a13b0f81eaa74e4291295b55cf22eab76">daemon.c</a>
+: <a class="el" href="daemon_8c.html#a6457b4c850a146e92e6d9c3556306b5d">daemon.c</a>
+</li>
+<li>process_dump_dir()
+: <a class="el" href="flowgrindd_8c.html#a503cc18cff076681463354c5e10bc2b9">flowgrindd.c</a>
 </li>
 <li>process_iat()
-: <a class="el" href="daemon_8c.html#a34beef5ddbe2e0dfec478bf2fa6dc3f9">daemon.c</a>
+: <a class="el" href="daemon_8c.html#a54c3849a22e7bc35672dd1e04c34f5fc">daemon.c</a>
 </li>
 <li>process_requests()
 : <a class="el" href="daemon_8c.html#abc7b750d30fa56acd31644f53be03ca5">daemon.c</a>
 </li>
 <li>process_rtt()
-: <a class="el" href="daemon_8c.html#aece282f1f5d183c0b60d8e0a1dfedb2d">daemon.c</a>
+: <a class="el" href="daemon_8c.html#a9f3ff8ee35a524d84af02768849f3673">daemon.c</a>
 </li>
 <li>process_select()
 : <a class="el" href="daemon_8c.html#a1f781d43f485b8fc44f0374bfd0b0a90">daemon.c</a>
+</li>
+<li>pthread_barrier_destroy()
+: <a class="el" href="fg__barrier_8h.html#ae8ef9b4e2d7feaa1a28159991e7433ac">fg_barrier.h</a>
+, <a class="el" href="fg__barrier_8c.html#ae8ef9b4e2d7feaa1a28159991e7433ac">fg_barrier.c</a>
+</li>
+<li>pthread_barrier_init()
+: <a class="el" href="fg__barrier_8h.html#a8ccfa0d7e4ed11ad58990e4bc88d6563">fg_barrier.h</a>
+, <a class="el" href="fg__barrier_8c.html#a8ccfa0d7e4ed11ad58990e4bc88d6563">fg_barrier.c</a>
+</li>
+<li>pthread_barrier_wait()
+: <a class="el" href="fg__barrier_8c.html#a85f92053b4d12aa94927b364b5b757d9">fg_barrier.c</a>
+, <a class="el" href="fg__barrier_8h.html#a85f92053b4d12aa94927b364b5b757d9">fg_barrier.h</a>
+</li>
+<li>pthread_getaffinity()
+: <a class="el" href="fg__affinity_8c.html#a62fedf32521ee5f1c85a9b46c5c7486e">fg_affinity.c</a>
+, <a class="el" href="fg__affinity_8h.html#a62fedf32521ee5f1c85a9b46c5c7486e">fg_affinity.h</a>
+</li>
+<li>pthread_setaffinity()
+: <a class="el" href="fg__affinity_8c.html#a517bfed4f1e6f6c441b8d8f772d7b127">fg_affinity.c</a>
+, <a class="el" href="fg__affinity_8h.html#a517bfed4f1e6f6c441b8d8f772d7b127">fg_affinity.h</a>
+</li>
+<li>push_back_record()
+: <a class="el" href="fg__argparser_8c.html#a16e296dfddbc3ece5b7c4591ad776991">fg_argparser.c</a>
 </li>
 </ul>
 </div><!-- contents -->
@@ -200,7 +246,7 @@ $(document).ready(function(){initNavTree('globals_func_p.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue May 27 2014 09:21:58 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>

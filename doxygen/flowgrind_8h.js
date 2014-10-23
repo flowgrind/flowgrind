@@ -1,12 +1,12 @@
 var flowgrind_8h =
 [
-    [ "_cflow", "struct__cflow.html", "struct__cflow" ],
-    [ "_column", "struct__column.html", "struct__column" ],
-    [ "_column_header", "struct__column__header.html", "struct__column__header" ],
-    [ "_column_state", "struct__column__state.html", "struct__column__state" ],
-    [ "_controller_options", "struct__controller__options.html", "struct__controller__options" ],
-    [ "_daemon", "struct__daemon.html", "struct__daemon" ],
-    [ "_flow_endpoint", "struct__flow__endpoint.html", "struct__flow__endpoint" ],
+    [ "cflow", "structcflow.html", "structcflow" ],
+    [ "column", "structcolumn.html", "structcolumn" ],
+    [ "column_header", "structcolumn__header.html", "structcolumn__header" ],
+    [ "column_state", "structcolumn__state.html", "structcolumn__state" ],
+    [ "controller_options", "structcontroller__options.html", "structcontroller__options" ],
+    [ "daemon", "structdaemon.html", "structdaemon" ],
+    [ "flow_endpoint", "structflow__endpoint.html", "structflow__endpoint" ],
     [ "SYSCTL_CC_AVAILABLE", "flowgrind_8h.html#ace6ded21d82120b66d4ed437baa01ede", null ],
     [ "column_id", "flowgrind_8h.html#a012a3bb7e27a2d842441b4fbf4a71c3c", [
       [ "COL_FLOW_ID", "flowgrind_8h.html#a012a3bb7e27a2d842441b4fbf4a71c3ca6f1cbca0fff2cba7fb3acc0d2048bc8c", null ],
@@ -44,8 +44,19 @@ var flowgrind_8h =
       [ "COL_STATUS", "flowgrind_8h.html#a012a3bb7e27a2d842441b4fbf4a71c3ca85244502984894018fb1192930410997", null ]
     ] ],
     [ "long_opt_only", "flowgrind_8h.html#a2d29beb503cd27927990a55971956322", [
-      [ "HELP_OPTION", "flowgrind_8h.html#a2d29beb503cd27927990a55971956322a026276ebc78eca67db6fbe1d7c044a7a", null ],
       [ "LOG_FILE_OPTION", "flowgrind_8h.html#a2d29beb503cd27927990a55971956322a6380e0b560066798fb5f4a42a19f1c0d", null ]
+    ] ],
+    [ "mutex_contexts", "flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0", [
+      [ "MUTEX_CONTEXT_CONTROLLER", "flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0ab0ae825d06311783b17382379fec8bc0", null ],
+      [ "MUTEX_CONTEXT_TWO_SIDED", "flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0a15ec7755740ff89d770678038de2c075", null ],
+      [ "MUTEX_CONTEXT_SOURCE", "flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0aa0cf7859897335b91ffac48dc85c02bd", null ],
+      [ "MUTEX_CONTEXT_DESTINATION", "flowgrind_8h.html#ac78d11830c319470167dd394edc0e8d0a5c74f2afe887d5d550a53653ab49cb02", null ]
+    ] ],
+    [ "opt_types", "flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ad", [
+      [ "OPT_CONTROLLER", "flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada7abbca9a7d60d8f191414c88c87e2eee", null ],
+      [ "OPT_SELECTOR", "flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada49a9c1952e87b856c69a7fe858f59430", null ],
+      [ "OPT_FLOW", "flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29d8becf0391ae9c7d5653cf091cf728", null ],
+      [ "OPT_FLOW_ENDPOINT", "flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ada29357690b8081d175548f693c32fcbb4", null ]
     ] ],
     [ "protocol", "flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cd", [
       [ "PROTO_TCP", "flowgrind_8h.html#add2ec924c0f221790d7235ffb2e615cda44547a13166ee3f0220fb3c4fc60e544", null ],

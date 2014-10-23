@@ -32,7 +32,7 @@
   <td style="padding-left: 0.5em;">
    <div id="projectname">Flowgrind
    </div>
-   <div id="projectbrief">TCP Performance Measurement</div>
+   <div id="projectbrief">Advanced TCP traffic generator</div>
   </td>
  </tr>
  </tbody>
@@ -78,6 +78,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li class="current"><a href="globals.html"><span>All</span></a></li>
       <li><a href="globals_func.html"><span>Functions</span></a></li>
       <li><a href="globals_vars.html"><span>Variables</span></a></li>
+      <li><a href="globals_type.html"><span>Typedefs</span></a></li>
       <li><a href="globals_enum.html"><span>Enumerations</span></a></li>
       <li><a href="globals_eval.html"><span>Enumerator</span></a></li>
       <li><a href="globals_defs.html"><span>Macros</span></a></li>
@@ -106,6 +107,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="globals_u.html#index_u"><span>u</span></a></li>
       <li><a href="globals_v.html#index_v"><span>v</span></a></li>
       <li><a href="globals_w.html#index_w"><span>w</span></a></li>
+      <li><a href="globals_x.html#index_x"><span>x</span></a></li>
     </ul>
   </div>
 </div><!-- top -->
@@ -128,7 +130,7 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -143,6 +145,7 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 <h3><a class="anchor" id="index_s"></a>- s -</h3><ul>
 <li>sanity_check()
 : <a class="el" href="flowgrind_8c.html#aecf3d6e643400d9a2fd67ac89048072c">flowgrind.c</a>
+, <a class="el" href="flowgrindd_8c.html#aecf3d6e643400d9a2fd67ac89048072c">flowgrindd.c</a>
 </li>
 <li>scale_thruput()
 : <a class="el" href="flowgrind_8c.html#a11ffa4876606c94c8e70f13e6cc5d390">flowgrind.c</a>
@@ -150,17 +153,23 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 <li>SEGMENT_BASED
 : <a class="el" href="flowgrind_8h.html#a815b8430f22a24a11d25db029a90baf7a53d1a4e523649d1fef35bf094481ace5">flowgrind.h</a>
 </li>
+<li>SELECT_TYPE_ARG1
+: <a class="el" href="config_8h.html#a9f4c30db127f8c10d9b4f0eaed1d6e8f">config.h</a>
+</li>
+<li>SELECT_TYPE_ARG234
+: <a class="el" href="config_8h.html#a2c1fd0e84b7aaf9617b67596ef9b274f">config.h</a>
+</li>
+<li>SELECT_TYPE_ARG5
+: <a class="el" href="config_8h.html#af3f6c94b1def9d6d936270c458f586a0">config.h</a>
+</li>
 <li>send_response()
-: <a class="el" href="daemon_8c.html#a373fc4da5ccdc81ed2c687d1bc17964d">daemon.c</a>
-</li>
-<li>set_affinity()
-: <a class="el" href="flowgrindd_8c.html#a046e5e27bb52c2b103905f4358c4239e">flowgrindd.c</a>
-</li>
-<li>set_column_unit()
-: <a class="el" href="flowgrind_8c.html#a1e65ee41678dad66509c1e4dfb3abc44">flowgrind.c</a>
+: <a class="el" href="daemon_8c.html#ae5808c1a8a4f235184150b7fb30bc287">daemon.c</a>
 </li>
 <li>SET_COLUMN_UNIT
 : <a class="el" href="flowgrind_8c.html#a9c1e5776e7375f5adbbc3c81ad87137a">flowgrind.c</a>
+</li>
+<li>set_column_unit()
+: <a class="el" href="flowgrind_8c.html#a1e65ee41678dad66509c1e4dfb3abc44">flowgrind.c</a>
 </li>
 <li>set_column_visibility()
 : <a class="el" href="flowgrind_8c.html#a4bdc0a3a2e8905ba8440399f42108012">flowgrind.c</a>
@@ -174,12 +183,12 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 , <a class="el" href="fg__socket_8h.html#a128d76deeb39f543de89cf0c52729101">fg_socket.h</a>
 </li>
 <li>set_flow_tcp_options()
-: <a class="el" href="daemon_8c.html#aa8a6c09ac4e6e2d81e0a1be32fb2cf15">daemon.c</a>
-, <a class="el" href="daemon_8h.html#aa8a6c09ac4e6e2d81e0a1be32fb2cf15">daemon.h</a>
+: <a class="el" href="daemon_8c.html#afa6483c8495b4df9665927f6ab4eaabb">daemon.c</a>
+, <a class="el" href="daemon_8h.html#afa6483c8495b4df9665927f6ab4eaabb">daemon.h</a>
 </li>
 <li>set_ip_mtu_discover()
-: <a class="el" href="fg__socket_8h.html#a28705e5f3da83f4c8721e547c41687c4">fg_socket.h</a>
-, <a class="el" href="fg__socket_8c.html#a28705e5f3da83f4c8721e547c41687c4">fg_socket.c</a>
+: <a class="el" href="fg__socket_8c.html#a28705e5f3da83f4c8721e547c41687c4">fg_socket.c</a>
+, <a class="el" href="fg__socket_8h.html#a28705e5f3da83f4c8721e547c41687c4">fg_socket.h</a>
 </li>
 <li>set_keepalive()
 : <a class="el" href="fg__socket_8c.html#a1edeef337ec1070a0beead92d5071a81">fg_socket.c</a>
@@ -221,16 +230,16 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 , <a class="el" href="fg__socket_8h.html#ab2053a8d245324b11d603cc43b327db5">fg_socket.h</a>
 </li>
 <li>set_tcp_mtcp()
-: <a class="el" href="fg__socket_8c.html#a3812672e43521addb0f94be5ec70a2c7">fg_socket.c</a>
-, <a class="el" href="fg__socket_8h.html#a3812672e43521addb0f94be5ec70a2c7">fg_socket.h</a>
+: <a class="el" href="fg__socket_8h.html#a3812672e43521addb0f94be5ec70a2c7">fg_socket.h</a>
+, <a class="el" href="fg__socket_8c.html#a3812672e43521addb0f94be5ec70a2c7">fg_socket.c</a>
 </li>
 <li>set_tcp_nodelay()
 : <a class="el" href="fg__socket_8c.html#ac2ddd7ff0e28617a498b922b85ad9e29">fg_socket.c</a>
 , <a class="el" href="fg__socket_8h.html#ac2ddd7ff0e28617a498b922b85ad9e29">fg_socket.h</a>
 </li>
 <li>set_window_size()
-: <a class="el" href="fg__socket_8c.html#a06909241ff7947d728ab69beffd9a46f">fg_socket.c</a>
-, <a class="el" href="fg__socket_8h.html#ac85fddb79b91a5655b9f98969f10b3ee">fg_socket.h</a>
+: <a class="el" href="fg__socket_8h.html#ac85fddb79b91a5655b9f98969f10b3ee">fg_socket.h</a>
+, <a class="el" href="fg__socket_8c.html#a06909241ff7947d728ab69beffd9a46f">fg_socket.c</a>
 </li>
 <li>set_window_size_directed()
 : <a class="el" href="fg__socket_8c.html#a317084d802890587e7c1e568d039d59c">fg_socket.c</a>
@@ -255,21 +264,24 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 , <a class="el" href="fg__socket_8c.html#ac65409d904781e5a23529bd6bef2b673">fg_socket.c</a>
 </li>
 <li>SOURCE
-: <a class="el" href="common_8h.html#a36d949e26d4bc91bf3f97176c135fb5ba0159491ea913604389155db907e0d1c0">common.h</a>
+: <a class="el" href="common_8h.html#a8ce1128c4f31eb3b18469da81c255fdfa0159491ea913604389155db907e0d1c0">common.h</a>
 </li>
 <li>start_flows()
-: <a class="el" href="daemon_8c.html#ab302595774612de509e76f318e39cb95">daemon.c</a>
+: <a class="el" href="daemon_8c.html#a59607f45dabe596ae017733d49caafb8">daemon.c</a>
 , <a class="el" href="flowgrindd_8c.html#aa474434b5dc6f7e1a4ca9af98382c37f">flowgrindd.c</a>
 </li>
 <li>started
-: <a class="el" href="daemon_8c.html#a22822755789d0770b81f031d467cd6e4">daemon.c</a>
-, <a class="el" href="daemon_8h.html#a22822755789d0770b81f031d467cd6e4">daemon.h</a>
+: <a class="el" href="daemon_8h.html#a22822755789d0770b81f031d467cd6e4">daemon.h</a>
+, <a class="el" href="daemon_8c.html#a22822755789d0770b81f031d467cd6e4">daemon.c</a>
+</li>
+<li>STDC_HEADERS
+: <a class="el" href="config_8h.html#a550e5c272cc3cf3814651721167dcd23">config.h</a>
 </li>
 <li>stop_flow()
-: <a class="el" href="daemon_8c.html#a3b70865876ef8b29ce72262fd3d3aa59">daemon.c</a>
+: <a class="el" href="daemon_8c.html#aa1f5aec48271ef6205d79be756decdc4">daemon.c</a>
 </li>
 <li>stop_flows()
-: <a class="el" href="flowgrind__stop_8c.html#a13f5c71eadb2d8bcdb9180001d77c9f5">flowgrind_stop.c</a>
+: <a class="el" href="flowgrind__stop_8c.html#aa5b49519f829e8a68510171a114881b0">flowgrind_stop.c</a>
 </li>
 <li>strdup_append()
 : <a class="el" href="fg__string_8c.html#aad540414ac01751458ed700f68461a99">fg_string.c</a>
@@ -279,8 +291,8 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 : <a class="el" href="fg__string_8c.html#ad32db34b532f25c1826d5d7d51f09d70">fg_string.c</a>
 </li>
 <li>strndup_append()
-: <a class="el" href="fg__string_8c.html#a871747a8e3ba933f2f755b31c725626a">fg_string.c</a>
-, <a class="el" href="fg__string_8h.html#a871747a8e3ba933f2f755b31c725626a">fg_string.h</a>
+: <a class="el" href="fg__string_8h.html#a871747a8e3ba933f2f755b31c725626a">fg_string.h</a>
+, <a class="el" href="fg__string_8c.html#a871747a8e3ba933f2f755b31c725626a">fg_string.c</a>
 </li>
 <li>SYSCTL_CC_AVAILABLE
 : <a class="el" href="flowgrind_8h.html#ace6ded21d82120b66d4ed437baa01ede">flowgrind.h</a>
@@ -291,7 +303,7 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue May 27 2014 09:21:58 for Flowgrind by
+    <li class="footer">Generated on Thu Oct 23 2014 15:11:29 for Flowgrind by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.6 </li>
   </ul>
