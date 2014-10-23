@@ -67,15 +67,15 @@
 
 void remove_flow(unsigned int i);
 
-#if (defined __LINUX__ || defined __FreeBSD__)
-int get_tcp_info(struct _flow *flow, struct tcp_info *info);
-#endif /* (defined __LINUX__ || defined __FreeBSD__) */
+#ifdef HAVE_TCP_INFO
+int get_tcp_info(struct flow *flow, struct tcp_info *info);
+#endif /* HAVE_TCP_INFO */
 
-void init_flow(struct _flow* flow, int is_source);
-void uninit_flow(struct _flow *flow);
+void init_flow(struct flow* flow, int is_source);
+void uninit_flow(struct flow *flow);
 
 /* listen_port will receive the port of the created socket */
-static int create_listen_socket(struct _flow *flow, char *bind_addr,
+static int create_listen_socket(struct flow *flow, char *bind_addr,
 				unsigned short *listen_port)
 {
 	int port;
@@ -147,12 +147,12 @@ static int create_listen_socket(struct _flow *flow, char *bind_addr,
 	return fd;
 }
 
-void add_flow_destination(struct _request_add_flow_destination *request)
+void add_flow_destination(struct request_add_flow_destination *request)
 {
-	struct _flow *flow;
+	struct flow *flow;
 	unsigned short server_data_port;
 
-	if (num_flows >= MAX_FLOWS) {
+	if (fg_list_size(&flows) >= MAX_FLOWS) {
 		logging_log(LOG_WARNING, "Can not accept another flow, already "
 			    "handling MAX_FLOW flows.");
 		request_error(&request->r, "Can not accept another flow, "
@@ -160,7 +160,12 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		return;
 	}
 
-	flow = &flows[num_flows++];
+	flow = malloc(sizeof(struct flow));
+	if (!flow) {
+		logging_log(LOG_ALERT, "could not allocate memory for flow");
+		return;
+	}
+
 	init_flow(flow, 0);
 
 	flow->settings = request->settings;
@@ -172,7 +177,6 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		request_error(&request->r, "could not allocate memory "
 			      "for read/write blocks");
 		uninit_flow(flow);
-		num_flows--;
 		return;
 	}
 
@@ -195,7 +199,6 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		request_error(&request->r, "could not create listen socket "
 			      "for data connection: %s", flow->error);
 		uninit_flow(flow);
-		num_flows--;
 		return;
 	} else {
 		DEBUG_MSG(LOG_WARNING, "listening on %s port %u for data "
@@ -219,10 +222,12 @@ void add_flow_destination(struct _request_add_flow_destination *request)
 		flow->real_listen_receive_buffer_size;
 	request->flow_id = flow->id;
 
+	fg_list_push_back(&flows, flow);
+
 	return;
 }
 
-int accept_data(struct _flow *flow)
+int accept_data(struct flow *flow)
 {
 	struct sockaddr_storage caddr;
 	socklen_t addrlen = sizeof(caddr);

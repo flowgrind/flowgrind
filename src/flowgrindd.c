@@ -31,6 +31,11 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#ifdef __DARWIN__
+/** Temporarily renaming daemon() so compiler does not see the warning on OS X */
+#define daemon fake_daemon_function
+#endif /* __DARWIN__ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -45,15 +50,7 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include <getopt.h>
-
-/* CPU affinity */
-#ifdef __LINUX__
-#include <sched.h>
-#elif __FreeBSD__
-#include <sys/param.h>
-#include <sys/cpuset.h>
-#endif /* __LINUX__ */
+#include <sys/stat.h>
 
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
@@ -64,17 +61,31 @@
 #include "common.h"
 #include "daemon.h"
 #include "log.h"
+#include "fg_affinity.h"
 #include "fg_error.h"
 #include "fg_math.h"
 #include "fg_progname.h"
 #include "fg_string.h"
 #include "fg_time.h"
-#include "fg_stdlib.h"
+#include "fg_definitions.h"
 #include "debug.h"
+#include "fg_argparser.h"
 
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
+
+#ifdef __DARWIN__
+/** Remap daemon() function */
+#undef daemon
+extern int daemon(int, int);
+#endif /* __DARWIN__ */
+
+/** Print error message, usage string and exit. Used for cmdline parsing errors */
+#define PARSE_ERR(err_msg, ...) do {	\
+	errx(err_msg, ##__VA_ARGS__);	\
+	usage(EXIT_FAILURE);		\
+} while (0)
 
 /* XXX add a brief description doxygen */
 static unsigned port = DEFAULT_LISTEN_PORT;
@@ -82,8 +93,11 @@ static unsigned port = DEFAULT_LISTEN_PORT;
 /* XXX add a brief description doxygen */
 static char *rpc_bind_addr = NULL;
 
-/* XXX add a brief description doxygen */
-static int cpu = -1;				    /* No CPU affinity */
+/** CPU core to which flowgrindd should bind to */
+static int core;
+
+/** Command line option parser */
+static struct arg_parser parser;
 
 /* External global variables */
 extern const char *progname;
@@ -112,9 +126,8 @@ static void usage(short status)
 #ifdef DEBUG
 		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
 		"                 increase the verbosity (no daemon, log to stderr)\n"
-#else
-		"  -d             don't fork into background,increase debugging verbosity.\n"
-		"                 Add option multiple times to increase the verbosity\n"
+#else /* DEBUG */
+		"  -d             don't fork into background, log to stderr\n"
 #endif /* DEBUG */
 		"  -h, --help     display this help and exit\n"
 		"  -p #           XML-RPC server port\n"
@@ -155,7 +168,7 @@ static void sighandler(int sig)
 	}
 }
 
-static int dispatch_request(struct _request *request, int type)
+static int dispatch_request(struct request *request, int type)
 {
 	pthread_cond_t cond;
 
@@ -175,12 +188,11 @@ static int dispatch_request(struct _request *request, int type)
 	if (!requests) {
 		requests = request;
 		requests_last = request;
-	}
-	else {
+	} else {
 		requests_last->next = request;
 		requests_last = request;
 	}
-	if ( write(daemon_pipe[1], &type, 1) != 1 ) /* Doesn't matter what we write */
+	if (write(daemon_pipe[1], &type, 1) != 1) /* Doesn't matter what we write */
 		return -1;
 	/* Wait until the daemon thread has processed the request */
 	pthread_cond_wait(&cond, &mutex);
@@ -206,10 +218,10 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	char* bind_address = 0;
 	xmlrpc_value* extra_options = 0;
 
-	struct _flow_settings settings;
-	struct _flow_source_settings source_settings;
+	struct flow_settings settings;
+	struct flow_source_settings source_settings;
 
-	struct _request_add_flow_source* request = 0;
+	struct request_add_flow_source* request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method add_flow_source called");
 
@@ -228,9 +240,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"{s:b,s:b,s:i,s:i,*}"
 		"{s:s,*}"
 		"{s:i,s:i,s:i,s:i,s:i,*}"
-#ifdef HAVE_LIBPCAP
-		"{s:s,*}"
-#endif /* HAVE_LIBPCAP */
+		"{s:s,*}" /* for LIBPCAP dumps */
 		"{s:i,s:A,*}"
 		"{s:s,s:i,s:i,*}"
 		")",
@@ -282,9 +292,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		"mtcp", &settings.mtcp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
-#ifdef HAVE_LIBPCAP
 		"dump_prefix", &dump_prefix,
-#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options,
 
@@ -295,6 +303,11 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 	if (env->fault_occurred)
 		goto cleanup;
+
+#ifndef HAVE_LIBPCAP
+	if (settings.traffic_dump)
+		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Daemon was asked to dump traffic, but wasn't compiled with libpcap support");
+#endif
 
 	/* Check for sanity */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
@@ -356,14 +369,13 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	strcpy(settings.cc_alg, cc_alg);
 	strcpy(settings.bind_address, bind_address);
 
-	request = malloc(sizeof(struct _request_add_flow_source));
+	request = malloc(sizeof(struct request_add_flow_source));
 	request->settings = settings;
 	request->source_settings = source_settings;
-	rc = dispatch_request((struct _request*)request, REQUEST_ADD_SOURCE);
+	rc = dispatch_request((struct request*)request, REQUEST_ADD_SOURCE);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "{s:i,s:s,s:i,s:i}",
@@ -382,9 +394,8 @@ cleanup:
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_source failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method add_flow_source successful");
-	}
 
 	return ret;
 }
@@ -401,9 +412,9 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	char* bind_address = 0;
 	xmlrpc_value* extra_options = 0;
 
-	struct _flow_settings settings;
+	struct flow_settings settings;
 
-	struct _request_add_flow_destination* request = 0;
+	struct request_add_flow_destination* request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method add_flow_destination called");
 
@@ -422,9 +433,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"{s:b,s:b,s:i,s:i,*}"
 		"{s:s,*}"
 		"{s:i,s:i,s:i,s:i,s:i,*}"
-#ifdef HAVE_LIBPCAP
-		"{s:s,*}"
-#endif /* HAVE_LIBPCAP */
+		"{s:s,*}" /* For libpcap dumps */
 		"{s:i,s:A,*}"
 		")",
 
@@ -475,14 +484,17 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		"mtcp", &settings.mtcp,
 		"dscp", &settings.dscp,
 		"ipmtudiscover", &settings.ipmtudiscover,
-#ifdef HAVE_LIBPCAP
 		"dump_prefix", &dump_prefix,
-#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", &settings.num_extra_socket_options,
 		"extra_socket_options", &extra_options);
 
 	if (env->fault_occurred)
 		goto cleanup;
+
+#ifndef HAVE_LIBPCAP
+	if (settings.traffic_dump)
+		XMLRPC_FAIL(env, XMLRPC_TYPE_ERROR, "Daemon was asked to dump traffic, but wasn't compiled with libpcap support");
+#endif
 
 	/* Check for sanity */
 	if (strlen(bind_address) >= sizeof(settings.bind_address) - 1 ||
@@ -539,13 +551,12 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	strcpy(settings.cc_alg, cc_alg);
 	strcpy(settings.bind_address, bind_address);
 	DEBUG_MSG(LOG_WARNING, "bind_address=%s", bind_address);
-	request = malloc(sizeof(struct _request_add_flow_destination));
+	request = malloc(sizeof(struct request_add_flow_destination));
 	request->settings = settings;
-	rc = dispatch_request((struct _request*)request, REQUEST_ADD_DESTINATION);
+	rc = dispatch_request((struct request*)request, REQUEST_ADD_DESTINATION);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "{s:i,s:i,s:i,s:i}",
@@ -564,9 +575,8 @@ cleanup:
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method add_flow_destination failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method add_flow_destination successful");
-	}
 
 	return ret;
 }
@@ -580,7 +590,7 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	int rc;
 	xmlrpc_value *ret = 0;
 	int start_timestamp;
-	struct _request_start_flows *request = 0;
+	struct request_start_flows *request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method start_flows called");
 
@@ -593,13 +603,12 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	if (env->fault_occurred)
 		goto cleanup;
 
-	request = malloc(sizeof(struct _request_start_flows));
+	request = malloc(sizeof(struct request_start_flows));
 	request->start_timestamp = start_timestamp;
-	rc = dispatch_request((struct _request*)request, REQUEST_START_FLOWS);
+	rc = dispatch_request((struct request*)request, REQUEST_START_FLOWS);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "i", 0);
@@ -610,9 +619,8 @@ cleanup:
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method start_flows failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method start_flows successful");
-	}
 
 	return ret;
 }
@@ -629,7 +637,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 	DEBUG_MSG(LOG_NOTICE, "Method get_reports called");
 
-	struct _report *report = get_reports(&has_more);
+	struct report *report = get_reports(&has_more);
 
 	ret = xmlrpc_array_new(env);
 
@@ -707,16 +715,15 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 
 		xmlrpc_DECREF(rv);
 
-		struct _report *next = report->next;
+		struct report *next = report->next;
 		free(report);
 		report = next;
 	}
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_reports failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method get_reports successful");
-	}
 
 	return ret;
 }
@@ -730,7 +737,7 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	int rc;
 	xmlrpc_value *ret = 0;
 	int flow_id;
-	struct _request_stop_flow *request = 0;
+	struct request_stop_flow *request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method stop_flow called");
 
@@ -743,13 +750,12 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	if (env->fault_occurred)
 		goto cleanup;
 
-	request = malloc(sizeof(struct _request_stop_flow));
+	request = malloc(sizeof(struct request_stop_flow));
 	request->flow_id = flow_id;
-	rc = dispatch_request((struct _request*)request, REQUEST_STOP_FLOW);
+	rc = dispatch_request((struct request*)request, REQUEST_STOP_FLOW);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "()");
@@ -760,9 +766,8 @@ cleanup:
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method stop_flow failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method stop_flow successful");
-	}
 
 	return ret;
 }
@@ -793,9 +798,8 @@ static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 
 	if (env->fault_occurred)
 		logging_log(LOG_WARNING, "Method get_version failed: %s", env->fault_string);
-	else {
+	else
 		DEBUG_MSG(LOG_WARNING, "Method get_version successful");
-	}
 
 	return ret;
 }
@@ -810,16 +814,15 @@ static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 
 	int rc;
 	xmlrpc_value *ret = 0;
-	struct _request_get_status *request = 0;
+	struct request_get_status *request = 0;
 
 	DEBUG_MSG(LOG_WARNING, "Method get_status called");
 
-	request = malloc(sizeof(struct _request_get_status));
-	rc = dispatch_request((struct _request*)request, REQUEST_GET_STATUS);
+	request = malloc(sizeof(struct request_get_status));
+	rc = dispatch_request((struct request*)request, REQUEST_GET_STATUS);
 
-	if (rc == -1) {
+	if (rc == -1)
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
-	}
 
 	/* Return our result. */
 	ret = xmlrpc_build_value(env, "{s:i,s:i}",
@@ -853,10 +856,10 @@ void create_daemon_thread()
 
 	int rc = pthread_create(&daemon_thread, NULL, daemon_main, 0);
 	if (rc)
-		crit("could not start thread");
+		critc(rc, "could not start thread");
 }
 
-/* creates listen socket for the xmlrpc server */
+/** Creates listen socket for the xmlrpc server */
 static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	int rc;
 	int fd;
@@ -872,7 +875,7 @@ static int bind_rpc_server(char *bind_addr, unsigned int port) {
 
 	if ((rc = getaddrinfo(bind_addr, tmp_port,
 				&hints, &res)) != 0) {
-		logging_log(LOG_ALERT, "Failed to find address to bind rpc_server: %s\n",
+		critx( "Failed to find address to bind rpc_server: %s\n",
 			gai_strerror(rc));
 		return -1;
 	}
@@ -899,7 +902,7 @@ static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
-		logging_log(LOG_ALERT, "failed to bind RPC listen socket: %s\n", strerror(errno));
+		crit("failed to bind RPC listen socket");
 		freeaddrinfo(ressave);
 		return -1;
 	}
@@ -907,12 +910,14 @@ static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	return fd;
 }
 
-static void run_rpc_server(xmlrpc_env *env, unsigned int port)
+/** Initializes the xmlrpc server and registers exported methods */
+static void init_rpc_server(struct fg_rpc_server *server, unsigned int port)
 {
-	xmlrpc_server_abyss_parms serverparm;
 	xmlrpc_registry * registryP;
-	memset(&serverparm, 0, sizeof(serverparm));
+	xmlrpc_env *env = &(server->env);
+	memset(&(server->parms), 0, sizeof(server->parms));
 
+	xmlrpc_env_init(env);
 	registryP = xmlrpc_registry_new(env);
 
 	xmlrpc_registry_add_method(env, registryP, NULL, "add_flow_destination", &add_flow_destination, NULL);
@@ -927,67 +932,83 @@ static void run_rpc_server(xmlrpc_env *env, unsigned int port)
 	   like a normal API.  We select the modern form by setting
 	   config_file_name to NULL:
 	*/
-	serverparm.config_file_name	= NULL;
-	serverparm.registryP		= registryP;
-	serverparm.socket_bound		= 1;
-	serverparm.log_file_name        = NULL; /*"/tmp/xmlrpc_log";*/
+	server->parms.config_file_name	= NULL;
+	server->parms.registryP		= registryP;
+	server->parms.socket_bound	= 1;
+	server->parms.log_file_name	= NULL; /*"/tmp/xmlrpc_log";*/
 
 	/* Increase HTTP keep-alive duration. Using defaults the amount of
 	 * sockets in TIME_WAIT state would become too high.
 	 */
-	serverparm.keepalive_timeout = 60;
-	serverparm.keepalive_max_conn = 1000;
+	server->parms.keepalive_timeout = 60;
+	server->parms.keepalive_max_conn = 1000;
 
 	/* Disable introspection */
-	serverparm.dont_advertise = 1;
+	server->parms.dont_advertise = 1;
 
 	logging_log(LOG_NOTICE, "Running XML-RPC server on port %u", port);
 	printf("Running XML-RPC server...\n");
 
-	serverparm.socket_handle = bind_rpc_server(rpc_bind_addr, port);
-	xmlrpc_server_abyss(env, &serverparm, XMLRPC_APSIZE(socket_handle));
+	server->parms.socket_handle = bind_rpc_server(rpc_bind_addr, port);
+}
 
-	if (env->fault_occurred) {
+/** Enters the XMLRPC Server main loop */
+void run_rpc_server(struct fg_rpc_server *server)
+{
+	xmlrpc_env *env = &(server->env);
+	xmlrpc_server_abyss(env, &(server->parms), XMLRPC_APSIZE(socket_handle));
+
+	if (env->fault_occurred)
 		logging_log(LOG_ALERT, "XML-RPC Fault: %s (%d)\n",
-			env->fault_string, env->fault_code);
-	}
+			    env->fault_string, env->fault_code);
 	/* xmlrpc_server_abyss() never returns */
 }
 
-void set_affinity(int cpu)
+void bind_daemon_to_core(void)
 {
-#ifdef __LINUX__
-	typedef cpu_set_t fg_cpuset;
-#elif __FreeBSD__
-	typedef cpuset_t fg_cpuset;
-#endif /* __LINUX__ */
-	int rc;
-	int ncpu = sysconf(_SC_NPROCESSORS_ONLN);   /* number of cores */
-	fg_cpuset cpuset;			    /* define cpu_set bit mask */
+	pthread_t thread = pthread_self();
+	int rc = pthread_setaffinity(thread, core);
 
-	/* sanity check */
-	if (cpu > ncpu) {
-		logging_log(LOG_WARNING, "CPU binding failed. Given cpu number "
-			    "is higher then the available cores");
-		return;
-	}
-
-	CPU_ZERO(&cpuset);	/* initialize to 0, i.e. no CPUs selected. */
-	CPU_SET(cpu, &cpuset);	/* set bit that represents the given core */
-
-#ifdef __LINUX__
-	rc = sched_setaffinity(getpid(), sizeof(cpuset), &cpuset);
-#elif __FreeBSD__
-	rc = cpuset_setaffinity(CPU_LEVEL_WHICH, CPU_WHICH_TID, -1,
-				sizeof(cpuset), &cpuset);
-#endif /* __LINUX__ */
 	if (rc)
 		logging_log(LOG_WARNING, "failed to bind %s (PID %d) to "
-			    "CPU %i\n", progname, getpid(), cpu);
+			    "CPU core %i", progname, thread, core);
 	else
-		DEBUG_MSG(LOG_WARNING, "bind %s (PID %d) to CPU %i\n",
-			  progname, getpid(), cpu);
+		DEBUG_MSG(LOG_INFO, "bind %s (PID %d) to CPU core %i",
+			  progname, getpid(), core);
 }
+
+#ifdef HAVE_LIBPCAP
+int process_dump_dir() {
+	if (!dump_dir)
+		dump_dir = getcwd(NULL, 0);
+
+	struct stat dirstats;
+
+	if (stat(dump_dir, &dirstats) == -1) {
+		DEBUG_MSG(LOG_WARNING, "Unable to stat %s: %s",
+			  dump_dir, strerror(errno));
+		return 0;
+	}
+
+	if (!S_ISDIR(dirstats.st_mode)) {
+		DEBUG_MSG(LOG_ERR, "Provided path %s is not a directory",
+			  dump_dir);
+		return 0;
+	}
+
+	if (access(dump_dir, W_OK | X_OK) == -1) {
+		DEBUG_MSG(LOG_ERR, "Insufficent permissions to access %s: %s",
+			  dump_dir, strerror(errno));
+		return 0;
+	}
+
+	/* ensure path contains terminating slash */
+	if (dump_dir[strlen(dump_dir) - 1] != '/')
+		asprintf_append(&dump_dir, "/");
+
+	return 1;
+}
+#endif /* HAVE_LIBPCAP */
 
 /**
  * Parse command line options to initialize global options
@@ -997,92 +1018,111 @@ void set_affinity(int cpu)
  */
 static void parse_cmdline(int argc, char *argv[])
 {
-	/* long options */
-	static const struct option long_opt[] = {
-		{"help", no_argument, 0, 'h'},
-		{"version", no_argument, 0, 'v'},
+	const struct ap_Option options[] = {
+		{'b', 0, ap_yes, 0, 0},
+		{'c', 0, ap_yes, 0, 0},
 #ifdef DEBUG
-		{"debug", no_argument, 0, 'd'},
-#endif /* DEBUG */
-		{NULL, 0, NULL, 0}
+		{'d', "debug", ap_no, 0, 0},
+#else /* DEBUG */
+		{'d', 0, ap_no, 0, 0},
+#endif
+		{'h', "help", ap_no, 0, 0},
+		{'o', 0, ap_yes, 0, 0},
+		{'p', 0, ap_yes, 0, 0},
+		{'v', "version", ap_no, 0, 0},
+#ifdef HAVE_LIBPCAP
+		{'w', 0, ap_yes, 0, 0},
+#endif /* HAVE_LIBPCAP */
+		{0, 0, ap_no, 0, 0}
 	};
 
-	/* short options */
-#ifdef HAVE_LIBPCAP
-	static const char *short_opt = "b:c:dhp:w:v";
-#else
-	static const char *short_opt = "b:c:dhp:v";
-#endif /* HAVE_LIBPCAP */
-
-	/* variables from getopt() */
-	extern char *optarg;    /* the option argument */
-	extern int optind;	/* index of the next element */
-	int ch = 0;		/* getopt_long() return value */
+	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
+		critx("could not allocate memory for option parser");
+	if (ap_error(&parser))
+		PARSE_ERR("%s", ap_error(&parser));
 
 	/* parse command line */
-	while ((ch = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
-		switch (ch) {
+	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
+		const int code = ap_code(&parser, argind);
+		const char *arg = ap_argument(&parser, argind);
+
+		switch (code) {
+		case 0:
+			PARSE_ERR("invalid argument: %s", arg);
 		case 'b':
-			rpc_bind_addr = strdup(optarg);
-			if (sscanf(optarg, "%s", rpc_bind_addr) != 1) {
-				errx("failed to parse bind address");
-				usage(EXIT_FAILURE);
-			}
+			rpc_bind_addr = strdup(arg);
+			if (sscanf(arg, "%s", rpc_bind_addr) != 1)
+				PARSE_ERR("failed to parse bind address");
 			break;
 		case 'c':
-			if (sscanf(optarg, "%i", &cpu) != 1) {
-				errx("failed to parse CPU number");
-				usage(EXIT_FAILURE);
-			}
+			if (sscanf(arg, "%u", &core) != 1)
+				PARSE_ERR("failed to parse CPU number");
 			break;
 		case 'd':
 			log_type = LOGTYPE_STDERR;
+#ifdef DEBUG
 			increase_debuglevel();
+#endif /* DEBUG */
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
 			break;
 		case 'p':
-			if (sscanf(optarg, "%u", &port) != 1) {
-				errx("failed to parse port number");
-				usage(EXIT_FAILURE);
-			}
+			if (sscanf(arg, "%u", &port) != 1)
+				PARSE_ERR("failed to parse port number");
 			break;
 #ifdef HAVE_LIBPCAP
 		case 'w':
-			dump_dir = optarg;
+			dump_dir = strdup(arg);
 			break;
 #endif /* HAVE_LIBPCAP */
 		case 'v':
-			fprintf(stderr, "%s version: %s\n", progname,
-				FLOWGRIND_VERSION);
+			fprintf(stderr, "%s %s\%s\n%s\n\n%s\n", progname,
+				FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
+				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 			exit(EXIT_SUCCESS);
-
-		/* unknown option or missing option-argument */
-		case '?':
-			usage(EXIT_FAILURE);
+			break;
+		default:
+			PARSE_ERR("uncaught option: %s", arg);
 			break;
 		}
 	}
 
-	/* Do we have remaning command line arguments? */
-	if (optind < argc) {
-		char *args = NULL;
-		while (optind < argc)
-			asprintf_append(&args, "%s ", argv[optind++]);
-		errx("invalid arguments: %s", args);
-		free(args);
-		usage(EXIT_FAILURE);
+#ifdef HAVE_LIBPCAP
+	if (!process_dump_dir()) {
+		if (ap_is_used(&parser, 'w'))
+			PARSE_ERR("the dump directory %s for tcpdumps does "
+				  "either not exist or you have insufficient "
+				  "permissions to write to it", dump_dir);
+		else
+			warnx("tcpdumping will not be available since you "
+			      "don't have sufficient permissions to write to "
+			      "%s", dump_dir);
+	}
+#endif /* HAVE_LIBPCAP */
+}
+
+static void sanity_check(void)
+{
+	if (core < 0) {
+		errx("CPU binding failed. Given CPU ID is negative");
+		exit(EXIT_FAILURE);
 	}
 
-	// TODO more sanity checks... (e.g. if port is in valid range)
+	if (core > get_ncores(NCORE_CURRENT)) {
+		errx("CPU binding failed. Given CPU ID is higher then "
+		     "available CPU cores");
+		exit(EXIT_FAILURE);
+	}
+
+	/* TODO more sanity checks... (e.g. if port is in valid range) */
 }
 
 int main(int argc, char *argv[])
 {
 	struct sigaction sa;
-
-	xmlrpc_env env;
+	/* Info about the xmlrpc server */
+	struct fg_rpc_server server;
 
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		crit("could not ignore SIGPIPE");
@@ -1097,9 +1137,15 @@ int main(int argc, char *argv[])
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
 	logging_init();
+	sanity_check();
+	fg_list_init(&flows);
 #ifdef HAVE_LIBPCAP
 	fg_pcap_init();
 #endif /* HAVE_LIBPCAP */
+
+	init_rpc_server(&server, port);
+
+	/* Push flowgrindd into the background */
 	if (log_type == LOGTYPE_SYSLOG) {
 		/* Need to call daemon() before creating the thread because
 		 * it internally calls fork() which does not copy threads. */
@@ -1108,14 +1154,15 @@ int main(int argc, char *argv[])
 		logging_log(LOG_NOTICE, "flowgrindd daemonized");
 	}
 
-	if (cpu >= 0)
-		set_affinity(cpu);
+	if (ap_is_used(&parser, 'c'))
+		bind_daemon_to_core();
 
 	create_daemon_thread();
 
-	xmlrpc_env_init(&env);
+	/* This will block */
+	run_rpc_server(&server);
 
-	run_rpc_server(&env, port);
+	ap_free(&parser);
 
 	critx("control should never reach end of main()");
 }

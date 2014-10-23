@@ -33,15 +33,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
+
+/* for inet_pton */
+#include <arpa/inet.h>
+/* for AF_INET6 */
+#include <sys/socket.h>
+/* for sockaddr_in6 */
+#include <netinet/in.h>
 
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
 
 #include "common.h"
+#include "fg_definitions.h"
 #include "fg_error.h"
 #include "fg_progname.h"
+#include "fg_argparser.h"
+
+/** Command line option parser */
+static struct arg_parser parser;
 
 /* External global variables */
 extern const char *progname;
@@ -74,40 +85,37 @@ static void usage(short status)
 	exit(EXIT_SUCCESS);
 }
 
-static void stop_flows(char* address)
+static void stop_flows(const char* address)
 {
 	xmlrpc_env env;
 	xmlrpc_client *client = 0;
 	xmlrpc_value * resultP = 0;
-	char* p;
 	int port = DEFAULT_LISTEN_PORT;
-	char host[1000], url[1000];
+	bool is_ipv6 = false;
+	char *arg, *url = 0;
+	int rc;
+	char *rpc_address = arg = strdup(address);
+	struct sockaddr_in6 source_in6;
+	source_in6.sin6_family = AF_INET6;
 
-	if (strlen(address) > sizeof(url) - 50) {
-		errx("address too long: %s", address);
-		return;
-	}
+	parse_rpc_address(&rpc_address, &port, &is_ipv6);
 
-	/* Construct canonical address and URL */
-	strncpy(host, address, 1000);
+	if (is_ipv6 && (inet_pton(AF_INET6, rpc_address,
+		(char*)&source_in6.sin6_addr) <= 0))
+		errx("invalid IPv6 address '%s' for RPC",  rpc_address);
 
-	p = strchr(host, ':');
-	if (p) {
-		if (p == host) {
-			errx("no address given: %s", address);
-			return;
-		}
-		port = atoi(p + 1);
-		if (port < 1 || port > 65535) {
-			errx("invalid port given: %s", address);
-			return;
-		}
-		*p = 0;
-	}
-	sprintf(url, "http://%s:%d/RPC2", host, port);
-	sprintf(host, "%s:%d", host, port);
+	if (port < 1 || port > 65535)
+		errx("invalid port for RPC");
 
-	printf("Stopping all flows on %s\n", host);
+	if (is_ipv6)
+		rc = asprintf(&url, "http://[%s]:%d/RPC2", rpc_address, port);
+	else
+		rc = asprintf(&url, "http://%s:%d/RPC2", rpc_address, port);
+
+	if (rc==-1)
+		critx("failed to build RPC URL");
+
+	printf("Stopping all flows on %s\n", url);
 
 	/* Stop the flows */
 	xmlrpc_env_init(&env);
@@ -123,12 +131,12 @@ static void stop_flows(char* address)
 cleanup:
 	if (env.fault_occurred) {
 		warnx("could not stop flows on %s: %s (%d)",
-		      host, env.fault_string, env.fault_code);
+		      url, env.fault_string, env.fault_code);
 	}
 	if (client)
 		xmlrpc_client_destroy(client);
 	xmlrpc_env_clean(&env);
-
+	free_all(arg, url);
 }
 
 int main(int argc, char *argv[])
@@ -136,42 +144,57 @@ int main(int argc, char *argv[])
 	/* update progname from argv[0] */
 	set_progname(argv[0]);
 
-	/* long options */
-	static const struct option long_opt[] = {
-		{"help", no_argument, 0, 'h'},
-		{"version", no_argument, 0, 'v'},
-		{NULL, 0, NULL, 0}
+	const struct ap_Option options[] = {
+		{'h', "help", ap_no, 0, 0},
+		{'v', "version", ap_no, 0, 0},
+		{0, 0, ap_no, 0, 0}
 	};
 
-	/* short options */
-	static const char *short_opt = "hv";
+	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
+		critx("could not allocate memory for option parser");
+	if (ap_error(&parser)) {
+		errx("%s", ap_error(&parser));
+		usage(EXIT_FAILURE);
+	}
 
 	/* parse command line */
-	int ch;
-	while ((ch = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
-		switch (ch) {
+	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
+		const int code = ap_code(&parser, argind);
+
+		switch (code) {
+		case 0:
+			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
 			break;
 		case 'v':
-			fprintf(stderr, "%s version: %s\n", progname,
-				FLOWGRIND_VERSION);
+			fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+				FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
+				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 			exit(EXIT_SUCCESS);
-
-		/* unknown option or missing option-argument */
-		case '?':
+			break;
+		default:
+			errx("uncaught option: %s", ap_argument(&parser, argind));
 			usage(EXIT_FAILURE);
 			break;
 		}
+	}
+
+	if (!ap_arguments(&parser)) {
+		errx("no address given");
+		usage(EXIT_FAILURE);
 	}
 
 	xmlrpc_env rpc_env;
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
-	for (int i = optind; i < argc; i++)
-		stop_flows(argv[i]);
+	for (int argind = 0; argind < ap_arguments(&parser); argind++)
+		/* if non-option, it is an address */
+		if (!ap_code(&parser, argind))
+			stop_flows(ap_argument(&parser, argind));
 
 	xmlrpc_env_clean(&rpc_env);
 	xmlrpc_client_teardown_global_const();
+	ap_free(&parser);
 }

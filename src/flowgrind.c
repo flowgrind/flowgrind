@@ -31,17 +31,18 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef DEBUG
 #include <assert.h>
-#endif /* DEBUG */
-
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
 #include <sys/types.h>
+/* for AF_INET6 */
+#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+/* for CA states (on Linux only) */
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,7 +54,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
-#include <getopt.h>
 
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
@@ -64,10 +64,10 @@
 #include "fg_error.h"
 #include "fg_progname.h"
 #include "fg_time.h"
-#include "fg_stdlib.h"
-#include "fg_socket.h"
+#include "fg_definitions.h"
 #include "fg_string.h"
 #include "debug.h"
+#include "fg_argparser.h"
 
 /** To show intermediated interval report columns */
 #define SHOW_COLUMNS(...)                                                   \
@@ -80,6 +80,12 @@
 /** To set the unit of intermediated interval report columns */
 #define SET_COLUMN_UNIT(unit, ...)                                          \
         (set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
+
+/** Print error message, usage string and exit. Used for cmdline parsing errors */
+#define PARSE_ERR(err_msg, ...) do {	\
+	errx(err_msg, ##__VA_ARGS__);	\
+	usage(EXIT_FAILURE);		\
+} while (0)
 
 /** Logfile for measurement output */
 static FILE *log_stream = NULL;
@@ -94,16 +100,22 @@ static bool sigint_caught = false;
 static xmlrpc_env rpc_env;
 
 /** Unique (by URL) flowgrind daemons */
-static struct _daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
+static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 
 /** Number of flowgrind dameons */
 static unsigned int num_unique_servers = 0;
 
+/** Command line option parser */
+static struct arg_parser parser;
+
 /** Controller options */
-static struct _controller_options copt;
+static struct controller_options copt;
 
 /** Infos about all flows including flow options */
-static struct _cflow cflow[MAX_FLOWS];
+static struct cflow cflow[MAX_FLOWS];
+
+/** Command line option parser */
+static struct arg_parser parser;
 
 /** Number of currently active flows */
 static int active_flows = 0;
@@ -112,7 +124,7 @@ static int active_flows = 0;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 /** Infos about the intermediated interval report columns */
-static struct _column column_info[] = {
+static struct column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
 	 .header.unit = "#   ", .state.visible = true},
 	{.type = COL_BEGIN, .header.name = " begin",
@@ -195,8 +207,8 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void fetch_reports(xmlrpc_client *);
 static void set_column_visibility(bool visibility, unsigned int nargs, ...);
 static void set_column_unit(const char *unit, unsigned int nargs, ...);
-static void report_flow(const struct _daemon* daemon, struct _report* report);
-static void print_report(int id, int endpoint, struct _report* report);
+static void report_flow(const struct daemon* daemon, struct report* report);
+static void print_report(int id, int endpoint, struct report* report);
 
 /**
  * Print flowgrind usage and exit
@@ -216,8 +228,7 @@ static void usage(short status)
 		"Mandatory arguments to long options are mandatory for short options too.\n\n"
 
 		"General options:\n"
-		"  -h             display this help and exit (same as --help)\n"
-		"      --help[=WHAT]\n"
+		"  -h, --help[=WHAT]\n"
 		"                 display help and exit. Optional WHAT can either be 'socket' for\n"
 		"                 help on socket options or 'traffic' traffic generation help\n"
 		"  -v, --version  print version information and exit\n\n"
@@ -229,17 +240,15 @@ static void usage(short status)
 		"                 'iat', 'kernel' (all show per default), and 'blocks', 'rtt',\n"
 #ifdef DEBUG
 		"                 'delay', 'status' (optional)\n"
-#else
+#else /* DEBUG */
 		"                 'delay' (optional)\n"
 #endif /* DEBUG */
 #ifdef DEBUG
 		"  -d, --debug    increase debugging verbosity. Add option multiple times to\n"
 		"                 increase the verbosity\n"
 #endif /* DEBUG */
-#ifdef HAVE_LIBPCAP
 		"  -e, --dump-prefix=PRE\n"
-		"                 prepend prefix PRE to dump filename (default: \"%3$s\")\n"
-#endif /* HAVE_LIBPCAP */
+		"                 prepend prefix PRE to pcap dump filename (default: \"%3$s\")\n"
 		"  -i, --report-interval=#.#\n"
 		"                 reporting interval, in seconds (default: 0.05s)\n"
 		"      --log-file[=FILE]\n"
@@ -273,7 +282,7 @@ static void usage(short status)
 		"                 to the second flow. With -1 all flow are refered\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
-#else
+#else /* HAVE_LIBGSL */
 		"  -G x=(q|p|g):(C|U):#1:[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"                 activate stochastic traffic generation and set parameters\n"
@@ -288,9 +297,7 @@ static void usage(short status)
 		"  -L             call connect() on test socket immediately before starting to\n"
 		"                 send data (late connect). If not specified the test connection\n"
 		"                 is established in the preparation phase before the test starts\n"
-#ifdef HAVE_LIBPCAP
 		"  -M x           dump traffic using libpcap. flowgrindd must be run as root\n"
-#endif /* HAVE_LIBPCAP */
 		"  -N             shutdown() each socket direction after test flow\n"
 		"  -O x=OPT       set socket option OPT on test socket. For additional information\n"
 		"                 see 'flowgrind --help=socket'\n"
@@ -298,10 +305,9 @@ static void usage(short status)
 		"                 block size did not suffice to fill sending queue (pushy)\n"
 		"  -Q             summarize only, no intermediated interval reports are\n"
 		"                 computed (quiet)\n"
-		"  -R x=#.#(z|k|M|G)(b|B|o)\n"
+		"  -R x=#.#(z|k|M|G)(b|B)\n"
 		"                 send at specified rate per second, where: z = 2**0, k = 2**10,\n"
-		"                 M = 2**20, G = 2**30, and b = bits/s (default), B = bytes/s,\n"
-		"                 o = blocks/s (same as -G s=g,C,#)\n"
+		"                 M = 2**20, G = 2**30, and b = bits/s (default), B = bytes/s\n"
 		"  -S x=#         set block (message) size, in bytes (same as -G s=q,C,#)\n"
 		"  -T x=#.#       set flow duration, in seconds (default: s=10,d=0)\n"
 		"  -U #           set application buffer size, in bytes (default: 8192)\n"
@@ -311,9 +317,7 @@ static void usage(short status)
 /*		"  -Z x=#.#       set amount of data to be send, in bytes (instead of -t)\n"*/,
 		progname,
 		MIN_BLOCK_SIZE
-#ifdef HAVE_LIBPCAP
 		, copt.dump_prefix
-#endif /* HAVE_LIBPCAP */
 		);
 	exit(EXIT_SUCCESS);
 }
@@ -333,7 +337,7 @@ static void usage_sockopt(void)
 		"repeatedly pass the same endpoint in order to specify multiple socket options\n\n"
 
 		"Standard socket options:\n", progname);
-#ifdef TCP_CONGESTION
+#ifdef HAVE_SO_TCP_CONGESTION
 	FILE *fp;
 	char buf1[1024];
 
@@ -359,7 +363,7 @@ static void usage_sockopt(void)
 
 		pclose(fp);
 	}
-#endif /* TCP_CONGESTION */
+#endif /* HAVE_SO_TCP_CONGESTION */
 	fprintf(stderr,
 		"  -O x=TCP_CORK\n"
 		"               set TCP_CORK on test socket\n"
@@ -410,7 +414,7 @@ static void usage_trafgenopt(void)
 		"Stochastic traffic generation:\n"
 #ifdef HAVE_LIBGSL
 		"  -G x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]\n"
-#else
+#else /* HAVE_LIBGSL */
 		"  -G x=(q|p|g):(C|U):#1:[#2]\n"
 #endif /* HAVE_LIBGSL */
 		"               Flow parameter:\n"
@@ -427,7 +431,7 @@ static void usage_trafgenopt(void)
 		"                 L = lognormal (#1: zeta - mean, #2: sigma - std dev)\n"
 		"                 P = pareto (#1: k - shape, #2 x_min - scale)\n"
 		"                 W = weibull (#1: lambda - scale, #2: k - shape)\n"
-#else
+#else /* HAVE_LIBGSL */
 		"               advanced distributions are only available if compiled with libgsl\n"
 #endif /* HAVE_LIBGSL */
 		"  -U #         specify a cap for the calculated values for request and response\n"
@@ -477,9 +481,7 @@ static void init_controller_options(void)
 	copt.reporting_interval = 0.05;
 	copt.log_to_stdout = true;
 	copt.log_to_file = false;
-#ifdef HAVE_LIBPCAP
 	copt.dump_prefix = "flowgrind-";
-#endif /* HAVE_LIBPCAP */
 	copt.clobber = false;
 	copt.mbyte = false;
 	copt.symbolic = true;
@@ -611,7 +613,8 @@ inline static void die_if_fault_occurred(xmlrpc_env *env)
 }
 
 /* creates an xmlrpc_client for connect to server, uses global env rpc_env */
-static void prepare_xmlrpc_client(xmlrpc_client **rpc_client) {
+static void prepare_xmlrpc_client(xmlrpc_client **rpc_client)
+{
 	struct xmlrpc_clientparms clientParms;
 	size_t clientParms_cpsize = XMLRPC_CPSIZE(transport);
 
@@ -755,7 +758,7 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 	log_output(headline);
 
 	/* prepare column visibility based on involved OSes */
-	bool has_linux, has_freebsd;
+	bool has_linux = false, has_freebsd = false;
 	for (unsigned int j = 0; j < num_unique_servers; j++)
 		if (!strcmp(unique_servers[j].os_name, "Linux"))
 			has_linux = true;
@@ -819,9 +822,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:b,s:b,s:i,s:i}"
 		"{s:s}"
 		"{s:i,s:i,s:i,s:i,s:i}"
-#ifdef HAVE_LIBPCAP
 		"{s:s}"
-#endif /* HAVE_LIBPCAP */
 		"{s:i,s:A}"
 		")",
 
@@ -872,9 +873,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"mtcp", cflow[id].settings[DESTINATION].mtcp,
 		"dscp", (int)cflow[id].settings[DESTINATION].dscp,
 		"ipmtudiscover", cflow[id].settings[DESTINATION].ipmtudiscover,
-#ifdef HAVE_LIBPCAP
 		"dump_prefix", copt.dump_prefix,
-#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", cflow[id].settings[DESTINATION].num_extra_socket_options,
 		"extra_socket_options", extra_options);
 
@@ -925,9 +924,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"{s:b,s:b,s:i,s:i}"
 		"{s:s}"
 		"{s:i,s:i,s:i,s:i,s:i}"
-#ifdef HAVE_LIBPCAP
 		"{s:s}"
-#endif /* HAVE_LIBPCAP */
 		"{s:i,s:A}"
 		"{s:s,s:i,s:i}"
 		")",
@@ -980,9 +977,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"mtcp", cflow[id].settings[SOURCE].mtcp,
 		"dscp", (int)cflow[id].settings[SOURCE].dscp,
 		"ipmtudiscover", cflow[id].settings[SOURCE].ipmtudiscover,
-#ifdef HAVE_LIBPCAP
 		"dump_prefix", copt.dump_prefix,
-#endif /* HAVE_LIBPCAP */
 		"num_extra_socket_options", cflow[id].settings[SOURCE].num_extra_socket_options,
 		"extra_socket_options", extra_options,
 
@@ -1022,7 +1017,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 		if (sigint_caught)
 			return;
 
-		DEBUG_MSG(LOG_ERR, "starting flow on server %d", j);
+		DEBUG_MSG(LOG_ERR, "starting flow on server %u", j);
 		xmlrpc_client_call2f(&rpc_env, rpc_client,
 				     unique_servers[j].server_url,
 				     "start_flows", &resultP, "({s:i})",
@@ -1050,7 +1045,8 @@ static void grind_flows(xmlrpc_client *rpc_client)
 }
 
 /* Poll the daemons for reports */
-static void fetch_reports(xmlrpc_client *rpc_client) {
+static void fetch_reports(xmlrpc_client *rpc_client)
+{
 
 	xmlrpc_value * resultP = 0;
 
@@ -1092,7 +1088,7 @@ has_more_reports:
 
 			xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
 			if (rv) {
-				struct _report report;
+				struct report report;
 				int begin_sec, begin_nsec, end_sec, end_nsec;
 				int tcpi_snd_cwnd;
 				int tcpi_snd_ssthresh;
@@ -1179,7 +1175,7 @@ has_more_reports:
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
 				report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
 				report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
-#else
+#else /* HAVE_UNSIGNED_LONG_LONG_INT */
 				report.bytes_read = (uint32_t)bytes_read_low;
 				report.bytes_written = (uint32_t)bytes_written_low;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */
@@ -1222,12 +1218,12 @@ has_more_reports:
 
 /* This function allots an report received from one daemon (identified
  * by server_url)  to the proper flow */
-static void report_flow(const struct _daemon* daemon, struct _report* report)
+static void report_flow(const struct daemon* daemon, struct report* report)
 {
 	const char* server_url = daemon->server_url;
 	int endpoint;
 	int id;
-	struct _cflow *f = NULL;
+	struct cflow *f = NULL;
 
 	/* Get matching flow for report */
 	/* TODO Maybe just use compare daemon pointers? */
@@ -1249,7 +1245,7 @@ exit_outer_loop:
 		DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);
 		/* Final report, keep it for later */
 		free(f->final_report[endpoint]);
-		f->final_report[endpoint] = malloc(sizeof(struct _report));
+		f->final_report[endpoint] = malloc(sizeof(struct report));
 		*f->final_report[endpoint] = *report;
 
 		if (!f->finished[endpoint]) {
@@ -1258,9 +1254,7 @@ exit_outer_loop:
 				active_flows--;
 				DEBUG_MSG(LOG_DEBUG, "remaining active flows: "
 					  "%d", active_flows);
-#ifdef DEBUG
 				assert(active_flows >= 0);
-#endif /* DEBUG */
 			}
 		}
 		return;
@@ -1274,7 +1268,7 @@ static void close_flows(void)
 	xmlrpc_client *client;
 
 	for (unsigned int id = 0; id < copt.num_flows; id++) {
-		DEBUG_MSG(LOG_WARNING, "closing flow %d.", id);
+		DEBUG_MSG(LOG_WARNING, "closing flow %u.", id);
 
 		if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
 			continue;
@@ -1311,7 +1305,7 @@ static void close_flows(void)
 			active_flows--;
 
 		xmlrpc_client_destroy(client);
-		DEBUG_MSG(LOG_WARNING, "closed flow %d.", id);
+		DEBUG_MSG(LOG_WARNING, "closed flow %u.", id);
 	}
 }
 
@@ -1390,7 +1384,7 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
 	char tempBuffer[50];
-	struct _column *column = &column_info[column_id];
+	struct column *column = &column_info[column_id];
 	char* number_formatstring;
 
 	if (!column->state.visible)
@@ -1506,7 +1500,7 @@ static void create_column_str(char *strHead1Row, char *strHead2Row,
 	int lengthData = 0;
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
-	struct _column *column = &column_info[column_id];
+	struct column *column = &column_info[column_id];
 
 	if (!column->state.visible)
 		return;
@@ -1671,7 +1665,7 @@ static char *create_output(char hash, int id, int type, double begin, double end
 #ifdef DEBUG
 	create_column_str(headerString1, headerString2, dataString, COL_STATUS,
 			  status, &columnWidthChanged);
-#else
+#else /* DEBUG */
 	UNUSED_ARGUMENT(status);
 #endif /* DEBUG */
 
@@ -1699,7 +1693,7 @@ inline static double scale_thruput(double thruput)
         return thruput / 1e6 * (1<<3);
 }
 
-static void print_report(int id, int endpoint, struct _report* r)
+static void print_report(int id, int endpoint, struct report* r)
 {
 
 	double min_rtt = r->rtt_min;
@@ -1821,12 +1815,12 @@ static void print_report(int id, int endpoint, struct _report* r)
 static char *guess_topology (int mtu)
 {
 	/* Mapping of common MTU sizes to network technologies */
-	struct _mtu_hint {
+	struct mtu_hint {
 		int mtu;
 		char *topology;
 	};
 
-	static const struct _mtu_hint mtu_hints[] = {
+	static const struct mtu_hint mtu_hints[] = {
 		{65535,	"Hyperchannel"},		/* RFC1374 */
 		{17914, "16 MB/s Token Ring"},
 		{16436, "Linux Loopback device"},
@@ -1846,7 +1840,7 @@ static char *guess_topology (int mtu)
 	};
 
 	for (unsigned int i = 0;
-	     i < sizeof(mtu_hints) / sizeof(struct _mtu_hint); i++)
+	     i < sizeof(mtu_hints) / sizeof(struct mtu_hint); i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
 	return "unknown";
@@ -1884,7 +1878,7 @@ static void report_final(void)
 
 			if (cflow[id].final_report[endpoint]) {
 
-				CATC("sbuf = %u/%u, rbuf = %u/%u (real/req)",
+				CATC("sbuf = %d/%d, rbuf = %d/%d (real/req)",
 					cflow[id].endpoint[endpoint].send_buffer_size_real,
 					cflow[id].settings[endpoint].requested_send_buffer_size,
 					cflow[id].endpoint[endpoint].receive_buffer_size_real,
@@ -2022,7 +2016,7 @@ static void report_final(void)
 
 /* Finds the daemon (or creating a new one) for a given server_url,
  * uses global static unique_servers variable for storage */
-static struct _daemon * get_daemon_by_url(const char* server_url,
+static struct daemon * get_daemon_by_url(const char* server_url,
 					  const char* server_name,
 					  unsigned short server_port)
 {
@@ -2032,87 +2026,80 @@ static struct _daemon * get_daemon_by_url(const char* server_url,
 			return &unique_servers[i];
 	}
 	/* didn't find anything, seems to be a new one */
-	memset(&unique_servers[num_unique_servers], 0, sizeof(struct _daemon));
+	memset(&unique_servers[num_unique_servers], 0, sizeof(struct daemon));
 	strcpy(unique_servers[num_unique_servers].server_url, server_url);
 	strcpy(unique_servers[num_unique_servers].server_name, server_name);
 	unique_servers[num_unique_servers].server_port = server_port;
 	return &unique_servers[num_unique_servers++];
 }
 
-static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
+/**
+ * Parse option for stochastic traffic generation (option -G)
+ *
+ * @param[in] params parameter string in the form 'x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]'
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
+ */
+static void parse_trafgen_option(const char *params, int flow_id, int endpoint_id)
 {
 	int rc;
 	double param1 = 0, param2 = 0, unused;
 	char typechar, distchar;
 	enum distributions distr = CONSTANT;
 
-	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar, &param1, &param2, &unused);
-	if (rc != 3 && rc != 4) {
-		errx("malformed traffic generation parameters");
-		usage(EXIT_FAILURE);
-	}
+	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar,
+		    &param1, &param2, &unused);
+	if (rc != 3 && rc != 4)
+		PARSE_ERR("flow %i: option -G: malformed traffic generation "
+			  "parameters", flow_id);
 
 	switch (distchar) {
 	case 'N':
 		distr = NORMAL;
-		if (!param1 || !param2) {
-			errx("normal distribution needs two non-zero "
-			     "parameters");
-			usage(EXIT_FAILURE);
-		}
+		if (!param1 || !param2)
+			PARSE_ERR("flow %i: option -G: normal distribution "
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'W':
 		distr = WEIBULL;
-		if (!param1 || !param2) {
-			errx("weibull distribution needs two non-zero "
-			     "parameters");
-			usage(EXIT_FAILURE);
-		}
+		if (!param1 || !param2)
+			PARSE_ERR("flow %i: option -G: weibull distribution "
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'U':
 		distr = UNIFORM;
-		if  (param1 <= 0 || param2 <= 0 || (param1 > param2)) {
-			errx("uniform distribution needs two positive "
-			     "parameters");
-			usage(EXIT_FAILURE);
-		}
+		if  (param1 <= 0 || param2 <= 0 || (param1 > param2))
+			PARSE_ERR("flow %i: option -G: uniform distribution "
+				  "needs two positive parameters", flow_id);
 		break;
 	case 'E':
 		distr = EXPONENTIAL;
-		if (param1 <= 0) {
-			errx("exponential value needs one positive "
-			     "paramters");
-			usage(EXIT_FAILURE);
-		}
+		if (param1 <= 0)
+			PARSE_ERR("flow %i: option -G: exponential distribution "
+				  "needs one positive parameter", flow_id);
 		break;
 	case 'P':
 		distr = PARETO;
-		if (!param1 || !param2) {
-			errx("pareto distribution needs two non-zero "
-			     "parameters");
-			usage(EXIT_FAILURE);
-		}
+		if (!param1 || !param2)
+			PARSE_ERR("flow %i: option -G: pareto distribution "
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'L':
 		distr = LOGNORMAL;
-		if (!param1 || !param2) {
-			errx("lognormal distribution needs two "
-			     "non-zero parameters");
-			usage(EXIT_FAILURE);
-		}
+		if (!param1 || !param2)
+			PARSE_ERR("flow %i: option -G: lognormal distribution "
+				  "needs two non-zero parameters", flow_id);
 		break;
 	case 'C':
 		distr = CONSTANT;
-		if (param1 <= 0) {
-			errx("constant value needs one positive "
-			     "paramters");
-			usage(EXIT_FAILURE);
-		}
+		if (param1 <= 0)
+			PARSE_ERR("flow %i: option -G: constant distribution "
+				  "needs one positive parameters", flow_id);
 		break;
 	default:
-		errx("syntax error in traffic generation option: %c "
-		     "is not a distribution", distchar);
-		usage(EXIT_FAILURE);
+		PARSE_ERR("flow %i: option -G: syntax error: %c is not a "
+			  "distribution", flow_id, distchar);
+		break;
 	}
 
 	switch (typechar) {
@@ -2132,6 +2119,7 @@ static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
 		cflow[flow_id].settings[endpoint_id].interpacket_gap_trafgen_options.param_two = param2;
 		break;
 	}
+
 	/* sanity check for max block size */
 	for (int i = 0; i < 2; i++) {
 		if (distr == CONSTANT && cflow[flow_id].settings[i].maximum_block_size < param1)
@@ -2145,24 +2133,22 @@ static void parse_trafgen_option(char *params, int flow_id, int endpoint_id)
  * Parse argument for option -R, which specifies the rate the endpoint will send
  *
  * @param[in] arg argument for option -R in form of #.#(z|k|M|G)(b|B|o)
- * @param[in] flow_id id of the flow for which flow to parse
- * @param[in] endpoint_id endpoint to parse for
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
-static void parse_rate_option(char *arg, int flow_id, int endpoint_id) {
+static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
+{
 	char unit = 0, type = 0;
 	double optdouble = 0.0;
 	/* last %c for catching wrong input... this is not nice. */
 	int rc = sscanf(arg, "%lf%c%c%c",
 			&optdouble, &unit, &type, &unit);
-	if (rc < 1 || rc > 4) {
-		errx("malformed rate for flow %u", flow_id);
-		usage(EXIT_FAILURE);
-	}
+	if (rc < 1 || rc > 4)
+		PARSE_ERR("flow %i: option -R: malformed rate", flow_id);
 
-	if (optdouble == 0.0) {
-		cflow[flow_id].settings[endpoint_id].write_rate_str = NULL;
-		usage(EXIT_FAILURE);
-	}
+	if (optdouble == 0.0)
+		PARSE_ERR("flow %i: option -R: rate of 0", flow_id);
+
 
 	switch (unit) {
 	case 0:
@@ -2182,66 +2168,49 @@ static void parse_rate_option(char *arg, int flow_id, int endpoint_id) {
 		break;
 
 	default:
-		errx("illegal unit specifier in rate of flow %u", flow_id);
-		usage(EXIT_FAILURE);
+		PARSE_ERR("flow %i: option -R: illegal unit specifier", flow_id);
+		break;
 	}
 
-	switch (type) {
-	case 0:
-	case 'b':
-		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size * 8;
-		if (optdouble < 1) {
-			errx("client block size for flow %u is too big for "
-			      "specified rate", flow_id);
-			usage(EXIT_FAILURE);
-		}
-		break;
+	if (type != 'b' && type != 'B')
+		PARSE_ERR("flow %i: option -R: illegal type specifier "
+			  "(either 'b' or 'B')", flow_id);
+	if (type == 'b')
+		optdouble /=  8;
 
-	case 'B':
-		optdouble /= cflow[flow_id].settings[SOURCE].maximum_block_size;
-		if (optdouble < 1) {
-			errx("client block size for flow %u is too big for "
-			      "specified rate", flow_id);
-			usage(EXIT_FAILURE);
-		}
-		break;
-
-	case 'o':
-		break;
-
-	default:
-		errx("illegal type specifier (either block or byte) for "
-			"flow %u", flow_id);
-		usage(EXIT_FAILURE);
-	}
-
-	if (optdouble > 5e5)
+	if (optdouble > 5e9)
 		warnx("rate of flow %d too high", flow_id);
 
 	cflow[flow_id].settings[endpoint_id].write_rate_str = strdup(arg);
 	cflow[flow_id].settings[endpoint_id].write_rate = optdouble;
 }
 
+
+
 /**
  * Parse argument for option -H, which specifies the endpoints of a flow
  *
- * @param[in] arg argument for option -H in form of HOST[/CONTROL[:PORT]]
- *		    - HOST: test address where the actual test connection goes to
- *		    - CONTROL: RPC address, where this program connects to
- *		    - PORT: port for the control connection
- * @param[in] endpoint flow-endpoint to write to
+ * @param[in] hostarg argument for option -H in form of HOST[/CONTROL[:PORT]]
+ *	- HOST: test address where the actual test connection goes to
+ *	- CONTROL: RPC address, where this program connects to
+ *	- PORT: port for the control connection
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
  */
-static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
+static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
+{
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
-	struct _daemon* daemon;
-	char url[1000];
+	struct daemon* daemon;
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
-	char *sepptr, *rpc_address = 0;
+	char *rpc_address, *url = 0, *sepptr = 0;
+	char *arg = strdup(hostarg);
+	struct flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
+	int rc;
 
-	/* RPC address */
+	/* extra RPC address ? */
 	sepptr = strchr(arg, '/');
 	if (sepptr) {
 		*sepptr = '\0';
@@ -2253,100 +2222,60 @@ static void parse_host_option(char* arg, struct _flow_endpoint* endpoint) {
 
 	/* IPv6 Address? */
 	if (strchr(arg, ':')) {
-		if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0) {
-			errx("invalid IPv6 address "
-			     "'%s' for test connection", arg);
-			usage(EXIT_FAILURE);
-		}
+		if (inet_pton(AF_INET6, arg, (char*)&source_in6.sin6_addr) <= 0)
+			PARSE_ERR("flow %i: invalid IPv6 address '%s' for "
+				  "test connection", flow_id, arg);
+
 		if (!extra_rpc)
 			is_ipv6 = true;
 	}
 
+	/* optional dedicated rpc address was supplied and needs to be parsed */
 	if (extra_rpc) {
-		/* Now it's getting tricky... */
-		/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
-		if ((sepptr = strchr(rpc_address, ']'))) {
-			is_ipv6 = true;
-			*sepptr = '\0';
-			if (rpc_address[0] == '[')
-				rpc_address++;
-			sepptr++;
-			if (sepptr != '\0' && *sepptr == ':')
-				sepptr++;
-			port = atoi(sepptr);
-		} else if ((sepptr = strchr(rpc_address, ':'))) {
-			/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
-			if (strchr(sepptr+1, ':')) {
-				is_ipv6 = true;
-			} else {
-			/* 3rd case: IPv4 or name with port 1.2.3.4:5999 */
-				*sepptr = '\0';
-				sepptr++;
-				if ((*sepptr != '\0') && (*sepptr == ':'))
-						sepptr++;
-				port = atoi(sepptr);
-			}
-		}
-		if (is_ipv6 && (inet_pton(AF_INET6, arg,
-			(char*)&source_in6.sin6_addr) <= 0)) {
-			errx("invalid IPv6 address '%s' for RPC connection", arg);
-			usage(EXIT_FAILURE);
-		}
-		if (port < 1 || port > 65535) {
-			errx("invalid port for RPC connection");
-			usage(EXIT_FAILURE);
-		}
+		parse_rpc_address(&rpc_address, &port, &is_ipv6);
+		if (is_ipv6 && (inet_pton(AF_INET6, rpc_address,
+				(char*)&source_in6.sin6_addr) <= 0))
+			PARSE_ERR("flow %i: invalid IPv6 address '%s' for RPC",
+				  flow_id, arg);
+		if (port < 1 || port > 65535)
+			PARSE_ERR("flow %i: invalid port for RPC", flow_id);
 	}
 
-	if (!*arg) {
-		errx("no test host given in argument");
-		usage(EXIT_FAILURE);
-	}
+	if (!*arg)
+		PARSE_ERR("flow %i: no test host given in argument", flow_id);
 	if (is_ipv6)
-		sprintf(url, "http://[%s]:%d/RPC2", rpc_address, port);
+		rc = asprintf(&url, "http://[%s]:%d/RPC2", rpc_address, port);
 	else
-		sprintf(url, "http://%s:%d/RPC2", rpc_address, port);
+		rc = asprintf(&url, "http://%s:%d/RPC2", rpc_address, port);
+
+	if (rc==-1)
+		critx("could not allocate memory for the RPC url");
 
 	daemon = get_daemon_by_url(url, rpc_address, port);
 	endpoint->daemon = daemon;
 	strcpy(endpoint->test_address, arg);
+	free_all(arg, url);
 }
 
-/* Parse flow specific options given on the cmdline */
-static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
-	int rc = 0;
-	unsigned optunsigned = 0;
+/**
+ * Parse flow options with endpoint
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
+ * @param[in] flow_id ID of flow to apply option to
+ * @param[in] endpoint_id endpoint to apply option to
+ */
+static void parse_flow_option_endpoint(int code, const char* arg,
+				       const char* opt_string, int flow_id,
+				       int endpoint_id)
+{
+	int optint = 0;
 	double optdouble = 0.0;
 
-	struct _flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
-	struct _flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
+	struct flow_settings* settings = &cflow[flow_id].settings[endpoint_id];
 
-	switch (ch) {
-	/* flow options w/o endpoint identifier */
-	case 'E':
-		cflow[flow_id].byte_counting = 1;
-		break;
-	case 'I':
-		SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
-		break;
-	case 'J':
-		rc = sscanf(arg, "%u", &optunsigned);
-		if (rc != 1) {
-			errx("random seed must be a valid unsigned integer");
-			usage(EXIT_FAILURE);
-		}
-		cflow[flow_id].random_seed = optunsigned;
-		break;
-	case 'L':
-		cflow[flow_id].late_connect = 1;
-		break;
-	case 'N':
-		cflow[flow_id].shutdown = 1;
-		break;
-	case 'Q':
-		cflow[flow_id].summarize_only = 1;
-		break;
-	/* flow options w/ endpoint identifier */
+	switch (code) {
 	case 'G':
 		parse_trafgen_option(arg, flow_id, endpoint_id);
 		break;
@@ -2356,36 +2285,30 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 		settings->response_trafgen_options.param_one = MIN_BLOCK_SIZE;
 		break;
 	case 'B':
-		rc = sscanf(arg, "%u", &optunsigned);
-		if (rc != 1) {
-			errx("send buffer size must be a positive "
-			     "integer (in bytes)");
-			usage(EXIT_FAILURE);
-		}
-		settings->requested_send_buffer_size = optunsigned;
+		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
+			PARSE_ERR("in flow %i: option %s needs positive integer",
+				  flow_id, opt_string);
+		settings->requested_send_buffer_size = optint;
 		break;
 	case 'C':
 		settings->flow_control= 1;
 		break;
 	case 'D':
-		rc = sscanf(arg, "%x", &optunsigned);
-		if (rc != 1 || (optunsigned & ~0x3f)) {
-			errx("malformed differentiated service code point");
-			usage(EXIT_FAILURE);
-		}
-		settings->dscp = optunsigned;
+		if (sscanf(arg, "%x", &optint) != 1 || (optint & ~0x3f))
+			PARSE_ERR("in flow %i: option %s service code point "
+				  "is malformed", flow_id, opt_string);
+		settings->dscp = optint;
 		break;
 	case 'H':
-		parse_host_option(arg, endpoint);
+		parse_host_option(arg, flow_id, endpoint_id);
 		break;
 	case 'M':
 		settings->traffic_dump = 1;
 		break;
 	case 'O':
-		if (!*arg) {
-			errx("-O requires a value for each given endpoint");
-			usage(EXIT_FAILURE);
-		}
+		if (!*arg)
+			PARSE_ERR("in flow %i: option %s requires a value "
+				  "for each endpoint", flow_id, opt_string);
 
 		if (!strcmp(arg, "TCP_CORK")) {
 			settings->cork = 1;
@@ -2401,91 +2324,122 @@ static void parse_flow_option(int ch, char* arg, int flow_id, int endpoint_id) {
 			settings->route_record = 1;
 		/* keep TCP_CONG_MODULE for backward compatibility */
 		} else if (!memcmp(arg, "TCP_CONG_MODULE=", 16)) {
-			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
-				errx("too large string for TCP_CONG_MODULE value");
-				usage(EXIT_FAILURE);
-			}
+			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg))
+				PARSE_ERR("in flow %i: option %s: too large "
+					  "string for TCP_CONG_MODULE",
+					  flow_id, opt_string);
 			strcpy(settings->cc_alg, arg + 16);
 		} else if (!memcmp(arg, "TCP_CONGESTION=", 15)) {
-			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg)) {
-				errx("too large string for TCP_CONGESTION value");
-				usage(EXIT_FAILURE);
-			}
+			if (strlen(arg + 16) >= sizeof(cflow[0].settings[SOURCE].cc_alg))
+				PARSE_ERR("in flow %i: option %s: too large "
+					  "string for TCP_CONGESTION",
+					  flow_id, opt_string);
 			strcpy(settings->cc_alg, arg + 15);
 		} else if (!strcmp(arg, "SO_DEBUG")) {
 			settings->so_debug = 1;
 		} else if (!strcmp(arg, "IP_MTU_DISCOVER")) {
 			settings->ipmtudiscover = 1;
 		} else {
-			errx("unknown socket option or socket option "
-			     "not implemented for endpoint");
-			usage(EXIT_FAILURE);
+			PARSE_ERR("in flow %i: option %s: unknown socket "
+				  "option or socket option not implemented",
+				  flow_id, opt_string);
 		}
 		break;
 	case 'P':
 		settings->pushy = 1;
 		break;
 	case 'R':
-		if (!*arg) {
-			errx("-R requires a value for each given endpoint");
-			usage(EXIT_FAILURE);
-		}
+		if (!*arg)
+			PARSE_ERR("in flow %i: option %s requires a value "
+				  "for each given endpoint", flow_id, opt_string);
 		parse_rate_option(arg, flow_id, endpoint_id);
 		break;
 	case 'S':
-		rc = sscanf(arg, "%u", &optunsigned);
+		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
+			PARSE_ERR("in flow %i: option %s needs positive integer",
+				  flow_id, opt_string);
 		settings->request_trafgen_options.distribution = CONSTANT;
-		settings->request_trafgen_options.param_one = optunsigned;
+		settings->request_trafgen_options.param_one = optint;
 		for (int id = 0; id < MAX_FLOWS; id++) {
 			for (int i = 0; i < 2; i++) {
-				if ((signed)optunsigned > cflow[id].settings[i].maximum_block_size)
-					cflow[id].settings[i].maximum_block_size = (signed)optunsigned;
+				if ((signed)optint > cflow[id].settings[i].maximum_block_size)
+					cflow[id].settings[i].maximum_block_size = (signed)optint;
 			}
 		}
 		break;
 	case 'T':
-		rc = sscanf(arg, "%lf", &optdouble);
-		if (rc != 1) {
-			errx("malformed flow duration");
-			usage(EXIT_FAILURE);
-		}
+		if (sscanf(arg, "%lf", &optdouble) != 1 || optdouble < 0)
+			PARSE_ERR("in flow %i: option %s needs positive number",
+				  flow_id, opt_string);
 		settings->duration[WRITE] = optdouble;
 		break;
 	case 'U':
-		rc = sscanf(arg, "%d", &optunsigned);
-		if (rc != 1) {
-			errx("block size must be a positive integer");
-			usage(EXIT_FAILURE);
-		}
-		settings->maximum_block_size = optunsigned;
+		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
+			PARSE_ERR("in flow %i: option %s needs positive integer",
+				  flow_id, opt_string);
+		settings->maximum_block_size = optint;
 		break;
 	case 'W':
-		rc = sscanf(arg, "%u", &optunsigned);
-		if (rc != 1) {
-			errx("receive buffer size (advertised window) "
-			     "must be a positive integer (in bytes)");
-			usage(EXIT_FAILURE);
-		}
-		settings->requested_read_buffer_size = optunsigned;
+		if (sscanf(arg, "%u", &optint) != 1 || optint < 0)
+			PARSE_ERR("in flow %i: option %s needs non-negative number",
+				  flow_id, opt_string);
+		settings->requested_read_buffer_size = optint;
 		break;
 	case 'Y':
-		rc = sscanf(arg, "%lf", &optdouble);
-		if (rc != 1 || optdouble < 0) {
-			errx("delay must be a non-negativ number (in seconds)");
-			usage(EXIT_FAILURE);
-		}
+		if (sscanf(arg, "%lf", &optdouble) != 1 || optdouble < 0)
+			PARSE_ERR("in flow %i: option %s needs non-negative number",
+				  flow_id, opt_string);
 		settings->delay[WRITE] = optdouble;
 		break;
 	}
 }
 
 /**
- * Parse argument for option -c, which hides/shows intermediated interval
- * report columns
+ * Parse flow options without endpoint
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument string of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
+ * @param[in] flow_id ID of flow to apply option to
+ */
+static void parse_flow_option(int code, const char* arg, const char* opt_string,
+			      int flow_id)
+{
+	unsigned optunsigned = 0;
+
+	switch (code) {
+	/* flow options w/o endpoint identifier */
+	case 'E':
+		cflow[flow_id].byte_counting = 1;
+		break;
+	case 'I':
+		SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
+		break;
+	case 'J':
+		if (sscanf(arg, "%u", &optunsigned) != 1)
+			PARSE_ERR("option %s needs an integer argument",
+				  opt_string);
+		cflow[flow_id].random_seed = optunsigned;
+		break;
+	case 'L':
+		cflow[flow_id].late_connect = 1;
+		break;
+	case 'N':
+		cflow[flow_id].shutdown = 1;
+		break;
+	case 'Q':
+		cflow[flow_id].summarize_only = 1;
+		break;
+	}
+}
+
+/**
+ * Parse argument for option -c to hide/show intermediated interval report
+ * columns
  *
  * @param[in] arg argument for option -c
  */
-static void parse_colon_option(char *arg)
+static void parse_colon_option(const char *arg)
 {
 	/* To make it easy (independed of default values), hide all colons */
 	HIDE_COLUMNS(COL_BEGIN, COL_END, COL_THROUGH, COL_TRANSAC,
@@ -2501,23 +2455,24 @@ static void parse_colon_option(char *arg)
 #endif /* DEBUG */
 
 	/* Set colon visibility according option */
-	for (char *token = strtok(arg, ","); token;
+	char *argcpy = strdup(arg);
+	for (char *token = strtok(argcpy, ","); token;
 	     token = strtok(NULL, ",")) {
-		if (!strcmp(token, "interval")) {
+		if (!strcmp(token, "interval"))
 			SHOW_COLUMNS(COL_BEGIN, COL_END);
-		} else if (!strcmp(token, "through")) {
+		else if (!strcmp(token, "through"))
 			SHOW_COLUMNS(COL_THROUGH);
-		} else if (!strcmp(token, "transac")) {
+		else if (!strcmp(token, "transac"))
 			SHOW_COLUMNS(COL_TRANSAC);
-		} else if (!strcmp(token, "blocks")) {
+		else if (!strcmp(token, "blocks"))
 			SHOW_COLUMNS(COL_BLOCK_REQU, COL_BLOCK_RESP);
-		} else if (!strcmp(token, "rtt")) {
+		else if (!strcmp(token, "rtt"))
 			SHOW_COLUMNS(COL_RTT_MIN, COL_RTT_AVG, COL_RTT_MAX);
-		} else if (!strcmp(token, "iat")) {
+		else if (!strcmp(token, "iat"))
 			SHOW_COLUMNS(COL_IAT_MIN, COL_IAT_AVG, COL_IAT_MAX);
-		} else if (!strcmp(token, "delay")) {
+		else if (!strcmp(token, "delay"))
 			SHOW_COLUMNS(COL_DLY_MIN, COL_DLY_AVG, COL_DLY_MAX);
-		} else if (!strcmp(token, "kernel")) {
+		else if (!strcmp(token, "kernel"))
 			SHOW_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_UACK,
 				     COL_TCP_SACK, COL_TCP_LOST, COL_TCP_RETR,
 				     COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
@@ -2525,253 +2480,320 @@ static void parse_colon_option(char *arg)
 				     COL_TCP_RTO, COL_TCP_CA_STATE, COL_SMSS,
 				     COL_PMTU);
 #ifdef DEBUG
-		} else if (!strcmp(token, "status")) {
+		else if (!strcmp(token, "status"))
 			SHOW_COLUMNS(COL_STATUS);
 #endif /* DEBUG */
-		} else {
-			errx("malformed option '-c'");
-			usage(EXIT_FAILURE);
-		}
+		else
+			PARSE_ERR("%s", "malformed option '-c'");
+	}
+	free(argcpy);
+}
+
+/**
+ * Parse general controller options given on the cmdline
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument string of the cmdline option
+ * @param[in] opt_string contains the real cmdline option string
+ */
+static void parse_general_option(int code, const char* arg, const char* opt_string)
+{
+
+	switch (code) {
+	case 0:
+		PARSE_ERR("invalid argument: %s", arg);
+	/* general options */
+	case 'h':
+		if (!arg || !strlen(arg))
+			usage(EXIT_SUCCESS);
+		else if (!strcmp(arg, "socket"))
+			usage_sockopt();
+		else if (!strcmp(arg, "traffic"))
+			usage_trafgenopt();
+		else
+			PARSE_ERR("invalid argument '%s' for %s", arg, opt_string);
+		break;
+	case 'v':
+		fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+			FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
+			FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
+		exit(EXIT_SUCCESS);
+
+	/* controller options */
+	case 'c':
+		parse_colon_option(arg);
+		break;
+#ifdef DEBUG
+	case 'd':
+		increase_debuglevel();
+		break;
+#endif /* DEBUG */
+	case 'e':
+		copt.dump_prefix = strdup(arg);
+		break;
+	case 'i':
+		if (sscanf(arg, "%lf", &copt.reporting_interval) != 1 ||
+					copt.reporting_interval <= 0)
+			PARSE_ERR("option %s needs a positive number "
+				  "(in seconds)", opt_string);
+		break;
+	case LOG_FILE_OPTION:
+		copt.log_to_file = true;
+		if (arg)
+			log_filename = strdup(arg);
+		break;
+	case 'm':
+		copt.mbyte = true;
+		column_info[COL_THROUGH].header.unit = " [MB/s]";
+		break;
+	case 'n':
+		if (sscanf(arg, "%hd", &copt.num_flows) != 1 ||
+			   copt.num_flows > MAX_FLOWS)
+			PARSE_ERR("option %s (number of flows) must be within "
+				  "[1..%d]", opt_string, MAX_FLOWS);
+		break;
+	case 'o':
+		copt.clobber = true;
+		break;
+	case 'p':
+		copt.symbolic = false;
+		break;
+	case 'q':
+		copt.log_to_stdout = false;
+		break;
+	case 's':
+		if (!strcmp(arg, "segment"))
+			copt.force_unit = SEGMENT_BASED;
+		else if (!strcmp(arg, "byte"))
+			copt.force_unit = BYTE_BASED;
+		else
+			PARSE_ERR("invalid argument '%s' for option %s",
+				  arg, opt_string);
+		break;
+	case 'w':
+		copt.log_to_file = true;
+		break;
+	/* unknown option or missing option-argument */
+	default:
+		PARSE_ERR("uncaught option: %s", arg);
+		break;
+	}
+
+}
+
+/**
+ * Wrapper function for mutex checking and error message printing.
+ *
+ * Defines the cmdline options and distinguishes option types (flow, general, ...)
+ * and tokenizes flow options which can have several endpoints
+ *
+ * @param[in] ms array of mutex states
+ * @param[in] context the mutex context of this option (see enum #mutex_contexts)
+ * @param[in] argind option record index
+ * @param[in] flow_id ID of the flow to show in error message
+ */
+static void check_mutex(struct ap_Mutex_state ms[],
+			const enum mutex_contexts context,
+			const int argind, int flow_id)
+{
+	int mutex_index;
+	if (context == MUTEX_CONTEXT_CONTROLLER){
+		if (ap_set_check_mutex(&parser, &ms[context], argind, &mutex_index))
+			PARSE_ERR("Option %s conflicts with option %s",
+				ap_opt_string(&parser, argind),
+				ap_opt_string(&parser, mutex_index));
+	} else {
+		if (ap_set_check_mutex(&parser, &ms[context], argind, &mutex_index))
+			PARSE_ERR("In flow %i: option %s conflicts with option %s",
+				flow_id, ap_opt_string(&parser, argind),
+				ap_opt_string(&parser, mutex_index));
 	}
 }
 
-static void parse_cmdline(int argc, char *argv[]) {
+/**
+ * Parse flow options for multiple endpoints
+ *
+ * This iterates through the endpoints given in the argument string (e.g. s=#,d=# or b=#)
+ *
+ * @param[in] code the code of the cmdline option
+ * @param[in] arg the argument of the multi-endpoint flow option
+ * @param[in] opt_string contains the real cmdline option string
+ * @param[in] ms array of mutex states
+ * @param[in] argind index of the option
+ * @param[in] flow_id ID of flow to apply option to
+ */
+static void parse_multi_endpoint_option(int code, const char* arg,
+					const char* opt_string,
+					struct ap_Mutex_state ms[], int argind,
+					int flow_id)
+{
+	char *argcpy = strdup(arg);
+	for (char *token = strtok(argcpy, ","); token;
+	     token = strtok(NULL, ",")) {
+
+		char type = token[0];
+		char* arg;
+
+		if (token[1] == '=')
+			arg = token + 2;
+		else
+			arg = token + 1;
+
+		if (type != 's' && type != 'd' && type != 'b')
+			PARSE_ERR("Invalid enpoint specifier in Option %s",
+				  opt_string);
+
+		/* check mutex in context of current endpoint */
+		if (type == 's' || type == 'b') {
+			check_mutex(ms, MUTEX_CONTEXT_SOURCE, argind, flow_id);
+			parse_flow_option_endpoint(code, arg, opt_string,
+						   flow_id, SOURCE);
+		}
+		if (type == 'd' || type == 'b') {
+			check_mutex(ms, MUTEX_CONTEXT_DESTINATION, argind, flow_id);
+			parse_flow_option_endpoint(code, arg, opt_string,
+						   flow_id, DESTINATION);
+		}
+	}
+	free(argcpy);
+}
+
+/**
+ * The main commandline argument parsing function
+ *
+ * Defines the cmdline options and distinguishes option types (flow, general,
+ * ...) and tokenizes flow options which can have several endpoints
+ *
+ * @param[in] argc number of arguments (as in main())
+ * @param[in] argv array of argument strings (as in main())
+ */
+static void parse_cmdline(int argc, char *argv[])
+{
 	int rc = 0;
 	int cur_num_flows = 0;
-	char *tok = NULL;
 	int current_flow_ids[MAX_FLOWS];
 	int max_flow_specifier = 0;
 	int optint = 0;
 
-	/* long options */
-	static const struct option long_opt[] = {
-		{"help", optional_argument, 0, HELP_OPTION},
-		{"version",no_argument, 0, 'v'},
-		{"show-colon", required_argument, 0, 'c'},
+	const struct ap_Option options[] = {
+		{'c', "show-colon", ap_yes, OPT_CONTROLLER, 0},
 #ifdef DEBUG
-		{"debug", no_argument, 0, 'd'},
+		{'d', "debug", ap_no, OPT_CONTROLLER, 0},
 #endif /* DEBUG */
-#ifdef HAVE_LIBPCAP
-		{"dump-prefix", required_argument, 0, 'e'},
-#endif /* HAVE_LIBPCAP */
-		{"report-interval", required_argument, 0, 'i'},
-		{"log-file", optional_argument, 0, LOG_FILE_OPTION},
-		{"flows", required_argument, 0, 'n'},
-		{"quite",no_argument, 0, 'q'},
-		{"tcp-stack", required_argument, 0, 's'},
-		{NULL, 0, NULL, 0}
+		{'e', "dump-prefix", ap_yes, OPT_CONTROLLER, 0},
+		{'h', "help", ap_maybe, OPT_CONTROLLER, 0},
+		{'i', "report-interval", ap_yes, OPT_CONTROLLER, 0},
+		{LOG_FILE_OPTION, "log-file", ap_maybe, OPT_CONTROLLER, 0},
+		{'m', 0, ap_no, OPT_CONTROLLER, 0},
+		{'n', "flows", ap_yes, OPT_CONTROLLER, 0},
+		{'o', 0, ap_no, OPT_CONTROLLER, 0},
+		{'p', 0, ap_no, OPT_CONTROLLER, 0},
+		{'q', "quiet", ap_no, OPT_CONTROLLER, 0},
+		{'s', "tcp-stack", ap_yes, OPT_CONTROLLER, 0},
+		{'v', "version", ap_no, OPT_CONTROLLER, 0},
+		{'w', 0, ap_no, OPT_CONTROLLER, 0},
+		{'A', 0, ap_yes, OPT_FLOW_ENDPOINT, (int[]){1,0}},
+		{'B', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'C', 0, ap_no, OPT_FLOW_ENDPOINT, 0},
+		{'D', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'E', 0, ap_no, OPT_FLOW, 0},
+		{'F', 0, ap_yes, OPT_SELECTOR, 0},
+		{'G', 0, ap_yes, OPT_FLOW_ENDPOINT, (int[]){1,2,3,0}},
+		{'H', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'I', 0, ap_no, OPT_FLOW, 0},
+		{'J', 0, ap_yes, OPT_FLOW, 0},
+		{'L', 0, ap_no, OPT_FLOW, 0},
+		{'M', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'N', 0, ap_no, OPT_FLOW, 0},
+		{'O', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'P', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'Q', 0, ap_no, OPT_FLOW, 0},
+		{'R', 0, ap_yes, OPT_FLOW_ENDPOINT, (int[]){2,0}},
+		{'S', 0, ap_yes, OPT_FLOW_ENDPOINT, (int[]){3,0}},
+		{'T', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'U', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'W', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{'Y', 0, ap_yes, OPT_FLOW_ENDPOINT, 0},
+		{0, 0, ap_no, 0, 0}
 	};
 
-	/* short options */
-	static const char *short_opt = "hvc:"
-#ifdef DEBUG
-		"d"
-#endif /* DEBUG */
-#ifdef HAVE_LIBPCAP
-		"e:"
-#endif /* HAVE_LIBPCAP */
-		"i:mn:opqs:w"
-		"A:B:CD:EF:G:H:IJ:LNM:O:P:QR:S:T:U:W:Y:";
+	if (!ap_init(&parser, argc, (const char* const*) argv, options, 0))
+		critx("could not allocate memory for option parser");
+	if (ap_error(&parser))
+		PARSE_ERR("%s", ap_error(&parser));
+
+	/* initialize 4 mutex contexts (for SOURCE+DESTINATION+CONTROLLER+BOTH ENDPOINTS) */
+	struct ap_Mutex_state ms[4];
+	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_CONTROLLER]);
+	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_TWO_SIDED]);
+	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_SOURCE]);
+	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_DESTINATION]);
 
 	/* if no option -F is given, configure all flows*/
 	for (int i = 0; i < MAX_FLOWS; i++)
 		current_flow_ids[i] = i;
 	cur_num_flows = MAX_FLOWS;
 
-	/* variables from getopt() */
-	extern char *optarg;	/* option argument */
-	extern int optind;      /* index of the next element */
-	int longindex = 0;	/* index of the long option */
-	int ch = 0;             /* getopt_long() return value */
-
 	/* parse command line */
-	while ((ch = getopt_long(argc, argv, short_opt, long_opt,
-				 &longindex)) != -1) {
-		switch (ch) {
-		/* general options */
-		case 'h':
-			usage(EXIT_SUCCESS);
-			break;
-		case HELP_OPTION:
-			if (!optarg) {
-				usage(EXIT_SUCCESS);
-			} else if (!strcmp(optarg, "socket")) {
-				usage_sockopt();
-			} else if (!strcmp(optarg, "traffic")) {
-				usage_trafgenopt();
-			} else {
-				errx("invalid argument '%s' for '--%s'",
-				     optarg, long_opt[longindex].name);
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'v':
-			fprintf(stderr, "%s version: %s\n", progname,
-				FLOWGRIND_VERSION);
-			exit(EXIT_SUCCESS);
+	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
+		const int code = ap_code(&parser, argind);
+		const char *arg = ap_argument(&parser, argind);
+		const char *opt_string = ap_opt_string(&parser, argind);
+		int tag = ap_option(&parser, argind)->tag;
 
-		/* controller options */
-		case 'c':
-			parse_colon_option(optarg);
+		/* distinguish option types by tag first */
+		switch (tag) {
+		case OPT_CONTROLLER:
+			check_mutex(ms, MUTEX_CONTEXT_CONTROLLER, argind, 0);
+			parse_general_option(code, arg, opt_string);
 			break;
-		case 'd':
-			increase_debuglevel();
-			break;
-#ifdef HAVE_LIBPCAP
-		case 'e':
-			copt.dump_prefix = optarg;
-			break;
-#endif /* HAVE_LIBPCAP */
-		case 'i':
-			rc = sscanf(optarg, "%lf", &copt.reporting_interval);
-			if (rc != 1 || copt.reporting_interval <= 0) {
-				errx("%s: reporting interval must be a "
-				     "positive number (in seconds)", progname);
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case LOG_FILE_OPTION:
-			copt.log_to_file = true;
-			if (optarg)
-				log_filename = strdup(optarg);
-			break;
-		case 'm':
-			copt.mbyte = true;
-			column_info[COL_THROUGH].header.unit = " [MB/s]";
-			break;
-		case 'n':
-			rc = sscanf(optarg, "%hd", &copt.num_flows);
-			if (rc != 1 || copt.num_flows > MAX_FLOWS) {
-				errx("number of test flows must be within "
-				     "[1..%d]", MAX_FLOWS);
-				usage(EXIT_FAILURE);
-			}
-			break;
-		case 'o':
-			copt.clobber = true;
-			break;
-		case 'p':
-			copt.symbolic = false;
-			break;
-		case 'q':
-			copt.log_to_stdout = false;
-			break;
-		case 's':
-			if (!strcmp(optarg, "segment")) {
-				copt.force_unit = SEGMENT_BASED;
-			} else if (!strcmp(optarg, "byte")) {
-				copt.force_unit = BYTE_BASED;
-			} else {
-				/* TODO Use a more elegant way to distinguish
-				 * between long and short option */
-				if (!longindex)
-					errx("invalid argument '%s' for "
-					     "option '-s'", optarg);
-				else
-					errx("invalid argument '%s' for "
-					     "option '--%s'", optarg,
-					     long_opt[longindex].name);
-				usage(EXIT_FAILURE);
-			}
-		case 'w':
-			copt.log_to_file = true;
-			break;
-
-		/* flow options w/o endpoint identifier */
-		case 'F':
+		case OPT_SELECTOR:
 			cur_num_flows = 0;
-			tok = strtok(optarg, ",");
-			while (tok) {
-				rc = sscanf(tok, "%d", &optint);
-				if (rc != 1) {
-					errx("malformed flow specifier");
-					usage(EXIT_FAILURE);
-				}
+			char *argcpy = strdup(arg);
+			for (char *token = strtok(argcpy, ","); token;
+			     token = strtok(NULL, ",")) {
+				rc = sscanf(token, "%d", &optint);
+				if (rc != 1)
+					PARSE_ERR("%s", "Malformed flow specifier");
+
+				/* all flows */
 				if (optint == -1) {
-					/* all flows */
 					for (int i = 0; i < MAX_FLOWS; i++)
 						current_flow_ids[i] = i;
 					cur_num_flows = MAX_FLOWS;
 					break;
-				} else {
-					current_flow_ids[cur_num_flows++] = optint;
-					ASSIGN_MAX(max_flow_specifier, optint);
-					tok = strtok(NULL, ",");
 				}
+
+				current_flow_ids[cur_num_flows++] = optint;
+				ASSIGN_MAX(max_flow_specifier, optint);
 			}
+			free(argcpy);
+			/* reset mutex for each new flow */
+			ap_reset_mutex(&ms[MUTEX_CONTEXT_SOURCE]);
+			ap_reset_mutex(&ms[MUTEX_CONTEXT_DESTINATION]);
+			ap_reset_mutex(&ms[MUTEX_CONTEXT_TWO_SIDED]);
 			break;
-		case 'E':
-		case 'I':
-		case 'J':
-		case 'L':
-		case 'N':
-		case 'Q':
+		case OPT_FLOW:
+			check_mutex(ms, MUTEX_CONTEXT_TWO_SIDED, argind,
+				    current_flow_ids[0]);
 			for (int i = 0; i < cur_num_flows; i++)
-				parse_flow_option(ch, optarg, current_flow_ids[i], 0);
+				parse_flow_option(code, arg, opt_string,
+						current_flow_ids[i]);
 			break;
-
-		/* flow options w/ endpoint identifier */
-		case 'G':
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'H':
-		case 'O':
-		case 'M':
-		case 'P':
-		case 'R':
-		case 'S':
-		case 'T':
-		case 'U':
-		case 'W':
-		case 'Y':
-			/* pre-parse flow option for endpoints */
-			for (char *token = strtok(optarg, ","); token; token = strtok(NULL, ",")) {
-
-				char type = token[0];
-				char* arg;
-
-				if (token[1] == '=')
-					arg = token + 2;
-				else
-					arg = token + 1;
-
-				if (type != 's' && type != 'd' && type != 'b')  {
-					errx("Invalid enpoint specifier in Option -%c", ch);
-					usage(EXIT_FAILURE);
-				}
-
-				for (int i = 0; i < cur_num_flows; i++) {
-					if (type == 's' || type == 'b')
-						parse_flow_option(ch, arg, current_flow_ids[i], SOURCE);
-					if (type == 'd' || type == 'b')
-						parse_flow_option(ch, arg, current_flow_ids[i], DESTINATION);
-				}
-			}
+		case OPT_FLOW_ENDPOINT:
+			for (int i = 0; i < cur_num_flows; i++)
+				parse_multi_endpoint_option(code, arg,
+							    opt_string, ms, argind,
+							    current_flow_ids[i]);
 			break;
-
-		/* unknown option or missing option-argument */
-		case '?':
-			usage(EXIT_FAILURE);
+		default:
+			PARSE_ERR("%s", "uncaught option tag!");
 			break;
 		}
 	}
 
-	if (copt.num_flows <= max_flow_specifier) {
-		errx("must not specify option for non-existing flow");
-		usage(EXIT_FAILURE);
-	}
-
-	/* Do we have remaning command line arguments? */
-	if (optind < argc) {
-		char *args = NULL;
-		while (optind < argc)
-			asprintf_append(&args, "%s ", argv[optind++]);
-		errx("invalid arguments: %s", args);
-		free(args);
-		usage(EXIT_FAILURE);
-	}
+	if (copt.num_flows <= max_flow_specifier)
+		PARSE_ERR("%s", "must not specify option for non-existing flow");
 
 #if 0
 	/* Demonstration how to set arbitary socket options. Note that this is
@@ -2782,7 +2804,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 	 */
 	{
 		assert(cflow[0].settings[SOURCE].num_extra_socket_options < MAX_EXTRA_SOCKET_OPTIONS);
-		struct _extra_socket_options *option = &cflow[0].settings[SOURCE].extra_socket_options[cflow[0].settings[SOURCE].num_extra_socket_options++];
+		struct extra_socket_options *option = &cflow[0].settings[SOURCE].extra_socket_options[cflow[0].settings[SOURCE].num_extra_socket_options++];
 		int v;
 
 		/* The value of the TCP_NODELAY constant gets passed to the daemons.
@@ -2790,7 +2812,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		 * a value that matches the daemons'. */
 		option->optname = TCP_NODELAY; /* or option->optname = 12345; as explained above */
 
-		option->level = level_ipproto_tcp; /* See _extra_socket_option_level enum in common.h */
+		option->level = level_ipproto_tcp; /* See extra_socket_option_level enum in common.h */
 
 		/* Again, value needs to be of correct size for the daemons.
 		 * Particular pitfalls can be differences in integer sizes or endianess.
@@ -2799,7 +2821,7 @@ static void parse_cmdline(int argc, char *argv[]) {
 		option->optlen = sizeof(v);
 		memcpy(option->optval, &v, sizeof(v));
 	}
-#endif
+#endif /* 0 */
 
 	for (int id = 0; id < copt.num_flows; id++) {
 		cflow[id].settings[SOURCE].duration[READ] = cflow[id].settings[DESTINATION].duration[WRITE];
@@ -2816,58 +2838,61 @@ static void parse_cmdline(int argc, char *argv[]) {
 		}
 	}
 
+	ap_free_mutex_state(&ms[MUTEX_CONTEXT_CONTROLLER]);
+	ap_free_mutex_state(&ms[MUTEX_CONTEXT_TWO_SIDED]);
+	ap_free_mutex_state(&ms[MUTEX_CONTEXT_SOURCE]);
+	ap_free_mutex_state(&ms[MUTEX_CONTEXT_DESTINATION]);
 }
 
 /**
  * Sanity checking flow options
  */
-static void sanity_check(void) {
-
-	bool sanity_err = false;
-
+static void sanity_check(void)
+{
 	for (int id = 0; id < copt.num_flows; id++) {
-		DEBUG_MSG(LOG_WARNING, "sanity checking parameter set of flow %d.", id);
+		DEBUG_MSG(LOG_DEBUG, "sanity checking parameter set of flow %d", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
 		    cflow[id].late_connect &&
 		    cflow[id].settings[DESTINATION].delay[WRITE] <
 		    cflow[id].settings[SOURCE].delay[WRITE]) {
-			warnx("server flow %d starts earlier than client "
+			errx("server flow %d starts earlier than client "
 			      "flow while late connecting", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[SOURCE].delay[WRITE] > 0 &&
 		    cflow[id].settings[SOURCE].duration[WRITE] == 0) {
-			warnx("client flow %d has a delay but no runtime", id);
-			sanity_err = true;
+			errx("client flow %d has a delay but no runtime", id);
+			exit(EXIT_FAILURE);
 		}
 		if (cflow[id].settings[DESTINATION].delay[WRITE] > 0 &&
 		    cflow[id].settings[DESTINATION].duration[WRITE] == 0) {
-			warnx("server flow %d has a delay but no runtime", id);
-			sanity_err = true;
+			errx("server flow %d has a delay but no runtime", id);
+			exit(EXIT_FAILURE);
 		}
 		if (!cflow[id].settings[DESTINATION].duration[WRITE] &&
 		    !cflow[id].settings[SOURCE].duration[WRITE]) {
-			warnx("server and client flow have both zero runtime "
+			errx("server and client flow have both zero runtime "
 			      "for flow %d", id);
-			sanity_err = true;
+			exit(EXIT_FAILURE);
 		}
 
 		for (unsigned i = 0; i < 2; i++) {
-			if (cflow[id].settings[i].flow_control && !cflow[id].settings[i].write_rate_str) {
-				warnx("flow %d has flow control enabled but no "
-				      "rate.", id);
-				sanity_err = true;
+			if (cflow[id].settings[i].flow_control &&
+			    !cflow[id].settings[i].write_rate_str) {
+				errx("flow %d has flow control enabled but no "
+				      "rate", id);
+				exit(EXIT_FAILURE);
+			}
+
+			if (cflow[id].settings[i].write_rate &&
+			    cflow[id].settings[i].write_rate /
+				cflow[id].settings[i].maximum_block_size < 1) {
+				errx("client block size for flow %u is too big for "
+				      "specified rate", id);
+				exit(EXIT_FAILURE);
 			}
 		}
-		DEBUG_MSG(LOG_WARNING, "sanity check parameter set of flow %d. completed", id);
-	}
-
-	if (sanity_err) {
-#ifdef DEBUG
-		DEBUG_MSG(LOG_ERR, "Skipping errors discovered by sanity checks.");
-#else
-		usage(EXIT_FAILURE);
-#endif /* DEBUG */
+		DEBUG_MSG(LOG_DEBUG, "sanity check parameter set of flow %d completed", id);
 	}
 }
 
@@ -2919,8 +2944,9 @@ int main(int argc, char *argv[])
 
 	xmlrpc_client_destroy(rpc_client);
 	xmlrpc_env_clean(&rpc_env);
-
 	xmlrpc_client_teardown_global_const();
+
+	ap_free(&parser);
 
 	DEBUG_MSG(LOG_WARNING, "bye");
 }

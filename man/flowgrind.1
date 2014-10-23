@@ -44,10 +44,7 @@ Mandatory arguments to long options are mandatory for short options too.
 
 .SS General options
 .TP
-\fB\-h\fR
-display this help and exit (same as \fB\-\-help\fR)
-.TP
-\fB\-\-help\fR[=\fIWHAT\fR]
+\fB\-h\fR, \fB\-\-help\fR[=\fIWHAT\fR]
 display help and exit. Optional WHAT can either be 'socket' for help on socket
 options or 'traffic' traffic generation help
 .TP
@@ -172,10 +169,9 @@ suffice to fill sending queue (pushy)
 \fB\-Q\fR
 summarize only, no intermediated interval reports are computed (quiet)
 .TP
-\fB\-R\fR \fIx\fR=\fI#\fR.\fI#\fR(\fIz\fR|\fIk\fR|\fIM\fR|\fIG\fR)(\fIb\fR|\fIB\fR|\fIo\fR)
+\fB\-R\fR \fIx\fR=\fI#\fR.\fI#\fR(\fIz\fR|\fIk\fR|\fIM\fR|\fIG\fR)(\fIb\fR|\fIB\fR)
 send at specified rate per second, where: z = 2**0, k = 2**10, M = 2**20, G =
-2**30, and b = bits/s (default), B = bytes/s, o = blocks/s (same as \fB\-G\fR
-s=g,C,#)
+2**30, and b = bits/s (default), B = bytes/s
 .TP
 \fB\-S \fIx\fR=\fI#\fR
 set block (message) size, in bytes (same as \fB\-G\fR s=q,C,#)

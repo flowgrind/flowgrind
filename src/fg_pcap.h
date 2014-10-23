@@ -37,17 +37,8 @@
 
 #include "daemon.h"
 
-void fg_pcap_init();
-void fg_pcap_go(struct _flow *);
+void fg_pcap_init(void);
+void fg_pcap_go(struct flow *);
 void fg_pcap_cleanup(void* arg);
-
-pthread_mutex_t pcap_mutex;
-
-/* pthread barrier does not exists in Darwin */
-#ifndef __DARWIN__
-pthread_barrier_t pcap_barrier;
-#endif /* __DARWIN__ */
-
-pcap_if_t * alldevs;
 
 #endif /* _FG_PCAP_H_ */

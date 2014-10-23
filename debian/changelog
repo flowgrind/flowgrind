@@ -1,3 +1,9 @@
+flowgrind (0.7.5-1) unstable; urgency=medium
+
+  * New upstream Release 0.7.5
+
+ -- Arnd Hannemann <arnd.hannemann@credativ.de>  Thu, 23 Oct 2014 15:27:09 +0200
+
 flowgrind (0.7.1-2) unstable; urgency=medium
 
   * Drop dependency to transitional package libxmlrpc-c3-dev, closes: #765139

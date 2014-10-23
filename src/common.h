@@ -40,7 +40,7 @@
 #define FLOWGRIND_VERSION GITVERSION
 #elif defined PACKAGE_VERSION
 #define FLOWGRIND_VERSION PACKAGE_VERSION
-#else
+#else /* GITVERSION */
 #define FLOWGRIND_VERSION "(n/a)"
 #endif /* GITVERSION */
 
@@ -53,22 +53,36 @@
 /** Maximal number of parallel flows */
 #define MAX_FLOWS 2048
 
-/* XXX add a brief description doxygen */
+/** Max number of arbitrary extra socket options which may be sent to the deamon */
 #define MAX_EXTRA_SOCKET_OPTIONS 10
 
-/* XXX add a brief description doxygen */
+/** Ensures extra options are limited in length on both controller and deamon side */
 #define MAX_EXTRA_SOCKET_OPTION_VALUE_LENGTH 100
 
 #ifndef TCP_CA_NAME_MAX
-/* XXX add a brief description doxygen */
+/** Max size of the congestion control algorithm specifier string */
 #define TCP_CA_NAME_MAX 16
 #endif /* TCP_CA_NAME_MAX */
 
 /** Minium block (message) size we can send */
-#define MIN_BLOCK_SIZE (signed) sizeof (struct _block)
+#define MIN_BLOCK_SIZE (signed) sizeof (struct block)
 
-/** Flow endpoint */
-enum flow_endpoint {
+/** Flowgrind's copyright year */
+#define FLOWGRIND_COPYRIGHT "Copyright (C) 2007 - 2014 Flowgrind authors."
+
+/** Standard GPL3 no warranty message */
+#define FLOWGRIND_COPYING								    \
+	"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"  \
+	"This is free software: you are free to change and redistribute it.\n"		    \
+	"There is NO WARRANTY, to the extent permitted by law."
+
+/** Flowgrind's authors in a printable string */
+#define FLOWGRIND_AUTHORS								    \
+	"Written by Arnd Hannemann, Tim Kosse, Christian Samsel, Daniel Schaffrath\n"	    \
+	"and Alexander Zimmermann."
+
+/** Flow endpoint types */
+enum flow_endpoint_type {
 	/** Endpoint that opens the connection */
 	SOURCE = 0,
 	/** Endpoint that accepts the connection */
@@ -91,8 +105,8 @@ enum interval_type {
 	FINAL
 };
 
-/* XXX add a brief description doxygen (no underscore for enum) */
-enum _extra_socket_option_level {
+/* XXX add a brief description doxygen */
+enum extra_socket_option_level {
 	level_sol_socket,
 	level_sol_tcp,
 	level_ipproto_ip,
@@ -120,7 +134,7 @@ enum distributions {
 };
 
 /** Flowgrind's data block layout */
-struct _block {
+struct block {
 	/** Size of our request or response block */
 	int32_t this_block_size;
 
@@ -137,59 +151,95 @@ struct _block {
 	struct timespec data2;
 };
 
-/* XXX add a brief description doxygen */
-struct _trafgen_options {
+/** Options for stochastic traffic generation */
+struct trafgen_options {
+	/** The stochastic distribution to draw values from */
 	enum distributions distribution;
+	/** First mathemathical parameter of the distribution */
 	double param_one;
+	/** Second mathematical parameter of the distribution, if required */
 	double param_two;
 
 };
 
-/* Common to both endpoints */
-struct _flow_settings {
+/**
+ * Settings that describe a flow between two endpoints. These options can be
+ * specified for each of the two endpoints
+ */
+struct flow_settings {
+	/** The interface address for the flow (used by daemon) */
 	char bind_address[1000];
 
+	/** Delay of flow in seconds (option -Y) */
 	double delay[2];
+	/** Duration of flow in seconds (option -T) */
 	double duration[2];
 
+	/** Interval to report flow on screen (option -i) */
 	double reporting_interval;
 
+	/** Request sender buffer in bytes (option -B) */
 	int requested_send_buffer_size;
+	/** Request receiver buffer, advertised window in bytes (option -W) */
 	int requested_read_buffer_size;
 
+	/** Application buffer size in bytes (option -U) */
 	int maximum_block_size;
 
+	/** Dump traffic using libpcap (option -M) */
 	int traffic_dump;
+	/** Sets SO_DEBUG on test socket (option -O) */
 	int so_debug;
+	/** Sets ROUTE_RECORD on test socket (option -O) */
 	int route_record;
+	/**
+	 * Do not iterate through select() to continue sending in case
+	 * block size did not suffice to fill sending queue (pushy) (option -P)
+	 */
 	int pushy;
+	/** Shutdown socket after test flow (option -N) */
 	int shutdown;
 
 	/** Send at specified rate per second (option -R) */
-	char *write_rate_str;
+	const char *write_rate_str;
 	/** The actual rate we should send */
 	int write_rate;
 
+	/** Random seed to use (default: read /dev/urandom) (option -J) */
 	unsigned int random_seed;
 
+	/** Stop flow if it is experiencing local congestion (option -C) */
 	int flow_control;
 
+	/** Enumerate bytes in payload instead of sending zeros (option -E) */
 	int byte_counting;
 
+	/** Sets SO_DEBUG on test socket (option -O) */
 	int cork;
+	/** Disable nagle algorithm on test socket (option -O) */
 	int nonagle;
+	/** Set congestion control algorithm ALG on test socket (option -O) */
 	char cc_alg[TCP_CA_NAME_MAX];
+	/** Set TCP_ELCN (20) on test socket (option -O) */
 	int elcn;
+	/** Set TCP_LCD (21) on test socket (option -O) */
 	int lcd;
+	/** Set TCP_MTCP (15) on test socket (option -O) */
 	int mtcp;
+	/** DSCP value for TOS byte (option -D) */
 	int dscp;
+	/** Set IP_MTU_DISCOVER on test socket (option -O) */
 	int ipmtudiscover;
 
-	struct _trafgen_options request_trafgen_options;
-	struct _trafgen_options response_trafgen_options;
-	struct _trafgen_options interpacket_gap_trafgen_options;
+	/** Stochastic traffic generation settings for the request size */
+	struct trafgen_options request_trafgen_options;
+	/** Stochastic traffic generation settings for the response size */
+	struct trafgen_options response_trafgen_options;
+	/** Stochastic traffic generation settings for the interpacket gap */
+	struct trafgen_options interpacket_gap_trafgen_options;
 
-	struct _extra_socket_options {
+	/* XXX add a brief description doxygen + is this obsolete? */
+	struct extra_socket_options {
 		int level;
 		int optname;
 		int optlen;
@@ -200,7 +250,7 @@ struct _flow_settings {
 
 /* Flowgrinds view on the tcp_info struct for
  * serialization / deserialization */
-struct _fg_tcp_info {
+struct fg_tcp_info {
 	int tcpi_snd_cwnd;
 	int tcpi_snd_ssthresh;
 	int tcpi_unacked;
@@ -219,7 +269,7 @@ struct _fg_tcp_info {
 };
 
 /* Report (measurement sample) of a flow */
-struct _report {
+struct report {
 	int id;
 	/* Is this an INTERVAL or FINAL report? */
 	int type;
@@ -228,7 +278,7 @@ struct _report {
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
 	unsigned long long bytes_read;
 	unsigned long long bytes_written;
-#else
+#else /* HAVE_UNSIGNED_LONG_LONG_INT */
 	long bytes_read;
 	long bytes_written;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */
@@ -260,14 +310,14 @@ struct _report {
 
 	/* on the Daemon this is filled from the os specific
 	 * tcp_info struct */
-	struct _fg_tcp_info tcp_info;
+	struct fg_tcp_info tcp_info;
 
 	int pmtu;
 	int imtu;
 
 	int status;
 
-	struct _report* next;
+	struct report* next;
 };
 
 #endif /* _COMMON_H_*/

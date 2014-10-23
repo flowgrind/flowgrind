@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Alexander Zimmermann <alexander.zimmermann@netapp.com>
+ * Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
  *
@@ -36,8 +36,10 @@
 #include <time.h>
 #include <stdbool.h>
 
+#ifndef NSEC_PER_SEC
 /** Number of nanoseconds per second */
 #define NSEC_PER_SEC	1000000000L
+#endif /* NSEC_PER_SEC */
 
 /**
  * Converts timespec struct @p tp into a null-terminated string and stores the
@@ -108,13 +110,12 @@ bool normalize_tp(struct timespec *tp);
 void time_add(struct timespec *tp, double seconds);
 
 /**
- * Returns wall-clock time with nanosecond precision
+ * Returns the current wall-clock time with nanosecond precision
  *
- * Get time from 'REALTIME' clock. A system-wide clock that measures real
- * time. This clock is affected by discontinuous jumps in the system time
- * (e.g., if admin manually changes the clock), and by the incremental
- * adjustments performed by NTP. The clock's time represents seconds and
- * nanoseconds since the Epoch
+ * Since the returned time is retrieved from a system-wide clock that measures
+ * real time, the time is may be affected by discontinuous jumps in the system
+ * time (e.g., if admin manually changes the clock), and by the incremental
+ * adjustments performed by NTP.
  *
  * @param[out] tp current time in seconds and nanoseconds since the Epoch
  * @return return 0 for success, or -1 for failure

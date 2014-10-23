@@ -29,10 +29,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef DEBUG
 #include <assert.h>
-#endif /* DEBUG */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -62,7 +59,7 @@
 #include "debug.h"
 #include "fg_error.h"
 #include "fg_math.h"
-#include "fg_stdlib.h"
+#include "fg_definitions.h"
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "log.h"
@@ -83,12 +80,6 @@
 #define SOL_IP IPPROTO_IP
 #endif /* SOL_IP */
 
-#ifdef __DARWIN__
-#define RANDOM_MAX  LONG_MAX        /* Darwin */
-#else
-#define RANDOM_MAX  RAND_MAX        /* Linux, FreeBSD */
-#endif /* __SOLARIS__ */
-
 #define CONGESTION_LIMIT 10000
 
 int daemon_pipe[2];
@@ -96,17 +87,16 @@ int daemon_pipe[2];
 int next_flow_id = 0;
 
 pthread_mutex_t mutex;
-struct _request *requests = 0, *requests_last = 0;
+struct request *requests = 0, *requests_last = 0;
 
 fd_set rfds, wfds, efds;
 int maxfd;
 
-struct _report* reports = 0;
-struct _report* reports_last = 0;
+struct report* reports = 0;
+struct report* reports_last = 0;
 unsigned int pending_reports = 0;
 
-struct _flow flows[MAX_FLOWS];
-unsigned int num_flows = 0;
+struct linked_list flows;
 
 char started = 0;
 
@@ -115,18 +105,18 @@ char dumping = 0;
 #endif /* HAVE_LIBPCAP */
 
 /* Forward declarations */
-static int write_data(struct _flow *flow);
-static int read_data(struct _flow *flow);
-static void process_rtt(struct _flow* flow);
-static void process_iat(struct _flow* flow);
-static void process_delay(struct _flow* flow);
-static void report_flow(struct _flow* flow, int type);
-static void send_response(struct _flow* flow,
+static int write_data(struct flow *flow);
+static int read_data(struct flow *flow);
+static void process_rtt(struct flow* flow);
+static void process_iat(struct flow* flow);
+static void process_delay(struct flow* flow);
+static void report_flow(struct flow* flow, int type);
+static void send_response(struct flow* flow,
 			  int requested_response_block_size);
-int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info);
+int get_tcp_info(struct flow *flow, struct fg_tcp_info *info);
 
 
-void flow_error(struct _flow *flow, const char *fmt, ...)
+void flow_error(struct flow *flow, const char *fmt, ...)
 {
 	char str[1000];
 	va_list ap;
@@ -139,7 +129,7 @@ void flow_error(struct _flow *flow, const char *fmt, ...)
 	strcpy(flow->error, str);
 }
 
-void request_error(struct _request *request, const char *fmt, ...)
+void request_error(struct request *request, const char *fmt, ...)
 {
 	char str[1000];
 	va_list ap;
@@ -152,14 +142,14 @@ void request_error(struct _request *request, const char *fmt, ...)
 	strcpy(request->error, str);
 }
 
-static inline int flow_in_delay(struct timespec *now, struct _flow *flow,
+static inline int flow_in_delay(struct timespec *now, struct flow *flow,
 				int direction)
 {
 	return time_is_after(&flow->start_timestamp[direction], now);
 }
 
 
-static inline int flow_sending(struct timespec *now, struct _flow *flow,
+static inline int flow_sending(struct timespec *now, struct flow *flow,
 			       int direction)
 {
 	return !flow_in_delay(now, flow, direction) &&
@@ -167,12 +157,12 @@ static inline int flow_sending(struct timespec *now, struct _flow *flow,
 		 time_diff_now(&flow->stop_timestamp[direction]) < 0.0);
 }
 
-static inline int flow_block_scheduled(struct timespec *now, struct _flow *flow)
+static inline int flow_block_scheduled(struct timespec *now, struct flow *flow)
 {
 	return time_is_after(now, &flow->next_write_block_timestamp);
 }
 
-void uninit_flow(struct _flow *flow)
+void uninit_flow(struct flow *flow)
 {
 	DEBUG_MSG(LOG_DEBUG,"uninit_flow() called for flow %d",flow->id);
 	if (flow->fd != -1)
@@ -185,24 +175,28 @@ void uninit_flow(struct _flow *flow)
 		rc = pthread_cancel(flow->pcap_thread);
 		if (rc)
 			logging_log(LOG_WARNING, "failed to cancel dump "
-				    "thread: %s", strerror(errno));
-		fg_pcap_cleanup(flow);
+				    "thread: %s", strerror(rc));
+
+		/* wait for the dump thread to react to the cancellation request */
+		rc = pthread_join(flow->pcap_thread, NULL);
+		if (rc)
+			logging_log(LOG_WARNING, "failed to join dump "
+					"thread: %s", strerror(rc));
 	}
-#endif
+#endif /* HAVE_LIBPCAP */
 	free_all(flow->read_block, flow->write_block, flow->addr, flow->error);
 	free_math_functions(flow);
 }
 
-void remove_flow(unsigned int i)
+void remove_flow(struct flow * const flow)
 {
-	for (unsigned int j = i; j < num_flows - 1; j++)
-		flows[j] = flows[j + 1];
-	num_flows--;
-	if (!num_flows)
+	fg_list_remove(&flows, flow);
+	free(flow);
+	if (!fg_list_size(&flows))
 		started = 0;
 }
 
-static void prepare_wfds(struct timespec *now, struct _flow *flow, fd_set *wfds)
+static void prepare_wfds(struct timespec *now, struct flow *flow, fd_set *wfds)
 {
 	int rc = 0;
 
@@ -213,9 +207,7 @@ static void prepare_wfds(struct timespec *now, struct _flow *flow, fd_set *wfds)
 	}
 
 	if (flow_sending(now, flow, WRITE)) {
-#ifdef DEBUG
 		assert(!flow->finished[WRITE]);
-#endif
 		if (flow_block_scheduled(now, flow)) {
 			DEBUG_MSG(LOG_DEBUG, "adding sock of flow %d to wfds",
 				  flow->id);
@@ -238,7 +230,7 @@ static void prepare_wfds(struct timespec *now, struct _flow *flow, fd_set *wfds)
 	return;
 }
 
-static int prepare_rfds(struct timespec *now, struct _flow *flow, fd_set *rfds)
+static int prepare_rfds(struct timespec *now, struct flow *flow, fd_set *rfds)
 {
 	int rc = 0;
 
@@ -278,8 +270,8 @@ static int prepare_rfds(struct timespec *now, struct _flow *flow, fd_set *rfds)
 
 static int prepare_fds() {
 
-	DEBUG_MSG(LOG_DEBUG, "prepare_fds() called, num_flows: %d", num_flows);
-	unsigned int i = 0;
+	DEBUG_MSG(LOG_DEBUG, "prepare_fds() called, number of flows: %zu",
+		  fg_list_size(&flows));
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
@@ -291,8 +283,10 @@ static int prepare_fds() {
 	struct timespec now;
 	gettime(&now);
 
-	while (i < num_flows) {
-		struct _flow *flow = &flows[i++];
+	const struct list_node *node = fg_list_front(&flows);
+	while (node) {
+		struct flow *flow = node->data;
+		node = node->next;
 
 		if (started &&
 		    (flow->finished[READ] ||
@@ -316,7 +310,7 @@ static int prepare_fds() {
 				report_flow(flow, INTERVAL);
 			report_flow(flow, FINAL);
 			uninit_flow(flow);
-			remove_flow(--i);
+			remove_flow(flow);
 			continue;
 		}
 
@@ -337,10 +331,10 @@ static int prepare_fds() {
 		}
 	}
 
-	return num_flows;
+	return fg_list_size(&flows);
 }
 
-static void start_flows(struct _request_start_flows *request)
+static void start_flows(struct request_start_flows *request)
 {
 	struct timespec start;
 	gettime(&start);
@@ -352,12 +346,14 @@ static void start_flows(struct _request_start_flows *request)
 		start.tv_sec = request->start_timestamp;
 		start.tv_nsec = 0;
 	}
-#else
+#else /* 0 */
 	UNUSED_ARGUMENT(request);
-#endif
+#endif /* 0 */
 
-	for (unsigned int i = 0; i < num_flows; i++) {
-		struct _flow *flow = &flows[i];
+	const struct list_node *node = fg_list_front(&flows);
+	while (node) {
+		struct flow *flow = node->data;
+		node = node->next;
 		/* initalize random number generator etc */
 		init_math_functions(flow, flow->settings.random_seed);
 
@@ -387,7 +383,7 @@ static void start_flows(struct _request_start_flows *request)
 	started = 1;
 }
 
-static void stop_flow(struct _request_stop_flow *request)
+static void stop_flow(struct request_stop_flow *request)
 {
 	DEBUG_MSG(LOG_DEBUG, "stop_flow forcefully unlocked mutex");
 	pthread_mutex_unlock(&mutex);
@@ -395,8 +391,10 @@ static void stop_flow(struct _request_stop_flow *request)
 	if (request->flow_id == -1) {
 		/* Stop all flows */
 
-		for (unsigned int i = 0; i < num_flows; i++) {
-			struct _flow *flow = &flows[i];
+		const struct list_node *node = fg_list_front(&flows);
+		while (node) {
+			struct flow *flow = node->data;
+			node = node->next;
 
 			flow->statistics[FINAL].has_tcp_info =
 				get_tcp_info(flow,
@@ -409,14 +407,16 @@ static void stop_flow(struct _request_stop_flow *request)
 			report_flow(flow, FINAL);
 
 			uninit_flow(flow);
-			remove_flow(i);
+			remove_flow(flow);
 		}
 
 		return;
 	}
 
-	for (unsigned int i = 0; i < num_flows; i++) {
-		struct _flow *flow = &flows[i];
+	const struct list_node *node = fg_list_front(&flows);
+	while (node) {
+		struct flow *flow = node->data;
+		node = node->next;
 
 		if (flow->id != request->flow_id)
 			continue;
@@ -433,7 +433,7 @@ static void stop_flow(struct _request_stop_flow *request)
 		report_flow(flow, FINAL);
 
 		uninit_flow(flow);
-		remove_flow(i);
+		remove_flow(flow);
 		return;
 	}
 
@@ -455,33 +455,33 @@ static void process_requests()
 	}
 
 	while (requests) {
-		struct _request* request = requests;
+		struct request* request = requests;
 		requests = requests->next;
 		rc = 0;
 
 		switch (request->type) {
 		case REQUEST_ADD_DESTINATION:
 			add_flow_destination((struct
-						_request_add_flow_destination
+						request_add_flow_destination
 						*)request);
 			break;
 		case REQUEST_ADD_SOURCE:
 			rc = add_flow_source((struct
-						_request_add_flow_source
+						request_add_flow_source
 						*)request);
 			break;
 		case REQUEST_START_FLOWS:
-			start_flows((struct _request_start_flows *)request);
+			start_flows((struct request_start_flows *)request);
 			break;
 		case REQUEST_STOP_FLOW:
-			stop_flow((struct _request_stop_flow *)request);
+			stop_flow((struct request_stop_flow *)request);
 			break;
 		case REQUEST_GET_STATUS:
 			{
-				struct _request_get_status *r =
-					(struct _request_get_status *)request;
+				struct request_get_status *r =
+					(struct request_get_status *)request;
 				r->started = started;
-				r->num_flows = num_flows;
+				r->num_flows = fg_list_size(&flows);
 			}
 			break;
 		default:
@@ -499,12 +499,12 @@ static void process_requests()
 /*
  * Prepare a report. type is either INTERVAL or FINAL
  */
-static void report_flow(struct _flow* flow, int type)
+static void report_flow(struct flow* flow, int type)
 {
 	DEBUG_MSG(LOG_DEBUG, "report_flow called for flow %d (type %d)",
 		  flow->id, type);
-	struct _report* report =
-		(struct _report*)malloc(sizeof(struct _report));
+	struct report* report =
+		(struct report*)malloc(sizeof(struct report));
 
 	report->id = flow->id;
 	report->type = type;
@@ -626,13 +626,13 @@ static void report_flow(struct _flow* flow, int type)
 
 /* Fills the given _fg_tcp_info with the values of the OS specific tcp_info,
  * returns 0 on success */
-int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
+int get_tcp_info(struct flow *flow, struct fg_tcp_info *info)
 {
-#if (defined __LINUX__ || defined __FreeBSD__)
+#ifdef HAVE_TCP_INFO
 	struct tcp_info tmp_info;
 	socklen_t info_len = sizeof(tmp_info);
 	int rc;
-	memset(info, 0, sizeof(struct _fg_tcp_info));
+	memset(info, 0, sizeof(struct fg_tcp_info));
 
 	rc = getsockopt(flow->fd, IPPROTO_TCP, TCP_INFO, &tmp_info, &info_len);
 	if (rc == -1) {
@@ -647,19 +647,23 @@ int get_tcp_info(struct _flow *flow, struct _fg_tcp_info *info)
 	CPY_INFO_MEMBER(tcpi_rto);
 	CPY_INFO_MEMBER(tcpi_snd_mss);
 
-	/* FreeBSD 9.1 doesn't fill these members */
+	/* TODO FreeBSD 9.1 doesn't fill these members, but maybe FreeBSD 10.0
+	 * will fill it, so get rid of this ifdef */
 #ifdef __LINUX__
 	CPY_INFO_MEMBER(tcpi_backoff);
 	CPY_INFO_MEMBER(tcpi_unacked);
 	CPY_INFO_MEMBER(tcpi_sacked);
+	CPY_INFO_MEMBER(tcpi_lost);
 	CPY_INFO_MEMBER(tcpi_retrans);
 	CPY_INFO_MEMBER(tcpi_retransmits);
 	CPY_INFO_MEMBER(tcpi_fackets);
 	CPY_INFO_MEMBER(tcpi_reordering);
-#endif
-#else
-	memset(info, 0, sizeof(_fg_tcp_info);
-#endif
+	CPY_INFO_MEMBER(tcpi_ca_state);
+#endif /* __LINUX__ */
+#else /* HAVE_TCP_INFO */
+	UNUSED_ARGUMENT(flow);
+	memset(info, 0, sizeof(struct fg_tcp_info));
+#endif /* HAVE_TCP_INFO */
 	return 0;
 }
 
@@ -671,8 +675,10 @@ static void timer_check()
 		return;
 
 	gettime(&now);
-	for (unsigned int i = 0; i < num_flows; i++) {
-		struct _flow *flow = &flows[i];
+	const struct list_node *node = fg_list_front(&flows);
+	while (node) {
+		struct flow *flow = node->data;
+		node = node->next;
 
 		DEBUG_MSG(LOG_DEBUG, "processing timer_check() for flow %d",
 			  flow->id);
@@ -701,10 +707,10 @@ static void timer_check()
 
 static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 {
-	unsigned int i = 0;
-	while (i < num_flows) {
-
-		struct _flow *flow = &flows[i];
+	const struct list_node *node = fg_list_front(&flows);
+	while (node) {
+		struct flow *flow = node->data;
+		node = node->next;
 
 		DEBUG_MSG(LOG_DEBUG, "processing pselect() for flow %d",
 			  flow->id);
@@ -754,7 +760,6 @@ static void process_select(fd_set *rfds, fd_set *wfds, fd_set *efds)
 					goto remove;
 				}
 		}
-		i++;
 		continue;
 remove:
 		if (flow->fd != -1) {
@@ -766,7 +771,7 @@ remove:
 		flow->pmtu = get_pmtu(flow->fd);
 		report_flow(flow, FINAL);
 		uninit_flow(flow);
-		remove_flow(i);
+		remove_flow(flow);
 		DEBUG_MSG(LOG_ERR, "removed flow %d", flow->id);
 	}
 }
@@ -798,7 +803,7 @@ void* daemon_main(void* ptr __attribute__((unused)))
 	}
 }
 
-void add_report(struct _report* report)
+void add_report(struct report* report)
 {
 	DEBUG_MSG(LOG_DEBUG, "add_report trying to lock mutex");
 	pthread_mutex_lock(&mutex);
@@ -824,11 +829,11 @@ void add_report(struct _report* report)
 	DEBUG_MSG(LOG_DEBUG, "add_report unlocked mutex");
 }
 
-struct _report* get_reports(int *has_more)
+struct report* get_reports(int *has_more)
 {
 	const unsigned int max_reports = 50;
 
-	struct _report* ret;
+	struct report* ret;
 	DEBUG_MSG(LOG_DEBUG, "get_reports trying to lock mutex");
 	pthread_mutex_lock(&mutex);
 	DEBUG_MSG(LOG_DEBUG, "get_reports aquired mutex");
@@ -841,7 +846,7 @@ struct _report* get_reports(int *has_more)
 		reports_last = 0;
 	} else {
 		/* Split off first 50 items */
-		struct _report* tmp;
+		struct report* tmp;
 		for (unsigned int i = 0; i < max_reports - 1; i++)
 			reports = reports->next;
 		tmp = reports->next;
@@ -857,9 +862,9 @@ struct _report* get_reports(int *has_more)
 	return ret;
 }
 
-void init_flow(struct _flow* flow, int is_source)
+void init_flow(struct flow* flow, int is_source)
 {
-	memset(flow, 0, sizeof(struct _flow));
+	memset(flow, 0, sizeof(struct flow));
 
 	flow->id = next_flow_id++;
 	flow->endpoint = is_source ? SOURCE : DESTINATION;
@@ -897,7 +902,7 @@ void init_flow(struct _flow* flow, int is_source)
 	DEBUG_MSG(LOG_NOTICE, "called init flow %d", flow->id);
 }
 
-static int write_data(struct _flow *flow)
+static int write_data(struct flow *flow)
 {
 	int rc = 0;
 	int response_block_size = 0;
@@ -911,10 +916,10 @@ static int write_data(struct _flow *flow)
 			response_block_size = next_response_block_size(flow);
 			/* serialize data:
 			 * this_block_size */
-			((struct _block *)flow->write_block)->this_block_size =
+			((struct block *)flow->write_block)->this_block_size =
 				htonl(flow->current_write_block_size);
 			/* requested_block_size */
-			((struct _block *)flow->write_block)->request_block_size =
+			((struct block *)flow->write_block)->request_block_size =
 				htonl(response_block_size);
 			/* write rtt data (will be echoed back by the receiver
 			 * in the response packet) */
@@ -923,8 +928,8 @@ static int write_data(struct _flow *flow)
 
 			DEBUG_MSG(LOG_DEBUG, "wrote new request data to out "
 				  "buffer bs = %d, rqs = %d, on flow %d",
-				  ntohl(((struct _block *)flow->write_block)->this_block_size),
-				  ntohl(((struct _block *)flow->write_block)->request_block_size),
+				  ntohl(((struct block *)flow->write_block)->this_block_size),
+				  ntohl(((struct block *)flow->write_block)->request_block_size),
 				  flow->id);
 		}
 
@@ -966,10 +971,8 @@ static int write_data(struct _flow *flow)
 
 		if (flow->current_block_bytes_written >=
 		    flow->current_write_block_size) {
-#ifdef DEBUG
 			assert(flow->current_block_bytes_written ==
 			       flow->current_write_block_size);
-#endif
 			/* we just finished writing a block */
 			flow->current_block_bytes_written = 0;
 			gettime(&flow->last_block_written);
@@ -1013,7 +1016,7 @@ static int write_data(struct _flow *flow)
 	return 0;
 }
 
-static inline int try_read_n_bytes(struct _flow *flow, int bytes)
+static inline int try_read_n_bytes(struct flow *flow, int bytes)
 {
 	int rc;
 	struct iovec iov;
@@ -1022,9 +1025,9 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 #ifdef DEBUG
 	char cbuf[512];
 	struct cmsghdr *cmsg;
-#else
+#else /* DEBUG */
 	char cbuf[16];
-#endif
+#endif /* DEBUG */
 	iov.iov_base = flow->read_block +
 		       flow->current_block_bytes_read;
 	iov.iov_len = bytes;
@@ -1044,7 +1047,7 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 		if (errno == EAGAIN)
 			flow_error(flow, "Premature end of test: %s",
 				   strerror(errno));
-			return -1;
+		return -1;
 	}
 
 	if (rc == 0) {
@@ -1052,8 +1055,8 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 			  "flow %d", flow->id);
 		if (!flow->finished[READ] || !flow->settings.shutdown)
 			warnx("premature shutdown of server flow");
-			flow->finished[READ] = 1;
-			return -1;
+		flow->finished[READ] = 1;
+		return -1;
 	}
 
 	DEBUG_MSG(LOG_DEBUG, "flow %d received %u bytes", flow->id, rc);
@@ -1067,12 +1070,12 @@ static inline int try_read_n_bytes(struct _flow *flow, int bytes)
 		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, "
 			  "len = %zu",
 		flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
-#endif
+#endif /* DEBUG */
 
 	return rc;
 }
 
-static int read_data(struct _flow *flow)
+static int read_data(struct flow *flow)
 {
 	int rc = 0;
 	int optint = 0;
@@ -1089,7 +1092,7 @@ static int read_data(struct _flow *flow)
 		/* parse data and update status */
 
 		/* parse and check current block size for validity */
-		optint = ntohl( ((struct _block *)flow->read_block)->this_block_size );
+		optint = ntohl( ((struct block *)flow->read_block)->this_block_size );
 		if (optint >= MIN_BLOCK_SIZE &&
 		    optint <= flow->settings.maximum_block_size )
 			flow->current_read_block_size = optint;
@@ -1099,7 +1102,7 @@ static int read_data(struct _flow *flow)
 				    flow->settings.maximum_block_size);
 
 		/* parse and check current request size for validity */
-		optint = ntohl( ((struct _block *)flow->read_block)->request_block_size );
+		optint = ntohl( ((struct block *)flow->read_block)->request_block_size );
 		if (optint == -1 || optint == 0  ||
 		    (optint >= MIN_BLOCK_SIZE &&
 		     optint <= flow->settings.maximum_block_size))
@@ -1122,7 +1125,7 @@ static int read_data(struct _flow *flow)
 				  flow->current_read_block_size,
 				  requested_response_block_size);
 		}
-#endif
+#endif /* DEBUG */
 		/* read rest of block, if we have more to read */
 		if (flow->current_block_bytes_read <
 		    flow->current_read_block_size)
@@ -1132,10 +1135,8 @@ static int read_data(struct _flow *flow)
 
 		if (flow->current_block_bytes_read >=
 		    flow->current_read_block_size ) {
-#ifdef DEBUG
 			assert(flow->current_block_bytes_read ==
 					flow->current_read_block_size);
-#endif
 			flow->current_block_bytes_read = 0;
 
 			/* TODO process_rtt(), process_iat(), and
@@ -1168,7 +1169,7 @@ static int read_data(struct _flow *flow)
 	return rc;
 }
 
-static void process_rtt(struct _flow* flow)
+static void process_rtt(struct flow* flow)
 {
 	double current_rtt = .0;
 	struct timespec now;
@@ -1199,7 +1200,7 @@ static void process_rtt(struct _flow* flow)
 		  flow->id, current_rtt * 1e3);
 }
 
-static void process_iat(struct _flow* flow)
+static void process_iat(struct flow* flow)
 {
 	double current_iat = .0;
 	struct timespec now;
@@ -1232,7 +1233,7 @@ static void process_iat(struct _flow* flow)
 		  flow->id, current_iat * 1e3);
 }
 
-static void process_delay(struct _flow* flow)
+static void process_delay(struct flow* flow)
 {
 	double current_delay = .0;
 	struct timespec now;
@@ -1263,32 +1264,32 @@ static void process_delay(struct _flow* flow)
 		  flow->id, current_delay * 1e3);
 }
 
-static void send_response(struct _flow* flow, int requested_response_block_size)
+static void send_response(struct flow* flow, int requested_response_block_size)
 {
 	int rc;
 	int try = 0;
-#ifdef DEBUG
+
 	assert(!flow->current_block_bytes_written);
-#endif
+
 	/* write requested block size as current size */
-	((struct _block *)flow->write_block)->this_block_size =
+	((struct block *)flow->write_block)->this_block_size =
 		htonl(requested_response_block_size);
 	/* rqs = -1 indicates response block */
-	((struct _block *)flow->write_block)->request_block_size = htonl(-1);
+	((struct block *)flow->write_block)->request_block_size = htonl(-1);
 	/* copy rtt data from received block to response block (echo back) */
-	((struct _block *)flow->write_block)->data =
-		((struct _block *)flow->read_block)->data;
+	((struct block *)flow->write_block)->data =
+		((struct block *)flow->read_block)->data;
 	/* workaround for 64bit sender and 32bit receiver: we check if the
 	 * timespec is 64bit and then echo the missing 32bit back, too */
-	if ((((struct _block *)flow->write_block)->data.tv_sec) ||
-	    ((struct _block *)flow->write_block)->data.tv_nsec)
-		((struct _block *)flow->write_block)->data2 =
-			((struct _block *)flow->read_block)->data2;
+	if ((((struct block *)flow->write_block)->data.tv_sec) ||
+	    ((struct block *)flow->write_block)->data.tv_nsec)
+		((struct block *)flow->write_block)->data2 =
+			((struct block *)flow->read_block)->data2;
 
 	DEBUG_MSG(LOG_DEBUG, "wrote new response data to out buffer bs = %d, "
 		  "rqs = %d on flow %d",
-		  ntohl(((struct _block *)flow->write_block)->this_block_size),
-		  ntohl(((struct _block *)flow->write_block)->request_block_size),
+		  ntohl(((struct block *)flow->write_block)->this_block_size),
+		  ntohl(((struct block *)flow->write_block)->request_block_size),
 		  flow->id);
 
 	/* send data out until block is finished (or abort if 0 zero bytes are
@@ -1332,10 +1333,8 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 
 			if (flow->current_block_bytes_written >=
 			    (unsigned int)requested_response_block_size) {
-#ifdef DEBUG
 				assert(flow->current_block_bytes_written ==
 					(unsigned int)requested_response_block_size);
-#endif
 				/* just finish sending response block */
 				flow->current_block_bytes_written = 0;
 				gettime(&flow->last_block_written);
@@ -1348,11 +1347,11 @@ static void send_response(struct _flow* flow, int requested_response_block_size)
 }
 
 
-int apply_extra_socket_options(struct _flow *flow)
+int apply_extra_socket_options(struct flow *flow)
 {
 	for (int i = 0; i < flow->settings.num_extra_socket_options; i++) {
 		int level, res;
-		const struct _extra_socket_options *option =
+		const struct extra_socket_options *option =
 			&flow->settings.extra_socket_options[i];
 
 		switch (option->level) {
@@ -1365,11 +1364,9 @@ int apply_extra_socket_options(struct _flow *flow)
 		case level_ipproto_ip:
 			level = IPPROTO_IP;
 			break;
-#ifndef __DARWIN__
 		case level_ipproto_sctp:
 			level = IPPROTO_SCTP;
 			break;
-#endif /* __DARWIN__ */
 		case level_ipproto_tcp:
 			level = IPPROTO_TCP;
 			break;
@@ -1396,7 +1393,7 @@ int apply_extra_socket_options(struct _flow *flow)
 }
 
 /* Set the TCP options on the data socket */
-int set_flow_tcp_options(struct _flow *flow)
+int set_flow_tcp_options(struct flow *flow)
 {
 	set_non_blocking(flow->fd);
 

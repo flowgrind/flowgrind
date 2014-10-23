@@ -29,10 +29,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#ifdef DEBUG
-#include <assert.h>
-#endif /* DEBUG */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -70,14 +66,14 @@
 
 void remove_flow(unsigned int i);
 
-#if (defined __LINUX__ || defined __FreeBSD__)
-int get_tcp_info(struct _flow *flow, struct tcp_info *info);
-#endif /* (defined __LINUX__ || defined __FreeBSD__) */
+#ifdef HAVE_TCP_INFO
+int get_tcp_info(struct flow *flow, struct tcp_info *info);
+#endif /* HAVE_TCP_INFO */
 
-void init_flow(struct _flow* flow, int is_source);
-void uninit_flow(struct _flow *flow);
+void init_flow(struct flow* flow, int is_source);
+void uninit_flow(struct flow *flow);
 
-static int name2socket(struct _flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
+static int name2socket(struct flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
 		socklen_t *lenp, char do_connect,
 		const int read_buffer_size_req, int *read_buffer_size,
 		const int send_buffer_size_req, int *send_buffer_size)
@@ -154,20 +150,25 @@ static int name2socket(struct _flow *flow, char *server_name, unsigned port, str
 	return fd;
 }
 
-int add_flow_source(struct _request_add_flow_source *request)
+int add_flow_source(struct request_add_flow_source *request)
 {
-#ifdef TCP_CONGESTION
+#ifdef HAVE_SO_TCP_CONGESTION
 	socklen_t opt_len = 0;
-#endif /* TCP_CONGESTION */
-	struct _flow *flow;
+#endif /* HAVE_SO_TCP_CONGESTION */
+	struct flow *flow;
 
-	if (num_flows >= MAX_FLOWS) {
+	if (fg_list_size(&flows) >= MAX_FLOWS) {
 		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
 		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
 		return -1;
 	}
 
-	flow = &flows[num_flows++];
+	flow = malloc(sizeof(struct flow));
+	if (!flow) {
+		logging_log(LOG_ALERT, "could not allocate memory for flow");
+		return -1;
+	}
+
 	init_flow(flow, 1);
 
 	flow->settings = request->settings;
@@ -180,7 +181,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");
 		uninit_flow(flow);
-		num_flows--;
 		return -1;
 	}
 	if (flow->settings.byte_counting) {
@@ -199,7 +199,6 @@ int add_flow_source(struct _request_add_flow_source *request)
 		logging_log(LOG_ALERT, "Could not create data socket: %s", flow->error);
 		request_error(&request->r, "Could not create data socket: %s", flow->error);
 		uninit_flow(flow);
-		num_flows--;
 		return -1;
 	}
 
@@ -207,21 +206,19 @@ int add_flow_source(struct _request_add_flow_source *request)
 		request->r.error = flow->error;
 		flow->error = NULL;
 		uninit_flow(flow);
-		num_flows--;
 		return -1;
 	}
 
-#ifdef TCP_CONGESTION
+#ifdef HAVE_SO_TCP_CONGESTION
 	opt_len = sizeof(request->cc_alg);
 	if (getsockopt(flow->fd, IPPROTO_TCP, TCP_CONGESTION,
 				request->cc_alg, &opt_len) == -1) {
 		request_error(&request->r, "failed to determine actual congestion control algorithm: %s",
 			strerror(errno));
 		uninit_flow(flow);
-		num_flows--;
 		return -1;
 	}
-#endif /* TCP_CONGESTION */
+#endif /* HAVE_SO_TCP_CONGESTION */
 
 #ifdef HAVE_LIBPCAP
 	fg_pcap_go(flow);
@@ -234,6 +231,8 @@ int add_flow_source(struct _request_add_flow_source *request)
 	}
 
 	request->flow_id = flow->id;
+
+	fg_list_push_back(&flows, flow);
 
 	return 0;
 }

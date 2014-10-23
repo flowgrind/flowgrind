@@ -39,6 +39,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
+#include <pcap.h>
+#include <netdb.h>
 
 #include "debug.h"
 #include "fg_socket.h"
@@ -47,15 +49,20 @@
 #include "daemon.h"
 #include "fg_pcap.h"
 
-#ifdef HAVE_LIBPCAP
-
-#include <pcap.h>
+/* OS X hasn't defined pthread_barrier */
+#ifndef HAVE_PTHREAD_BARRIER
+#include "fg_barrier.h"
+#endif
 
 #define PCAP_SNAPLEN 130
 #define PCAP_FILTER "tcp"
 #define PCAP_PROMISC 0
 
 static char errbuf[PCAP_ERRBUF_SIZE];
+
+static pthread_barrier_t pcap_barrier;
+
+static pcap_if_t * alldevs;
 
 void fg_pcap_init()
 {
@@ -86,21 +93,18 @@ void fg_pcap_init()
 		DEBUG_MSG(LOG_ERR, "pcap: found pcapable device (%s)", devdes);
 	}
 #endif /* DEBUG*/
-	pthread_mutex_init(&pcap_mutex, NULL);
-#ifndef __DARWIN__
+
 	pthread_barrier_init(&pcap_barrier, NULL, 2);
-#endif /* __DARWIN__ */
 	return;
 }
 
 void fg_pcap_cleanup(void* arg)
 {
-	struct _flow * flow;
-	flow = (struct _flow *) arg;
+	struct flow * flow;
+	flow = (struct flow *) arg;
 	if (!dumping)
 		return;
 	DEBUG_MSG(LOG_DEBUG, "fg_pcap_cleanup() called for flow %d", flow->id);
-	pthread_mutex_lock(&pcap_mutex);
 	if (flow->pcap_dumper)
 		pcap_dump_close((pcap_dumper_t *)flow->pcap_dumper);
 	flow->pcap_dumper = NULL;
@@ -108,7 +112,6 @@ void fg_pcap_cleanup(void* arg)
 	if (flow->pcap_handle)
 		pcap_close((pcap_t *)flow->pcap_handle);
 	flow->pcap_handle = NULL;
-	pthread_mutex_unlock(&pcap_mutex);
 	dumping = 0;
 }
 
@@ -122,11 +125,10 @@ static void* fg_pcap_work(void* arg)
 	struct pcap_stat p_stats;
 #endif /* DEBUG */
 	int rc;
-	struct _flow * flow;
-	flow = (struct _flow *) arg;
+	struct flow * flow;
+	flow = (struct flow *) arg;
 	pcap_if_t *d;
-	struct sockaddr_storage sa;
-	socklen_t sl = sizeof(sa);
+	struct addrinfo *ainf;
 	char found = 0;
 	uint32_t net = 0;
 	uint32_t mask = 0;
@@ -141,12 +143,11 @@ static void* fg_pcap_work(void* arg)
 	DEBUG_MSG(LOG_DEBUG, "fg_pcap_thread() called for flow %d", flow->id);
 
 	/* make sure all resources are released when finished */
-	pthread_detach(pthread_self());
 	pthread_cleanup_push(fg_pcap_cleanup, (void*) flow);
 
-	if (getsockname(flow->fd, (struct sockaddr *)&sa, &sl) == -1) {
-		logging_log(LOG_WARNING, "getsockname() failed. Eliding "
-			    "packet capture for flow.");
+	if ((rc = getaddrinfo(flow->settings.bind_address, NULL, NULL, &ainf))) {
+		logging_log(LOG_WARNING, "getaddrinfo() failed (%s). Eliding "
+			    "packet capture for flow.", gai_strerror(rc));
 		goto remove;
 	}
 
@@ -156,7 +157,7 @@ static void* fg_pcap_work(void* arg)
 		for (a = d->addresses; a; a = a->next) {
 			if (!a->addr)
 				continue;
-			if (sockaddr_compare(a->addr, (struct sockaddr *)&sa)) {
+			if (sockaddr_compare(a->addr, ainf->ai_addr)) {
 				DEBUG_MSG(LOG_NOTICE, "pcap: data connection "
 					  "inbound from %s (%s)", d->name,
 					  fg_nameinfo(a->addr,
@@ -265,9 +266,8 @@ static void* fg_pcap_work(void* arg)
 	}
 
 	/* barrier: dump is ready */
-#ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
-#endif /* __DARWIN__ */
+
 	for (;;) {
 		rc = pcap_dispatch((pcap_t *)flow->pcap_handle, -1,
 				   &pcap_dump, (u_char *)flow->pcap_dumper);
@@ -282,7 +282,7 @@ static void* fg_pcap_work(void* arg)
 #ifdef DEBUG
 		pcap_stats((pcap_t *)flow->pcap_handle, &p_stats);
 #endif /* DEBUG */
-		DEBUG_MSG(LOG_NOTICE, "pcap: finished dumping %u packets for "
+		DEBUG_MSG(LOG_NOTICE, "pcap: finished dumping %d packets for "
 			  "flow %d", rc, flow->id);
 		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets received by filter for "
 			  "flow %d", p_stats.ps_recv, flow->id);
@@ -293,17 +293,17 @@ static void* fg_pcap_work(void* arg)
 			 * if we should cancel */
 			pthread_testcancel();
 	}
+
+remove: ;
+
 	pthread_cleanup_pop(1);
 
-remove:
-#ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
-#endif /* __DARWIN__ */
 	return 0;
 
 }
 
-void fg_pcap_go(struct _flow *flow)
+void fg_pcap_go(struct flow *flow)
 {
 	int rc;
 	if (!flow->settings.traffic_dump)
@@ -319,14 +319,13 @@ void fg_pcap_go(struct _flow *flow)
 	dumping = 1;
 	rc = pthread_create(&flow->pcap_thread, NULL, fg_pcap_work,
 			    (void*)flow);
+
 	/* barrier: dump thread is ready (or aborted) */
-#ifndef __DARWIN__
 	pthread_barrier_wait(&pcap_barrier);
-#endif /* __DARWIN__ */
+
 	if (rc)
 		logging_log(LOG_WARNING, "Could not start pcap thread: %s",
-			    strerror(errno) );
+			    strerror(rc) );
 	return;
 }
 
-#endif /* HAVE_LIBPCAP */

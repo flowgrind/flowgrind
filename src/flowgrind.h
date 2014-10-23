@@ -42,7 +42,7 @@
 #ifdef __LINUX__
 /** Sysctl for quering available congestion control algorithms */
 #define SYSCTL_CC_AVAILABLE  "net.ipv4.tcp_available_congestion_control"
-#elif __FreeBSD__
+#elif __FREEBSD__
 #define SYSCTL_CC_AVAILABLE "net.inet.tcp.cc.available"
 #endif /* __LINUX__ */
 
@@ -62,7 +62,7 @@ enum tcp_stack {
 	BYTE_BASED
 };
 
-#ifndef __LINUX__
+#ifndef HAVE_TCP_CA_STATE
 /** Values for Linux tcpi_state, if not compiled on Linux */
 enum tcp_ca_state {
 	/** TCP sender follows fast path execution (normal state) */
@@ -76,7 +76,7 @@ enum tcp_ca_state {
 	/** Retransmission timeout occurred */
         TCP_CA_Loss = 4
 };
-#endif /* __LINUX__ */
+#endif /* HAVE_TCP_CA_STATE */
 
 /** IDs to explicit address an intermediated interval report column */
 enum column_id {
@@ -127,16 +127,38 @@ enum column_id {
 #endif /* DEBUG */
 };
 
+/** Option types in flowgrind controller */
+enum opt_types {
+	/** General controller options */
+	OPT_CONTROLLER,
+	/** Selects a subset of flows to apply options to (-F) */
+	OPT_SELECTOR,
+	/** Flow option without endpoint string */
+	OPT_FLOW,
+	/** Flow option with endpoint string */
+	OPT_FLOW_ENDPOINT,
+};
+
+/** Mutual exclusion contexts for options */
+enum mutex_contexts {
+	/** Context for controller options */
+	MUTEX_CONTEXT_CONTROLLER = 0,
+	/** Context for flow options for both endpoints */
+	MUTEX_CONTEXT_TWO_SIDED,
+	/** Context for flow options on source side */
+	MUTEX_CONTEXT_SOURCE,
+	/** Context for flow options on destination side */
+	MUTEX_CONTEXT_DESTINATION,
+};
+
 /** For long options with no equivalent short option, use a pseudo short option */
 enum long_opt_only {
-	/** Pseudo short option for option --help */
-	HELP_OPTION = CHAR_MAX + 1,
 	/** Pseudo short option for option --log-file */
-	LOG_FILE_OPTION
+	LOG_FILE_OPTION = CHAR_MAX + 1,
 };
 
 /** Controller options */
-struct _controller_options {
+struct controller_options {
 	/** Number of test flows (option -n) */
 	unsigned short num_flows;
 	/** Length of reporting interval, in seconds (option -i) */
@@ -145,10 +167,8 @@ struct _controller_options {
 	bool log_to_stdout;
 	/** Write output to logfile (option -w) */
 	bool log_to_file;
-#ifdef HAVE_LIBPCAP
 	/** Prefix for dumpfile (option -e) */
-	char *dump_prefix;
-#endif /* HAVE_LIBPCAP */
+	const char *dump_prefix;
 	/** Overwrite existing log files (option -o) */
 	bool clobber;
 	/** Report in MByte/s instead of MBit/s (option -m) */
@@ -160,7 +180,7 @@ struct _controller_options {
 };
 
 /** Infos about a flowgrind daemon */
-struct _daemon {
+struct daemon {
 /* Note: a daemon can potentially managing multiple flows */
 	/** XMLRPC URL for this daemon */
 	char server_url[1000];
@@ -177,20 +197,20 @@ struct _daemon {
 };
 
 /** Infos about the flow endpoint */
-struct _flow_endpoint {
+struct flow_endpoint {
 	/** Sending buffer (SO_SNDBUF) */
 	int send_buffer_size_real;
 	/** Receiver buffer (SO_RCVBUF) */
 	int receive_buffer_size_real;
 
 	/** Pointer to the daemon managing this endpoint */
-	struct _daemon* daemon;
-	/* XXX add a brief description doxygen */
+	struct daemon* daemon;
+	/** network address where the actual test connection goes to */
 	char test_address[1000];
 };
 
 /** Infos about the flow including flow options */
-struct _cflow {
+struct cflow {
 	/** Used transport protocol */
 	enum protocol proto;
 
@@ -211,22 +231,22 @@ struct _cflow {
 
 	/* For the following arrays: 0 stands for source; 1 for destination */
 
-	/* XXX add a brief description doxygen */
+	/** ID used internally by the deamon to distinguish its flows */
 	int endpoint_id[2];
-	/* XXX add a brief description doxygen */
+	/** Timestamp set just before starting flow */
 	struct timespec start_timestamp[2];
 	/** Infos about flow endpoint */
-	struct _flow_endpoint endpoint[2];
+	struct flow_endpoint endpoint[2];
 	/** Flow specific options */
-	struct _flow_settings settings[2];
+	struct flow_settings settings[2];
 	/** Flag if final report for the flow is received  */
 	char finished[2];
 	/** Final report from the daemon */
-	struct _report *final_report[2];
+	struct report *final_report[2];
 };
 
 /** Header of an intermediated interval report column */
-struct _column_header {
+struct column_header {
         /** First header row: name of the column */
         const char* name;
         /** Second header row: unit of the column */
@@ -234,7 +254,7 @@ struct _column_header {
 };
 
 /** State of an intermediated interval report column */
-struct _column_state {
+struct column_state {
         /** Dynamically turn an column on/off */
         bool visible;
         /** How often the current column width was too high */
@@ -244,13 +264,13 @@ struct _column_state {
 };
 
 /** Intermediated interval report column */
-struct _column {
+struct column {
         /** Unique column identifier */
         enum column_id type;
         /** Column header (name and unit) */
-        struct _column_header header;
+        struct column_header header;
         /** State of the column */
-        struct _column_state state;
+        struct column_state state;
 };
 
 #endif /* _FLOWGRIND_H_ */
