@@ -47,7 +47,7 @@
 #include <xmlrpc-c/server_abyss.h>
 #include <xmlrpc-c/util.h>
 
-/** time select() will block waiting for a file descriptor to become ready */
+/** Time select() will block waiting for a file descriptor to become ready */
 #define DEFAULT_SELECT_TIMEOUT  10000000
 
 enum flow_state
@@ -238,14 +238,12 @@ struct request_get_status
 	int num_flows;
 };
 
-/**
- * Struct to hold information about the daemons XMLrpc server.
- */
+/** Information about the daemons XMLrpc server */
 struct fg_rpc_server
 {
-	/** Environment used by the Abyss Server. */
+	/** Environment used by the Abyss Server */
 	xmlrpc_env env;
-	/** Parameters of the XMLrpc Server. */
+	/** Parameters of the XMLrpc Server */
 	xmlrpc_server_abyss_parms parms;
 };
 
