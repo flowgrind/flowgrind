@@ -168,43 +168,6 @@ static void sighandler(int sig)
 	}
 }
 
-static int dispatch_request(struct request *request, int type)
-{
-	pthread_cond_t cond;
-
-	request->error = NULL;
-	request->type = type;
-	request->next = NULL;
-
-	/* Create synchronization mutex */
-	if (pthread_cond_init(&cond, NULL)) {
-		request_error(request, "Could not create synchronization mutex");
-		return -1;
-	}
-	request->condition = &cond;
-
-	pthread_mutex_lock(&mutex);
-
-	if (!requests) {
-		requests = request;
-		requests_last = request;
-	} else {
-		requests_last->next = request;
-		requests_last = request;
-	}
-	if (write(daemon_pipe[1], &type, 1) != 1) /* Doesn't matter what we write */
-		return -1;
-	/* Wait until the daemon thread has processed the request */
-	pthread_cond_wait(&cond, &mutex);
-
-	pthread_mutex_unlock(&mutex);
-
-	if (request->error)
-		return -1;
-
-	return 0;
-}
-
 static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)

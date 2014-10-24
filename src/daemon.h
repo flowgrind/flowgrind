@@ -274,4 +274,8 @@ void flow_error(struct flow *flow, const char *fmt, ...);
 void request_error(struct request *request, const char *fmt, ...);
 int set_flow_tcp_options(struct flow *flow);
 
+/** Dispatch a request to daemon loop.
+ * Is called by the rpc server to feed in requests to the daemon. */
+ int dispatch_request(struct request *request, int type);
+
 #endif /* _DAEMON_H_ */
