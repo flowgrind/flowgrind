@@ -2538,6 +2538,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 				  "(in seconds)", opt_string);
 		break;
 	case LOG_FILE_OPTION:
+		copt.log_to_stdout = false;
 		copt.log_to_file = true;
 		if (arg)
 			log_filename = strdup(arg);
@@ -2571,6 +2572,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 				  arg, opt_string);
 		break;
 	case 'w':
+		copt.log_to_stdout = false;
 		copt.log_to_file = true;
 		break;
 	/* unknown option or missing option-argument */
