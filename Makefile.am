@@ -54,7 +54,7 @@ flowgrindd_SOURCES = src/common.h src/daemon.h src/daemon.c src/debug.c \
 					 src/source.h src/source.c src/trafgen.h src/trafgen.c \
 					 src/fg_argparser.h src/fg_argparser.c src/fg_list.h \
 					 src/fg_list.c src/fg_definitions.h src/fg_affinity.h \
-					 src/fg_affinity.c
+					 src/fg_affinity.c src/fg_rpc_server.h src/fg_rpc_server.c
 flowgrindd_LDADD = $(LIBS) $(XMLRPC_C_SERVER_LDADD) $(GSL_LDADD)
 flowgrindd_CFLAGS = $(AM_CFLAGS) $(XMLRPC_C_SERVER_CFLAGS) $(GSL_CFLAGS)
 

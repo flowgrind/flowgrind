@@ -238,15 +238,6 @@ struct request_get_status
 	int num_flows;
 };
 
-/** Information about the daemons XMLrpc server */
-struct fg_rpc_server
-{
-	/** Environment used by the Abyss Server */
-	xmlrpc_env env;
-	/** Parameters of the XMLrpc Server */
-	xmlrpc_server_abyss_parms parms;
-};
-
 pthread_t daemon_thread;
 
 /* Through this pipe we wakeup the thread from select */
