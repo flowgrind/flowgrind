@@ -244,7 +244,6 @@ pthread_t daemon_thread;
 extern int daemon_pipe[2];
 
 extern char started;
-extern char dumping;
 extern pthread_mutex_t mutex;
 extern struct linked_list flows;
 extern struct report* reports;

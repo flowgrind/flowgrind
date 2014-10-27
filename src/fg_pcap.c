@@ -36,6 +36,7 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
+#include <stdbool.h>
 #include <string.h>
 #include <syslog.h>
 #include <stdlib.h>
@@ -75,6 +76,9 @@ static pthread_barrier_t pcap_barrier;
 
 /* A pointer to the first element in a list containing all 'pcapable' devices */
 static pcap_if_t * alldevs;
+
+/* XXX add a brief description doxygen */
+static bool dumping;
 
 void fg_pcap_init()
 {
@@ -131,7 +135,7 @@ void fg_pcap_cleanup(void* arg)
 	if (flow->pcap_handle)
 		pcap_close((pcap_t *)flow->pcap_handle);
 	flow->pcap_handle = NULL;
-	dumping = 0;
+	dumping = false;
 }
 
 /**
@@ -338,7 +342,7 @@ void fg_pcap_go(struct flow *flow)
 	}
 
 	DEBUG_MSG(LOG_DEBUG, "called fg_pcap_go() for flow %d", flow->id);
-	dumping = 1;
+	dumping = true;
 	rc = pthread_create(&flow->pcap_thread, NULL, fg_pcap_work,
 			    (void*)flow);
 

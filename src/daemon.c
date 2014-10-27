@@ -101,10 +101,6 @@ struct linked_list flows;
 
 char started = 0;
 
-#ifdef HAVE_LIBPCAP
-char dumping = 0;
-#endif /* HAVE_LIBPCAP */
-
 /* Forward declarations */
 static int write_data(struct flow *flow);
 static int read_data(struct flow *flow);
