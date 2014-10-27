@@ -336,35 +336,9 @@ static void usage_sockopt(void)
 		"values for each endpoints, separate them by comma. Moreover, it is possible to\n"
 		"repeatedly pass the same endpoint in order to specify multiple socket options\n\n"
 
-		"Standard socket options:\n", progname);
-#ifdef HAVE_SO_TCP_CONGESTION
-	FILE *fp;
-	char buf1[1024];
-
-	fprintf(stderr,
+		"Standard socket options:\n"
 		"  -O x=TCP_CONGESTION=ALG\n"
-		"               set congestion control algorithm ALG on test socket");
-
-	/* TODO Do not call /sbin/sysctl. Use /proc/sys instead. It seems that
-	 * we have to use a system call on FreeBSD since they deprecate
-	 * procfs */
-
-	/* Read and print available congestion control algorithms */
-	sprintf(buf1, "/sbin/sysctl -n %s", SYSCTL_CC_AVAILABLE);
-	fp = popen(buf1, "r");
-
-	if (fp != NULL) {
-		fprintf(stderr,
-			".\n "
-			"              Available algorithms are: ");
-		char buf2[1024];
-		while (fgets(buf2, 1024, fp) != NULL)
-			fprintf(stderr, "%s", buf2);
-
-		pclose(fp);
-	}
-#endif /* HAVE_SO_TCP_CONGESTION */
-	fprintf(stderr,
+		"               set congestion control algorithm ALG on test socket\n"
 		"  -O x=TCP_CORK\n"
 		"               set TCP_CORK on test socket\n"
 		"  -O x=TCP_NODELAY\n"
@@ -389,8 +363,8 @@ static void usage_sockopt(void)
 		"               sets Reno TCP as congestion control algorithm at the source and\n"
 		"               SO_DEBUG as socket option at the destinatio\n"
 		"  -O s=SO_DEBUG,s=TCP_CORK\n"
-		"               set SO_DEBUG and TCP_CORK as socket option at the source\n"
-		);
+		"               set SO_DEBUG and TCP_CORK as socket option at the source\n",
+		progname);
 	exit(EXIT_SUCCESS);
 }
 
