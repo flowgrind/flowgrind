@@ -1333,7 +1333,7 @@ static int det_column_size(double value)
 
 	if (value < 0)
 		i++;
-	while ((abs(value) / (dez - 1.0)) > 1.0) {
+	while ((fabs(value) / (dez - 1.0)) > 1.0) {
 		i++;
 		dez *= 10;
 	}
