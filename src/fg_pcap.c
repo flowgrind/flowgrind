@@ -68,16 +68,16 @@
 /* Flag whether to use promiscuous mode */
 #define PCAP_PROMISC 0
 
-/* A buffer filled with an error message by the pcap library in case of an error */
+/* Error message buffer filled by the pcap library in case of an error */
 static char errbuf[PCAP_ERRBUF_SIZE] = "";
 
-/* A thread barrier used to block fg_pcap_go() until the worker thread reaches its main loop */
+/* Barrier to block fg_pcap_go() until worker thread reaches its main loop */
 static pthread_barrier_t pcap_barrier;
 
-/* A pointer to the first element in a list containing all 'pcapable' devices */
+/* Pointer to the first element in a list containing all 'pcapable' devices */
 static pcap_if_t *alldevs;
 
-/* XXX add a brief description doxygen */
+/* Flag if traffic is currently dumped */
 static bool dumping;
 
 void fg_pcap_init(void)
@@ -114,14 +114,15 @@ void fg_pcap_init(void)
 
 /**
  * Cleanup method to be called after dumping of the specified flow has finished.
- * It closes the handle to the ``savefile'' and the handle to the device
- * whose traffic was captured.
+ *
+ * It closes the handle to the savefile and the handle to the device whose
+ * traffic was captured.
  *
  * @param[in] arg pointer to the flow whose dumping finished
  */
 void fg_pcap_cleanup(void *arg)
 {
-	/* Signature of pthread_create() requires that all arguments must be
+	/* signature of pthread_create() requires that all arguments must be
 	 * passed by reference and cast to (void *) */
 	struct flow *flow = (struct flow *) arg;
 
@@ -141,9 +142,11 @@ void fg_pcap_cleanup(void *arg)
 
 /**
  * Worker method performing actual packet capturing for the provided flow.
- * Prepares the flow for packet capturing by figuring out the correct device,
- * constructing the pcap filter, etc. and finally starts capturing.
- * Synchronizes with fg_pcap_go() after initialization before starting capturing.
+ *
+ * It prepares the flow for packet capturing by figuring out the correct
+ * device, constructing the pcap filter, etc. and finally starts capturing.
+ * Synchronizes with fg_pcap_go() after initialization before starting
+ * capturing.
  *
  * @param[in] arg pointer to the flow whose traffic should be captured
  */
@@ -153,7 +156,7 @@ static void* fg_pcap_work(void *arg)
 	 * execpt they cirumvent strange compiler warnings because of libpcap
 	 * typedef woo's */
 
-	/* Signature of pthread_create() requires that all arguments must be
+	/* signature of pthread_create() requires that all arguments must be
 	 * passed by reference and cast to (void *) */
 	struct flow *flow = (struct flow *) arg;
 
@@ -308,8 +311,7 @@ static void* fg_pcap_work(void *arg)
 		DEBUG_MSG(LOG_NOTICE, "pcap: %d packets dropped by kernel for "
 			  "flow %d", p_stats.ps_drop, flow->id);
 		if (rc == 0)
-			/* if no packets are received try
-			 * if we should cancel */
+			/* if no packets are received try if we should cancel */
 			pthread_testcancel();
 	}
 
