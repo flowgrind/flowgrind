@@ -1069,7 +1069,7 @@ static inline int try_read_n_bytes(struct flow *flow, int bytes)
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg))
 		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, "
 			  "len = %u",
-		flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
+		flow->id, cmsg->cmsg_type, (socklen_t) cmsg->cmsg_len);
 #endif /* DEBUG */
 
 	return rc;
