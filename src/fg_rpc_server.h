@@ -28,6 +28,8 @@
 #ifndef _FG_RPC_SERVER_H_
 #define _FG_RPC_SERVER_H_
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
