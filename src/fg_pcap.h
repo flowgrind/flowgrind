@@ -32,9 +32,6 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-#include <pcap.h>
-#include <pthread.h>
-
 #include "daemon.h"
 
 /**
