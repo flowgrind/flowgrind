@@ -40,8 +40,10 @@
  * This method fills internal structures on which other methods of this library
  * depend.  It is therefore crucial to call it before any call to other methods
  * of this library.
+ *
+ * @return return 0 for success, or -1 for failure
  */
-void fg_pcap_init(void);
+int fg_pcap_init(void);
 
 /**
  * Start a tcpdump to capture traffic of the provided flow.

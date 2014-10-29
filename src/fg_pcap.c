@@ -50,6 +50,7 @@
 #include "debug.h"
 #include "fg_socket.h"
 #include "fg_time.h"
+#include "fg_string.h"
 #include "log.h"
 #include "daemon.h"
 #include "fg_pcap.h"
@@ -80,36 +81,38 @@ static pcap_if_t *alldevs;
 /* Flag if traffic is currently dumped */
 static bool dumping;
 
-void fg_pcap_init(void)
+int fg_pcap_init(void)
 {
 	/* initalize *alldevs for later use */
 	if (pcap_findalldevs(&alldevs, errbuf) == -1) {
 		logging_log(LOG_WARNING,"Error in pcap_findalldevs: %s\n",
 			    errbuf);
-		return;
+		return -1;
 	}
 
 #ifdef DEBUG
-	char devdes[200];
 	for (pcap_if_t *d = alldevs; d; d = d->next) {
-		snprintf(devdes, sizeof(devdes), "%s: ", d->name);
+		char *devdes = NULL;
+		if (asprintf(&devdes, "%s: ", d->name) == -1)
+			return -1;
+
 		for (pcap_addr_t *a = d->addresses; a; a = a->next) {
-			char addr[100];
 			if (!a->addr)
 				continue;
-			snprintf(addr, sizeof(addr), "a=%s",
-				 fg_nameinfo(a->addr, sizeof(struct sockaddr)));
-			strncat(devdes, addr,
-				sizeof(devdes) - strlen(devdes) - 1);
+
+			asprintf_append(&devdes, "a=%s",
+					fg_nameinfo(a->addr,
+						    sizeof(struct sockaddr)));
 			if (a->next)
-				strncat(devdes, ", ",
-					sizeof(devdes) - strlen(devdes) - 1);
+				asprintf_append(&devdes, ", ");
 		}
 		DEBUG_MSG(LOG_ERR, "pcap: found pcapable device (%s)", devdes);
+		free(devdes);
 	}
 #endif /* DEBUG*/
 
 	pthread_barrier_init(&pcap_barrier, NULL, 2);
+	return 0;
 }
 
 /**
@@ -242,42 +245,30 @@ static void* fg_pcap_work(void *arg)
 	}
 
 	/* generate a nice filename */
-	char dump_filename[500];
-	dump_filename[0] = '\0';
+	char *dump_filename = NULL;
 
 	/* dir and prefix */
 	if (dump_dir)
-		strcat(dump_filename, dump_dir);
+		asprintf_append(&dump_filename, "%s", dump_dir);
 	if (dump_prefix)
-		strcat(dump_filename, dump_prefix);
+		asprintf_append(&dump_filename, "%s", dump_prefix);
 
 	/* timestamp */
-	struct timespec now;
-	char buf[60];
-	gettime(&now);
-	strftime(buf, sizeof(buf), "%Y-%m-%d-%H:%M:%S",
-		 localtime(&now.tv_sec));
-	strcat(dump_filename, buf);
+	asprintf_append(&dump_filename, "%s", ctimenow(false));
 
 	/* hostname */
-	char hostname[100];
-	hostname[0]= '\0';
-	if (!gethostname(hostname, 59)) {
-		strcat(dump_filename, "-");
-		strcat(dump_filename, hostname);
-	}
+	char hostname[128] = "";
+	if (!gethostname(hostname, sizeof(hostname)))
+		asprintf_append(&dump_filename, "-%s", hostname);
 
-	/* interface */
-	strcat(dump_filename, "-");
-	strcat(dump_filename, d->name);
-
-	/* suffix */
-	strcat(dump_filename, ".pcap");
+	/* interface and suffix */
+	asprintf_append(&dump_filename, "-%s.pcap", d->name);
 
 	DEBUG_MSG(LOG_NOTICE, "dumping to \"%s\"", dump_filename);
 
 	flow->pcap_dumper = (struct pcap_dumper_t *)pcap_dump_open(
 				(pcap_t *)flow->pcap_handle, dump_filename);
+	free(dump_filename);
 
 	if (!flow->pcap_dumper) {
 		logging_log(LOG_WARNING, "pcap: failed to open dump file "
@@ -321,7 +312,6 @@ remove: ;
 
 	pthread_barrier_wait(&pcap_barrier);
 	return 0;
-
 }
 
 void fg_pcap_go(struct flow *flow)
