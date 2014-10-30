@@ -42,23 +42,46 @@
 #endif /* NSEC_PER_SEC */
 
 /**
+ * Returns the current wall-clock time as null-terminated string and stores the
+ * string in a user-supplied buffer @p buf
+ *
+ * @param[out] buf buffer with room for at least 30 bytes
+ * @param[in] size size of the buffer
+ * @param[in] ns if returned time string should have nanosecond precision
+ * @return string of the form '2013-12-09-12:00:48[.34369902]'
+ */
+const char *ctimenow_r(char *buf, size_t size, bool ns);
+
+
+/**
+ * Returns the current wall-clock time as null-terminated string
+ *
+ * @param[in] ns if returned time string should have nanosecond precision
+ * @return string of the form '2013-12-09-12:00:48[.34369902]'
+ */
+const char *ctimenow(bool ns);
+
+/**
  * Converts timespec struct @p tp into a null-terminated string and stores the
  * string in a user-supplied buffer @p buf
  *
  * @param[in] tp point in time
  * @param[out] buf buffer with room for at least 30 bytes
  * @param[in] size size of the buffer
- * @return string of the form '2013-12-09 12:00:48.34369902'
+ * @param[in] ns if returned time string should have nanosecond precision
+ * @return string of the form '2013-12-09-12:00:48i[.34369902]'
  */
-const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size);
+const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size,
+			bool ns);
 
 /**
  * Converts timespec struct @p tp into a null-terminated string
  *
  * @param[in] tp point in time
- * @return string of the form '2013-12-09 12:00:48.34369902'
+ * @param[in] ns if returned time string should have nanosecond precision
+ * @return string of the form '2013-12-09-12:00:48[.34369902]'
  */
-const char *ctimespec(const struct timespec *tp);
+const char *ctimespec(const struct timespec *tp, bool ns);
 
 /**
  * Returns the time difference between two the specific points in time @p tp1
