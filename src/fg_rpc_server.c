@@ -27,7 +27,13 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif /* HAVE_CONFIG_H */
+
+#include <sys/utsname.h>
+/* for log levels */
+#include <syslog.h>
 
 #include "common.h"
 #include "daemon.h"
@@ -36,11 +42,6 @@
 #include "fg_definitions.h"
 #include "debug.h"
 #include "fg_rpc_server.h"
-
-#include <sys/utsname.h>
-
-/* for log levels */
-#include <syslog.h>
 
 static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,

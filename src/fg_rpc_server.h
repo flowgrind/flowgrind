@@ -28,14 +28,15 @@
 #ifndef _FG_RPC_SERVER_H_
 #define _FG_RPC_SERVER_H_
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <netdb.h>
 #include <netinet/tcp.h>
 
