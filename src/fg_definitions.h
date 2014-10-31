@@ -30,17 +30,17 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-/** These macros gain us a few percent of speed @{ */
+/** These macros gain us a few percent of speed. @{ */
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)			/** @} */
 
-/** Suppress warning for unused argument */
+/** Suppress warning for unused argument. */
 #define UNUSED_ARGUMENT(x) (void)x
 
-/** To determine the number of input arguments passed to a function call */
+/** To determine the number of input arguments passed to a function call. */
 #define NARGS(...) (sizeof((int[]){__VA_ARGS__})/sizeof(int))
 
-/** To vectorize an arbitrary function that takes any type of pointer */
+/** To vectorize an arbitrary function that takes any type of pointer. */
 #define FN_APPLY(type, fn, ...) do {				\
 	void *stopper = (int[]){0};				\
 	void **list = (type*[]){__VA_ARGS__, stopper};		\
@@ -48,16 +48,16 @@
 		fn(list[i]);					\
 } while(0)
 
-/** To free() an arbitrary number of variables */
+/** To free() an arbitrary number of variables. */
 #define free_all(...) FN_APPLY(void, free, __VA_ARGS__);
 
-/** Assign value if it less than current one */
+/** Assign value if it less than current one. */
 #define ASSIGN_MIN(s, c)		\
 	({ typeof (s) _s = (s);		\
 	   typeof (c) _c = (c);		\
 	   if (_s > _c) s = c; })
 
-/** Assign value if it's greater than current one */
+/** Assign value if it's greater than current one. */
 #define ASSIGN_MAX(s, c)		\
 	({ typeof (s) _s = (s);		\
 	   typeof (c) _c = (c);		\

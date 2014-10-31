@@ -47,7 +47,7 @@
 #include <xmlrpc-c/server_abyss.h>
 #include <xmlrpc-c/util.h>
 
-/** Time select() will block waiting for a file descriptor to become ready */
+/** Time select() will block waiting for a file descriptor to become ready. */
 #define DEFAULT_SELECT_TIMEOUT  10000000
 
 enum flow_state
@@ -134,23 +134,23 @@ struct flow
 
 		/* TODO Create an array for IAT / RTT and delay */
 
-		/** Minimum interarrival time */
+		/** Minimum interarrival time. */
 		double iat_min;
-		/** Maximum interarrival time */
+		/** Maximum interarrival time. */
 		double iat_max;
-		/** Accumulated interarrival time */
+		/** Accumulated interarrival time. */
 		double iat_sum;
-		/** Minimum one-way delay */
+		/** Minimum one-way delay. */
 		double delay_min;
-		/** Maximum one-way delay */
+		/** Maximum one-way delay. */
 		double delay_max;
-		/** Accumulated one-way delay */
+		/** Accumulated one-way delay. */
 		double delay_sum;
-		/** Minimum round-trip time */
+		/** Minimum round-trip time. */
 		double rtt_min;
-		/** Maximum round-trip time */
+		/** Maximum round-trip time. */
 		double rtt_max;
-		/** Accumulated round-trip time */
+		/** Accumulated round-trip time. */
 		double rtt_sum;
 
 		int has_tcp_info;
