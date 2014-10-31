@@ -238,15 +238,6 @@ struct request_get_status
 	int num_flows;
 };
 
-/** Information about the daemons XMLrpc server */
-struct fg_rpc_server
-{
-	/** Environment used by the Abyss Server */
-	xmlrpc_env env;
-	/** Parameters of the XMLrpc Server */
-	xmlrpc_server_abyss_parms parms;
-};
-
 pthread_t daemon_thread;
 
 /* Through this pipe we wakeup the thread from select */
@@ -273,5 +264,9 @@ void add_report(struct report* report);
 void flow_error(struct flow *flow, const char *fmt, ...);
 void request_error(struct request *request, const char *fmt, ...);
 int set_flow_tcp_options(struct flow *flow);
+
+/** Dispatch a request to daemon loop.
+ * Is called by the rpc server to feed in requests to the daemon. */
+ int dispatch_request(struct request *request, int type);
 
 #endif /* _DAEMON_H_ */
