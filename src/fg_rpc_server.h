@@ -40,9 +40,6 @@
 #include <netdb.h>
 #include <netinet/tcp.h>
 
-#include "common.h"
-#include "fg_list.h"
-
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
