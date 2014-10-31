@@ -28,41 +28,42 @@
 #ifndef _FG_RPC_SERVER_H_
 #define _FG_RPC_SERVER_H_
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif /* HAVE_CONFIG_H */
 
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <netdb.h>
 #include <netinet/tcp.h>
-
-#include "common.h"
-#include "fg_list.h"
 
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
 #include <xmlrpc-c/util.h>
 
-/** Information about the daemons XMLrpc server */
+/** Information about the daemons XMLrpc server. */
 struct fg_rpc_server
 {
-	/** Environment used by the Abyss Server */
+	/** Environment used by the Abyss server. */
 	xmlrpc_env env;
-	/** Parameters of the XMLrpc Server */
+	/** Parameters of the XMLrpc server. */
 	xmlrpc_server_abyss_parms parms;
 };
 
+/**
+ * Initializes the xmlrpc server.
+ *
+ * This function initializes the xmlrpc environment, registers exported methods
+ * and binds to the control port.
+ */
+void init_rpc_server(struct fg_rpc_server *server, char *rpc_bind_addr,
+		     unsigned int port);
 
-#endif /* _DAEMON_H_ */
-
-/** Initializes the xmlrpc server.
-  * This function initializes the xmlrpc environment, registers exported methods
-  * and binds to the control port. */
-void init_rpc_server(struct fg_rpc_server *server, char *rpc_bind_addr, unsigned int port);
-
-/** Enters the xmlrpc server mainloop */
+/** Enters the xmlrpc server mainloop. */
 void run_rpc_server(struct fg_rpc_server *server);
+
+#endif /* _FG_RPC_SERVER_H_ */
