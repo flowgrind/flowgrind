@@ -221,7 +221,7 @@ static void usage(short status)
 		exit(status);
 	}
 
-	fprintf(stderr,
+	fprintf(stdout,
 		"Usage: %1$s [OPTION]...\n"
 		"Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X.\n\n"
 
@@ -327,7 +327,7 @@ static void usage(short status)
  */
 static void usage_sockopt(void)
 {
-	fprintf(stderr,
+	fprintf(stdout,
 		"%s allows to set the following standard and non-standard socket options. \n\n"
 
 		"All socket options take the flow endpoint as argument, denoted by 'x' in the\n"
@@ -373,7 +373,7 @@ static void usage_sockopt(void)
  */
 static void usage_trafgenopt(void)
 {
-	fprintf(stderr,
+	fprintf(stdout,
 		"%s supports stochastic traffic generation, which allows to conduct\n"
 		"besides normal bulk also advanced rate-limited and request-response data\n"
 		"transfers.\n\n"
@@ -2487,7 +2487,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 			PARSE_ERR("invalid argument '%s' for %s", arg, opt_string);
 		break;
 	case 'v':
-		fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+		fprintf(stdout, "%s %s\n%s\n%s\n\n%s\n", progname,
 			FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
 			FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 		exit(EXIT_SUCCESS);

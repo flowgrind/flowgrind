@@ -71,7 +71,7 @@ static void usage(short status)
 		exit(status);
 	}
 
-	fprintf(stderr,
+	fprintf(stdout,
 		"Usage: %1$s [OPTION]... [ADDRESS]...\n"
 		"Stop all flows on the daemons running at the given addresses.\n\n"
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 			usage(EXIT_SUCCESS);
 			break;
 		case 'v':
-			fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+			fprintf(stdout, "%s %s\n%s\n%s\n\n%s\n", progname,
 				FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
 				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 			exit(EXIT_SUCCESS);

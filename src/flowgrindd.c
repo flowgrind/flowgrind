@@ -117,7 +117,7 @@ static void usage(short status)
 		exit(status);
 	}
 
-	fprintf(stderr,
+	fprintf(stdout,
 		"Usage: %1$s [OPTION]...\n"
 		"Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X.\n\n"
 
@@ -304,7 +304,7 @@ static void parse_cmdline(int argc, char *argv[])
 			break;
 #endif /* HAVE_LIBPCAP */
 		case 'v':
-			fprintf(stderr, "%s %s\%s\n%s\n\n%s\n", progname,
+			fprintf(stdout, "%s %s\%s\n%s\n\n%s\n", progname,
 				FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
 				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 			exit(EXIT_SUCCESS);
