@@ -54,7 +54,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
-
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -67,6 +66,7 @@
 #include "fg_definitions.h"
 #include "fg_string.h"
 #include "debug.h"
+#include "fg_rpc_client.h"
 #include "fg_argparser.h"
 
 /** To show intermediated interval report columns. */
