@@ -1325,19 +1325,19 @@ static void set_column_unit(const char *unit, unsigned int nargs, ...)
         va_end(ap);
 }
 
-/* New output determines the number of digits before the comma */
-static int det_column_size(double value)
+/**
+ * Determines the length of the integer part of a decimal number.
+ *
+ * @param[in] value decimal number
+ */
+static inline size_t det_num_digits(double value)
 {
-	int i = 1;
-	double dez = 10.0;
 
-	if (value < 0)
-		i++;
-	while ((fabs(value) / (dez - 1.0)) > 1.0) {
-		i++;
-		dez *= 10;
-	}
-	return i;
+	/* Avoiding divide-by-zero */
+	if (unlikely((int)value == 0))
+		return 1;
+	else
+		return floor(log10(abs((int)value))) + 1;
 }
 
 /* produces the string command for printf for the right number of digits and decimal part */
@@ -1377,12 +1377,11 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 			lengthData = strlen("UINT_MAX");
 			break;
 		default:
-			lengthData = det_column_size(value) +
-					numDigitsDecimalPart + 1;
+			lengthData = det_num_digits(value) +
+				numDigitsDecimalPart + 1;
 		}
 	} else {
-		lengthData = det_column_size(value) +
-				numDigitsDecimalPart + 1;
+		lengthData = det_num_digits(value) + numDigitsDecimalPart + 1;
 	}
 	/* leading space */
 	lengthData++;
