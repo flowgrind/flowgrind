@@ -1,6 +1,6 @@
 /**
- * @file fg_rpc_server.c
- * @brief Flowgrindd rpcserver implementation
+ * @file fg_rpc_client.c
+ * @brief RPC related functions used by the Flowgrind controller flowgrind-stop
  */
 
 /*

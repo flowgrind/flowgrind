@@ -1,6 +1,6 @@
 /**
- * @file fg_rpc_common.h
- * @brief RPC related functions used by the Flowgrind daemon and controller
+ * @file fg_rpc_client.h
+ * @brief RPC related functions used by the Flowgrind controller flowgrind-stop
  */
 
 /*
