@@ -1458,3 +1458,40 @@ int set_flow_tcp_options(struct flow *flow)
 	return 0;
 }
 
+/* Dispatch an incoming request to daemon thread */
+int dispatch_request(struct request *request, int type)
+{
+	pthread_cond_t cond;
+
+	request->error = NULL;
+	request->type = type;
+	request->next = NULL;
+
+	/* Create synchronization mutex */
+	if (pthread_cond_init(&cond, NULL)) {
+		request_error(request, "Could not create synchronization mutex");
+		return -1;
+	}
+	request->condition = &cond;
+
+	pthread_mutex_lock(&mutex);
+
+	if (!requests) {
+		requests = request;
+		requests_last = request;
+	} else {
+		requests_last->next = request;
+		requests_last = request;
+	}
+	if (write(daemon_pipe[1], &type, 1) != 1) /* Doesn't matter what we write */
+		return -1;
+	/* Wait until the daemon thread has processed the request */
+	pthread_cond_wait(&cond, &mutex);
+
+	pthread_mutex_unlock(&mutex);
+
+	if (request->error)
+		return -1;
+
+	return 0;
+}

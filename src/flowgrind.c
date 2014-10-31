@@ -221,7 +221,7 @@ static void usage(short status)
 		exit(status);
 	}
 
-	fprintf(stderr,
+	fprintf(stdout,
 		"Usage: %1$s [OPTION]...\n"
 		"Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X.\n\n"
 
@@ -327,7 +327,7 @@ static void usage(short status)
  */
 static void usage_sockopt(void)
 {
-	fprintf(stderr,
+	fprintf(stdout,
 		"%s allows to set the following standard and non-standard socket options. \n\n"
 
 		"All socket options take the flow endpoint as argument, denoted by 'x' in the\n"
@@ -373,7 +373,7 @@ static void usage_sockopt(void)
  */
 static void usage_trafgenopt(void)
 {
-	fprintf(stderr,
+	fprintf(stdout,
 		"%s supports stochastic traffic generation, which allows to conduct\n"
 		"besides normal bulk also advanced rate-limited and request-response data\n"
 		"transfers.\n\n"
@@ -1312,19 +1312,19 @@ static void set_column_unit(const char *unit, unsigned int nargs, ...)
         va_end(ap);
 }
 
-/* New output determines the number of digits before the comma */
-static int det_column_size(double value)
+/**
+ * Determines the length of the integer part of a decimal number.
+ *
+ * @param[in] value decimal number
+ */
+static inline size_t det_num_digits(double value)
 {
-	int i = 1;
-	double dez = 10.0;
 
-	if (value < 0)
-		i++;
-	while ((fabs(value) / (dez - 1.0)) > 1.0) {
-		i++;
-		dez *= 10;
-	}
-	return i;
+	/* Avoiding divide-by-zero */
+	if (unlikely((int)value == 0))
+		return 1;
+	else
+		return floor(log10(abs((int)value))) + 1;
 }
 
 /* produces the string command for printf for the right number of digits and decimal part */
@@ -1364,12 +1364,11 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 			lengthData = strlen("UINT_MAX");
 			break;
 		default:
-			lengthData = det_column_size(value) +
-					numDigitsDecimalPart + 1;
+			lengthData = det_num_digits(value) +
+				numDigitsDecimalPart + 1;
 		}
 	} else {
-		lengthData = det_column_size(value) +
-				numDigitsDecimalPart + 1;
+		lengthData = det_num_digits(value) + numDigitsDecimalPart + 1;
 	}
 	/* leading space */
 	lengthData++;
@@ -2475,7 +2474,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 			PARSE_ERR("invalid argument '%s' for %s", arg, opt_string);
 		break;
 	case 'v':
-		fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+		fprintf(stdout, "%s %s\n%s\n%s\n\n%s\n", progname,
 			FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
 			FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 		exit(EXIT_SUCCESS);
