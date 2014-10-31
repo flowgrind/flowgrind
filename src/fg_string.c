@@ -37,7 +37,7 @@
 
 /**
  * Append the duplication of string @p a of length @p alen to the given
- * string @p s at point @p slen
+ * string @p s at point @p slen.
  *
  * @param[in] s destination string to append to
  * @param[in] slen length of string @p s

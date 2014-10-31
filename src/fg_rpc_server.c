@@ -679,7 +679,7 @@ cleanup:
 	return ret;
 }
 
-/** Creates listen socket for the xmlrpc server. */
+/* Creates listen socket for the xmlrpc server. */
 static int bind_rpc_server(char *bind_addr, unsigned int port) {
 	int rc;
 	int fd;

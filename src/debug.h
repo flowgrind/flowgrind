@@ -39,12 +39,12 @@
 #include <pthread.h>
 
 /**
- * Print debug message to standard error
+ * Print debug message to standard error.
  *
  * If the debug level is higher than the given debug level @p LVL, print debug
  * message @p MSG together with current time, the delta in time since the last
  * and first debug call, the function in which the debug call occurs, and the
- * process and thread PID
+ * process and thread PID.
  */
 #define DEBUG_MSG(LVL, MSG, ...) do {					       \
 	if (debug_level >= LVL)						       \
@@ -53,20 +53,20 @@
 			(unsigned int)pthread_self()%USHRT_MAX, ##__VA_ARGS__);\
 } while (0)
 
-/** Global debug level for flowgrind controller and daemon */
+/** Global debug level for flowgrind controller and daemon. */
 unsigned int debug_level;
 
-/** Decrease debug level */
+/** Decrease debug level. */
 void decrease_debuglevel(void);
 
-/** Decrease debug level */
+/** Decrease debug level. */
 void increase_debuglevel(void);
 
 /**
- * Helper function for DEBUG_MSG macro
+ * Helper function for DEBUG_MSG macro.
  *
  * @return string with the current time in seconds and nanoseconds since the
- * Epoch together with the delta in time since the last and first function call
+ * Epoch together with the delta in time since the last and first function call.
  */
 const char *debug_timestamp(void);
 

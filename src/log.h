@@ -32,7 +32,7 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-/** Maximum length of logging string */
+/** Maximum length of logging string. */
 #define LOGGING_MAXLEN	255
 
 extern int log_type;

@@ -69,28 +69,28 @@
 #include "debug.h"
 #include "fg_argparser.h"
 
-/** To show intermediated interval report columns */
+/** To show intermediated interval report columns. */
 #define SHOW_COLUMNS(...)                                                   \
         (set_column_visibility(true, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** To hide intermediated interval report columns */
+/** To hide intermediated interval report columns. */
 #define HIDE_COLUMNS(...)                                                   \
         (set_column_visibility(false, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** To set the unit of intermediated interval report columns */
+/** To set the unit of intermediated interval report columns. */
 #define SET_COLUMN_UNIT(unit, ...)                                          \
         (set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** Print error message, usage string and exit. Used for cmdline parsing errors */
+/** Print error message, usage string and exit. Used for cmdline parsing errors. */
 #define PARSE_ERR(err_msg, ...) do {	\
 	errx(err_msg, ##__VA_ARGS__);	\
 	usage(EXIT_FAILURE);		\
 } while (0)
 
-/** Logfile for measurement output */
+/** Logfile for measurement output. */
 static FILE *log_stream = NULL;
 
-/** Name of logfile */
+/** Name of logfile. */
 static char *log_filename = NULL;
 
 /** SIGINT (CTRL-C) received? */
@@ -99,31 +99,31 @@ static bool sigint_caught = false;
 /* XXX add a brief description doxygen */
 static xmlrpc_env rpc_env;
 
-/** Unique (by URL) flowgrind daemons */
+/** Unique (by URL) flowgrind daemons. */
 static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 
-/** Number of flowgrind dameons */
+/** Number of flowgrind dameons. */
 static unsigned int num_unique_servers = 0;
 
-/** Command line option parser */
+/** Command line option parser. */
 static struct arg_parser parser;
 
-/** Controller options */
+/** Controller options. */
 static struct controller_options copt;
 
-/** Infos about all flows including flow options */
+/** Infos about all flows including flow options. */
 static struct cflow cflow[MAX_FLOWS];
 
-/** Command line option parser */
+/** Command line option parser. */
 static struct arg_parser parser;
 
-/** Number of currently active flows */
+/** Number of currently active flows. */
 static int active_flows = 0;
 
 /* To cover a gcc bug (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36446) */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-/** Infos about the intermediated interval report columns */
+/** Infos about the intermediated interval report columns. */
 static struct column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
 	 .header.unit = "#   ", .state.visible = true},
@@ -211,7 +211,7 @@ static void report_flow(const struct daemon* daemon, struct report* report);
 static void print_report(int id, int endpoint, struct report* report);
 
 /**
- * Print flowgrind usage and exit
+ * Print flowgrind usage and exit.
  */
 static void usage(short status)
 {
@@ -323,7 +323,7 @@ static void usage(short status)
 }
 
 /**
- * Print help on socket options and exit
+ * Print help on socket options and exit.
  */
 static void usage_sockopt(void)
 {
@@ -369,7 +369,7 @@ static void usage_sockopt(void)
 }
 
 /**
- * Print help on traffic generation and exit
+ * Print help on traffic generation and exit.
  */
 static void usage_trafgenopt(void)
 {
@@ -447,7 +447,7 @@ static void sighandler(int sig)
 }
 
 /**
- * Initialization of general controller options
+ * Initialization of general controller options.
  */
 static void init_controller_options(void)
 {
@@ -525,7 +525,7 @@ static void init_flow_options(void)
 }
 
 /**
- * Create a logfile for measurement output
+ * Create a logfile for measurement output.
  */
 static void open_logfile(void)
 {
@@ -550,7 +550,7 @@ static void open_logfile(void)
 }
 
 /**
- * Close measurement output file
+ * Close measurement output file.
  */
 static void close_logfile(void)
 {
@@ -1271,7 +1271,7 @@ static void close_flows(void)
 }
 
 /**
- * To show/hide intermediated interval report columns
+ * To show/hide intermediated interval report columns.
  *
  * @param[in] visibility show/hide column
  * @param[in] nargs length of variable argument list
@@ -1292,7 +1292,7 @@ static void set_column_visibility(bool visibility, unsigned int nargs, ...)
 }
 
 /**
- * To set the unit the in header of intermediated interval report columns
+ * To set the unit the in header of intermediated interval report columns.
  *
  * @param[in] unit unit of column header as string
  * @param[in] nargs length of variable argument list
@@ -1994,7 +1994,7 @@ static struct daemon * get_daemon_by_url(const char* server_url,
 }
 
 /**
- * Parse option for stochastic traffic generation (option -G)
+ * Parse option for stochastic traffic generation (option -G).
  *
  * @param[in] params parameter string in the form 'x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]'
  * @param[in] flow_id ID of flow to apply option to
@@ -2090,7 +2090,7 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 }
 
 /**
- * Parse argument for option -R, which specifies the rate the endpoint will send
+ * Parse argument for option -R, which specifies the rate the endpoint will send.
  *
  * @param[in] arg argument for option -R in form of #.#(z|k|M|G)(b|B|o)
  * @param[in] flow_id ID of flow to apply option to
@@ -2148,7 +2148,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 
 
 /**
- * Parse argument for option -H, which specifies the endpoints of a flow
+ * Parse argument for option -H, which specifies the endpoints of a flow.
  *
  * @param[in] hostarg argument for option -H in form of HOST[/CONTROL[:PORT]]
  *	- HOST: test address where the actual test connection goes to
@@ -2218,7 +2218,7 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 }
 
 /**
- * Parse flow options with endpoint
+ * Parse flow options with endpoint.
  *
  * @param[in] code the code of the cmdline option
  * @param[in] arg the argument of the cmdline option
@@ -2355,7 +2355,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 }
 
 /**
- * Parse flow options without endpoint
+ * Parse flow options without endpoint.
  *
  * @param[in] code the code of the cmdline option
  * @param[in] arg the argument string of the cmdline option
@@ -2395,7 +2395,7 @@ static void parse_flow_option(int code, const char* arg, const char* opt_string,
 
 /**
  * Parse argument for option -c to hide/show intermediated interval report
- * columns
+ * columns.
  *
  * @param[in] arg argument for option -c
  */
@@ -2450,7 +2450,7 @@ static void parse_colon_option(const char *arg)
 }
 
 /**
- * Parse general controller options given on the cmdline
+ * Parse general controller options given on the cmdline.
  *
  * @param[in] code the code of the cmdline option
  * @param[in] arg the argument string of the cmdline option
@@ -2545,7 +2545,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * Wrapper function for mutex checking and error message printing.
  *
  * Defines the cmdline options and distinguishes option types (flow, general, ...)
- * and tokenizes flow options which can have several endpoints
+ * and tokenizes flow options which can have several endpoints.
  *
  * @param[in] ms array of mutex states
  * @param[in] context the mutex context of this option (see enum #mutex_contexts)
@@ -2571,9 +2571,10 @@ static void check_mutex(struct ap_Mutex_state ms[],
 }
 
 /**
- * Parse flow options for multiple endpoints
+ * Parse flow options for multiple endpoints.
  *
- * This iterates through the endpoints given in the argument string (e.g. s=#,d=# or b=#)
+ * This iterates through the endpoints given in the argument string
+ * (e.g. s=#,d=# or b=#).
  *
  * @param[in] code the code of the cmdline option
  * @param[in] arg the argument of the multi-endpoint flow option
@@ -2619,10 +2620,10 @@ static void parse_multi_endpoint_option(int code, const char* arg,
 }
 
 /**
- * The main commandline argument parsing function
+ * The main commandline argument parsing function.
  *
  * Defines the cmdline options and distinguishes option types (flow, general,
- * ...) and tokenizes flow options which can have several endpoints
+ * ...) and tokenizes flow options which can have several endpoints.
  *
  * @param[in] argc number of arguments (as in main())
  * @param[in] argv array of argument strings (as in main())
@@ -2805,7 +2806,7 @@ static void parse_cmdline(int argc, char *argv[])
 }
 
 /**
- * Sanity checking flow options
+ * Sanity checking flow options.
  */
 static void sanity_check(void)
 {
