@@ -32,7 +32,7 @@
 #endif /* HAVE_CONFIG_H */
 
 #ifdef __DARWIN__
-/** Temporarily renaming daemon() so compiler does not see the warning on OS X */
+/** Temporarily renaming daemon() so compiler does not see the warning on OS X. */
 #define daemon fake_daemon_function
 #endif /* __DARWIN__ */
 
@@ -77,12 +77,12 @@
 #endif /* HAVE_LIBPCAP */
 
 #ifdef __DARWIN__
-/** Remap daemon() function */
+/** Remap daemon() function. */
 #undef daemon
 extern int daemon(int, int);
 #endif /* __DARWIN__ */
 
-/** Print error message, usage string and exit. Used for cmdline parsing errors */
+/** Print error message, usage string and exit. Used for cmdline parsing errors. */
 #define PARSE_ERR(err_msg, ...) do {	\
 	errx(err_msg, ##__VA_ARGS__);	\
 	usage(EXIT_FAILURE);		\
@@ -94,10 +94,10 @@ static unsigned port = DEFAULT_LISTEN_PORT;
 /* XXX add a brief description doxygen */
 static char *rpc_bind_addr = NULL;
 
-/** CPU core to which flowgrindd should bind to */
+/** CPU core to which flowgrindd should bind to. */
 static int core;
 
-/** Command line option parser */
+/** Command line option parser. */
 static struct arg_parser parser;
 
 /* External global variables */
@@ -107,7 +107,7 @@ extern const char *progname;
 static void usage(short status) __attribute__((noreturn));
 
 /**
- * Print flowgrindd usage and exit
+ * Print flowgrindd usage and exit.
  */
 static void usage(short status)
 {
@@ -238,7 +238,7 @@ int process_dump_dir() {
 #endif /* HAVE_LIBPCAP */
 
 /**
- * Parse command line options to initialize global options
+ * Parse command line options to initialize global options.
  *
  * @param[in] argc number of command line arguments
  * @param[in] argv arguments provided by the command line

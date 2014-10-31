@@ -51,17 +51,17 @@
 #include "fg_progname.h"
 #include "fg_argparser.h"
 
-/** Command line option parser */
+/** Command line option parser. */
 static struct arg_parser parser;
 
-/* External global variables */
+/* External global variables. */
 extern const char *progname;
 
-/* Forward declarations */
+/* Forward declarations. */
 static void usage(short status) __attribute__((noreturn));
 
 /**
- * Print flowgrind-stop usage and exit
+ * Print flowgrind-stop usage and exit.
  */
 static void usage(short status)
 {
