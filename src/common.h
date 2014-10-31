@@ -29,13 +29,13 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-#include <sys/time.h>
-#include <time.h>
-#include <stdint.h>
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
+
+#include <sys/time.h>
+#include <time.h>
+#include <stdint.h>
 
 #include "gitversion.h"
 
