@@ -54,9 +54,6 @@ struct fg_rpc_server
 	xmlrpc_server_abyss_parms parms;
 };
 
-
-#endif /* _DAEMON_H_ */
-
 /**
  * Initializes the xmlrpc server.
  *
@@ -67,3 +64,5 @@ void init_rpc_server(struct fg_rpc_server *server, char *rpc_bind_addr,
 
 /** Enters the xmlrpc server mainloop. */
 void run_rpc_server(struct fg_rpc_server *server);
+
+#endif /* _FG_RPC_SERVER_H_ */
