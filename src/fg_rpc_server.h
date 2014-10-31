@@ -48,9 +48,9 @@
 /** Information about the daemons XMLrpc server. */
 struct fg_rpc_server
 {
-	/** Environment used by the Abyss Server. */
+	/** Environment used by the Abyss server. */
 	xmlrpc_env env;
-	/** Parameters of the XMLrpc Server. */
+	/** Parameters of the XMLrpc server. */
 	xmlrpc_server_abyss_parms parms;
 };
 
@@ -58,7 +58,8 @@ struct fg_rpc_server
  * Initializes the xmlrpc server.
  *
  * This function initializes the xmlrpc environment, registers exported methods
- * and binds to the control port. */
+ * and binds to the control port.
+ */
 void init_rpc_server(struct fg_rpc_server *server, char *rpc_bind_addr,
 		     unsigned int port);
 
