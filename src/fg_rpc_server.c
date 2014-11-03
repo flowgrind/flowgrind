@@ -496,6 +496,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"{s:i,s:i,s:i,s:i,s:i}" /* ...      */
 			"{s:i,s:i,s:i,s:i,s:i}" /* ...      */
 			"{s:i}"
+			"{s:s}"
 			")",
 
 			"id", report->id,
@@ -546,7 +547,9 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			"tcpi_ca_state", (int)report->tcp_info.tcpi_ca_state,
 			"tcpi_snd_mss", (int)report->tcp_info.tcpi_snd_mss,
 
-			"status", report->status
+			"status", report->status,
+
+			"ipaddress",report->bind_address
 		);
 
 		xmlrpc_array_append_item(env, ret, rv);

@@ -508,6 +508,7 @@ static void report_flow(struct flow* flow, int type)
 
 	report->id = flow->id;
 	report->type = type;
+	strcpy(report->bind_address,flow->settings.bind_address);
 
 	if (type == INTERVAL)
 		report->begin = flow->last_report_time;
