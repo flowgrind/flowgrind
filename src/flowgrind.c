@@ -732,7 +732,7 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 	log_output(headline);
 
 	/* prepare column visibility based on involved OSes */
-	bool involved_os[3] = {false};
+	bool involved_os[OS_LAST+1] = {false};
 	for (unsigned int j = 0; j < num_unique_servers; j++)
 		if (!strcmp(unique_servers[j].os_name, "Linux"))
 			involved_os[LINUX] = true;
