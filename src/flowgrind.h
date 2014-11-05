@@ -47,6 +47,18 @@ enum protocol {
 	PROTO_UDP
 };
 
+/** Supported operating systems. */
+enum os {
+	/** Linux. */
+	LINUX = 0,
+	/** FreeBSD. */
+	FREEBSD,
+	/** Apple OS X. */
+	DARWIN,
+	/** Pointer to the last OS in the list. */
+	OS_LAST = DARWIN
+};
+
 /** Unit of the TCP Stack. */
 enum tcp_stack {
 	/** Linux is a segment-based stack. */
