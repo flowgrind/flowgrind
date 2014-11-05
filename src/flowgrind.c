@@ -54,7 +54,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
-
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -67,6 +66,7 @@
 #include "fg_definitions.h"
 #include "fg_string.h"
 #include "debug.h"
+#include "fg_rpc_client.h"
 #include "fg_argparser.h"
 
 /** To show intermediated interval report columns. */
@@ -719,19 +719,24 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 	log_output(headline);
 
 	/* prepare column visibility based on involved OSes */
-	bool has_linux = false, has_freebsd = false;
+	bool involved_os[OS_LAST+1] = {};
 	for (unsigned int j = 0; j < num_unique_servers; j++)
 		if (!strcmp(unique_servers[j].os_name, "Linux"))
-			has_linux = true;
+			involved_os[LINUX] = true;
 		else if (!strcmp(unique_servers[j].os_name, "FreeBSD"))
-			has_freebsd = true;
-		else if (has_linux && has_freebsd)
-			break;
-	if (!has_linux)
-		HIDE_COLUMNS(COL_TCP_UACK, COL_TCP_SACK, COL_TCP_RETR,
-			     COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
-			     COL_TCP_BKOF, COL_TCP_CA_STATE);
-	if (!has_freebsd)
+			involved_os[FREEBSD] = true;
+		else if (!strcmp(unique_servers[j].os_name, "Darwin"))
+			involved_os[DARWIN] = true;
+
+	/* No Linux OS is involved in the test */
+	if (!involved_os[LINUX])
+		HIDE_COLUMNS(COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
+			     COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK,
+			     COL_TCP_REOR, COL_TCP_BKOF, COL_TCP_CA_STATE,
+			     COL_PMTU);
+
+	/* No FreeBSD OS is involved in the test */
+	if (!involved_os[FREEBSD])
 		HIDE_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_RTT,
 			     COL_TCP_RTTVAR, COL_TCP_RTO, COL_SMSS);
 

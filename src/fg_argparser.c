@@ -589,32 +589,3 @@ void ap_free_mutex_state(struct ap_Mutex_state *const ms)
 	}
 }
 
-/* Parse RPC address for the xmlrpc control connection */
-void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
-{
-	char* sepptr = 0;
-
-	/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
-	if ((sepptr = strchr(*rpc_address, ']'))) {
-		*is_ipv6 = true;
-		*sepptr = '\0';
-		if (*rpc_address[0] == '[')
-			(*rpc_address)++;
-		sepptr++;
-		if (sepptr != '\0' && *sepptr == ':')
-			sepptr++;
-		*port = atoi(sepptr);
-	} else if ((sepptr = strchr(*rpc_address, ':'))) {
-		/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
-		if (strchr(sepptr+1, ':')) {
-			*is_ipv6 = true;
-		} else {
-		/* 3rd case: IPv4 or name with port 1.2.3.4:5999 */
-			*sepptr = '\0';
-			sepptr++;
-			if ((*sepptr != '\0') && (*sepptr == ':'))
-					sepptr++;
-			*port = atoi(sepptr);
-		}
-	}
-}
