@@ -277,6 +277,7 @@ struct fg_tcp_info {
 struct report {
 	int id;
 	/* Is this an INTERVAL or FINAL report? */
+	char bind_address[1000];
 	int type;
 	struct timespec begin;
 	struct timespec end;

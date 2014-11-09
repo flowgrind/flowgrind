@@ -1028,6 +1028,7 @@ static void fetch_reports(xmlrpc_client *rpc_client)
 {
 
 	xmlrpc_value * resultP = 0;
+	char* bind_address = 0;
 
 	for (unsigned int j = 0; j < num_unique_servers; j++) {
 		int array_size, has_more;
@@ -1098,6 +1099,7 @@ has_more_reports:
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
 					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
 					"{s:i,*}"
+					"{s:s,*}"
 					")",
 
 					"id", &report.id,
@@ -1148,8 +1150,9 @@ has_more_reports:
 					"tcpi_ca_state", &tcpi_ca_state,
 					"tcpi_snd_mss", &tcpi_snd_mss,
 
-					"status", &report.status
-				);
+					"status", &report.status,
+
+					"ipaddress", &bind_address);
 				xmlrpc_DECREF(rv);
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
 				report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
@@ -1185,6 +1188,8 @@ has_more_reports:
 				report.end.tv_sec = end_sec;
 				report.end.tv_nsec = end_nsec;
 
+				strcpy(report.bind_address, bind_address);
+
 				report_flow(&unique_servers[j], &report);
 			}
 		}
@@ -1199,7 +1204,6 @@ has_more_reports:
  * by server_url)  to the proper flow */
 static void report_flow(const struct daemon* daemon, struct report* report)
 {
-	const char* server_url = daemon->server_url;
 	int endpoint;
 	int id;
 	struct cflow *f = NULL;
@@ -1210,35 +1214,33 @@ static void report_flow(const struct daemon* daemon, struct report* report)
 		f = &cflow[id];
 
 		for (endpoint = 0; endpoint < 2; endpoint++) {
-			if (f->endpoint_id[endpoint] == report->id &&
-			    !strcmp(server_url, f->endpoint[endpoint].daemon->server_url))
-				goto exit_outer_loop;
-		}
-	}
-exit_outer_loop:
+			if (!strcmp(f->endpoint[endpoint].test_address,report->bind_address)&&
+					(f->endpoint_id[endpoint] == report->id)){
+				if (f->start_timestamp[endpoint].tv_sec == 0)
+					f->start_timestamp[endpoint] = report->begin;
+					
+					if (report->type == FINAL) {
+						DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);	
+						free(f->final_report[endpoint]);
+						f->final_report[endpoint] = malloc(sizeof(struct report));
+						*f->final_report[endpoint] = *report;
 
-	if (f->start_timestamp[endpoint].tv_sec == 0)
-		f->start_timestamp[endpoint] = report->begin;
-
-	if (report->type == FINAL) {
-		DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);
-		/* Final report, keep it for later */
-		free(f->final_report[endpoint]);
-		f->final_report[endpoint] = malloc(sizeof(struct report));
-		*f->final_report[endpoint] = *report;
-
-		if (!f->finished[endpoint]) {
-			f->finished[endpoint] = 1;
-			if (f->finished[1 - endpoint]) {
-				active_flows--;
-				DEBUG_MSG(LOG_DEBUG, "remaining active flows: "
-					  "%d", active_flows);
-				assert(active_flows >= 0);
+						if (!f->finished[endpoint]) {
+							f->finished[endpoint] = 1;
+							if (f->finished[1 - endpoint]) {
+								active_flows--;
+								DEBUG_MSG(LOG_DEBUG, "remaining active flows: "
+									  "%d", active_flows);
+								assert(active_flows >= 0);
+							}
+						}
+						return;
+					}
+				print_report(id, endpoint, report);
+				return;		
 			}
 		}
-		return;
 	}
-	print_report(id, endpoint, report);
 }
 
 static void close_flows(void)
