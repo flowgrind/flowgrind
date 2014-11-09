@@ -55,8 +55,8 @@ enum os {
 	FREEBSD,
 	/** Apple OS X. */
 	DARWIN,
-	/** Pointer to the last OS in the list. */
-	OS_LAST = DARWIN
+	/** Number of elements in enum. Must be last element. */
+	NUM_OSes
 };
 
 /** Unit of the TCP Stack. */
