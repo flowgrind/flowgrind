@@ -878,25 +878,25 @@ void init_flow(struct flow* flow, int is_source)
 	flow->finished[READ] = flow->finished[WRITE] = 0;
 
 	flow->addr = 0;
-	/* INTERVAL and FINAL */
-	for (int i = 0; i < 2; i++) {
-		flow->statistics[i].bytes_read = 0;
-		flow->statistics[i].bytes_written = 0;
 
-		flow->statistics[i].request_blocks_read = 0;
-		flow->statistics[i].request_blocks_written = 0;
-		flow->statistics[i].response_blocks_read = 0;
-		flow->statistics[i].response_blocks_written = 0;
+	foreach(int *i, INTERVAL, FINAL) {
+		flow->statistics[*i].bytes_read = 0;
+		flow->statistics[*i].bytes_written = 0;
 
-		flow->statistics[i].rtt_min = FLT_MAX;
-		flow->statistics[i].rtt_max = FLT_MIN;
-		flow->statistics[i].rtt_sum = 0.0F;
-		flow->statistics[i].iat_min = FLT_MAX;
-		flow->statistics[i].iat_max = FLT_MIN;
-		flow->statistics[i].iat_sum = 0.0F;
-		flow->statistics[i].delay_min = FLT_MAX;
-		flow->statistics[i].delay_max = FLT_MIN;
-		flow->statistics[i].delay_sum = 0.0F;
+		flow->statistics[*i].request_blocks_read = 0;
+		flow->statistics[*i].request_blocks_written = 0;
+		flow->statistics[*i].response_blocks_read = 0;
+		flow->statistics[*i].response_blocks_written = 0;
+
+		flow->statistics[*i].rtt_min = FLT_MAX;
+		flow->statistics[*i].rtt_max = FLT_MIN;
+		flow->statistics[*i].rtt_sum = 0.0F;
+		flow->statistics[*i].iat_min = FLT_MAX;
+		flow->statistics[*i].iat_max = FLT_MIN;
+		flow->statistics[*i].iat_sum = 0.0F;
+		flow->statistics[*i].delay_min = FLT_MAX;
+		flow->statistics[*i].delay_max = FLT_MIN;
+		flow->statistics[*i].delay_sum = 0.0F;
 	}
 
 	DEBUG_MSG(LOG_NOTICE, "called init flow %d", flow->id);
@@ -964,8 +964,8 @@ static int write_data(struct flow *flow)
 			  flow->current_write_block_size,
 			  flow->current_block_bytes_written);
 
-		for (int i = 0; i < 2; i++)
-			flow->statistics[i].bytes_written += rc;
+		foreach(int *i, INTERVAL, FINAL)
+			flow->statistics[*i].bytes_written += rc;
 
 		flow->current_block_bytes_written += rc;
 
@@ -976,8 +976,9 @@ static int write_data(struct flow *flow)
 			/* we just finished writing a block */
 			flow->current_block_bytes_written = 0;
 			gettime(&flow->last_block_written);
-			for (int i = 0; i < 2; i++)
-				flow->statistics[i].request_blocks_written++;
+
+			foreach(int *i, INTERVAL, FINAL)
+				flow->statistics[*i].request_blocks_written++;
 
 			interpacket_gap = next_interpacket_gap(flow);
 
@@ -1062,8 +1063,9 @@ static inline int try_read_n_bytes(struct flow *flow, int bytes)
 	DEBUG_MSG(LOG_DEBUG, "flow %d received %u bytes", flow->id, rc);
 
 	flow->current_block_bytes_read += rc;
-	for (int i = 0; i < 2; i++)
-		flow->statistics[i].bytes_read += rc;
+
+	foreach(int *i, INTERVAL, FINAL)
+		flow->statistics[*i].bytes_read += rc;
 
 #ifdef DEBUG
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg))
@@ -1146,13 +1148,13 @@ static int read_data(struct flow *flow)
 			if (requested_response_block_size == -1) {
 				/* this is a response block, consider DATA as
 				 * RTT  */
-				for (int i = 0; i < 2; i++)
-					flow->statistics[i].response_blocks_read++;
+				foreach(int *i, INTERVAL, FINAL)
+					flow->statistics[*i].response_blocks_read++;
 				process_rtt(flow);
 			} else {
 				/* this is a request block, calculate IAT */
-				for (int i = 0; i < 2; i++)
-					flow->statistics[i].request_blocks_read++;
+				foreach(int *i, INTERVAL, FINAL)
+					flow->statistics[*i].request_blocks_read++;
 				process_iat(flow);
 				process_delay(flow);
 
@@ -1189,10 +1191,10 @@ static void process_rtt(struct flow* flow)
 	flow->last_block_read = now;
 
 	if (!isnan(current_rtt)) {
-		for (int i = 0; i < 2; i++) {
-			ASSIGN_MIN(flow->statistics[i].rtt_min, current_rtt);
-			ASSIGN_MAX(flow->statistics[i].rtt_max, current_rtt);
-			flow->statistics[i].rtt_sum += current_rtt;
+		foreach(int *i, INTERVAL, FINAL) {
+			ASSIGN_MIN(flow->statistics[*i].rtt_min, current_rtt);
+			ASSIGN_MAX(flow->statistics[*i].rtt_max, current_rtt);
+			flow->statistics[*i].rtt_sum += current_rtt;
 		}
 	}
 
@@ -1223,10 +1225,10 @@ static void process_iat(struct flow* flow)
 	flow->last_block_read = now;
 
 	if (!isnan(current_iat)) {
-		for (int i = 0; i < 2; i++) {
-			ASSIGN_MIN(flow->statistics[i].iat_min, current_iat);
-			ASSIGN_MAX(flow->statistics[i].iat_max, current_iat);
-			flow->statistics[i].iat_sum += current_iat;
+		foreach(int *i, INTERVAL, FINAL) {
+			ASSIGN_MIN(flow->statistics[*i].iat_min, current_iat);
+			ASSIGN_MAX(flow->statistics[*i].iat_max, current_iat);
+			flow->statistics[*i].iat_sum += current_iat;
 		}
 	}
 	DEBUG_MSG(LOG_NOTICE, "processed IAT of flow %d (%.3lfms)",
@@ -1251,12 +1253,12 @@ static void process_delay(struct flow* flow)
 	}
 
 	if (!isnan(current_delay)) {
-		for (int i = 0; i < 2; i++) {
-			ASSIGN_MIN(flow->statistics[i].delay_min,
+		foreach(int *i, INTERVAL, FINAL) {
+			ASSIGN_MIN(flow->statistics[*i].delay_min,
 				   current_delay);
-			ASSIGN_MAX(flow->statistics[i].delay_max,
+			ASSIGN_MAX(flow->statistics[*i].delay_max,
 				   current_delay);
-			flow->statistics[i].delay_sum += current_delay;
+			flow->statistics[*i].delay_sum += current_delay;
 		}
 	}
 
@@ -1328,8 +1330,8 @@ static void send_response(struct flow* flow, int requested_response_block_size)
 			}
 		} else {
 			flow->current_block_bytes_written += rc;
-			for (int i = 0; i < 2; i++)
-				flow->statistics[i].bytes_written += rc;
+			foreach(int *i, INTERVAL, FINAL)
+				flow->statistics[*i].bytes_written += rc;
 
 			if (flow->current_block_bytes_written >=
 			    (unsigned int)requested_response_block_size) {
@@ -1338,8 +1340,8 @@ static void send_response(struct flow* flow, int requested_response_block_size)
 				/* just finish sending response block */
 				flow->current_block_bytes_written = 0;
 				gettime(&flow->last_block_written);
-				for (int i = 0; i < 2; i++)
-					flow->statistics[i].response_blocks_written++;
+				foreach(int *i, INTERVAL, FINAL)
+					flow->statistics[*i].response_blocks_written++;
 				break;
 			}
 		}
