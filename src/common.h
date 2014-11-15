@@ -317,8 +317,10 @@ struct report {
 	 * tcp_info struct */
 	struct fg_tcp_info tcp_info;
 
-	int pmtu;
-	int imtu;
+	/** Discovered Path MTU */
+	unsigned int pmtu;
+	/** Interface MTU */
+	unsigned int imtu;
 
 	int status;
 
