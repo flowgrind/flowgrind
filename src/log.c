@@ -29,13 +29,14 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <time.h>
 
 #include "log.h"
+#include "fg_time.h"
 #include "fg_error.h"
 
-char timestr[20];
 char *logstr = NULL;
 int log_type = LOGTYPE_SYSLOG;
 
@@ -90,21 +91,8 @@ void logging_log_string (int priority, const char *s)
 		syslog(priority, "%s", s);
 		break;
 	case LOGTYPE_STDERR:
-		fprintf(stderr, "%s %s\n", logging_time(), s);
+		fprintf(stderr, "%s %s\n", ctimenow(false), s);
 		fflush(stderr);
 		break;
 	}
-}
-
-char * logging_time(void)
-{
-	time_t tp;
-	struct tm *loc = NULL;
-
-	tp = time(NULL);
-	loc = localtime(&tp);
-	memset(&timestr, 0, sizeof(timestr));
-	strftime(&timestr[0], sizeof(timestr), "%Y/%m/%d %H:%M:%S", loc);
-
-	return &timestr[0];
 }

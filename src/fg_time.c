@@ -43,7 +43,28 @@
 
 #include "fg_time.h"
 
-const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size)
+
+const char *ctimenow_r(char *buf, size_t size, bool ns)
+{
+	struct timespec now;
+
+	gettime(&now);
+
+	return ctimespec_r(&now, buf, size, ns);
+}
+
+const char *ctimenow(bool ns)
+{
+	struct timespec now;
+
+	gettime(&now);
+
+	return ctimespec(&now, ns);
+}
+
+
+const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size,
+			bool ns)
 {
 	struct tm tm;
 
@@ -53,19 +74,20 @@ const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size)
 	localtime_r(&tp->tv_sec, &tm);
 
 	/* Converts broken-down time representation into a string */
-	size_t len = strftime(buf, size, "%F %T", &tm);
+	size_t len = strftime(buf, size, "%F-%T", &tm);
 
 	/* Append nanoseconds to string */
-	snprintf(buf+len, size-len, ".%09ld", tp->tv_nsec);
+	if (ns)
+		snprintf(buf+len, size-len, ".%09ld", tp->tv_nsec);
 
 	return buf;
 }
 
-const char *ctimespec(const struct timespec *tp)
+const char *ctimespec(const struct timespec *tp, bool ns)
 {
 	static char buf[30];
 
-	ctimespec_r(tp, buf, sizeof(buf));
+	ctimespec_r(tp, buf, sizeof(buf), ns);
 
 	return buf;
 }
