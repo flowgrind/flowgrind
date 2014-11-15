@@ -75,7 +75,7 @@ struct flow
 	int id;
 
 	enum flow_state state;
-	enum endpoint endpoint;
+	enum endpoint_t endpoint;
 
 	int fd;
 	int listenfd_data;

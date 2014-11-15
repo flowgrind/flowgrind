@@ -208,8 +208,9 @@ static void fetch_reports(xmlrpc_client *);
 static void set_column_visibility(bool visibility, unsigned int nargs, ...);
 static void set_column_unit(const char *unit, unsigned int nargs, ...);
 static void report_flow(const struct daemon* daemon, struct report* report);
-static void print_report(int id, int endpoint, struct report* report);
-static void print_final_report(unsigned short flow_id, enum endpoint e);
+static void create_interval_report(unsigned short flow_id, enum endpoint_t e,
+				   struct report *r);
+static void print_final_report(unsigned short flow_id, enum endpoint_t e);
 
 /**
  * Print usage or error message and exit.
@@ -571,7 +572,6 @@ static void close_logfile(void)
 {
 	if (!copt.log_to_file)
 		return;
-
 	if (fclose(log_stream) == -1)
 		critx("could not close logfile '%s'", log_filename);
 
@@ -1247,7 +1247,7 @@ exit_outer_loop:
 		}
 		return;
 	}
-	print_report(id, *i, report);
+	create_interval_report(id, *i, report);
 }
 
 static void close_flows(void)
@@ -1680,7 +1680,8 @@ inline static double scale_thruput(double thruput)
         return thruput / 1e6 * (1<<3);
 }
 
-static void print_report(int id, int endpoint, struct report* r)
+static void create_interval_report(unsigned short flow_id, enum endpoint_t e,
+				   struct report *r)
 {
 
 	double min_rtt = r->rtt_min;
@@ -1716,7 +1717,7 @@ static void print_report(int id, int endpoint, struct report* r)
 		min_delay = max_delay = avg_delay = INFINITY;
 
 #ifdef DEBUG
-	if (cflow[id].finished[endpoint]) {
+	if (cflow[flow_id].finished[e]) {
 		COMMENT_CAT("stopped")
 	} else {
 		char tmp[2];
@@ -1762,16 +1763,16 @@ static void print_report(int id, int endpoint, struct report* r)
 
 	char rep_string[4000];
 	double diff_first_last =
-		time_diff(&cflow[id].start_timestamp[endpoint], &r->begin);
+		time_diff(&cflow[flow_id].start_timestamp[e], &r->begin);
 	double diff_first_now =
-		time_diff(&cflow[id].start_timestamp[endpoint], &r->end);
+		time_diff(&cflow[flow_id].start_timestamp[e], &r->end);
 	double thruput = scale_thruput((double)r->bytes_written /
 				       (diff_first_now - diff_first_last));
 	double transac = (double)r->response_blocks_read /
 			 (diff_first_now - diff_first_last);
 
 	strcpy(rep_string,
-	       create_output(0, id, endpoint, diff_first_last, diff_first_now,
+	       create_output(0, flow_id, e, diff_first_last, diff_first_now,
 		             thruput, transac,
 			     (unsigned int)r->request_blocks_written,
 			     (unsigned int)r->response_blocks_written,
@@ -1860,7 +1861,7 @@ static void create_final_report(void)
  * @param[in] flow_id flow a final report will be created for
  * @param[in] e flow endpoint (SOURCE or DESTINATION)
  */
-static void print_final_report(unsigned short flow_id, enum endpoint e)
+static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 {
 	/* To store the final report */
 	char *buf = NULL;

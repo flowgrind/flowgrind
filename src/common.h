@@ -86,15 +86,15 @@
 	"and Alexander Zimmermann."
 
 /** Flow endpoint types. */
-enum endpoint {
+enum endpoint_t {
 	/** Endpoint that opens the connection. */
 	SOURCE = 0,
 	/** Endpoint that accepts the connection. */
 	DESTINATION,
 };
 
-/** I/O operation. */
-enum io_ops {
+/** I/O operation types. */
+enum io_t {
 	/** Write operation. */
 	WRITE = 0,
 	/** Read operation. */
@@ -102,7 +102,7 @@ enum io_ops {
 };
 
 /** Report types. */
-enum interval_type {
+enum report_t {
 	/** Intermediated interval report. */
 	INTERVAL = 0,
 	/** Final report. */
@@ -276,8 +276,9 @@ struct fg_tcp_info {
 /* Report (measurement sample) of a flow */
 struct report {
 	int id;
-	/* Is this an INTERVAL or FINAL report? */
-	int type;
+	/** Report type - either INTERVAL or FINAL report */
+	enum report_t type;
+
 	struct timespec begin;
 	struct timespec end;
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
