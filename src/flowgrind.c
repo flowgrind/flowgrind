@@ -1333,6 +1333,7 @@ static void set_column_unit(const char *unit, unsigned int nargs, ...)
  * Determines the length of the integer part of a decimal number.
  *
  * @param[in] value decimal number
+ * @return length of integer part
  */
 static inline size_t det_num_digits(double value)
 {
