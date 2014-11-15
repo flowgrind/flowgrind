@@ -437,6 +437,11 @@ static void usage_trafgenopt(void)
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Signal handler to catching signals.
+ *
+ * @param[in] sig signal to catch
+ */
 static void sighandler(int sig)
 {
 	UNUSED_ARGUMENT(sig);
@@ -444,8 +449,8 @@ static void sighandler(int sig)
 	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
 
 	if (!sigint_caught) {
-		warnx("# received SIGINT, trying to gracefully close flows. "
-		      "Press CTRL+C again to force termination");
+		warnx("caught SIGINT, trying to gracefully close flows. "
+		      "Press CTRL+C again to force termination \n");
 		sigint_caught = true;
 	} else {
 		exit(EXIT_FAILURE);
