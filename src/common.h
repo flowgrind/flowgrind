@@ -86,7 +86,7 @@
 	"and Alexander Zimmermann."
 
 /** Flow endpoint types. */
-enum flow_endpoint_type {
+enum endpoint {
 	/** Endpoint that opens the connection. */
 	SOURCE = 0,
 	/** Endpoint that accepts the connection. */
