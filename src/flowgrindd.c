@@ -88,6 +88,9 @@ extern int daemon(int, int);
 	usage(EXIT_FAILURE);		\
 } while (0)
 
+/* External global variables */
+extern const char *progname;
+
 /* XXX add a brief description doxygen */
 static unsigned port = DEFAULT_LISTEN_PORT;
 
@@ -99,9 +102,6 @@ static int core;
 
 /** Command line option parser. */
 static struct arg_parser parser;
-
-/* External global variables */
-extern const char *progname;
 
 /* Forward declarations */
 static void usage(short status) __attribute__((noreturn));

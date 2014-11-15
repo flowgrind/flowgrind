@@ -87,6 +87,9 @@
 	usage(EXIT_FAILURE);		\
 } while (0)
 
+/* External global variables */
+extern const char *progname;
+
 /** Logfile for measurement output. */
 static FILE *log_stream = NULL;
 
@@ -195,9 +198,6 @@ static struct column column_info[] = {
 #endif /* DEBUG */
 };
 #pragma GCC diagnostic pop
-
-/* External global variables */
-extern const char *progname;
 
 /* Forward declarations */
 static void usage(short status) __attribute__((noreturn));

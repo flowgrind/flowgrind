@@ -50,11 +50,11 @@
 #include "fg_rpc_client.h"
 #include "fg_argparser.h"
 
-/** Command line option parser. */
-static struct arg_parser parser;
-
 /* External global variables. */
 extern const char *progname;
+
+/** Command line option parser. */
+static struct arg_parser parser;
 
 /* Forward declarations. */
 static void usage(short status) __attribute__((noreturn));
