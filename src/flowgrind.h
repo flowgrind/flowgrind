@@ -40,15 +40,15 @@
 #include "common.h"
 
 /** Transport protocols. */
-enum protocol {
+enum protocol_t {
 	/** Transmission Control Protocol. */
 	PROTO_TCP = 1,
 	/** User Datagram Protocol. */
-	PROTO_UDP
+	PROTO_UDP,
 };
 
 /** Supported operating systems. */
-enum os {
+enum os_t {
 	/** Linux. */
 	LINUX = 0,
 	/** FreeBSD. */
@@ -56,15 +56,15 @@ enum os {
 	/** Apple OS X. */
 	DARWIN,
 	/** Number of elements in enum. Must be last element. */
-	NUM_OSes
+	NUM_OSes,
 };
 
 /** Unit of the TCP Stack. */
-enum tcp_stack {
+enum tcp_stack_t {
 	/** Linux is a segment-based stack. */
 	SEGMENT_BASED = 0,
 	/** FreeBSD and OS X stack is a bytes-based stack. */
-	BYTE_BASED
+	BYTE_BASED,
 };
 
 #ifndef HAVE_TCP_CA_STATE
@@ -79,7 +79,7 @@ enum tcp_ca_state {
 	/** TCP sender performs Fast Recovery. */
         TCP_CA_Recovery = 3,
 	/** Retransmission timeout occurred. */
-        TCP_CA_Loss = 4
+        TCP_CA_Loss = 4,
 };
 #endif /* HAVE_TCP_CA_STATE */
 
@@ -128,12 +128,14 @@ enum column_id {
         COL_PMTU,                                           /** @} */
 #ifdef DEBUG
         /** Read / write status. */
-        COL_STATUS
+        COL_STATUS,
 #endif /* DEBUG */
+	/** Number of elements in enum. Must be last element. */
+	NUM_COL,
 };
 
 /** Option types in flowgrind controller. */
-enum opt_types {
+enum option_t {
 	/** General controller options. */
 	OPT_CONTROLLER,
 	/** Selects a subset of flows to apply options to (-F). */
@@ -141,11 +143,11 @@ enum opt_types {
 	/** Flow option without endpoint string. */
 	OPT_FLOW,
 	/** Flow option with endpoint string. */
-	OPT_FLOW_ENDPOINT,
+	OPT_FLOW_ENDPOINT
 };
 
 /** Mutual exclusion contexts for options. */
-enum mutex_contexts {
+enum mutex_context_t {
 	/** Context for controller options. */
 	MUTEX_CONTEXT_CONTROLLER = 0,
 	/** Context for flow options for both endpoints. */
@@ -153,7 +155,7 @@ enum mutex_contexts {
 	/** Context for flow options on source side. */
 	MUTEX_CONTEXT_SOURCE,
 	/** Context for flow options on destination side. */
-	MUTEX_CONTEXT_DESTINATION,
+	MUTEX_CONTEXT_DESTINATION
 };
 
 /** For long options with no equivalent short option, use pseudo short option. */
@@ -181,7 +183,7 @@ struct controller_options {
 	/** Don't use symbolic values instead of number (option -p). */
 	bool symbolic;
 	/** Force kernel output to specific unit  (option -s). */
-	enum tcp_stack force_unit;
+	enum tcp_stack_t force_unit;
 };
 
 /** Infos about a flowgrind daemon. */
@@ -217,7 +219,7 @@ struct flow_endpoint {
 /** Infos about the flow including flow options */
 struct cflow {
 	/** Used transport protocol. */
-	enum protocol proto;
+	enum protocol_t proto;
 
 	/* TODO Some of this flow option members are duplicates from the
 	 * _flow_settings struct (see common.h). Flowgrind contoller

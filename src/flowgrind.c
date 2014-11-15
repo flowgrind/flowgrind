@@ -2044,7 +2044,7 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 	int rc;
 	double param1 = 0, param2 = 0, unused;
 	char typechar, distchar;
-	enum distributions distr = CONSTANT;
+	enum distribution_t distr = CONSTANT;
 
 	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar,
 		    &param1, &param2, &unused);
@@ -2596,7 +2596,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * @param[in] flow_id ID of the flow to show in error message
  */
 static void check_mutex(struct ap_Mutex_state ms[],
-			const enum mutex_contexts context,
+			const enum mutex_context_t context,
 			const int argind, int flow_id)
 {
 	int mutex_index;

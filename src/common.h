@@ -86,27 +86,27 @@
 	"and Alexander Zimmermann."
 
 /** Flow endpoint types. */
-enum flow_endpoint_type {
+enum endpoint_t {
 	/** Endpoint that opens the connection. */
 	SOURCE = 0,
 	/** Endpoint that accepts the connection. */
 	DESTINATION,
 };
 
-/** I/O operation. */
-enum io_ops {
+/** I/O operation types. */
+enum io_t {
 	/** Write operation. */
 	WRITE = 0,
 	/** Read operation. */
-	READ
+	READ,
 };
 
 /** Report types. */
-enum interval_type {
+enum report_t {
 	/** Intermediated interval report. */
 	INTERVAL = 0,
 	/** Final report. */
-	FINAL
+	FINAL,
 };
 
 /* XXX add a brief description doxygen. */
@@ -116,11 +116,11 @@ enum extra_socket_option_level {
 	level_ipproto_ip,
 	level_ipproto_sctp,
 	level_ipproto_tcp,
-	level_ipproto_udp
+	level_ipproto_udp,
 };
 
 /** Stochastic distributions for traffic generation. */
-enum distributions {
+enum distribution_t {
 	/** No stochastic distribution. */
 	CONSTANT = 0,
 	/** Normal distribution. */
@@ -134,7 +134,7 @@ enum distributions {
 	/** Pareto distribution. */
 	PARETO,
 	/** Log Normal distribution. */
-	LOGNORMAL
+	LOGNORMAL,
 };
 
 /** Flowgrind's data block layout. */
@@ -158,7 +158,7 @@ struct block {
 /** Options for stochastic traffic generation. */
 struct trafgen_options {
 	/** The stochastic distribution to draw values from. */
-	enum distributions distribution;
+	enum distribution_t distribution;
 	/** First mathemathical parameter of the distribution. */
 	double param_one;
 	/** Second mathematical parameter of the distribution, if required. */
@@ -276,8 +276,8 @@ struct fg_tcp_info {
 /* Report (measurement sample) of a flow */
 struct report {
 	int id;
-	/* Is this an INTERVAL or FINAL report? */
-	int type;
+	/** Report type - either INTERVAL or FINAL report */
+	enum report_t type;
 	struct timespec begin;
 	struct timespec end;
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
