@@ -1537,141 +1537,6 @@ static void create_column_str(char *strHead1Row, char *strHead2Row,
 }
 
 /* Output a single report (with header if width has changed */
-static char *create_output(char hash, int id, int type, double begin, double end,
-		   double throughput, double transac,
-		   unsigned int request_blocks, unsigned int response_blocks,
-		   double rttmin, double rttavg, double rttmax,
-		   double iatmin, double iatavg, double iatmax,
-		   double delaymin, double delayavg, double delaymax,
-		   unsigned int cwnd, unsigned int ssth, unsigned int uack,
-		   unsigned int sack, unsigned int lost, unsigned int reor,
-		   unsigned int retr, unsigned int tret, unsigned int fack,
-		   double linrtt, double linrttvar, double linrto,
-		   unsigned int backoff, int ca_state, int snd_mss,  int pmtu,
-		   char* status)
-{
-	int columnWidthChanged = 0;
-	static int counter = 0;
-
-	/* Create Row + Header */
-	char dataString[250];
-	char headerString1[250];
-	char headerString2[250];
-	static char outputString[1000];
-	char tmp[100];
-
-	/* output string
-	param # + flow_id */
-	if (hash)
-		sprintf(dataString, "#");
-
-	if (type)
-		sprintf(dataString, "D%3d", id);
-	else
-		sprintf(dataString, "S%3d", id);
-
-	strcpy(headerString1, column_info[COL_FLOW_ID].header.name);
-	strcpy(headerString2, column_info[COL_FLOW_ID].header.unit);
-
-	if (ca_state == TCP_CA_Open)
-		strcpy(tmp, "open");
-	else if (ca_state == TCP_CA_Disorder)
-		strcpy(tmp, "disorder");
-	else if (ca_state == TCP_CA_CWR)
-		strcpy(tmp, "cwr");
-	else if (ca_state == TCP_CA_Recovery)
-		strcpy(tmp, "recover");
-	else if (ca_state == TCP_CA_Loss)
-		strcpy(tmp, "loss");
-	else
-		strcpy(tmp, "unknown");
-
-	create_column(headerString1, headerString2, dataString, COL_BEGIN,
-		      begin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_END,
-		      end, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_THROUGH,
-		      throughput, 6, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TRANSAC,
-		      transac, 2, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_BLOCK_REQU,
-		      request_blocks, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_BLOCK_RESP,
-		      response_blocks, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_MIN,
-		      rttmin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_AVG,
-		      rttavg, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_MAX,
-		      rttmax, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_MIN,
-		      iatmin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_AVG,
-		      iatavg, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_MAX,
-		      iatmax, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_MIN,
-		      delaymin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_AVG,
-		      delayavg, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_MAX,
-		      delaymax, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_CWND,
-		      cwnd, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_SSTH,
-		      ssth, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_UACK,
-		      uack, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_SACK,
-		      sack, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_LOST,
-		      lost, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RETR,
-		      retr, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_TRET,
-		      tret, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_FACK,
-		      fack, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_REOR,
-		      reor, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_BKOF,
-		      backoff, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTT,
-		      linrtt, 1, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTTVAR,
-		      linrttvar, 1, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTO,
-		      linrto, 1, &columnWidthChanged);
-	create_column_str(headerString1, headerString2, dataString,
-			  COL_TCP_CA_STATE, tmp, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_SMSS,
-		      snd_mss, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_PMTU,
-		      pmtu, 0, &columnWidthChanged);
-#ifdef DEBUG
-	create_column_str(headerString1, headerString2, dataString, COL_STATUS,
-			  status, &columnWidthChanged);
-#else /* DEBUG */
-	UNUSED_ARGUMENT(status);
-#endif /* DEBUG */
-
-	/* newline */
-	strcat(headerString1, "\n");
-	strcat(headerString2, "\n");
-	strcat(dataString, "\n");
-	/* output string end */
-	if (columnWidthChanged > 0 || (counter % 25) == 0) {
-		strcpy(outputString, headerString1);
-		strcat(outputString, headerString2);
-		strcat(outputString, dataString);
-	} else {
-		strcpy(outputString, dataString);
-	}
-	counter++;
-
-	return outputString;
-}
-
 inline static double scale_thruput(double thruput)
 {
         if (copt.mbyte)
@@ -1770,30 +1635,124 @@ static void create_interval_report(unsigned short flow_id, enum endpoint_t e,
 	double transac = (double)r->response_blocks_read /
 			 (diff_first_now - diff_first_last);
 
-	strcpy(rep_string,
-	       create_output(0, flow_id, e, diff_first_last, diff_first_now,
-		             thruput, transac,
-			     (unsigned int)r->request_blocks_written,
-			     (unsigned int)r->response_blocks_written,
-			     min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
-			     min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
-			     min_delay * 1e3, avg_delay * 1e3, max_delay * 1e3,
-			     (unsigned int)r->tcp_info.tcpi_snd_cwnd,
-			     (unsigned int)r->tcp_info.tcpi_snd_ssthresh,
-			     (unsigned int)r->tcp_info.tcpi_unacked,
-			     (unsigned int)r->tcp_info.tcpi_sacked,
-			     (unsigned int)r->tcp_info.tcpi_lost,
-			     (unsigned int)r->tcp_info.tcpi_reordering,
-			     (unsigned int)r->tcp_info.tcpi_retrans,
-			     (unsigned int)r->tcp_info.tcpi_retransmits,
-			     (unsigned int)r->tcp_info.tcpi_fackets,
-			     (double)r->tcp_info.tcpi_rtt / 1e3,
-			     (double)r->tcp_info.tcpi_rttvar / 1e3,
-			     (double)r->tcp_info.tcpi_rto / 1e3,
-			     (unsigned int)r->tcp_info.tcpi_backoff,
-			     r->tcp_info.tcpi_ca_state,
-			     (unsigned int)r->tcp_info.tcpi_snd_mss,
-			     r->pmtu, comment_buffer));
+
+	int columnWidthChanged = 0;
+	static int counter = 0;
+
+	/* Create Row + Header */
+	char dataString[250];
+	char headerString1[250];
+	char headerString2[250];
+	static char outputString[1000];
+	char tmp[100];
+
+	/* output string
+	param # + flow_id */
+	sprintf(dataString, "#");
+
+	if (e)
+		sprintf(dataString, "D%3d", flow_id);
+	else
+		sprintf(dataString, "S%3d", flow_id);
+
+	strcpy(headerString1, column_info[COL_FLOW_ID].header.name);
+	strcpy(headerString2, column_info[COL_FLOW_ID].header.unit);
+
+	if (r->tcp_info.tcpi_ca_state == TCP_CA_Open)
+		strcpy(tmp, "open");
+	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Disorder)
+		strcpy(tmp, "disorder");
+	else if (r->tcp_info.tcpi_ca_state == TCP_CA_CWR)
+		strcpy(tmp, "cwr");
+	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Recovery)
+		strcpy(tmp, "recover");
+	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Loss)
+		strcpy(tmp, "loss");
+	else
+		strcpy(tmp, "unknown");
+
+	create_column(headerString1, headerString2, dataString, COL_BEGIN,
+		      diff_first_last, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_END,
+		      diff_first_now, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_THROUGH,
+		      thruput, 6, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TRANSAC,
+		      transac, 2, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_BLOCK_REQU,
+		      (unsigned int)r->request_blocks_written, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_BLOCK_RESP,
+		      (unsigned int)r->response_blocks_written, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_RTT_MIN,
+		      min_rtt * 1e3, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_RTT_AVG,
+		      avg_rtt * 1e3, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_RTT_MAX,
+		      max_rtt * 1e3, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_IAT_MIN,
+		      min_iat * 1e3, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_IAT_AVG,
+		      avg_iat * 1e3, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_IAT_MAX,
+		      max_iat * 1e3, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_DLY_MIN,
+		      min_delay * 1e3, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_DLY_AVG,
+		      avg_delay * 1e3, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_DLY_MAX,
+		      max_delay * 1e3, 3, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_CWND,
+		      (unsigned int)r->tcp_info.tcpi_snd_cwnd, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_SSTH,
+		      (unsigned int)r->tcp_info.tcpi_snd_ssthresh, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_UACK,
+		      (unsigned int)r->tcp_info.tcpi_unacked, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_SACK,
+		      (unsigned int)r->tcp_info.tcpi_sacked, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_LOST,
+		      (unsigned int)r->tcp_info.tcpi_lost, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_RETR,
+		      (unsigned int)r->tcp_info.tcpi_retrans, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_TRET,
+		      (unsigned int)r->tcp_info.tcpi_retransmits, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_FACK,
+		      (unsigned int)r->tcp_info.tcpi_fackets, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_REOR,
+		      (unsigned int)r->tcp_info.tcpi_reordering, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_BKOF,
+		      (unsigned int)r->tcp_info.tcpi_backoff, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_RTT,
+		      (double)r->tcp_info.tcpi_rtt / 1e3, 1, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_RTTVAR,
+		      (double)r->tcp_info.tcpi_rttvar / 1e3, 1, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_TCP_RTO,
+		      (double)r->tcp_info.tcpi_rto / 1e3, 1, &columnWidthChanged);
+	create_column_str(headerString1, headerString2, dataString,
+			  COL_TCP_CA_STATE, tmp, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_SMSS,
+		      (unsigned int)r->tcp_info.tcpi_snd_mss, 0, &columnWidthChanged);
+	create_column(headerString1, headerString2, dataString, COL_PMTU,
+		      r->pmtu, 0, &columnWidthChanged);
+#ifdef DEBUG
+	create_column_str(headerString1, headerString2, dataString, COL_STATUS,
+			  comment_buffer, &columnWidthChanged);
+#endif /* DEBUG */
+
+	/* newline */
+	strcat(headerString1, "\n");
+	strcat(headerString2, "\n");
+	strcat(dataString, "\n");
+	/* output string end */
+	if (columnWidthChanged > 0 || (counter % 25) == 0) {
+		strcpy(outputString, headerString1);
+		strcat(outputString, headerString2);
+		strcat(outputString, dataString);
+	} else {
+		strcpy(outputString, dataString);
+	}
+	counter++;
+
+	strcpy(rep_string, outputString);
 	strncpy(report_buffer, rep_string, sizeof(report_buffer));
 	report_buffer[sizeof(report_buffer) - 1] = 0;
 	log_output(report_buffer);
