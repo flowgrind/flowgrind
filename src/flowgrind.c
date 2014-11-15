@@ -210,7 +210,6 @@ static void set_column_unit(const char *unit, unsigned int nargs, ...);
 static void report_flow(const struct daemon* daemon, struct report* report);
 static void create_interval_report(unsigned short flow_id, enum endpoint_t e,
 				   struct report *r);
-static void print_final_report(unsigned short flow_id, enum endpoint_t e);
 
 /**
  * Print usage or error message and exit.
@@ -1840,22 +1839,6 @@ static char *guess_topology (unsigned int mtu)
 }
 
 /**
- * Create final report (i.e. summary line) for all configured flows.
- */
-static void create_final_report(void)
-{
-	for (unsigned short id = 0; id < copt.num_flows; id++) {
-		/* New line for each final flow report */
-		log_output("\n");
-
-		foreach(int *i, SOURCE, DESTINATION) {
-			print_final_report(id, *i);
-			free(cflow[id].final_report[*i]);
-		}
-	}
-}
-
-/**
  * Print final report (i.e summary line) for endpoint @p e of flow @p flow_id.
  *
  * @param[in] flow_id flow a final report will be created for
@@ -2031,6 +2014,22 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 
 	log_output(buf);
 	free(buf);
+}
+
+/**
+ * Create final report (i.e. summary line) for all configured flows.
+ */
+static void create_final_report(void)
+{
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
+		/* New line for each final flow report */
+		log_output("\n");
+
+		foreach(int *i, SOURCE, DESTINATION) {
+			print_final_report(id, *i);
+			free(cflow[id].final_report[*i]);
+		}
+	}
 }
 
 /* Finds the daemon (or creating a new one) for a given server_url,
