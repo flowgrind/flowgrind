@@ -175,9 +175,6 @@ static void sighandler(int sig)
 	}
 }
 
-
-
-
 void create_daemon_thread()
 {
 	int flags;
@@ -195,7 +192,6 @@ void create_daemon_thread()
 	if (rc)
 		critc(rc, "could not start thread");
 }
-
 
 void bind_daemon_to_core(void)
 {
