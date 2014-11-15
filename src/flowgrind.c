@@ -1788,11 +1788,16 @@ static void print_report(int id, int endpoint, struct report* r)
 	log_output(report_buffer);
 }
 
-static char *guess_topology (int mtu)
+/**
+ * Maps common MTU sizes to network technologies.
+ *
+ * @param[in] mtu MTU size
+ * @return return network technology as string
+ */
+static char *guess_topology (unsigned int mtu)
 {
-	/* Mapping of common MTU sizes to network technologies */
 	struct mtu_hint {
-		int mtu;
+		unsigned int mtu;
 		char *topology;
 	};
 
@@ -1815,8 +1820,8 @@ static char *guess_topology (int mtu)
 		{296,  "PPP (low delay)"},
 	};
 
-	for (unsigned int i = 0;
-	     i < sizeof(mtu_hints) / sizeof(struct mtu_hint); i++)
+	size_t array_size = sizeof(mtu_hints) / sizeof(struct mtu_hint);
+	for (unsigned int i = 0; i < array_size; i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
 	return "unknown";
