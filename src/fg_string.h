@@ -40,7 +40,7 @@
 char *strdup_append(char *s, const char *a);
 
 /**
- * Append at most n characters of the duplication of string @a to the given
+ * Append at most n characters of the duplication of string @p a to the given
  * string @p s.
  *
  * @param[in] s destination string to append to

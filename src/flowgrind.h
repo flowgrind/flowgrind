@@ -40,7 +40,7 @@
 #include "common.h"
 
 /** Transport protocols. */
-enum protocol {
+enum protocol_t {
 	/** Transmission Control Protocol. */
 	PROTO_TCP = 1,
 	/** User Datagram Protocol. */
@@ -48,7 +48,7 @@ enum protocol {
 };
 
 /** Supported operating systems. */
-enum os {
+enum os_t {
 	/** Linux. */
 	LINUX = 0,
 	/** FreeBSD. */
@@ -128,12 +128,14 @@ enum column_id {
         COL_PMTU,                                           /** @} */
 #ifdef DEBUG
         /** Read / write status. */
-        COL_STATUS
+        COL_STATUS,
 #endif /* DEBUG */
+	/** Number of elements in enum. Must be last element. */
+	NUM_COL
 };
 
 /** Option types in flowgrind controller. */
-enum opt_types {
+enum option_t {
 	/** General controller options. */
 	OPT_CONTROLLER,
 	/** Selects a subset of flows to apply options to (-F). */
@@ -141,7 +143,7 @@ enum opt_types {
 	/** Flow option without endpoint string. */
 	OPT_FLOW,
 	/** Flow option with endpoint string. */
-	OPT_FLOW_ENDPOINT,
+	OPT_FLOW_ENDPOINT
 };
 
 /** Mutual exclusion contexts for options. */
@@ -153,7 +155,7 @@ enum mutex_contexts {
 	/** Context for flow options on source side. */
 	MUTEX_CONTEXT_SOURCE,
 	/** Context for flow options on destination side. */
-	MUTEX_CONTEXT_DESTINATION,
+	MUTEX_CONTEXT_DESTINATION
 };
 
 /** For long options with no equivalent short option, use pseudo short option. */
@@ -217,7 +219,7 @@ struct flow_endpoint {
 /** Infos about the flow including flow options */
 struct cflow {
 	/** Used transport protocol. */
-	enum protocol proto;
+	enum protocol_t proto;
 
 	/* TODO Some of this flow option members are duplicates from the
 	 * _flow_settings struct (see common.h). Flowgrind contoller

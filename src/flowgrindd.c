@@ -88,6 +88,9 @@ extern int daemon(int, int);
 	usage(EXIT_FAILURE);		\
 } while (0)
 
+/* External global variables */
+extern const char *progname;
+
 /* XXX add a brief description doxygen */
 static unsigned port = DEFAULT_LISTEN_PORT;
 
@@ -100,14 +103,16 @@ static int core;
 /** Command line option parser. */
 static struct arg_parser parser;
 
-/* External global variables */
-extern const char *progname;
-
 /* Forward declarations */
 static void usage(short status) __attribute__((noreturn));
 
 /**
- * Print flowgrindd usage and exit.
+ * Print usage or error message and exit.
+ *
+ * Depending on exit status @p status print either the usage or an error
+ * message. In all cases it call exit() with the given exit status @p status.
+ *
+ * @param[in] status exit status
  */
 static void usage(short status)
 {
@@ -140,6 +145,11 @@ static void usage(short status)
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Signal handler to catching signals.
+ *
+ * @param[in] sig signal to catch
+ */
 static void sighandler(int sig)
 {
 	int status;
@@ -148,29 +158,22 @@ static void sighandler(int sig)
 	case SIGCHLD:
 		while (waitpid(-1, &status, WNOHANG) > 0)
 			logging_log(LOG_NOTICE, "child returned (status = %d)",
-					status);
+				    status);
 		break;
-
 	case SIGHUP:
-		logging_log(LOG_NOTICE, "got SIGHUP, don't know what to do.");
+		logging_log(LOG_NOTICE, "caught SIGHUP, Don't know what to do.");
 		break;
-
 	case SIGALRM:
-		logging_log(LOG_NOTICE, "Caught SIGALRM. don't know what to do.");
+		logging_log(LOG_NOTICE, "caught SIGALRM. Don't know what to do.");
 		break;
-
 	case SIGPIPE:
 		break;
-
 	default:
-		logging_log(LOG_ALERT, "got signal %d, but don't remember "
-				"intercepting it, aborting...", sig);
+		logging_log(LOG_ALERT, "caught signal %d, but don't remember "
+			    "intercepting it, aborting...", sig);
 		abort();
 	}
 }
-
-
-
 
 void create_daemon_thread()
 {
@@ -189,7 +192,6 @@ void create_daemon_thread()
 	if (rc)
 		critc(rc, "could not start thread");
 }
-
 
 void bind_daemon_to_core(void)
 {
@@ -347,19 +349,21 @@ static void sanity_check(void)
 
 int main(int argc, char *argv[])
 {
-	struct sigaction sa;
 	/* Info about the xmlrpc server */
 	struct fg_rpc_server server;
 
-	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-		crit("could not ignore SIGPIPE");
-
+	struct sigaction sa;
 	sa.sa_handler = sighandler;
 	sa.sa_flags = 0;
 	sigemptyset (&sa.sa_mask);
-	sigaction (SIGHUP, &sa, NULL);
-	sigaction (SIGALRM, &sa, NULL);
-	sigaction (SIGCHLD, &sa, NULL);
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		crit("could not ignore SIGPIPE");
+	if (sigaction (SIGHUP, &sa, NULL))
+		critx("could not set handler for SIGUP");
+	if (sigaction (SIGALRM, &sa, NULL))
+		critx("could not set handler for SIGALRM");
+	if (sigaction (SIGCHLD, &sa, NULL))
+		critx("could not set handler for SIGCHLD");
 
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
