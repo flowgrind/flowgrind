@@ -50,14 +50,14 @@
 /** Time select() will block waiting for a file descriptor to become ready. */
 #define DEFAULT_SELECT_TIMEOUT  10000000
 
-enum flow_state
+enum flow_state_t
 {
 	/* SOURCE */
 	GRIND_WAIT_CONNECT = 0,
 	/* DESTINATION */
 	GRIND_WAIT_ACCEPT,
 	/* RUN */
-	GRIND
+	GRIND,
 };
 
 struct flow_source_settings
@@ -74,8 +74,8 @@ struct flow
 {
 	int id;
 
-	enum flow_state state;
-	enum flow_endpoint_type endpoint;
+	enum flow_state_t state;
+	enum endpoint_t endpoint;
 
 	int fd;
 	int listenfd_data;
