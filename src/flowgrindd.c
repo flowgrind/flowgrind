@@ -107,7 +107,12 @@ extern const char *progname;
 static void usage(short status) __attribute__((noreturn));
 
 /**
- * Print flowgrindd usage and exit.
+ * Print usage or error message and exit.
+ *
+ * Depending on exit status @p status print either the usage or an error
+ * message. In all cases it call exit() with the given exit status @p status.
+ *
+ * @param[in] status exit status
  */
 static void usage(short status)
 {
@@ -169,9 +174,6 @@ static void sighandler(int sig)
 	}
 }
 
-
-
-
 void create_daemon_thread()
 {
 	int flags;
@@ -189,7 +191,6 @@ void create_daemon_thread()
 	if (rc)
 		critc(rc, "could not start thread");
 }
-
 
 void bind_daemon_to_core(void)
 {

@@ -96,7 +96,7 @@ static char *log_filename = NULL;
 /** SIGINT (CTRL-C) received? */
 static bool sigint_caught = false;
 
-/* XXX add a brief description doxygen */
+/* XML-RPC environment object that contains any error that has occurred. */
 static xmlrpc_env rpc_env;
 
 /** Unique (by URL) flowgrind daemons. */
@@ -211,7 +211,12 @@ static void report_flow(const struct daemon* daemon, struct report* report);
 static void print_report(int id, int endpoint, struct report* report);
 
 /**
- * Print flowgrind usage and exit.
+ * Print usage or error message and exit.
+ *
+ * Depending on exit status @p status print either the usage or an error
+ * message. In all cases it call exit() with the given exit status @p status.
+ *
+ * @param[in] status exit status
  */
 static void usage(short status)
 {
@@ -323,7 +328,7 @@ static void usage(short status)
 }
 
 /**
- * Print help on socket options and exit.
+ * Print help on flowgrind's socket options and exit with EXIT_SUCCESS.
  */
 static void usage_sockopt(void)
 {
@@ -369,7 +374,7 @@ static void usage_sockopt(void)
 }
 
 /**
- * Print help on traffic generation and exit.
+ * Print help on flowgrind's traffic generation facilities and exit with EXIT_SUCCESS.
  */
 static void usage_trafgenopt(void)
 {
@@ -1319,6 +1324,7 @@ static void set_column_unit(const char *unit, unsigned int nargs, ...)
  * Determines the length of the integer part of a decimal number.
  *
  * @param[in] value decimal number
+ * @return length of integer part
  */
 static inline size_t det_num_digits(double value)
 {
