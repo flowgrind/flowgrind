@@ -565,7 +565,6 @@ static void close_logfile(void)
 {
 	if (!copt.log_to_file)
 		return;
-
 	if (fclose(log_stream) == -1)
 		critx("could not close logfile '%s'", log_filename);
 
@@ -1333,7 +1332,6 @@ static void set_column_unit(const char *unit, unsigned int nargs, ...)
  */
 static inline size_t det_num_digits(double value)
 {
-
 	/* Avoiding divide-by-zero */
 	if (unlikely((int)value == 0))
 		return 1;
