@@ -2648,7 +2648,7 @@ static void parse_multi_endpoint_option(int code, const char* arg,
 			arg = token + 1;
 
 		if (type != 's' && type != 'd' && type != 'b')
-			PARSE_ERR("Invalid enpoint specifier in Option %s",
+			PARSE_ERR("Invalid endpoint specifier in Option %s",
 				  opt_string);
 
 		/* check mutex in context of current endpoint */
