@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <strings.h>
 #include <signal.h>
 #include <string.h>
@@ -995,7 +996,7 @@ static int write_data(struct flow *flow)
 						  "block scheduled for %s, "
 						  "%.6lfs before now.",
 						   flow->id,
-						   ctimespec(&flow->next_write_block_timestamp),
+						   ctimespec(&flow->next_write_block_timestamp, true),
 						   time_diff(&flow->next_write_block_timestamp,
 							     &flow->last_block_written));
 					flow->congestion_counter++;

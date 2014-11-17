@@ -544,13 +544,8 @@ static void open_logfile(void)
 
 	/* Log filename is not given by cmdline */
 	if (!log_filename) {
-		struct timespec now;
-		char buf[60];
-
-		gettime(&now);
-		/* TODO Do not call strftime(); use functions from fg_time.h */
-		strftime(buf, sizeof(buf), "%F-%T", localtime(&now.tv_sec));
-		if (asprintf(&log_filename, "%s-%s.log", progname, buf) == -1)
+		if (asprintf(&log_filename, "%s-%s.log", progname,
+			     ctimenow(false)) == -1)
 			critx("could not allocate memory for the log filename");
 	}
 
@@ -720,21 +715,13 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 
 	/* prepare headline */
 	char headline[200];
-	int rc;
 	struct utsname me;
-	time_t start_ts;
-	char start_ts_buffer[26];
+	int rc = uname(&me);
 
-	rc = uname(&me);
-	/* TODO Use fg_time.c here */
-	start_ts = time(NULL);
-	ctime_r(&start_ts, start_ts_buffer);
-	start_ts_buffer[24] = '\0';
 	snprintf(headline, sizeof(headline),
-		 "# %s: controlling host = %s, number of flows = %d, "
+		 "# Date: %s, controlling host = %s, number of flows = %d, "
 		 "reporting interval = %.2fs, [through] = %s (%s)\n",
-		 (start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
-		 (rc == -1 ? "(unknown)" : me.nodename),
+		 ctimenow(false), (rc == -1 ? "(unknown)" : me.nodename),
 		 copt.num_flows, copt.reporting_interval,
 		 (copt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
 		 FLOWGRIND_VERSION);

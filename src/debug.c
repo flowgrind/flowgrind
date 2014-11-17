@@ -64,7 +64,7 @@ const char *debug_timestamp()
 	if (!first.tv_sec && !first.tv_nsec)
 		last = first = now;
 
-	ctimespec_r(&now, buf, sizeof(buf));
+	ctimespec_r(&now, buf, sizeof(buf), true);
 	snprintf(buf+strlen(buf), sizeof(buf)-strlen(buf),
 		 " [+%8.6lf] (%8.6lf)",
 		 time_diff(&last, &now), time_diff(&first, &now));
