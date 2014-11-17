@@ -47,7 +47,7 @@
 
 #define MAX_RUNS_PER_DISTRIBUTION 10
 
-inline static double calculate(struct flow *flow, enum distributions type, double param_one, double param_two) {
+inline static double calculate(struct flow *flow, enum distribution_t type, double param_one, double param_two) {
 
 	double val = 0;
 

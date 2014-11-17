@@ -565,7 +565,6 @@ static void close_logfile(void)
 {
 	if (!copt.log_to_file)
 		return;
-
 	if (fclose(log_stream) == -1)
 		critx("could not close logfile '%s'", log_filename);
 
@@ -1333,7 +1332,6 @@ static void set_column_unit(const char *unit, unsigned int nargs, ...)
  */
 static inline size_t det_num_digits(double value)
 {
-
 	/* Avoiding divide-by-zero */
 	if (unlikely((int)value == 0))
 		return 1;
@@ -1825,190 +1823,196 @@ static char *guess_topology (unsigned int mtu)
 	return "unknown";
 }
 
-static void report_final(void)
+/**
+ * Print final report (i.e summary line) for endpoint @p e of flow @p flow_id.
+ *
+ * @param[in] flow_id flow a final report will be created for
+ * @param[in] e flow endpoint (SOURCE or DESTINATION)
+ */
+static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 {
-	char header_buffer[600] = "";
-	char header_nibble[600] = "";
+	/* To store the final report */
+	char *buf = NULL;
 
-	for (int id = 0; id < copt.num_flows; id++) {
+	/* Only for convenience */
+	struct flow_endpoint *endpoint = &cflow[flow_id].endpoint[e];
+	struct flow_settings *settings = &cflow[flow_id].settings[e];
+	struct report *report = cflow[flow_id].final_report[e];
 
-#define CAT(fmt, args...) do {\
-	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
-	strncat(header_buffer, header_nibble, sizeof(header_buffer) - strlen(header_buffer) - 1); } while (0)
-#define CATC(fmt, args...) CAT(", "fmt, ##args)
+	/* Flow ID and endpoint (source or destination) */
+	asprintf_append(&buf, "# ID %3d %s: ", flow_id, e ? "D" : "S");
 
+	/* Infos about the test connections */
+	asprintf_append(&buf, "%s", endpoint->test_address);
+
+	if (strcmp(endpoint->daemon->server_name, endpoint->test_address) != 0)
+		asprintf_append(&buf, "/%s", endpoint->daemon->server_name);
+	if (endpoint->daemon->server_port != DEFAULT_LISTEN_PORT)
+		asprintf_append(&buf, ":%d", endpoint->daemon->server_port);
+
+	/* Infos about the daemon OS */
+	asprintf_append(&buf, " (%s %s), ",
+			endpoint->daemon->os_name, endpoint->daemon->os_release);
+
+	/* No final report received. Skip endpoint this final report line */
+	if (!cflow[flow_id].final_report[e]) {
+		asprintf_append(&buf, "Error: no final report received");
+		return;
+	}
+
+	/* Random seed */
+	asprintf_append(&buf, "random seed: %u, ", cflow[flow_id].random_seed);
+
+	/* Sending & Receiving buffer */
+	asprintf_append(&buf, "sbuf = %d/%d [B] (real/req), ",
+			endpoint->send_buffer_size_real,
+			settings->requested_send_buffer_size);
+	asprintf_append(&buf, "rbuf = %d/%d [B] (real/req), ",
+			endpoint->receive_buffer_size_real,
+			settings->requested_read_buffer_size);
+
+	/* SMSS, Path MTU, Interface MTU */
+	if (report->tcp_info.tcpi_snd_mss > 0)
+		asprintf_append(&buf, "SMSS = %d [B], ",
+				report->tcp_info.tcpi_snd_mss);
+	if (report->pmtu > 0)
+		asprintf_append(&buf, "PMTU = %d [B], ", report->pmtu);
+	if (report->imtu > 0)
+		asprintf_append(&buf, "Interface MTU = %d (%s) [B], ",
+				report->imtu, guess_topology(report->imtu));
+
+	/* Congestion control algorithms */
+	if (settings->cc_alg[0])
+		asprintf_append(&buf, "CC = %s, ", settings->cc_alg);
+
+	/* Calculate time */
+	double report_time = time_diff(&report->begin, &report->end);
+	double delta_write = 0.0;
+	if (settings->duration[WRITE])
+		delta_write = report_time - settings->duration[WRITE]
+					  - settings->delay[SOURCE];
+	double delta_read = 0.0;
+	if (settings->duration[READ])
+		delta_read = report_time - settings->duration[READ]
+					 - settings->delay[DESTINATION];
+
+	/* Calculate delta target vs real report time */
+	double real_write = settings->duration[WRITE] + delta_write;
+	double real_read = settings->duration[READ] + delta_read;
+	if (settings->duration[WRITE])
+		asprintf_append(&buf, "duration = %.3f/%.3f [s] (real/req), ",
+				real_write, settings->duration[WRITE]);
+	if (settings->delay[WRITE])
+		asprintf_append(&buf, "write delay = %.3f [s], ",
+				settings->delay[WRITE]);
+	if (settings->delay[READ])
+		asprintf_append(&buf, "read delay = %.3f [s], ",
+				settings->delay[READ]);
+
+	/* Calucate throughput */
+	double thruput_read = report->bytes_read / MAX(real_read, real_write);
+	double thruput_write = report->bytes_written / MAX(real_read, real_write);
+	if (isnan(thruput_read))
+		thruput_read = 0.0;
+	if (isnan(thruput_write))
+		thruput_write = 0.0;
+
+	thruput_read = scale_thruput(thruput_read);
+	thruput_write = scale_thruput(thruput_write);
+
+	if (copt.mbyte)
+		asprintf_append(&buf, "through = %.6f/%.6f [Mbyte/s] (out/in)",
+				thruput_write, thruput_read);
+	else
+		asprintf_append(&buf, "through = " "%.6f/%.6f [Mbit/s] (out/in)",
+				thruput_write, thruput_read);
+
+	/* Transactions */
+	double trans = report->response_blocks_read / MAX(real_read, real_write);
+	if (isnan(trans))
+		trans = 0.0;
+	if (trans)
+		asprintf_append(&buf, ", transactions/s = %.2f [#]", trans);
+
+	/* Blocks */
+	if (report->request_blocks_written || report->request_blocks_read)
+		asprintf_append(&buf, ", request blocks = %u/%u [#] (out/in)",
+				report->request_blocks_written,
+				report->request_blocks_read);
+	if (report->response_blocks_written || report->response_blocks_read)
+		asprintf_append(&buf, ", response blocks = %u/%u [#] (out/in)",
+				report->response_blocks_written,
+				report->response_blocks_read);
+
+	/* RTT */
+	if (report->response_blocks_read) {
+		double rtt_avg = report->rtt_sum /
+				(double)(report->response_blocks_read);
+		asprintf_append(&buf, ", RTT = %.3f/%.3f/%.3f [ms] (min/avg/max)",
+				report->rtt_min * 1e3, rtt_avg * 1e3,
+				report->rtt_max * 1e3);
+	}
+
+	/* IAT */
+	if (report->request_blocks_read) {
+		double iat_avg = report->iat_sum /
+				 (double)(report->request_blocks_read);
+		asprintf_append(&buf, ", IAT = %.3f/%.3f/%.3f [ms] (min/avg/max)",
+				report->iat_min * 1e3, iat_avg * 1e3,
+				report->iat_max * 1e3);
+	}
+
+	/* Delay */
+	if (report->request_blocks_read) {
+		double delay_avg = report->delay_sum /
+				   (double)(report->request_blocks_read);
+		asprintf_append(&buf, ", delay = %.3f/%.3f/%.3f [ms] (min/avg/max)",
+				report->delay_min * 1e3, delay_avg * 1e3,
+				report->delay_max * 1e3);
+	}
+
+	/* Fixed sending rate per second was set */
+	if (settings->write_rate_str)
+		asprintf_append(&buf, ", rate = %s", settings->write_rate_str);
+
+	/* Socket options */
+	if (settings->elcn)
+		asprintf_append(&buf, ", ELCN");
+	if (settings->cork)
+		asprintf_append(&buf, ", TCP_CORK");
+	if (settings->pushy)
+		asprintf_append(&buf, ", PUSHY");
+	if (settings->nonagle)
+		asprintf_append(&buf, ", TCP_NODELAY");
+	if (settings->mtcp)
+		asprintf_append(&buf, ", TCP_MTCP");
+	if (settings->dscp)
+		asprintf_append(&buf, ", dscp = 0x%02x", settings->dscp);
+
+	/* Other flags */
+	if (cflow[flow_id].late_connect)
+		asprintf_append(&buf, ", late connecting");
+	if (cflow[flow_id].shutdown)
+		asprintf_append(&buf, ", calling shutdown");
+
+	asprintf_append(&buf, "\n");
+
+	log_output(buf);
+	free(buf);
+}
+
+/**
+ * Create final report (i.e. summary line) for all configured flows.
+ */
+static void create_final_report(void)
+{
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
+		/* New line for each final flow report */
 		log_output("\n");
 
 		foreach(int *i, SOURCE, DESTINATION) {
-			header_buffer[0] = 0;
-
-			CAT("#% 4d %s:", id, *i ? "D" : "S");
-
-			CAT(" %s", cflow[id].endpoint[*i].test_address);
-			if (strcmp(cflow[id].endpoint[*i].daemon->server_name,
-				   cflow[id].endpoint[*i].test_address) != 0)
-				CAT("/%s", cflow[id].endpoint[*i].daemon->server_name);
-			if (cflow[id].endpoint[*i].daemon->server_port != DEFAULT_LISTEN_PORT)
-				CAT(":%d", cflow[id].endpoint[*i].daemon->server_port);
-			CAT(" (%s %s)", cflow[id].endpoint[*i].daemon->os_name,
-					cflow[id].endpoint[*i].daemon->os_release);
-
-			CATC("random seed: %u", cflow[id].random_seed);
-
-			if (cflow[id].final_report[*i]) {
-
-				CATC("sbuf = %d/%d, rbuf = %d/%d (real/req)",
-				     cflow[id].endpoint[*i].send_buffer_size_real,
-				     cflow[id].settings[*i].requested_send_buffer_size,
-				     cflow[id].endpoint[*i].receive_buffer_size_real,
-				     cflow[id].settings[*i].requested_read_buffer_size);
-
-
-				/* SMSS, Path MTU, Interface MTU */
-				if (cflow[id].final_report[*i]->tcp_info.tcpi_snd_mss > 0)
-					CATC("SMSS = %d",
-					     cflow[id].final_report[*i]->tcp_info.tcpi_snd_mss);
-				if (cflow[id].final_report[*i]->pmtu > 0)
-					CATC("Path MTU = %d",
-					     cflow[id].final_report[*i]->pmtu);
-				if (cflow[id].final_report[*i]->imtu > 0)
-					CATC("Interface MTU = %d (%s)",
-					     cflow[id].final_report[*i]->imtu,
-					     guess_topology(cflow[id].final_report[*i]->imtu));
-
-				if (cflow[id].settings[*i].cc_alg[0])
-					CATC("cc = %s",
-					     cflow[id].settings[*i].cc_alg);
-
-
-				double thruput_read, thruput_written, transactions_per_sec;
-				double report_time, report_delta_write = 0, report_delta_read = 0, duration_read, duration_write;
-
-				/* calculate time */
-				report_time = time_diff(&cflow[id].final_report[*i]->begin,
-							&cflow[id].final_report[*i]->end);
-				if (cflow[id].settings[*i].duration[WRITE])
-					report_delta_write =
-						report_time -
-						cflow[id].settings[*i].duration[WRITE] -
-						cflow[id].settings[*i].delay[SOURCE];
-				if (cflow[id].settings[*i].duration[READ])
-					report_delta_read =
-						report_time -
-						cflow[id].settings[*i].duration[READ] -
-						cflow[id].settings[*i].delay[DESTINATION];
-
-				/* calculate delta target vs real report time */
-				duration_write = cflow[id].settings[*i].duration[WRITE] +
-						 report_delta_write;
-				duration_read = cflow[id].settings[*i].duration[READ] +
-						report_delta_read;
-
-				if (cflow[id].settings[*i].duration[WRITE])
-					CATC("flow duration = %.3fs/%.3fs (real/req)",
-						duration_write,
-						cflow[id].settings[*i].duration[WRITE]);
-
-				if (cflow[id].settings[*i].delay[WRITE])
-				       CATC("write delay = %.3fs",
-					    cflow[id].settings[*i].delay[WRITE]);
-
-				if (cflow[id].settings[*i].delay[READ])
-				       CATC("read delay = %.3fs",
-					    cflow[id].settings[*i].delay[READ]);
-
-				/* calucate throughput */
-				thruput_read = cflow[id].final_report[*i]->bytes_read /
-					       MAX(duration_read, duration_write);
-				if (isnan(thruput_read))
-					thruput_read = 0.0;
-
-				thruput_written = cflow[id].final_report[*i]->bytes_written /
-						  MAX(duration_read, duration_write);
-				if (isnan(thruput_written))
-					thruput_written = 0.0;
-
-				thruput_read = scale_thruput(thruput_read);
-				thruput_written = scale_thruput(thruput_written);
-
-				if (copt.mbyte)
-					CATC("through = %.6f/%.6fMbyte/s (out/in)", thruput_written, thruput_read);
-				else
-					CATC("through = %.6f/%.6fMbit/s (out/in)", thruput_written, thruput_read);
-
-				/* transactions */
-				transactions_per_sec = cflow[id].final_report[*i]->response_blocks_read /
-						       MAX(duration_read, duration_write);
-				if (isnan(transactions_per_sec))
-					transactions_per_sec = 0.0;
-				if (transactions_per_sec)
-					CATC("transactions/s = %.2f", transactions_per_sec);
-				/* blocks */
-				if (cflow[id].final_report[*i]->request_blocks_written ||
-				    cflow[id].final_report[*i]->request_blocks_read)
-					CATC("request blocks = %u/%u (out/in)",
-					cflow[id].final_report[*i]->request_blocks_written,
-					cflow[id].final_report[*i]->request_blocks_read);
-
-				if (cflow[id].final_report[*i]->response_blocks_written ||
-				    cflow[id].final_report[*i]->response_blocks_read)
-					CATC("response blocks = %u/%u (out/in)",
-					cflow[id].final_report[*i]->response_blocks_written,
-					cflow[id].final_report[*i]->response_blocks_read);
-				/* rtt */
-				if (cflow[id].final_report[*i]->response_blocks_read) {
-					double min_rtt = cflow[id].final_report[*i]->rtt_min;
-					double max_rtt = cflow[id].final_report[*i]->rtt_max;
-					double avg_rtt = cflow[id].final_report[*i]->rtt_sum /
-						(double)(cflow[id].final_report[*i]->response_blocks_read);
-					CATC("RTT = %.3f/%.3f/%.3f (min/avg/max)",
-					     min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
-				}
-				/* iat */
-				if (cflow[id].final_report[*i]->request_blocks_read) {
-					double min_iat = cflow[id].final_report[*i]->iat_min;
-					double max_iat = cflow[id].final_report[*i]->iat_max;
-					double avg_iat = cflow[id].final_report[*i]->iat_sum /
-						(double)(cflow[id].final_report[*i]->request_blocks_read);
-					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)",
-					     min_iat*1e3, avg_iat*1e3, max_iat*1e3);
-				}
-				/* delay */
-				if (cflow[id].final_report[*i]->request_blocks_read) {
-					double min_delay = cflow[id].final_report[*i]->delay_min;
-					double max_delay = cflow[id].final_report[*i]->delay_max;
-					double avg_delay = cflow[id].final_report[*i]->delay_sum /
-						(double)(cflow[id].final_report[*i]->request_blocks_read);
-					CATC("DLY = %.3f/%.3f/%.3f (min/avg/max)",
-					     min_delay*1e3, avg_delay*1e3, max_delay*1e3);
-				}
-
-				free(cflow[id].final_report[*i]);
-
-			} else {
-				CATC("ERR: no final report received");
-			}
-			if (cflow[id].settings[*i].write_rate_str)
-				CATC("rate = %s", cflow[id].settings[*i].write_rate_str);
-			if (cflow[id].settings[*i].elcn)
-				CATC("ELCN %s", cflow[id].settings[*i].elcn == 1 ? "enabled" : "disabled");
-			if (cflow[id].settings[*i].cork)
-				CATC("TCP_CORK");
-			if (cflow[id].settings[*i].pushy)
-				CATC("PUSHY");
-			if (cflow[id].settings[*i].nonagle)
-				CATC("TCP_NODELAY");
-			if (cflow[id].settings[*i].mtcp)
-				CATC("TCP_MTCP");
-			if (cflow[id].settings[*i].dscp)
-				CATC("dscp = 0x%02x", cflow[id].settings[*i].dscp);
-			if (cflow[id].late_connect)
-				CATC("late connecting");
-			if (cflow[id].shutdown)
-				CATC("calling shutdown");
-
-			CAT("\n");
-			log_output(header_buffer);
+			print_final_report(id, *i);
+			free(cflow[id].final_report[*i]);
 		}
 	}
 }
@@ -2044,7 +2048,7 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 	int rc;
 	double param1 = 0, param2 = 0, unused;
 	char typechar, distchar;
-	enum distributions distr = CONSTANT;
+	enum distribution_t distr = CONSTANT;
 
 	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar,
 		    &param1, &param2, &unused);
@@ -2596,7 +2600,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * @param[in] flow_id ID of the flow to show in error message
  */
 static void check_mutex(struct ap_Mutex_state ms[],
-			const enum mutex_contexts context,
+			const enum mutex_context_t context,
 			const int argind, int flow_id)
 {
 	int mutex_index;
@@ -2941,7 +2945,7 @@ int main(int argc, char *argv[])
 
 	DEBUG_MSG(LOG_WARNING, "report final");
 	fetch_reports(rpc_client);
-	report_final();
+	create_final_report();
 
 	close_logfile();
 
