@@ -87,6 +87,9 @@
 	usage(EXIT_FAILURE);		\
 } while (0)
 
+/* External global variables */
+extern const char *progname;
+
 /** Logfile for measurement output. */
 static FILE *log_stream = NULL;
 
@@ -195,9 +198,6 @@ static struct column column_info[] = {
 #endif /* DEBUG */
 };
 #pragma GCC diagnostic pop
-
-/* External global variables */
-extern const char *progname;
 
 /* Forward declarations */
 static void usage(short status) __attribute__((noreturn));
@@ -436,6 +436,11 @@ static void usage_trafgenopt(void)
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Signal handler to catching signals.
+ *
+ * @param[in] sig signal to catch
+ */
 static void sighandler(int sig)
 {
 	UNUSED_ARGUMENT(sig);
@@ -443,8 +448,8 @@ static void sighandler(int sig)
 	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
 
 	if (!sigint_caught) {
-		warnx("# received SIGINT, trying to gracefully close flows. "
-		      "Press CTRL+C again to force termination");
+		warnx("caught SIGINT, trying to gracefully close flows. "
+		      "Press CTRL+C again to force termination \n");
 		sigint_caught = true;
 	} else {
 		exit(EXIT_FAILURE);
@@ -1783,11 +1788,16 @@ static void print_report(int id, int endpoint, struct report* r)
 	log_output(report_buffer);
 }
 
-static char *guess_topology (int mtu)
+/**
+ * Maps common MTU sizes to network technologies.
+ *
+ * @param[in] mtu MTU size
+ * @return return network technology as string
+ */
+static char *guess_topology (unsigned int mtu)
 {
-	/* Mapping of common MTU sizes to network technologies */
 	struct mtu_hint {
-		int mtu;
+		unsigned int mtu;
 		char *topology;
 	};
 
@@ -1810,8 +1820,8 @@ static char *guess_topology (int mtu)
 		{296,  "PPP (low delay)"},
 	};
 
-	for (unsigned int i = 0;
-	     i < sizeof(mtu_hints) / sizeof(struct mtu_hint); i++)
+	size_t array_size = sizeof(mtu_hints) / sizeof(struct mtu_hint);
+	for (unsigned int i = 0; i < array_size; i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
 	return "unknown";
