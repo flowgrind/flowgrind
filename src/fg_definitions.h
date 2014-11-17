@@ -37,8 +37,15 @@
 /** Suppress warning for unused argument. */
 #define UNUSED_ARGUMENT(x) (void)x
 
-/** To determine the number of input arguments passed to a function call. */
+/** To determine the number of arguments in __VA_ARGS__. */
 #define NARGS(...) (sizeof((int[]){__VA_ARGS__})/sizeof(int))
+
+/** foreach macro for iterating through enum values. */
+#define foreach(iter, ...)					    \
+	for(int keep = 1, count = 0, size = NARGS(__VA_ARGS__);	    \
+	    keep && count != size; keep = !keep, count++)	    \
+		for(iter = ((int[]){__VA_ARGS__}) + count;	    \
+		    keep; keep = !keep)
 
 /** To vectorize an arbitrary function that takes any type of pointer. */
 #define FN_APPLY(type, fn, ...) do {				\

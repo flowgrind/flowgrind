@@ -478,33 +478,32 @@ static void init_flow_options(void)
 
 		cflow[id].proto = PROTO_TCP;
 
-		for (int i = 0; i < 2; i++) {
-
-			cflow[id].settings[i].requested_send_buffer_size = 0;
-			cflow[id].settings[i].requested_read_buffer_size = 0;
-			cflow[id].settings[i].delay[WRITE] = 0;
-			cflow[id].settings[i].maximum_block_size = 8192;
-			cflow[id].settings[i].request_trafgen_options.param_one = 8192;
-			cflow[id].settings[i].response_trafgen_options.param_one = 0;
-			cflow[id].settings[i].route_record = 0;
-			strcpy(cflow[id].endpoint[i].test_address, "localhost");
+		foreach(int *i, SOURCE, DESTINATION) {
+			cflow[id].settings[*i].requested_send_buffer_size = 0;
+			cflow[id].settings[*i].requested_read_buffer_size = 0;
+			cflow[id].settings[*i].delay[WRITE] = 0;
+			cflow[id].settings[*i].maximum_block_size = 8192;
+			cflow[id].settings[*i].request_trafgen_options.param_one = 8192;
+			cflow[id].settings[*i].response_trafgen_options.param_one = 0;
+			cflow[id].settings[*i].route_record = 0;
+			strcpy(cflow[id].endpoint[*i].test_address, "localhost");
 
 			/* Default daemon is localhost, set in parse_cmdline */
-			cflow[id].endpoint[i].daemon = 0;
+			cflow[id].endpoint[*i].daemon = 0;
 
-			cflow[id].settings[i].pushy = 0;
-			cflow[id].settings[i].cork = 0;
-			cflow[id].settings[i].cc_alg[0] = 0;
-			cflow[id].settings[i].elcn = 0;
-			cflow[id].settings[i].lcd = 0;
-			cflow[id].settings[i].mtcp = 0;
-			cflow[id].settings[i].nonagle = 0;
-			cflow[id].settings[i].traffic_dump = 0;
-			cflow[id].settings[i].so_debug = 0;
-			cflow[id].settings[i].dscp = 0;
-			cflow[id].settings[i].ipmtudiscover = 0;
+			cflow[id].settings[*i].pushy = 0;
+			cflow[id].settings[*i].cork = 0;
+			cflow[id].settings[*i].cc_alg[0] = 0;
+			cflow[id].settings[*i].elcn = 0;
+			cflow[id].settings[*i].lcd = 0;
+			cflow[id].settings[*i].mtcp = 0;
+			cflow[id].settings[*i].nonagle = 0;
+			cflow[id].settings[*i].traffic_dump = 0;
+			cflow[id].settings[*i].so_debug = 0;
+			cflow[id].settings[*i].dscp = 0;
+			cflow[id].settings[*i].ipmtudiscover = 0;
 
-			cflow[id].settings[i].num_extra_socket_options = 0;
+			cflow[id].settings[*i].num_extra_socket_options = 0;
 		}
 		cflow[id].settings[SOURCE].duration[WRITE] = 10.0;
 		cflow[id].settings[DESTINATION].duration[WRITE] = 0.0;
@@ -1197,7 +1196,7 @@ has_more_reports:
 static void report_flow(const struct daemon* daemon, struct report* report)
 {
 	const char* server_url = daemon->server_url;
-	int endpoint;
+	int *i;
 	int id;
 	struct cflow *f = NULL;
 
@@ -1206,27 +1205,26 @@ static void report_flow(const struct daemon* daemon, struct report* report)
 	for (id = 0; id < copt.num_flows; id++) {
 		f = &cflow[id];
 
-		for (endpoint = 0; endpoint < 2; endpoint++) {
-			if (f->endpoint_id[endpoint] == report->id &&
-			    !strcmp(server_url, f->endpoint[endpoint].daemon->server_url))
+		foreach(i, SOURCE, DESTINATION)
+			if (f->endpoint_id[*i] == report->id &&
+			    !strcmp(server_url, f->endpoint[*i].daemon->server_url))
 				goto exit_outer_loop;
-		}
 	}
 exit_outer_loop:
 
-	if (f->start_timestamp[endpoint].tv_sec == 0)
-		f->start_timestamp[endpoint] = report->begin;
+	if (f->start_timestamp[*i].tv_sec == 0)
+		f->start_timestamp[*i] = report->begin;
 
 	if (report->type == FINAL) {
 		DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);
 		/* Final report, keep it for later */
-		free(f->final_report[endpoint]);
-		f->final_report[endpoint] = malloc(sizeof(struct report));
-		*f->final_report[endpoint] = *report;
+		free(f->final_report[*i]);
+		f->final_report[*i] = malloc(sizeof(struct report));
+		*f->final_report[*i] = *report;
 
-		if (!f->finished[endpoint]) {
-			f->finished[endpoint] = 1;
-			if (f->finished[1 - endpoint]) {
+		if (!f->finished[*i]) {
+			f->finished[*i] = 1;
+			if (f->finished[1 - *i]) {
 				active_flows--;
 				DEBUG_MSG(LOG_DEBUG, "remaining active flows: "
 					  "%d", active_flows);
@@ -1235,7 +1233,7 @@ exit_outer_loop:
 		}
 		return;
 	}
-	print_report(id, endpoint, report);
+	print_report(id, *i, report);
 }
 
 static void close_flows(void)
@@ -1255,21 +1253,21 @@ static void close_flows(void)
 		die_if_fault_occurred(&env);
 		xmlrpc_env_clean(&env);
 
-		for (unsigned int endpoint = 0; endpoint < 2; endpoint++) {
+		foreach(int *i, SOURCE, DESTINATION) {
 			xmlrpc_value * resultP = 0;
 
-			if (cflow[id].endpoint_id[endpoint] == -1 ||
-					cflow[id].finished[endpoint]) {
+			if (cflow[id].endpoint_id[*i] == -1 ||
+			    cflow[id].finished[*i])
 				/* Endpoint does not need closing */
 				continue;
-			}
 
-			cflow[id].finished[endpoint] = 1;
+			cflow[id].finished[*i] = 1;
 
 			xmlrpc_env_init(&env);
 			xmlrpc_client_call2f(&env, client,
-				cflow[id].endpoint[endpoint].daemon->server_url,
-				"stop_flow", &resultP, "({s:i})", "flow_id", cflow[id].endpoint_id[endpoint]);
+					     cflow[id].endpoint[*i].daemon->server_url,
+					     "stop_flow", &resultP, "({s:i})",
+					     "flow_id", cflow[id].endpoint_id[*i]);
 			if (resultP)
 				xmlrpc_DECREF(resultP);
 
@@ -1841,75 +1839,92 @@ static void report_final(void)
 
 		log_output("\n");
 
-		for (int endpoint = 0; endpoint < 2; endpoint++) {
+		foreach(int *i, SOURCE, DESTINATION) {
 			header_buffer[0] = 0;
 
-			CAT("#% 4d %s:", id, endpoint ? "D" : "S");
+			CAT("#% 4d %s:", id, *i ? "D" : "S");
 
-			CAT(" %s", cflow[id].endpoint[endpoint].test_address);
-			if (strcmp(cflow[id].endpoint[endpoint].daemon->server_name,
-				   cflow[id].endpoint[endpoint].test_address) != 0)
-				CAT("/%s", cflow[id].endpoint[endpoint].daemon->server_name);
-			if (cflow[id].endpoint[endpoint].daemon->server_port != DEFAULT_LISTEN_PORT)
-				CAT(":%d", cflow[id].endpoint[endpoint].daemon->server_port);
-			CAT(" (%s %s)", cflow[id].endpoint[endpoint].daemon->os_name,
-					cflow[id].endpoint[endpoint].daemon->os_release);
+			CAT(" %s", cflow[id].endpoint[*i].test_address);
+			if (strcmp(cflow[id].endpoint[*i].daemon->server_name,
+				   cflow[id].endpoint[*i].test_address) != 0)
+				CAT("/%s", cflow[id].endpoint[*i].daemon->server_name);
+			if (cflow[id].endpoint[*i].daemon->server_port != DEFAULT_LISTEN_PORT)
+				CAT(":%d", cflow[id].endpoint[*i].daemon->server_port);
+			CAT(" (%s %s)", cflow[id].endpoint[*i].daemon->os_name,
+					cflow[id].endpoint[*i].daemon->os_release);
 
 			CATC("random seed: %u", cflow[id].random_seed);
 
-			if (cflow[id].final_report[endpoint]) {
+			if (cflow[id].final_report[*i]) {
 
 				CATC("sbuf = %d/%d, rbuf = %d/%d (real/req)",
-					cflow[id].endpoint[endpoint].send_buffer_size_real,
-					cflow[id].settings[endpoint].requested_send_buffer_size,
-					cflow[id].endpoint[endpoint].receive_buffer_size_real,
-					cflow[id].settings[endpoint].requested_read_buffer_size);
+				     cflow[id].endpoint[*i].send_buffer_size_real,
+				     cflow[id].settings[*i].requested_send_buffer_size,
+				     cflow[id].endpoint[*i].receive_buffer_size_real,
+				     cflow[id].settings[*i].requested_read_buffer_size);
 
 
 				/* SMSS, Path MTU, Interface MTU */
-				if (cflow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0)
-					CATC("SMSS = %d", cflow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
-				if (cflow[id].final_report[endpoint]->pmtu > 0)
-					CATC("Path MTU = %d", cflow[id].final_report[endpoint]->pmtu);
-				if (cflow[id].final_report[endpoint]->imtu > 0)
-					CATC("Interface MTU = %d (%s)", cflow[id].final_report[endpoint]->imtu,
-						guess_topology(cflow[id].final_report[endpoint]->imtu));
+				if (cflow[id].final_report[*i]->tcp_info.tcpi_snd_mss > 0)
+					CATC("SMSS = %d",
+					     cflow[id].final_report[*i]->tcp_info.tcpi_snd_mss);
+				if (cflow[id].final_report[*i]->pmtu > 0)
+					CATC("Path MTU = %d",
+					     cflow[id].final_report[*i]->pmtu);
+				if (cflow[id].final_report[*i]->imtu > 0)
+					CATC("Interface MTU = %d (%s)",
+					     cflow[id].final_report[*i]->imtu,
+					     guess_topology(cflow[id].final_report[*i]->imtu));
 
-				if (cflow[id].settings[endpoint].cc_alg[0])
-					CATC("cc = %s", cflow[id].settings[endpoint].cc_alg);
+				if (cflow[id].settings[*i].cc_alg[0])
+					CATC("cc = %s",
+					     cflow[id].settings[*i].cc_alg);
 
 
 				double thruput_read, thruput_written, transactions_per_sec;
 				double report_time, report_delta_write = 0, report_delta_read = 0, duration_read, duration_write;
 
 				/* calculate time */
-				report_time = time_diff(&cflow[id].final_report[endpoint]->begin, &cflow[id].final_report[endpoint]->end);
-				if (cflow[id].settings[endpoint].duration[WRITE])
-					report_delta_write = report_time - cflow[id].settings[endpoint].duration[WRITE] - cflow[id].settings[endpoint].delay[SOURCE];
-				if (cflow[id].settings[endpoint].duration[READ])
-					report_delta_read = report_time - cflow[id].settings[endpoint].duration[READ] - cflow[id].settings[endpoint].delay[DESTINATION];
+				report_time = time_diff(&cflow[id].final_report[*i]->begin,
+							&cflow[id].final_report[*i]->end);
+				if (cflow[id].settings[*i].duration[WRITE])
+					report_delta_write =
+						report_time -
+						cflow[id].settings[*i].duration[WRITE] -
+						cflow[id].settings[*i].delay[SOURCE];
+				if (cflow[id].settings[*i].duration[READ])
+					report_delta_read =
+						report_time -
+						cflow[id].settings[*i].duration[READ] -
+						cflow[id].settings[*i].delay[DESTINATION];
 
 				/* calculate delta target vs real report time */
-				duration_write = cflow[id].settings[endpoint].duration[WRITE] + report_delta_write;
-				duration_read = cflow[id].settings[endpoint].duration[READ] + report_delta_read;
+				duration_write = cflow[id].settings[*i].duration[WRITE] +
+						 report_delta_write;
+				duration_read = cflow[id].settings[*i].duration[READ] +
+						report_delta_read;
 
-				if (cflow[id].settings[endpoint].duration[WRITE])
+				if (cflow[id].settings[*i].duration[WRITE])
 					CATC("flow duration = %.3fs/%.3fs (real/req)",
 						duration_write,
-						cflow[id].settings[endpoint].duration[WRITE]);
+						cflow[id].settings[*i].duration[WRITE]);
 
-				if (cflow[id].settings[endpoint].delay[WRITE])
-				       CATC("write delay = %.3fs", cflow[id].settings[endpoint].delay[WRITE]);
+				if (cflow[id].settings[*i].delay[WRITE])
+				       CATC("write delay = %.3fs",
+					    cflow[id].settings[*i].delay[WRITE]);
 
-				if (cflow[id].settings[endpoint].delay[READ])
-				       CATC("read delay = %.3fs", cflow[id].settings[endpoint].delay[READ]);
+				if (cflow[id].settings[*i].delay[READ])
+				       CATC("read delay = %.3fs",
+					    cflow[id].settings[*i].delay[READ]);
 
 				/* calucate throughput */
-				thruput_read = cflow[id].final_report[endpoint]->bytes_read / MAX(duration_read, duration_write);
+				thruput_read = cflow[id].final_report[*i]->bytes_read /
+					       MAX(duration_read, duration_write);
 				if (isnan(thruput_read))
 					thruput_read = 0.0;
 
-				thruput_written = cflow[id].final_report[endpoint]->bytes_written / MAX(duration_read, duration_write);
+				thruput_written = cflow[id].final_report[*i]->bytes_written /
+						  MAX(duration_read, duration_write);
 				if (isnan(thruput_written))
 					thruput_written = 0.0;
 
@@ -1922,68 +1937,71 @@ static void report_final(void)
 					CATC("through = %.6f/%.6fMbit/s (out/in)", thruput_written, thruput_read);
 
 				/* transactions */
-				transactions_per_sec = cflow[id].final_report[endpoint]->response_blocks_read / MAX(duration_read, duration_write);
+				transactions_per_sec = cflow[id].final_report[*i]->response_blocks_read /
+						       MAX(duration_read, duration_write);
 				if (isnan(transactions_per_sec))
 					transactions_per_sec = 0.0;
 				if (transactions_per_sec)
 					CATC("transactions/s = %.2f", transactions_per_sec);
 				/* blocks */
-				if (cflow[id].final_report[endpoint]->request_blocks_written || cflow[id].final_report[endpoint]->request_blocks_read)
+				if (cflow[id].final_report[*i]->request_blocks_written ||
+				    cflow[id].final_report[*i]->request_blocks_read)
 					CATC("request blocks = %u/%u (out/in)",
-					cflow[id].final_report[endpoint]->request_blocks_written,
-					cflow[id].final_report[endpoint]->request_blocks_read);
+					cflow[id].final_report[*i]->request_blocks_written,
+					cflow[id].final_report[*i]->request_blocks_read);
 
-				if (cflow[id].final_report[endpoint]->response_blocks_written || cflow[id].final_report[endpoint]->response_blocks_read)
+				if (cflow[id].final_report[*i]->response_blocks_written ||
+				    cflow[id].final_report[*i]->response_blocks_read)
 					CATC("response blocks = %u/%u (out/in)",
-					cflow[id].final_report[endpoint]->response_blocks_written,
-					cflow[id].final_report[endpoint]->response_blocks_read);
+					cflow[id].final_report[*i]->response_blocks_written,
+					cflow[id].final_report[*i]->response_blocks_read);
 				/* rtt */
-				if (cflow[id].final_report[endpoint]->response_blocks_read) {
-					double min_rtt = cflow[id].final_report[endpoint]->rtt_min;
-					double max_rtt = cflow[id].final_report[endpoint]->rtt_max;
-					double avg_rtt = cflow[id].final_report[endpoint]->rtt_sum /
-						(double)(cflow[id].final_report[endpoint]->response_blocks_read);
+				if (cflow[id].final_report[*i]->response_blocks_read) {
+					double min_rtt = cflow[id].final_report[*i]->rtt_min;
+					double max_rtt = cflow[id].final_report[*i]->rtt_max;
+					double avg_rtt = cflow[id].final_report[*i]->rtt_sum /
+						(double)(cflow[id].final_report[*i]->response_blocks_read);
 					CATC("RTT = %.3f/%.3f/%.3f (min/avg/max)",
 					     min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
 				}
 				/* iat */
-				if (cflow[id].final_report[endpoint]->request_blocks_read) {
-					double min_iat = cflow[id].final_report[endpoint]->iat_min;
-					double max_iat = cflow[id].final_report[endpoint]->iat_max;
-					double avg_iat = cflow[id].final_report[endpoint]->iat_sum /
-						(double)(cflow[id].final_report[endpoint]->request_blocks_read);
+				if (cflow[id].final_report[*i]->request_blocks_read) {
+					double min_iat = cflow[id].final_report[*i]->iat_min;
+					double max_iat = cflow[id].final_report[*i]->iat_max;
+					double avg_iat = cflow[id].final_report[*i]->iat_sum /
+						(double)(cflow[id].final_report[*i]->request_blocks_read);
 					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)",
 					     min_iat*1e3, avg_iat*1e3, max_iat*1e3);
 				}
 				/* delay */
-				if (cflow[id].final_report[endpoint]->request_blocks_read) {
-					double min_delay = cflow[id].final_report[endpoint]->delay_min;
-					double max_delay = cflow[id].final_report[endpoint]->delay_max;
-					double avg_delay = cflow[id].final_report[endpoint]->delay_sum /
-						(double)(cflow[id].final_report[endpoint]->request_blocks_read);
+				if (cflow[id].final_report[*i]->request_blocks_read) {
+					double min_delay = cflow[id].final_report[*i]->delay_min;
+					double max_delay = cflow[id].final_report[*i]->delay_max;
+					double avg_delay = cflow[id].final_report[*i]->delay_sum /
+						(double)(cflow[id].final_report[*i]->request_blocks_read);
 					CATC("DLY = %.3f/%.3f/%.3f (min/avg/max)",
 					     min_delay*1e3, avg_delay*1e3, max_delay*1e3);
 				}
 
-				free(cflow[id].final_report[endpoint]);
+				free(cflow[id].final_report[*i]);
 
 			} else {
 				CATC("ERR: no final report received");
 			}
-			if (cflow[id].settings[endpoint].write_rate_str)
-				CATC("rate = %s", cflow[id].settings[endpoint].write_rate_str);
-			if (cflow[id].settings[endpoint].elcn)
-				CATC("ELCN %s", cflow[id].settings[endpoint].elcn == 1 ? "enabled" : "disabled");
-			if (cflow[id].settings[endpoint].cork)
+			if (cflow[id].settings[*i].write_rate_str)
+				CATC("rate = %s", cflow[id].settings[*i].write_rate_str);
+			if (cflow[id].settings[*i].elcn)
+				CATC("ELCN %s", cflow[id].settings[*i].elcn == 1 ? "enabled" : "disabled");
+			if (cflow[id].settings[*i].cork)
 				CATC("TCP_CORK");
-			if (cflow[id].settings[endpoint].pushy)
+			if (cflow[id].settings[*i].pushy)
 				CATC("PUSHY");
-			if (cflow[id].settings[endpoint].nonagle)
+			if (cflow[id].settings[*i].nonagle)
 				CATC("TCP_NODELAY");
-			if (cflow[id].settings[endpoint].mtcp)
+			if (cflow[id].settings[*i].mtcp)
 				CATC("TCP_MTCP");
-			if (cflow[id].settings[endpoint].dscp)
-				CATC("dscp = 0x%02x", cflow[id].settings[endpoint].dscp);
+			if (cflow[id].settings[*i].dscp)
+				CATC("dscp = 0x%02x", cflow[id].settings[*i].dscp);
 			if (cflow[id].late_connect)
 				CATC("late connecting");
 			if (cflow[id].shutdown)
@@ -2102,11 +2120,13 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 	}
 
 	/* sanity check for max block size */
-	for (int i = 0; i < 2; i++) {
-		if (distr == CONSTANT && cflow[flow_id].settings[i].maximum_block_size < param1)
-			cflow[flow_id].settings[i].maximum_block_size = param1;
-		if (distr == UNIFORM && cflow[flow_id].settings[i].maximum_block_size < param2)
-			cflow[flow_id].settings[i].maximum_block_size = param2;
+	foreach(int *i, SOURCE, DESTINATION) {
+		if (distr == CONSTANT &&
+		    cflow[flow_id].settings[*i].maximum_block_size < param1)
+			cflow[flow_id].settings[*i].maximum_block_size = param1;
+		if (distr == UNIFORM &&
+		    cflow[flow_id].settings[*i].maximum_block_size < param2)
+			cflow[flow_id].settings[*i].maximum_block_size = param2;
 	}
 }
 
@@ -2342,9 +2362,11 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 		settings->request_trafgen_options.distribution = CONSTANT;
 		settings->request_trafgen_options.param_one = optint;
 		for (int id = 0; id < MAX_FLOWS; id++) {
-			for (int i = 0; i < 2; i++) {
-				if ((signed)optint > cflow[id].settings[i].maximum_block_size)
-					cflow[id].settings[i].maximum_block_size = (signed)optint;
+			foreach(int *i, SOURCE, DESTINATION) {
+				if ((signed)optint >
+				    cflow[id].settings[*i].maximum_block_size)
+					cflow[id].settings[*i].maximum_block_size =
+						(signed)optint;
 			}
 		}
 		break;
@@ -2706,10 +2728,9 @@ static void parse_cmdline(int argc, char *argv[])
 
 	/* initialize 4 mutex contexts (for SOURCE+DESTINATION+CONTROLLER+BOTH ENDPOINTS) */
 	struct ap_Mutex_state ms[4];
-	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_CONTROLLER]);
-	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_TWO_SIDED]);
-	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_SOURCE]);
-	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_DESTINATION]);
+	foreach(int *i, MUTEX_CONTEXT_CONTROLLER, MUTEX_CONTEXT_TWO_SIDED,
+			MUTEX_CONTEXT_TWO_SIDED, MUTEX_CONTEXT_DESTINATION)
+		ap_init_mutex_state(&parser, &ms[*i]);
 
 	/* if no option -F is given, configure all flows*/
 	for (int i = 0; i < MAX_FLOWS; i++)
@@ -2751,9 +2772,10 @@ static void parse_cmdline(int argc, char *argv[])
 			}
 			free(argcpy);
 			/* reset mutex for each new flow */
-			ap_reset_mutex(&ms[MUTEX_CONTEXT_SOURCE]);
-			ap_reset_mutex(&ms[MUTEX_CONTEXT_DESTINATION]);
-			ap_reset_mutex(&ms[MUTEX_CONTEXT_TWO_SIDED]);
+			foreach(int *i, MUTEX_CONTEXT_SOURCE,
+					MUTEX_CONTEXT_DESTINATION,
+					MUTEX_CONTEXT_TWO_SIDED)
+				ap_reset_mutex(&ms[*i]);
 			break;
 		case OPT_FLOW:
 			check_mutex(ms, MUTEX_CONTEXT_TWO_SIDED, argind,
@@ -2811,19 +2833,18 @@ static void parse_cmdline(int argc, char *argv[])
 		cflow[id].settings[SOURCE].delay[READ] = cflow[id].settings[DESTINATION].delay[WRITE];
 		cflow[id].settings[DESTINATION].delay[READ] = cflow[id].settings[SOURCE].delay[WRITE];
 
-		for (unsigned i = 0; i < 2; i++) {
+		foreach(int *i, SOURCE, DESTINATION) {
 			/* Default to localhost, if no endpoints were set for a flow */
-			if (!cflow[id].endpoint[i].daemon) {
-				cflow[id].endpoint[i].daemon = get_daemon_by_url(
+			if (!cflow[id].endpoint[*i].daemon) {
+				cflow[id].endpoint[*i].daemon = get_daemon_by_url(
 					"http://localhost:5999/RPC2", "localhost", DEFAULT_LISTEN_PORT);
 			}
 		}
 	}
 
-	ap_free_mutex_state(&ms[MUTEX_CONTEXT_CONTROLLER]);
-	ap_free_mutex_state(&ms[MUTEX_CONTEXT_TWO_SIDED]);
-	ap_free_mutex_state(&ms[MUTEX_CONTEXT_SOURCE]);
-	ap_free_mutex_state(&ms[MUTEX_CONTEXT_DESTINATION]);
+	foreach(int *i, MUTEX_CONTEXT_CONTROLLER, MUTEX_CONTEXT_TWO_SIDED,
+			MUTEX_CONTEXT_TWO_SIDED, MUTEX_CONTEXT_DESTINATION)
+		ap_free_mutex_state(&ms[*i]);
 }
 
 /**
@@ -2858,17 +2879,17 @@ static void sanity_check(void)
 			exit(EXIT_FAILURE);
 		}
 
-		for (unsigned i = 0; i < 2; i++) {
-			if (cflow[id].settings[i].flow_control &&
-			    !cflow[id].settings[i].write_rate_str) {
+		foreach(int *i, SOURCE, DESTINATION) {
+			if (cflow[id].settings[*i].flow_control &&
+			    !cflow[id].settings[*i].write_rate_str) {
 				errx("flow %d has flow control enabled but no "
 				      "rate", id);
 				exit(EXIT_FAILURE);
 			}
 
-			if (cflow[id].settings[i].write_rate &&
-			    cflow[id].settings[i].write_rate /
-				cflow[id].settings[i].maximum_block_size < 1) {
+			if (cflow[id].settings[*i].write_rate &&
+			    (cflow[id].settings[*i].write_rate /
+			     cflow[id].settings[*i].maximum_block_size) < 1) {
 				errx("client block size for flow %u is too big for "
 				      "specified rate", id);
 				exit(EXIT_FAILURE);
