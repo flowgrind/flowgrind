@@ -2004,7 +2004,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 /**
  * Create final report (i.e. summary line) for all configured flows.
  */
-static void create_final_report(void)
+static void create_final_reports(void)
 {
 	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		/* New line for each final flow report */
@@ -2945,7 +2945,7 @@ int main(int argc, char *argv[])
 
 	DEBUG_MSG(LOG_WARNING, "report final");
 	fetch_reports(rpc_client);
-	create_final_report();
+	create_final_reports();
 
 	close_logfile();
 
