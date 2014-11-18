@@ -418,12 +418,12 @@ static void usage_trafgenopt(void)
 		"               values over this cap are recalculated\n\n"
 
 		"Examples:\n"
-		"  -G s=q,C,40\n"
+		"  -G s=q:C:40\n"
 		"               use contant request size of 40 bytes\n"
-		"  -G s=p,N,2000,50\n"
+		"  -G s=p:N:2000:50\n"
 		"               use normal distributed response size with mean 2000 bytes and\n"
 		"               variance 50\n"
-		"  -G s=g,U,0.005,0.01\n"
+		"  -G s=g:U:0.005:0.01\n"
 		"               use uniform distributed interpacket gap with minimum 0.005s and\n"
 		"               maximum 0.01s\n\n"
 
@@ -2648,7 +2648,7 @@ static void parse_multi_endpoint_option(int code, const char* arg,
 			arg = token + 1;
 
 		if (type != 's' && type != 'd' && type != 'b')
-			PARSE_ERR("Invalid enpoint specifier in Option %s",
+			PARSE_ERR("Invalid endpoint specifier in Option %s",
 				  opt_string);
 
 		/* check mutex in context of current endpoint */

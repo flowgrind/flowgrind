@@ -112,7 +112,7 @@ source and 4096 at the destination.
 \fB\-A \fIx\fR
 use minimal response size needed for RTT calculation
 .br
-(same as \fB\-G\fR s=p,C,40)
+(same as \fB\-G\fR s=p:C:40)
 .TP
 \fB\-B \fIx\fR=\fI#\fR
 set requested sending buffer, in bytes
@@ -174,7 +174,7 @@ send at specified rate per second, where: z = 2**0, k = 2**10, M = 2**20, G =
 2**30, and b = bits/s (default), B = bytes/s
 .TP
 \fB\-S \fIx\fR=\fI#\fR
-set block (message) size, in bytes (same as \fB\-G\fR s=q,C,#)
+set block (message) size, in bytes (same as \fB\-G\fR s=q:C:#)
 .TP
 \fB\-T\fR \fIx\fR=\fI#\fR.\fI#\fR
 set flow duration, in seconds (default: s=10,d=0)
@@ -326,13 +326,13 @@ addresses for controll traffic. Activate minimal response for RTT calculation
 setup one flow over loopback device and plot the data of the sender with the
 help of gnuplot
 .TP
-.B "flowgrind \-G s=q,C,400 \-G s=p,N,2000,50 \-G s=g,U,0.005,0.01 \-U 32000"
+.B "flowgrind \-G s=q:C:400 \-G s=p:N:2000:50 \-G s=g:U:0.005:0.01 \-U 32000"
 .br
-\-G s=q,C,400: use constant request size of 400 bytes
+\-G s=q:C:400 : use constant request size of 400 bytes
 .br
-\-G s=p,N,2000,50: use normal distributed response size with mean 2000 bytes and variance 50
+\-G s=p:N:2000:50 : use normal distributed response size with mean 2000 bytes and variance 50
 .br
-\-G s=g,U,0.005,0.01: use uniform distributed interpacket gap with min 0.005s and and max 10ms
+\-G s=g:U:0.005:0.01 : use uniform distributed interpacket gap with min 0.005s and and max 10ms
 .br
 \-U 32000: truncate block sizes at 32 kbytes (needed for normal distribution)
 
@@ -346,16 +346,16 @@ diverse, there is no guarantee that these are appropriate in every situation.
 .TP
 This scenario is based on the work in http://www.3gpp2.org/Public_html/specs/C.R1002-0_v1.0_041221.pdf.
 .TP
-.B flowgrind \-M s \-G s=q,C,350 \-G s=p,L,9055,115.17 \-U 100000
+.B flowgrind \-M s \-G s=q:C:350 \-G s=p:L:9055:115.17 \-U 100000
 .br
 .\-r 42: use random seed 42 to make measurements reproduceable
 .br
 \-M s: dump traffic on sender side
 .br
-\-G s=q,C,350:
+\-G s=q:C:350 :
 use constant requests size 350 bytes
 .br
-\-G s=p,L,9055,115:
+\-G s=p:L:9055:115 :
 use lognormal distribution with mean 9055 and variance 115 for response size
 .br
 \-U 100000:
@@ -368,9 +368,9 @@ Network Transactions/s as metric (higher values are better).
 .TP
 This scenario emulates a telnet session.
 .TP
-.B flowgrind \-G s=q,U,40,10000 \-G s=q,U,40,10000 \-O b=TCP_NODELAY
+.B flowgrind \-G s=q:U:40:10000 \-G s=q:U:40:10000 \-O b=TCP_NODELAY
 .br
-\-G s=q,U,40,10000 \-G s=q,U,40,10000: use uniform distributed request and response size between 40B and 10kB
+\-G s=q:U:40:10000 \-G s=q:U:40:10000 : use uniform distributed request and response size between 40B and 10kB
 .br
 \-O b=TCP_NODELAY: set socket options TCP_NODELAY as used by telnet applications
 .PP
@@ -381,7 +381,7 @@ metrics (higher is better).
 .TP
 This scenario emulates a video stream transfer with a bitrate of 800 kbit/s.
 .TP
-.B flowgrind \-G s=q,C,800 \-G s=g,N,0.008,0.001
+.B flowgrind \-G s=q:C:800 \-G s=g:N:0.008:0.001
 Use normal distributed interpacket gap with mean 0.008 and a small variance
 (0.001). In conjuction with request size 800 bytes a average bitrate of approx
 800 kbit/s is achieved. The variance is added to emulate a variable bitrate
