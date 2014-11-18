@@ -1349,11 +1349,38 @@ static char *create_output_str(int digits, int decimalPart)
 	return outstr;
 }
 
-static void create_column(char *strHead1Row, char *strHead2Row,
-			  char *strDataRow, int column_id, double value,
-			  int numDigitsDecimalPart, int *columnWidthChanged)
+static bool column_width_changed(struct column *column, unsigned column_size)
 {
-	unsigned int maxTooLongColumns = copt.num_flows * 5;
+	/* true if columnsize has changed */
+	bool has_changed = false;
+
+	if (column->state.last_width < column_size) {
+		/* column too small */
+		has_changed = true;
+		column->state.last_width = column_size;
+		column->state.oversized = 0;
+	} else if (column->state.last_width > 1 + column_size) {
+		/* column too big */
+		if (column->state.oversized >= copt.num_flows * 5) {
+			/* column too big for quite a while */
+			has_changed = true;
+			column->state.last_width = column_size;
+			column->state.oversized = 0;
+		} else {
+			(column->state.oversized)++;
+		}
+	} else {
+		/* This size was needed, keep it */
+		column->state.oversized = 0;
+	}
+
+	return has_changed;
+}
+
+static bool create_column(char *strHead1Row, char *strHead2Row,
+			  char *strDataRow, int column_id, double value,
+			  int numDigitsDecimalPart)
+{
 	int lengthData = 0;
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
@@ -1362,7 +1389,7 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 	char* number_formatstring;
 
 	if (!column->state.visible)
-		return;
+		return false;
 
 	/* get max columnsize */
 	if (copt.symbolic) {
@@ -1395,25 +1422,9 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 	columnSize = MAX(lengthData, lengthHead);
 
 	/* check if columnsize has changed */
-	if (column->state.last_width < columnSize) {
-		/* column too small */
-		*columnWidthChanged = 1;
-		column->state.last_width = columnSize;
-		column->state.oversized = 0;
-	} else if (column->state.last_width > 1 + columnSize) {
-		/* column too big */
-		if (column->state.oversized >= maxTooLongColumns) {
-			/* column too big for quite a while */
-			*columnWidthChanged = 1;
-			column->state.last_width = columnSize;
-			column->state.oversized = 0;
-		} else {
-			(column->state.oversized)++;
-		}
-	} else {
-		/* This size was needed, keep it */
-		column->state.oversized = 0;
-	}
+	bool has_changed = column_width_changed(column, columnSize);
+
+
 	number_formatstring = create_output_str(column->state.last_width,
 						numDigitsDecimalPart);
 
@@ -1451,6 +1462,7 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 		sprintf(tempBuffer, number_formatstring, value);
 		strcat(strDataRow, tempBuffer);
 	}
+
 	/* 1st header row */
 	for (unsigned int a = column->state.last_width;
 	     a > strlen(column->header.name); a--)
@@ -1462,21 +1474,21 @@ static void create_column(char *strHead1Row, char *strHead2Row,
 	     a > strlen(column->header.unit); a--)
 		strcat(strHead2Row, " ");
 	strcat(strHead2Row, column->header.unit);
+
+	return has_changed;
 }
 
-static void create_column_str(char *strHead1Row, char *strHead2Row,
-			      char *strDataRow, int column_id,
-			      char* value, int *columnWidthChanged)
+static bool create_column_str(char *strHead1Row, char *strHead2Row,
+			      char *strDataRow, int column_id, char* value)
 {
 
-	unsigned int maxTooLongColumns = copt.num_flows * 5;
 	int lengthData = 0;
 	int lengthHead = 0;
 	unsigned int columnSize = 0;
 	struct column *column = &column_info[column_id];
 
 	if (!column->state.visible)
-		return;
+		return false;
 
 	/* get max columnsize */
 	lengthData = strlen(value);
@@ -1485,25 +1497,7 @@ static void create_column_str(char *strHead1Row, char *strHead2Row,
 	columnSize = MAX(lengthData, lengthHead) + 1;
 
 	/* check if columnsize has changed */
-	if (column->state.last_width < columnSize) {
-		/* column too small */
-		*columnWidthChanged = 1;
-		column->state.last_width = columnSize;
-		column->state.oversized = 0;
-	} else if (column->state.last_width > 1 + columnSize) {
-		/* column too big */
-		if (column->state.oversized >= maxTooLongColumns) {
-			/* column too big for quite a while */
-			*columnWidthChanged = 1;
-			column->state.last_width = columnSize;
-			column->state.oversized = 0;
-		} else {
-			(column->state.oversized)++;
-		}
-	} else {
-		/* This size was needed, keep it */
-		column->state.oversized = 0;
-	}
+	bool has_changed = column_width_changed(column, columnSize);
 
 	/* create columns */
 	for (unsigned int a = lengthData+1; a < columnSize; a++)
@@ -1521,6 +1515,8 @@ static void create_column_str(char *strHead1Row, char *strHead2Row,
 	     a > strlen(column->header.unit) + 1; a--)
 		strcat(strHead2Row, " ");
 	strcat(strHead2Row, column->header.unit);
+
+	return has_changed;
 }
 
 inline static double scale_thruput(double thruput)
@@ -1534,7 +1530,8 @@ inline static double scale_thruput(double thruput)
 static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 				  struct report *r)
 {
-	int columnWidthChanged = 0;
+	/* Whether or not column header should printed */
+	bool print_header = false;
 
 	/* Create Row + Header */
 	char dataString[250];
@@ -1556,29 +1553,31 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	double diff_first_now = time_diff(&cflow[flow_id].start_timestamp[e],
 					  &r->end);
 
-	create_column(headerString1, headerString2, dataString, COL_BEGIN,
-		      diff_first_last, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_END,
-		      diff_first_now, 3, &columnWidthChanged);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_BEGIN, diff_first_last, 3);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_END, diff_first_now, 3);
 
 	/* Throughput */
 	double thruput = (double)r->bytes_written /
 			 (diff_first_now - diff_first_last);
 	thruput = scale_thruput(thruput);
-	create_column(headerString1, headerString2, dataString, COL_THROUGH,
-		      thruput, 6, &columnWidthChanged);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_THROUGH, thruput, 6);
 
 	/* Transactions */
 	double transac = (double)r->response_blocks_read /
 			 (diff_first_now - diff_first_last);
-	create_column(headerString1, headerString2, dataString, COL_TRANSAC,
-		      transac, 2, &columnWidthChanged);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TRANSAC, transac, 2);
 
 	/* Blocks */
-	create_column(headerString1, headerString2, dataString, COL_BLOCK_REQU,
-		      (unsigned int)r->request_blocks_written, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_BLOCK_RESP,
-		      (unsigned int)r->response_blocks_written, 0, &columnWidthChanged);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_BLOCK_REQU,
+				     (unsigned int)r->request_blocks_written, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_BLOCK_RESP,
+				     (unsigned int)r->response_blocks_written, 0);
 
 	/* RTT */
 	double rtt_avg = 0.0;
@@ -1587,12 +1586,12 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	else
 		r->rtt_min = r->rtt_max = rtt_avg = INFINITY;
 
-	create_column(headerString1, headerString2, dataString, COL_RTT_MIN,
-		      r->rtt_min * 1e3, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_AVG,
-		      rtt_avg * 1e3, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_MAX,
-		      r->rtt_max * 1e3, 3, &columnWidthChanged);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_RTT_MIN, r->rtt_min * 1e3, 3);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_RTT_AVG, rtt_avg * 1e3, 3);
+	print_header = create_column(headerString1, headerString2, dataString,
+			             COL_RTT_MAX, r->rtt_max * 1e3, 3);
 
 	/* IAT */
 	double iat_avg = 0.0;
@@ -1601,12 +1600,12 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	else
 		r->iat_min = r->iat_max = iat_avg = INFINITY;
 
-	create_column(headerString1, headerString2, dataString, COL_IAT_MIN,
-		      r->rtt_min * 1e3, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_AVG,
-		      iat_avg * 1e3, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_MAX,
-		      r->iat_max * 1e3, 3, &columnWidthChanged);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_IAT_MIN, r->rtt_min * 1e3, 3);
+	print_header = create_column(headerString1, headerString2, dataString,
+			             COL_IAT_AVG, iat_avg * 1e3, 3);
+	print_header = create_column(headerString1, headerString2, dataString,
+			             COL_IAT_MAX, r->iat_max * 1e3, 3);
 
 	/* Delay */
 	double delay_avg = 0.0;
@@ -1615,40 +1614,53 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	else
 		r->delay_min = r->delay_max = delay_avg = INFINITY;
 
-	create_column(headerString1, headerString2, dataString, COL_DLY_MIN,
-		      r->delay_min * 1e3, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_AVG,
-		      delay_avg * 1e3, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_MAX,
-		      r->delay_max * 1e3, 3, &columnWidthChanged);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_DLY_MIN, r->delay_min * 1e3, 3);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_DLY_AVG, delay_avg * 1e3, 3);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_DLY_MAX, r->delay_max * 1e3, 3);
 
 	/* TCP info struct */
-	create_column(headerString1, headerString2, dataString, COL_TCP_CWND,
-		      (unsigned int)r->tcp_info.tcpi_snd_cwnd, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_SSTH,
-		      (unsigned int)r->tcp_info.tcpi_snd_ssthresh, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_UACK,
-		      (unsigned int)r->tcp_info.tcpi_unacked, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_SACK,
-		      (unsigned int)r->tcp_info.tcpi_sacked, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_LOST,
-		      (unsigned int)r->tcp_info.tcpi_lost, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RETR,
-		      (unsigned int)r->tcp_info.tcpi_retrans, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_TRET,
-		      (unsigned int)r->tcp_info.tcpi_retransmits, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_FACK,
-		      (unsigned int)r->tcp_info.tcpi_fackets, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_REOR,
-		      (unsigned int)r->tcp_info.tcpi_reordering, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_BKOF,
-		      (unsigned int)r->tcp_info.tcpi_backoff, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTT,
-		      (double)r->tcp_info.tcpi_rtt / 1e3, 1, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTTVAR,
-		      (double)r->tcp_info.tcpi_rttvar / 1e3, 1, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTO,
-		      (double)r->tcp_info.tcpi_rto / 1e3, 1, &columnWidthChanged);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_CWND,
+				     (unsigned int)r->tcp_info.tcpi_snd_cwnd, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_SSTH,
+				     (unsigned int)r->tcp_info.tcpi_snd_ssthresh, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_UACK,
+				     (unsigned int)r->tcp_info.tcpi_unacked, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_SACK,
+				     (unsigned int)r->tcp_info.tcpi_sacked, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_LOST,
+				     (unsigned int)r->tcp_info.tcpi_lost, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_RETR,
+				     (unsigned int)r->tcp_info.tcpi_retrans, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_TRET,
+				     (unsigned int)r->tcp_info.tcpi_retransmits, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_FACK,
+				     (unsigned int)r->tcp_info.tcpi_fackets, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_REOR,
+				     (unsigned int)r->tcp_info.tcpi_reordering, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_BKOF,
+				     (unsigned int)r->tcp_info.tcpi_backoff, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_RTT,
+				     (double)r->tcp_info.tcpi_rtt / 1e3, 1);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_RTTVAR,
+				     (double)r->tcp_info.tcpi_rttvar / 1e3, 1);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_TCP_RTO,
+				     (double)r->tcp_info.tcpi_rto / 1e3, 1);
 
 	/* TCP CA state */
 	char *ca_state = NULL;
@@ -1665,14 +1677,15 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	else
 		ca_state = "unknown";
 
-	create_column_str(headerString1, headerString2, dataString,
-			  COL_TCP_CA_STATE, ca_state, &columnWidthChanged);
+	print_header = create_column_str(headerString1, headerString2, dataString,
+					 COL_TCP_CA_STATE, ca_state);
 
 	/* SMSS & PMTU */
-	create_column(headerString1, headerString2, dataString, COL_SMSS,
-		      (unsigned int)r->tcp_info.tcpi_snd_mss, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_PMTU,
-		      r->pmtu, 0, &columnWidthChanged);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_SMSS,
+				     (unsigned int)r->tcp_info.tcpi_snd_mss, 0);
+	print_header = create_column(headerString1, headerString2, dataString,
+				     COL_PMTU, r->pmtu, 0);
 
 #ifdef DEBUG
 	/* Internal flowgrind state */
@@ -1698,9 +1711,8 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	if (rc == -1)
 		critx("could not allocate memory for flowgrind status string");
 
-	create_column_str(headerString1, headerString2, dataString, COL_STATUS,
-			  fg_state, &columnWidthChanged);
-
+	print_header = create_column_str(headerString1, headerString2, dataString,
+					 COL_STATUS, fg_state);
 	free(fg_state);
 #endif /* DEBUG */
 
@@ -1708,9 +1720,9 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	char *buf = NULL;
 	static int printed_reports = 0;
 
-	/* Print new header if either the column width has changed or 25
+	/* Print header again if either the column width has changed or 25
 	 * reports has be printed */
-	if (columnWidthChanged > 0 || (printed_reports % 25) == 0) {
+	if (print_header || (printed_reports % 25) == 0) {
 		asprintf(&buf, "%s\n", headerString1);
 		asprintf_append(&buf, "%s\n", headerString2);
 		asprintf_append(&buf, "%s\n", dataString);
