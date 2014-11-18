@@ -1704,30 +1704,23 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	free(fg_state);
 #endif /* DEBUG */
 
-	/* newline */
-	strcat(headerString1, "\n");
-	strcat(headerString2, "\n");
-	strcat(dataString, "\n");
+	/* Print interval report now */
+	char *buf = NULL;
+	static int printed_reports = 0;
 
-	/* output string end */
-	static char outputString[1000];
-	static int counter = 0;
-	if (columnWidthChanged > 0 || (counter % 25) == 0) {
-		strcpy(outputString, headerString1);
-		strcat(outputString, headerString2);
-		strcat(outputString, dataString);
+	/* Print new header if either the column width has changed or 25
+	 * reports has be printed */
+	if (columnWidthChanged > 0 || (printed_reports % 25) == 0) {
+		asprintf(&buf, "%s\n", headerString1);
+		asprintf_append(&buf, "%s\n", headerString2);
+		asprintf_append(&buf, "%s\n", dataString);
 	} else {
-		strcpy(outputString, dataString);
+		asprintf(&buf, "%s\n", dataString);
 	}
-	counter++;
+	printed_reports++;
 
-	char report_buffer[4000] = "";
-	char rep_string[4000];
-
-	strcpy(rep_string, outputString);
-	strncpy(report_buffer, rep_string, sizeof(report_buffer));
-	report_buffer[sizeof(report_buffer) - 1] = 0;
-	log_output(report_buffer);
+	log_output(buf);
+	free(buf);
 }
 
 /**
