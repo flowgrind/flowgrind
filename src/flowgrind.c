@@ -1523,7 +1523,6 @@ static void create_column_str(char *strHead1Row, char *strHead2Row,
 	strcat(strHead2Row, column->header.unit);
 }
 
-/* Output a single report (with header if width has changed */
 inline static double scale_thruput(double thruput)
 {
         if (copt.mbyte)
@@ -1531,163 +1530,99 @@ inline static double scale_thruput(double thruput)
         return thruput / 1e6 * (1<<3);
 }
 
+/* Output a single report (with header if width has changed */
 static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 				  struct report *r)
 {
-
-	double min_rtt = r->rtt_min;
-	double max_rtt = r->rtt_max;
-	double avg_rtt;
-	double min_iat = r->iat_min;
-	double max_iat = r->iat_max;
-	double avg_iat;
-	double min_delay = r->delay_min;
-	double max_delay = r->delay_max;
-	double avg_delay;
-
-	char comment_buffer[100] = " (";
-	char report_buffer[4000] = "";
-
-	#define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
-		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
-		strncat(comment_buffer, (s), sizeof(comment_buffer)-1); }while(0);
-
-	if (r->response_blocks_read && r->rtt_sum)
-		avg_rtt = r->rtt_sum / (double)(r->response_blocks_read);
-	else
-		min_rtt = max_rtt = avg_rtt = INFINITY;
-
-	if (r->request_blocks_read && r->iat_sum)
-		avg_iat = r->iat_sum / (double)(r->request_blocks_read);
-	else
-		min_iat = max_iat = avg_iat = INFINITY;
-
-	if (r->request_blocks_read && r->delay_sum)
-		avg_delay = r->delay_sum / (double)(r->request_blocks_read);
-	else
-		min_delay = max_delay = avg_delay = INFINITY;
-
-#ifdef DEBUG
-	if (cflow[flow_id].finished[e]) {
-		COMMENT_CAT("stopped")
-	} else {
-		char tmp[2];
-
-		/* Write status */
-		switch (r->status & 0xFF) {
-		case 'd':
-		case 'l':
-		case 'o':
-		case 'f':
-		case 'c':
-		case 'n':
-			tmp[0] = (char)(r->status & 0xFF);
-			tmp[1] = 0;
-			COMMENT_CAT(tmp);
-			break;
-		default:
-			COMMENT_CAT("u");
-			break;
-		}
-
-		/* Read status */
-		switch (r->status >> 8) {
-		case 'd':
-		case 'l':
-		case 'o':
-		case 'f':
-		case 'c':
-		case 'n':
-			tmp[0] = (char)(r->status >> 8);
-			tmp[1] = 0;
-			COMMENT_CAT(tmp);
-			break;
-		default:
-			COMMENT_CAT("u");
-			break;
-		}
-	}
-#endif /* DEBUG */
-	strncat(comment_buffer, ")", sizeof(comment_buffer) - strlen(comment_buffer) - 1);
-	if (strlen(comment_buffer) == 2)
-		comment_buffer[0] = '\0';
-
-	char rep_string[4000];
-	double diff_first_last =
-		time_diff(&cflow[flow_id].start_timestamp[e], &r->begin);
-	double diff_first_now =
-		time_diff(&cflow[flow_id].start_timestamp[e], &r->end);
-	double thruput = scale_thruput((double)r->bytes_written /
-				       (diff_first_now - diff_first_last));
-	double transac = (double)r->response_blocks_read /
-			 (diff_first_now - diff_first_last);
-
-
 	int columnWidthChanged = 0;
-	static int counter = 0;
 
 	/* Create Row + Header */
 	char dataString[250];
 	char headerString1[250];
 	char headerString2[250];
-	static char outputString[1000];
-	char tmp[100];
 
-	/* output string
-	param # + flow_id */
+	/* Output string param  */
 	sprintf(dataString, "#");
 
-	if (e)
-		sprintf(dataString, "D%3d", flow_id);
-	else
-		sprintf(dataString, "S%3d", flow_id);
+	/* Flow ID and endpoint (source or destination) */
+	sprintf(dataString, "%s%3d", e ? "D" : "S", flow_id);
 
 	strcpy(headerString1, column_info[COL_FLOW_ID].header.name);
 	strcpy(headerString2, column_info[COL_FLOW_ID].header.unit);
 
-	if (r->tcp_info.tcpi_ca_state == TCP_CA_Open)
-		strcpy(tmp, "open");
-	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Disorder)
-		strcpy(tmp, "disorder");
-	else if (r->tcp_info.tcpi_ca_state == TCP_CA_CWR)
-		strcpy(tmp, "cwr");
-	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Recovery)
-		strcpy(tmp, "recover");
-	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Loss)
-		strcpy(tmp, "loss");
-	else
-		strcpy(tmp, "unknown");
+	/* Calculate time */
+	double diff_first_last = time_diff(&cflow[flow_id].start_timestamp[e],
+					  &r->begin);
+	double diff_first_now = time_diff(&cflow[flow_id].start_timestamp[e],
+					  &r->end);
 
 	create_column(headerString1, headerString2, dataString, COL_BEGIN,
 		      diff_first_last, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_END,
 		      diff_first_now, 3, &columnWidthChanged);
+
+	/* Throughput */
+	double thruput = (double)r->bytes_written /
+			 (diff_first_now - diff_first_last);
+	thruput = scale_thruput(thruput);
 	create_column(headerString1, headerString2, dataString, COL_THROUGH,
 		      thruput, 6, &columnWidthChanged);
+
+	/* Transactions */
+	double transac = (double)r->response_blocks_read /
+			 (diff_first_now - diff_first_last);
 	create_column(headerString1, headerString2, dataString, COL_TRANSAC,
 		      transac, 2, &columnWidthChanged);
+
+	/* Blocks */
 	create_column(headerString1, headerString2, dataString, COL_BLOCK_REQU,
 		      (unsigned int)r->request_blocks_written, 0, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_BLOCK_RESP,
 		      (unsigned int)r->response_blocks_written, 0, &columnWidthChanged);
+
+	/* RTT */
+	double rtt_avg = 0.0;
+	if (r->response_blocks_read && r->rtt_sum)
+		rtt_avg = r->rtt_sum / (double)(r->response_blocks_read);
+	else
+		r->rtt_min = r->rtt_max = rtt_avg = INFINITY;
+
 	create_column(headerString1, headerString2, dataString, COL_RTT_MIN,
-		      min_rtt * 1e3, 3, &columnWidthChanged);
+		      r->rtt_min * 1e3, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_RTT_AVG,
-		      avg_rtt * 1e3, 3, &columnWidthChanged);
+		      rtt_avg * 1e3, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_RTT_MAX,
-		      max_rtt * 1e3, 3, &columnWidthChanged);
+		      r->rtt_max * 1e3, 3, &columnWidthChanged);
+
+	/* IAT */
+	double iat_avg = 0.0;
+	if (r->request_blocks_read && r->iat_sum)
+		iat_avg = r->iat_sum / (double)(r->request_blocks_read);
+	else
+		r->iat_min = r->iat_max = iat_avg = INFINITY;
+
 	create_column(headerString1, headerString2, dataString, COL_IAT_MIN,
-		      min_iat * 1e3, 3, &columnWidthChanged);
+		      r->rtt_min * 1e3, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_IAT_AVG,
-		      avg_iat * 1e3, 3, &columnWidthChanged);
+		      iat_avg * 1e3, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_IAT_MAX,
-		      max_iat * 1e3, 3, &columnWidthChanged);
+		      r->iat_max * 1e3, 3, &columnWidthChanged);
+
+	/* Delay */
+	double delay_avg = 0.0;
+	if (r->request_blocks_read && r->delay_sum)
+		delay_avg = r->delay_sum / (double)(r->request_blocks_read);
+	else
+		r->delay_min = r->delay_max = delay_avg = INFINITY;
+
 	create_column(headerString1, headerString2, dataString, COL_DLY_MIN,
-		      min_delay * 1e3, 3, &columnWidthChanged);
+		      r->delay_min * 1e3, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_DLY_AVG,
-		      avg_delay * 1e3, 3, &columnWidthChanged);
+		      delay_avg * 1e3, 3, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_DLY_MAX,
-		      max_delay * 1e3, 3, &columnWidthChanged);
+		      r->delay_max * 1e3, 3, &columnWidthChanged);
+
+	/* TCP info struct */
 	create_column(headerString1, headerString2, dataString, COL_TCP_CWND,
 		      (unsigned int)r->tcp_info.tcpi_snd_cwnd, 0, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_TCP_SSTH,
@@ -1714,22 +1649,69 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 		      (double)r->tcp_info.tcpi_rttvar / 1e3, 1, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_TCP_RTO,
 		      (double)r->tcp_info.tcpi_rto / 1e3, 1, &columnWidthChanged);
+
+	/* TCP CA state */
+	char *ca_state = NULL;
+	if (r->tcp_info.tcpi_ca_state == TCP_CA_Open)
+		ca_state = "open";
+	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Disorder)
+		ca_state = "disorder";
+	else if (r->tcp_info.tcpi_ca_state == TCP_CA_CWR)
+		ca_state = "cwr";
+	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Recovery)
+		ca_state = "recover";
+	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Loss)
+		ca_state = "loss";
+	else
+		ca_state = "unknown";
+
 	create_column_str(headerString1, headerString2, dataString,
-			  COL_TCP_CA_STATE, tmp, &columnWidthChanged);
+			  COL_TCP_CA_STATE, ca_state, &columnWidthChanged);
+
+	/* SMSS & PMTU */
 	create_column(headerString1, headerString2, dataString, COL_SMSS,
 		      (unsigned int)r->tcp_info.tcpi_snd_mss, 0, &columnWidthChanged);
 	create_column(headerString1, headerString2, dataString, COL_PMTU,
 		      r->pmtu, 0, &columnWidthChanged);
+
 #ifdef DEBUG
+	/* Internal flowgrind state */
+	int rc = 0;
+	char *fg_state = NULL;
+	if (cflow[flow_id].finished[e]) {
+		rc = asprintf(&fg_state, "(stopped)");
+	} else {
+		/* Write status */
+		char ws = (char)(r->status & 0xFF);
+		if  (ws != 'd' || ws != 'l' || ws != 'o' || ws != 'f' ||
+		     ws != 'c' || ws != 'n')
+			ws = 'u';
+
+		/* Read status */
+		char rs = (char)(r->status >> 8);
+		if  (rs != 'd' || rs != 'l' || rs != 'o' || rs != 'f' ||
+		     rs != 'c' || rs != 'n')
+			rs = 'u';
+		rc = asprintf(&fg_state, "(%c/%c)", ws, rs);
+	}
+
+	if (rc == -1)
+		critx("could not allocate memory for flowgrind status string");
+
 	create_column_str(headerString1, headerString2, dataString, COL_STATUS,
-			  comment_buffer, &columnWidthChanged);
+			  fg_state, &columnWidthChanged);
+
+	free(fg_state);
 #endif /* DEBUG */
 
 	/* newline */
 	strcat(headerString1, "\n");
 	strcat(headerString2, "\n");
 	strcat(dataString, "\n");
+
 	/* output string end */
+	static char outputString[1000];
+	static int counter = 0;
 	if (columnWidthChanged > 0 || (counter % 25) == 0) {
 		strcpy(outputString, headerString1);
 		strcat(outputString, headerString2);
@@ -1738,6 +1720,9 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 		strcpy(outputString, dataString);
 	}
 	counter++;
+
+	char report_buffer[4000] = "";
+	char rep_string[4000];
 
 	strcpy(rep_string, outputString);
 	strncpy(report_buffer, rep_string, sizeof(report_buffer));
