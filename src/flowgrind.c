@@ -1909,7 +1909,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 		asprintf_append(&buf, "read delay = %.3f [s], ",
 				settings->delay[READ]);
 
-	/* Calucate throughput */
+	/* Throughput */
 	double thruput_read = report->bytes_read / MAX(real_read, real_write);
 	double thruput_write = report->bytes_written / MAX(real_read, real_write);
 	if (isnan(thruput_read))
@@ -1989,7 +1989,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	if (settings->dscp)
 		asprintf_append(&buf, ", dscp = 0x%02x", settings->dscp);
 
-	/* Other flags */
+	/* Other flow options */
 	if (cflow[flow_id].late_connect)
 		asprintf_append(&buf, ", late connecting");
 	if (cflow[flow_id].shutdown)
