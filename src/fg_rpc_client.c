@@ -39,7 +39,7 @@
 
 void parse_rpc_address(char **rpc_address, int *port, bool *is_ipv6)
 {
-        char* sepptr = 0;
+        char* sepptr = NULL;
 
         /* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
         if ((sepptr = strchr(*rpc_address, ']'))) {
