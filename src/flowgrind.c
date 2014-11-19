@@ -1790,7 +1790,7 @@ static void print_report(int id, int endpoint, struct report* r)
  * @param[in] mtu MTU size
  * @return return network technology as string
  */
-static char *guess_topology (unsigned int mtu)
+static char *guess_topology(unsigned int mtu)
 {
 	struct mtu_hint {
 		unsigned int mtu;
