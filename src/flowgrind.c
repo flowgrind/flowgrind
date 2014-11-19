@@ -1377,7 +1377,7 @@ static bool column_width_changed(struct column *column, unsigned column_size)
 	return has_changed;
 }
 
-static bool create_column(char *header1, char *header2, char *data,
+static bool create_column(char **header1, char **header2, char **data,
 			  enum column_id column_id, double value,
 			  unsigned accuracy)
 {
@@ -1423,7 +1423,6 @@ static bool create_column(char *header1, char *header2, char *data,
 	bool has_changed = column_width_changed(column, column_width);
 
 	/* Create data column */
-	char buf[50];
 	char *formatstr = create_output_str(column->state.last_width, accuracy);
 
 	if (copt.symbolic) {
@@ -1431,46 +1430,44 @@ static bool create_column(char *header1, char *header2, char *data,
 		case INT_MAX:
 			for (unsigned a = data_len;
 			     a < MAX(column_width, column->state.last_width); a++)
-				strcat(data, " ");
-			strcat(data, " INT_MAX");
+				asprintf_append(data, " ");
+			asprintf_append(data, " INT_MAX");
 			break;
 		case USHRT_MAX:
 			for (unsigned a = data_len;
 			     a < MAX(column_width, column->state.last_width); a++)
-				strcat(data, " ");
-			strcat(data, " USHRT_MAX");
+				asprintf_append(data, " ");
+			asprintf_append(data, " USHRT_MAX");
 			break;
 		case UINT_MAX:
 			for (unsigned a = data_len;
 			     a < MAX(column_width, column->state.last_width); a++)
-				strcat(data, " ");
-			strcat(data, " UINT_MAX");
+				asprintf_append(data, " ");
+			asprintf_append(data, " UINT_MAX");
 			break;
 		default: /* number */
-			sprintf(buf, formatstr, value);
-			strcat(data, buf);
+			asprintf_append(data, formatstr, value);
 		}
 	} else {
-		sprintf(buf, formatstr, value);
-		strcat(data, buf);
+		asprintf_append(data, formatstr, value);
 	}
 
 	/* Create 1st header row */
 	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.name); a--)
-		strcat(header1, " ");
-	strcat(header1, column->header.name);
+		asprintf_append(header1, " ");
+	asprintf_append(header1, "%s", column->header.name);
 
 	/* Create 2nd header row */
 	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.unit); a--)
-		strcat(header2, " ");
-	strcat(header2, column->header.unit);
+		asprintf_append(header2, " ");
+	asprintf_append(header2, "%s", column->header.unit);
 
 	return has_changed;
 }
 
-static bool create_column_str(char *header1, char *header2, char *data,
+static bool create_column_str(char **header1, char **header2, char **data,
 			      enum column_id column_id, char* value)
 {
 	/* Only for convenience */
@@ -1490,20 +1487,20 @@ static bool create_column_str(char *header1, char *header2, char *data,
 
 	/* Create data column */
 	for (unsigned a = data_len + 1; a < column_width; a++)
-		strcat(data, " ");
-	strcat(data, value);
+		asprintf_append(data, " ");
+	asprintf_append(data, "%s", value);
 
 	/* Create 1st header row */
 	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.name) + 1; a--)
-		strcat(header1, " ");
-	strcat(header1, column->header.name);
+		asprintf_append(header1, " ");
+	asprintf_append(header1, "%s", column->header.name);
 
 	/* Create 2nd header Row */
 	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.unit) + 1; a--)
-		strcat(header2, " ");
-	strcat(header2, column->header.unit);
+		asprintf_append(header2, " ");
+	asprintf_append(header2, "%s", column->header.unit);
 
 	return has_changed;
 }
@@ -1522,19 +1519,14 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	/* Whether or not column header should printed */
 	bool print_header = false;
 
-	/* 1st header row, 2nd header row, and buf for the actual values */
-	char header1[250];
-	char header2[250];
-	char values[250];
-
-	/* Output string param  */
-	sprintf(values, "#");
+	/* 1st header row, 2nd header row, and the actual measured data */
+	char *header1 = NULL, *header2 = NULL, *data = NULL;
 
 	/* Flow ID and endpoint (source or destination) */
-	sprintf(values, "%s%3d", e ? "D" : "S", flow_id);
-
-	strcpy(header1, column_info[COL_FLOW_ID].header.name);
-	strcpy(header2, column_info[COL_FLOW_ID].header.unit);
+	if (asprintf(&header1, "%s", column_info[COL_FLOW_ID].header.name) == -1 ||
+	    asprintf(&header2, "%s", column_info[COL_FLOW_ID].header.unit) == -1 ||
+	    asprintf(&data, "%s%3d", e ? "D" : "S", flow_id) == -1)
+		critx("could not allocate memory for interval report");
 
 	/* Calculate time */
 	double diff_first_last = time_diff(&cflow[flow_id].start_timestamp[e],
@@ -1542,28 +1534,28 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	double diff_first_now = time_diff(&cflow[flow_id].start_timestamp[e],
 					  &r->end);
 
-	print_header = create_column(header1, header2, values, COL_BEGIN,
+	print_header = create_column(&header1, &header2, &data, COL_BEGIN,
 				     diff_first_last, 3);
-	print_header = create_column(header1, header2, values, COL_END,
+	print_header = create_column(&header1, &header2, &data, COL_END,
 				     diff_first_now, 3);
 
 	/* Throughput */
 	double thruput = (double)r->bytes_written /
 			 (diff_first_now - diff_first_last);
 	thruput = scale_thruput(thruput);
-	print_header = create_column(header1, header2, values, COL_THROUGH,
+	print_header = create_column(&header1, &header2, &data, COL_THROUGH,
 				     thruput, 6);
 
 	/* Transactions */
 	double transac = (double)r->response_blocks_read /
 			 (diff_first_now - diff_first_last);
-	print_header = create_column(header1, header2, values, COL_TRANSAC,
+	print_header = create_column(&header1, &header2, &data, COL_TRANSAC,
 				     transac, 2);
 
 	/* Blocks */
-	print_header = create_column(header1, header2, values, COL_BLOCK_REQU,
+	print_header = create_column(&header1, &header2, &data, COL_BLOCK_REQU,
 				     (unsigned)r->request_blocks_written, 0);
-	print_header = create_column(header1, header2, values, COL_BLOCK_RESP,
+	print_header = create_column(&header1, &header2, &data, COL_BLOCK_RESP,
 				     (unsigned)r->response_blocks_written, 0);
 
 	/* RTT */
@@ -1573,11 +1565,11 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	else
 		r->rtt_min = r->rtt_max = rtt_avg = INFINITY;
 
-	print_header = create_column(header1, header2, values, COL_RTT_MIN,
+	print_header = create_column(&header1, &header2, &data, COL_RTT_MIN,
 				     r->rtt_min * 1e3, 3);
-	print_header = create_column(header1, header2, values, COL_RTT_AVG,
+	print_header = create_column(&header1, &header2, &data, COL_RTT_AVG,
 				     rtt_avg * 1e3, 3);
-	print_header = create_column(header1, header2, values, COL_RTT_MAX,
+	print_header = create_column(&header1, &header2, &data, COL_RTT_MAX,
 				     r->rtt_max * 1e3, 3);
 
 	/* IAT */
@@ -1587,11 +1579,11 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	else
 		r->iat_min = r->iat_max = iat_avg = INFINITY;
 
-	print_header = create_column(header1, header2, values, COL_IAT_MIN,
+	print_header = create_column(&header1, &header2, &data, COL_IAT_MIN,
 				     r->rtt_min * 1e3, 3);
-	print_header = create_column(header1, header2, values, COL_IAT_AVG,
+	print_header = create_column(&header1, &header2, &data, COL_IAT_AVG,
 				     iat_avg * 1e3, 3);
-	print_header = create_column(header1, header2, values, COL_IAT_MAX,
+	print_header = create_column(&header1, &header2, &data, COL_IAT_MAX,
 				     r->iat_max * 1e3, 3);
 
 	/* Delay */
@@ -1601,39 +1593,39 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	else
 		r->delay_min = r->delay_max = delay_avg = INFINITY;
 
-	print_header = create_column(header1, header2, values, COL_DLY_MIN,
+	print_header = create_column(&header1, &header2, &data, COL_DLY_MIN,
 				     r->delay_min * 1e3, 3);
-	print_header = create_column(header1, header2, values, COL_DLY_AVG,
+	print_header = create_column(&header1, &header2, &data, COL_DLY_AVG,
 				     delay_avg * 1e3, 3);
-	print_header = create_column(header1, header2, values, COL_DLY_MAX,
+	print_header = create_column(&header1, &header2, &data, COL_DLY_MAX,
 				     r->delay_max * 1e3, 3);
 
 	/* TCP info struct */
-	print_header = create_column(header1, header2, values, COL_TCP_CWND,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_CWND,
 				     (unsigned)r->tcp_info.tcpi_snd_cwnd, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_SSTH,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_SSTH,
 				     (unsigned)r->tcp_info.tcpi_snd_ssthresh, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_UACK,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_UACK,
 				     (unsigned)r->tcp_info.tcpi_unacked, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_SACK,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_SACK,
 				     (unsigned)r->tcp_info.tcpi_sacked, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_LOST,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_LOST,
 				     (unsigned)r->tcp_info.tcpi_lost, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_RETR,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_RETR,
 				     (unsigned)r->tcp_info.tcpi_retrans, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_TRET,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_TRET,
 				     (unsigned)r->tcp_info.tcpi_retransmits, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_FACK,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_FACK,
 				     (unsigned)r->tcp_info.tcpi_fackets, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_REOR,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_REOR,
 				     (unsigned)r->tcp_info.tcpi_reordering, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_BKOF,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_BKOF,
 				     (unsigned)r->tcp_info.tcpi_backoff, 0);
-	print_header = create_column(header1, header2, values, COL_TCP_RTT,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_RTT,
 				     (double)r->tcp_info.tcpi_rtt / 1e3, 1);
-	print_header = create_column(header1, header2, values, COL_TCP_RTTVAR,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_RTTVAR,
 				     (double)r->tcp_info.tcpi_rttvar / 1e3, 1);
-	print_header = create_column(header1, header2, values, COL_TCP_RTO,
+	print_header = create_column(&header1, &header2, &data, COL_TCP_RTO,
 				     (double)r->tcp_info.tcpi_rto / 1e3, 1);
 
 	/* TCP CA state */
@@ -1651,13 +1643,13 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	else
 		ca_state = "unknown";
 
-	print_header = create_column_str(header1, header2, values,
+	print_header = create_column_str(&header1, &header2, &data,
 					 COL_TCP_CA_STATE, ca_state);
 
 	/* SMSS & PMTU */
-	print_header = create_column(header1, header2, values, COL_SMSS,
+	print_header = create_column(&header1, &header2, &data, COL_SMSS,
 				     (unsigned)r->tcp_info.tcpi_snd_mss, 0);
-	print_header = create_column(header1, header2, values, COL_PMTU,
+	print_header = create_column(&header1, &header2, &data, COL_PMTU,
 				     r->pmtu, 0);
 
 /* Internal flowgrind state */
@@ -1684,28 +1676,27 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	if (rc == -1)
 		critx("could not allocate memory for flowgrind status string");
 
-	print_header = create_column_str(header1, header2, values, COL_STATUS,
+	print_header = create_column_str(&header1, &header2, &data, COL_STATUS,
 					 fg_state);
 	free(fg_state);
 #endif /* DEBUG */
 
-	/* Print interval report now */
-	char *buf = NULL;
-	static int printed_reports = 0;
+	/* Add new lines */
+	asprintf_append(&header2, "\n");
+	asprintf_append(&header1, "\n");
+	asprintf_append(&data, "\n");
 
 	/* Print header again if either the column width has changed or 25
 	 * reports have be printed */
+	static int printed_reports = 0;
 	if (print_header || (printed_reports % 25) == 0) {
-		asprintf(&buf, "%s\n", header1);
-		asprintf_append(&buf, "%s\n", header2);
-		asprintf_append(&buf, "%s\n", values);
-	} else {
-		asprintf(&buf, "%s\n", values);
+		log_output(header1);
+		log_output(header2);
 	}
-	printed_reports++;
 
-	log_output(buf);
-	free(buf);
+	log_output(data);
+	printed_reports++;
+	free_all(header1, header2, data);
 }
 
 /**
