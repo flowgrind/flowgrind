@@ -1195,7 +1195,7 @@ has_more_reports:
 static void report_flow(const struct daemon* daemon, struct report* report)
 {
 	const char* server_url = daemon->server_url;
-	int *i;
+	int *i = NULL;
 	int id;
 	struct cflow *f = NULL;
 
@@ -1790,7 +1790,7 @@ static void print_report(int id, int endpoint, struct report* r)
  * @param[in] mtu MTU size
  * @return return network technology as string
  */
-static char *guess_topology (unsigned int mtu)
+static char *guess_topology(unsigned int mtu)
 {
 	struct mtu_hint {
 		unsigned int mtu;
@@ -1909,7 +1909,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 		asprintf_append(&buf, "read delay = %.3f [s], ",
 				settings->delay[READ]);
 
-	/* Calucate throughput */
+	/* Throughput */
 	double thruput_read = report->bytes_read / MAX(real_read, real_write);
 	double thruput_write = report->bytes_written / MAX(real_read, real_write);
 	if (isnan(thruput_read))
@@ -1989,7 +1989,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	if (settings->dscp)
 		asprintf_append(&buf, ", dscp = 0x%02x", settings->dscp);
 
-	/* Other flags */
+	/* Other flow options */
 	if (cflow[flow_id].late_connect)
 		asprintf_append(&buf, ", late connecting");
 	if (cflow[flow_id].shutdown)
@@ -2004,7 +2004,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 /**
  * Create final report (i.e. summary line) for all configured flows.
  */
-static void create_final_report(void)
+static void create_final_reports(void)
 {
 	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		/* New line for each final flow report */
@@ -2945,7 +2945,7 @@ int main(int argc, char *argv[])
 
 	DEBUG_MSG(LOG_WARNING, "report final");
 	fetch_reports(rpc_client);
-	create_final_report();
+	create_final_reports();
 
 	close_logfile();
 

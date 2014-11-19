@@ -162,7 +162,6 @@ int gettime(struct timespec *tp)
 {
 	static struct timespec res = {.tv_sec = 0, .tv_nsec = 0};
 	clock_serv_t cclock;
-	mach_timespec_t mts;
 
 	host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
 
@@ -176,6 +175,7 @@ int gettime(struct timespec *tp)
 		assert(attribute[0] > 1);
 	}
 
+	mach_timespec_t mts;
 	kern_return_t rc = clock_get_time(cclock, &mts);
 	mach_port_deallocate(mach_task_self(), cclock);
 
