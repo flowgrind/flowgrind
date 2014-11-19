@@ -1195,7 +1195,7 @@ has_more_reports:
 static void report_flow(const struct daemon* daemon, struct report* report)
 {
 	const char* server_url = daemon->server_url;
-	int *i;
+	int *i = NULL;
 	int id;
 	struct cflow *f = NULL;
 
