@@ -267,7 +267,7 @@ struct column_state {
         /** How often the current column width was too high. */
         unsigned int oversized;
         /** Last width of the column. */
-        unsigned int last_width;
+	size_t last_width;
 };
 
 /** Intermediated interval report column. */
