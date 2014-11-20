@@ -545,7 +545,7 @@ static void open_logfile(void)
 	if (!log_filename) {
 		if (asprintf(&log_filename, "%s-%s.log", progname,
 			     ctimenow(false)) == -1)
-			critx("could not allocate memory for the log filename");
+			critx("could not allocate memory for log filename");
 	}
 
 	if (!copt.clobber && access(log_filename, R_OK) == 0)
@@ -2213,7 +2213,6 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	char *rpc_address, *url = 0, *sepptr = 0;
 	char *arg = strdup(hostarg);
 	struct flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
-	int rc;
 
 	/* extra RPC address ? */
 	sepptr = strchr(arg, '/');
@@ -2248,13 +2247,15 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 
 	if (!*arg)
 		PARSE_ERR("flow %i: no test host given in argument", flow_id);
+
+	int rc = 0;
 	if (is_ipv6)
 		rc = asprintf(&url, "http://[%s]:%d/RPC2", rpc_address, port);
 	else
 		rc = asprintf(&url, "http://%s:%d/RPC2", rpc_address, port);
 
-	if (rc==-1)
-		critx("could not allocate memory for the RPC url");
+	if (rc == -1)
+		critx("could not allocate memory for RPC URL");
 
 	daemon = get_daemon_by_url(url, rpc_address, port);
 	endpoint->daemon = daemon;
