@@ -44,7 +44,7 @@ void logging_init (void)
 {
 	logstr = malloc(LOGGING_MAXLEN);
 	if (logstr == NULL)
-		critx("unable to allocate memory for logging string");
+		critx("could not allocate memory for logging string");
 
 	switch (log_type) {
 	case LOGTYPE_SYSLOG:

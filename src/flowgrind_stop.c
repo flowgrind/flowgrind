@@ -92,7 +92,6 @@ static void stop_flows(const char* address)
 	int port = DEFAULT_LISTEN_PORT;
 	bool is_ipv6 = false;
 	char *arg, *url = 0;
-	int rc;
 	char *rpc_address = arg = strdup(address);
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
@@ -106,13 +105,14 @@ static void stop_flows(const char* address)
 	if (port < 1 || port > 65535)
 		errx("invalid port for RPC");
 
+	int rc = 0;
 	if (is_ipv6)
 		rc = asprintf(&url, "http://[%s]:%d/RPC2", rpc_address, port);
 	else
 		rc = asprintf(&url, "http://%s:%d/RPC2", rpc_address, port);
 
-	if (rc==-1)
-		critx("failed to build RPC URL");
+	if (rc == -1)
+		critx("could not allocate memory for RPC URL");
 
 	printf("Stopping all flows on %s\n", url);
 
