@@ -200,9 +200,14 @@ static struct column column_info[] = {
 #pragma GCC diagnostic pop
 
 /* Forward declarations */
-static void usage(short status) __attribute__((noreturn));
-static void usage_sockopt(void) __attribute__((noreturn));
-static void usage_trafgenopt(void) __attribute__((noreturn));
+static void usage(short status)
+	__attribute__((noreturn));
+static void usage_sockopt(void)
+	__attribute__((noreturn));
+static void usage_trafgenopt(void)
+	__attribute__((noreturn));
+inline static void print_output(const char *fmt, ...)
+	__attribute__((format(printf, 1, 2)));
 static void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void fetch_reports(xmlrpc_client *);
 static void set_column_visibility(bool visibility, unsigned nargs, ...);
@@ -572,16 +577,26 @@ static void close_logfile(void)
 	free(log_filename);
 }
 
-inline static void log_output(const char *msg)
+/**
+ * Print measurement output to logfile and / or to stdout.
+ *
+ * @param[in] fmt format string
+ * @param[in] ... parameters used to fill fmt
+ */
+inline static void print_output(const char *fmt, ...)
 {
+	va_list ap;
+
+	va_start(ap, fmt);
 	if (copt.log_to_stdout) {
-		printf("%s", msg);
+		vprintf(fmt, ap);
 		fflush(stdout);
 	}
 	if (copt.log_to_file) {
-		fprintf(log_stream, "%s", msg);
+		vfprintf(log_stream, fmt, ap);
 		fflush(log_stream);
 	}
+	va_end(ap);
 }
 
 inline static void die_if_fault_occurred(xmlrpc_env *env)
@@ -713,19 +728,15 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 		prepare_flow(id, rpc_client);
 	}
 
-	/* prepare headline */
-	char headline[200];
+	/* Print headline */
 	struct utsname me;
 	int rc = uname(&me);
-
-	snprintf(headline, sizeof(headline),
-		 "# Date: %s, controlling host = %s, number of flows = %d, "
-		 "reporting interval = %.2fs, [through] = %s (%s)\n",
-		 ctimenow(false), (rc == -1 ? "(unknown)" : me.nodename),
-		 copt.num_flows, copt.reporting_interval,
-		 (copt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
-		 FLOWGRIND_VERSION);
-	log_output(headline);
+	print_output("# Date: %s, controlling host = %s, number of flows = %d, "
+		     "reporting interval = %.2fs, [through] = %s (%s)\n",
+		     ctimenow(false), (rc == -1 ? "(unknown)" : me.nodename),
+		     copt.num_flows, copt.reporting_interval,
+		     (copt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
+		     FLOWGRIND_VERSION);
 
 	/* prepare column visibility based on involved OSes */
 	bool involved_os[] = {[0 ... NUM_OSes-1] = false};
@@ -1677,20 +1688,15 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	free(fg_state);
 #endif /* DEBUG */
 
-	/* Add new lines */
-	asprintf_append(&header2, "\n");
-	asprintf_append(&header1, "\n");
-	asprintf_append(&data, "\n");
-
 	/* Print header again if either the column width has changed or 25
 	 * reports have be printed */
 	static int printed_reports = 0;
 	if (changed || (printed_reports % 25) == 0) {
-		log_output(header1);
-		log_output(header2);
+		print_output("%s\n", header1);
+		print_output("%s\n", header2);
 	}
 
-	log_output(data);
+	print_output("%s\n", data);
 	printed_reports++;
 	free_all(header1, header2, data);
 }
@@ -1906,9 +1912,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	if (cflow[flow_id].shutdown)
 		asprintf_append(&buf, ", calling shutdown");
 
-	asprintf_append(&buf, "\n");
-
-	log_output(buf);
+	print_output("%s\n", buf);
 	free(buf);
 }
 
@@ -1919,7 +1923,7 @@ static void create_final_reports(void)
 {
 	for (unsigned id = 0; id < copt.num_flows; id++) {
 		/* New line for each final flow report */
-		log_output("\n");
+		print_output("\n");
 
 		foreach(int *i, SOURCE, DESTINATION) {
 			print_final_report(id, *i);
