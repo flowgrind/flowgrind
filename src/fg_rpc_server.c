@@ -680,7 +680,7 @@ cleanup:
 }
 
 /* Creates listen socket for the xmlrpc server. */
-static int bind_rpc_server(char *bind_addr, unsigned int port) {
+static int bind_rpc_server(char *bind_addr, unsigned port) {
 	int rc;
 	int fd;
 	int optval;
@@ -731,7 +731,7 @@ static int bind_rpc_server(char *bind_addr, unsigned int port) {
 }
 
 /* Initializes the xmlrpc server and registers exported methods */
-void init_rpc_server(struct fg_rpc_server *server, char *rpc_bind_addr, unsigned int port)
+void init_rpc_server(struct fg_rpc_server *server, char *rpc_bind_addr, unsigned port)
 {
 	xmlrpc_registry * registryP;
 	xmlrpc_env *env = &(server->env);

@@ -61,7 +61,7 @@ struct fg_rpc_server
  * and binds to the control port.
  */
 void init_rpc_server(struct fg_rpc_server *server, char *rpc_bind_addr,
-		     unsigned int port);
+		     unsigned port);
 
 /** Enters the xmlrpc server mainloop. */
 void run_rpc_server(struct fg_rpc_server *server);

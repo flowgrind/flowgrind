@@ -62,7 +62,7 @@ typedef struct {
  * appropriately)
  */
 int pthread_barrier_init(pthread_barrier_t *barrier,
-			 const pthread_barrierattr_t *attr, unsigned int count);
+			 const pthread_barrierattr_t *attr, unsigned count);
 /**
  * Destroys the barrier referenced by @p barrier.
  *

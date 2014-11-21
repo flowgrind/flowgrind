@@ -211,7 +211,7 @@ struct flow_settings {
 	int write_rate;
 
 	/** Random seed to use (default: read /dev/urandom) (option -J). */
-	unsigned int random_seed;
+	unsigned random_seed;
 
 	/** Stop flow if it is experiencing local congestion (option -C). */
 	int flow_control;
@@ -287,10 +287,10 @@ struct report {
 	long bytes_read;
 	long bytes_written;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */
-	unsigned int request_blocks_read;
-	unsigned int request_blocks_written;
-	unsigned int response_blocks_read;
-	unsigned int response_blocks_written;
+	unsigned request_blocks_read;
+	unsigned request_blocks_written;
+	unsigned response_blocks_read;
+	unsigned response_blocks_written;
 
 	/* TODO Create an array for IAT / RTT and delay */
 
@@ -318,9 +318,9 @@ struct report {
 	struct fg_tcp_info tcp_info;
 
 	/** Discovered Path MTU */
-	unsigned int pmtu;
+	unsigned pmtu;
 	/** Interface MTU */
-	unsigned int imtu;
+	unsigned imtu;
 
 	int status;
 

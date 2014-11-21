@@ -64,7 +64,7 @@
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
 
-void remove_flow(unsigned int i);
+void remove_flow(unsigned i);
 
 #ifdef HAVE_TCP_INFO
 int get_tcp_info(struct flow *flow, struct tcp_info *info);

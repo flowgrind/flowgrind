@@ -106,7 +106,7 @@ static xmlrpc_env rpc_env;
 static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 
 /** Number of flowgrind dameons. */
-static unsigned int num_unique_servers = 0;
+static unsigned num_unique_servers = 0;
 
 /** Command line option parser. */
 static struct arg_parser parser;
@@ -205,8 +205,8 @@ static void usage_sockopt(void) __attribute__((noreturn));
 static void usage_trafgenopt(void) __attribute__((noreturn));
 static void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void fetch_reports(xmlrpc_client *);
-static void set_column_visibility(bool visibility, unsigned int nargs, ...);
-static void set_column_unit(const char *unit, unsigned int nargs, ...);
+static void set_column_visibility(bool visibility, unsigned nargs, ...);
+static void set_column_unit(const char *unit, unsigned nargs, ...);
 static void report_flow(const struct daemon* daemon, struct report* report);
 static void print_report(int id, int endpoint, struct report* report);
 
@@ -624,7 +624,7 @@ static void check_version(xmlrpc_client *rpc_client)
 	xmlrpc_value * resultP = 0;
 	char mismatch = 0;
 
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
+	for (unsigned j = 0; j < num_unique_servers; j++) {
 
 		if (sigint_caught)
 			return;
@@ -675,7 +675,7 @@ static void check_idle(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
+	for (unsigned j = 0; j < num_unique_servers; j++) {
 		if (sigint_caught)
 			return;
 
@@ -706,7 +706,7 @@ static void check_idle(xmlrpc_client *rpc_client)
 static void prepare_grinding(xmlrpc_client *rpc_client)
 {
 	/* prepare flows */
-	for (unsigned int id = 0; id < copt.num_flows; id++) {
+	for (unsigned id = 0; id < copt.num_flows; id++) {
 		if (sigint_caught)
 			return;
 		prepare_flow(id, rpc_client);
@@ -728,7 +728,7 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 
 	/* prepare column visibility based on involved OSes */
 	bool involved_os[] = {[0 ... NUM_OSes-1] = false};
-	for (unsigned int j = 0; j < num_unique_servers; j++)
+	for (unsigned j = 0; j < num_unique_servers; j++)
 		if (!strcmp(unique_servers[j].os_name, "Linux"))
 			involved_os[LINUX] = true;
 		else if (!strcmp(unique_servers[j].os_name, "FreeBSD"))
@@ -987,7 +987,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 	gettime(&lastreport_begin);
 	gettime(&now);
 
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
+	for (unsigned j = 0; j < num_unique_servers; j++) {
 		if (sigint_caught)
 			return;
 
@@ -1024,7 +1024,7 @@ static void fetch_reports(xmlrpc_client *rpc_client)
 
 	xmlrpc_value * resultP = 0;
 
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
+	for (unsigned j = 0; j < num_unique_servers; j++) {
 		int array_size, has_more;
 		xmlrpc_value *rv = 0;
 
@@ -1240,7 +1240,7 @@ static void close_flows(void)
 	xmlrpc_env env;
 	xmlrpc_client *client;
 
-	for (unsigned int id = 0; id < copt.num_flows; id++) {
+	for (unsigned id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "closing flow %u.", id);
 
 		if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
@@ -1290,7 +1290,7 @@ static void close_flows(void)
  * @param[in] ... column IDs
  * @see enum column_id
  */
-static void set_column_visibility(bool visibility, unsigned int nargs, ...)
+static void set_column_visibility(bool visibility, unsigned nargs, ...)
 {
         va_list ap;
         enum column_id col_id;
@@ -1311,7 +1311,7 @@ static void set_column_visibility(bool visibility, unsigned int nargs, ...)
  * @param[in] ... column IDs
  * @see enum column_id
  */
-static void set_column_unit(const char *unit, unsigned int nargs, ...)
+static void set_column_unit(const char *unit, unsigned nargs, ...)
 {
         va_list ap;
         enum column_id col_id;
@@ -1790,10 +1790,10 @@ static void print_report(int id, int endpoint, struct report* r)
  * @param[in] mtu MTU size
  * @return return network technology as string
  */
-static char *guess_topology(unsigned int mtu)
+static char *guess_topology(unsigned mtu)
 {
 	struct mtu_hint {
-		unsigned int mtu;
+		unsigned mtu;
 		char *topology;
 	};
 
@@ -1817,7 +1817,7 @@ static char *guess_topology(unsigned int mtu)
 	};
 
 	size_t array_size = sizeof(mtu_hints) / sizeof(struct mtu_hint);
-	for (unsigned int i = 0; i < array_size; i++)
+	for (unsigned i = 0; i < array_size; i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
 	return "unknown";
@@ -2006,7 +2006,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
  */
 static void create_final_reports(void)
 {
-	for (unsigned short id = 0; id < copt.num_flows; id++) {
+	for (unsigned id = 0; id < copt.num_flows; id++) {
 		/* New line for each final flow report */
 		log_output("\n");
 
@@ -2024,7 +2024,7 @@ static struct daemon * get_daemon_by_url(const char* server_url,
 					  unsigned short server_port)
 {
 	/* If we have already a daemon for this URL return a pointer to it */
-	for (unsigned int i = 0; i < num_unique_servers; i++) {
+	for (unsigned i = 0; i < num_unique_servers; i++) {
 		if (!strcmp(unique_servers[i].server_url, server_url))
 			return &unique_servers[i];
 	}

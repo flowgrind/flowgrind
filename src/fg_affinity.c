@@ -72,7 +72,7 @@ int get_ncores(enum ncore_query query)
 
 /* Linux and FreeBSD have pthread_[set|get]affinity_np */
 #if defined HAVE_PTHREAD_AFFINITY_NP
-int pthread_setaffinity(pthread_t thread, unsigned int core)
+int pthread_setaffinity(pthread_t thread, unsigned core)
 {
 	cpu_set_t cpuset;
 	CPU_ZERO(&cpuset);
@@ -82,7 +82,7 @@ int pthread_setaffinity(pthread_t thread, unsigned int core)
 	return (rc == 0 ? 0 : -1);
 }
 
-int pthread_getaffinity(pthread_t thread, unsigned int *core)
+int pthread_getaffinity(pthread_t thread, unsigned *core)
 {
 	cpu_set_t cpuset;
 	int rc = pthread_getaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
@@ -93,7 +93,7 @@ int pthread_getaffinity(pthread_t thread, unsigned int *core)
 	 * all other cpuset contents, we treat the binding as unknown */
 	core = NULL;
 	bool core_found = false;
-	for (unsigned int i = 0; i < CPU_SETSIZE; i++) {
+	for (unsigned i = 0; i < CPU_SETSIZE; i++) {
 		if (CPU_ISSET(i, &cpuset)) {
 			if (!core_found) {
 				core_found = true;
@@ -110,7 +110,7 @@ int pthread_getaffinity(pthread_t thread, unsigned int *core)
 }
 /* OS X hasn't defined pthread_[set|get]affinity_np */
 #elif defined HAVE_THREAD_POLICY
-int pthread_setaffinity(pthread_t thread, unsigned int core)
+int pthread_setaffinity(pthread_t thread, unsigned core)
 {
 	/* Convert pthread ID */
 	mach_port_t mach_thread = pthread_mach_thread_np(thread);
@@ -125,7 +125,7 @@ int pthread_setaffinity(pthread_t thread, unsigned int core)
 	return (rc == KERN_SUCCESS ? 0 : -1);
 }
 
-int pthread_getaffinity(pthread_t thread, unsigned int *core)
+int pthread_getaffinity(pthread_t thread, unsigned *core)
 {
 	/* Convert pthread ID */
 	mach_port_t mach_thread = pthread_mach_thread_np(thread);
@@ -137,7 +137,7 @@ int pthread_getaffinity(pthread_t thread, unsigned int *core)
 					     THREAD_AFFINITY_POLICY,
 					     (thread_policy_t) &policy, &count,
 					     &get_default);
-	*core = (unsigned int)policy.affinity_tag;
+	*core = (unsigned)policy.affinity_tag;
 
 	return (rc == KERN_SUCCESS ? 0 : -1);
 }
