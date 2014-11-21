@@ -56,7 +56,7 @@ int get_ncores(enum ncore_query query);
  * @param[in] core core to which thread @p thread will be bounded
  * @return return 0 for success, or -1 for failure
  */
-int pthread_setaffinity(pthread_t thread, unsigned int core);
+int pthread_setaffinity(pthread_t thread, unsigned core);
 
 /**
  * Returns the CPU affinity of thread @p thread in the buffer pointed to by
@@ -66,6 +66,6 @@ int pthread_setaffinity(pthread_t thread, unsigned int core);
  * @param[out] core core to which thread @p thread is bounded 
  * @return return 0 for success, or -1 for failure
  */
-int pthread_getaffinity(pthread_t thread, unsigned int *core);
+int pthread_getaffinity(pthread_t thread, unsigned *core);
 
 #endif /* _FG_AFFINITY_H_ */

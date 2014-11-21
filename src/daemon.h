@@ -97,11 +97,11 @@ struct flow
 	char *read_block;
 	char *write_block;
 
-	unsigned int current_write_block_size;
-	unsigned int current_read_block_size;
+	unsigned current_write_block_size;
+	unsigned current_read_block_size;
 
-	unsigned int current_block_bytes_read;
-	unsigned int current_block_bytes_written;
+	unsigned current_block_bytes_read;
+	unsigned current_block_bytes_written;
 
 	unsigned short requested_server_test_port;
 
@@ -113,7 +113,7 @@ struct flow
 
 	int pmtu;
 
-	unsigned int congestion_counter;
+	unsigned congestion_counter;
 
 	/* Used for late_connect */
 	struct sockaddr *addr;
@@ -127,10 +127,10 @@ struct flow
 		long bytes_read;
 		long bytes_written;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */
-		unsigned int request_blocks_read;
-		unsigned int request_blocks_written;
-		unsigned int response_blocks_read;
-		unsigned int response_blocks_written;
+		unsigned request_blocks_read;
+		unsigned request_blocks_written;
+		unsigned response_blocks_read;
+		unsigned response_blocks_written;
 
 		/* TODO Create an array for IAT / RTT and delay */
 
@@ -249,7 +249,7 @@ extern pthread_mutex_t mutex;
 extern struct linked_list flows;
 extern struct report* reports;
 extern struct report* reports_last;
-extern unsigned int pending_reports;
+extern unsigned pending_reports;
 
 /* Gets 50 reports. There may be more pending but there's a limit on how
  * large a reply can get */

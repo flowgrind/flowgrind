@@ -35,7 +35,7 @@
 #include "fg_barrier.h"
 
 int pthread_barrier_init(pthread_barrier_t *barrier,
-			 const pthread_barrierattr_t *attr, unsigned int count)
+			 const pthread_barrierattr_t *attr, unsigned count)
 {
 	if (unlikely(!barrier) || unlikely(count == 0)) {
 		errno = EINVAL;

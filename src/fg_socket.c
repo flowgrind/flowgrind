@@ -78,7 +78,7 @@
 int set_window_size_directed(int fd, int window, int direction)
 {
 	int rc, try, w;
-	unsigned int optlen = sizeof w;
+	unsigned optlen = sizeof w;
 
 	if (window <= 0)
 			{ DEBUG_MSG(LOG_NOTICE, "Getting %sBUF from fd %d ",

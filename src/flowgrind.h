@@ -234,7 +234,7 @@ struct cflow {
 	/** Enumerate bytes in payload instead of sending zeros (option -E). */
 	char byte_counting;
 	/** Random seed for stochastic traffic generation (option -J). */
-	unsigned int random_seed;
+	unsigned random_seed;
 
 	/* For the following arrays: 0 stands for source; 1 for destination */
 
@@ -265,7 +265,7 @@ struct column_state {
 	/** Dynamically turn an column on/off. */
 	bool visible;
 	/** How often the current column width was too high. */
-	unsigned int oversized;
+	unsigned oversized;
 	/** Last width of the column. */
 	size_t last_width;
 };

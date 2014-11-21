@@ -46,15 +46,15 @@
  * and first debug call, the function in which the debug call occurs, and the
  * process and thread PID.
  */
-#define DEBUG_MSG(LVL, MSG, ...) do {					       \
-	if (debug_level >= LVL)						       \
-		fprintf(stderr, "%s %s:%d  [%d/%d] " MSG "\n",		       \
-			debug_timestamp(), __FUNCTION__, __LINE__, getpid(),   \
-			(unsigned int)pthread_self()%USHRT_MAX, ##__VA_ARGS__);\
+#define DEBUG_MSG(LVL, MSG, ...) do {					     \
+	if (debug_level >= LVL)						     \
+		fprintf(stderr, "%s %s:%d  [%d/%d] " MSG "\n",		     \
+			debug_timestamp(), __FUNCTION__, __LINE__, getpid(), \
+			(unsigned)pthread_self()%USHRT_MAX, ##__VA_ARGS__);  \
 } while (0)
 
 /** Global debug level for flowgrind controller and daemon. */
-unsigned int debug_level;
+unsigned debug_level;
 
 /** Decrease debug level. */
 void decrease_debuglevel(void);

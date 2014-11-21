@@ -95,7 +95,7 @@ int maxfd;
 
 struct report* reports = 0;
 struct report* reports_last = 0;
-unsigned int pending_reports = 0;
+unsigned pending_reports = 0;
 
 struct linked_list flows;
 
@@ -832,7 +832,7 @@ void add_report(struct report* report)
 
 struct report* get_reports(int *has_more)
 {
-	const unsigned int max_reports = 50;
+	const unsigned max_reports = 50;
 
 	struct report* ret;
 	DEBUG_MSG(LOG_DEBUG, "get_reports trying to lock mutex");
@@ -848,7 +848,7 @@ struct report* get_reports(int *has_more)
 	} else {
 		/* Split off first 50 items */
 		struct report* tmp;
-		for (unsigned int i = 0; i < max_reports - 1; i++)
+		for (unsigned i = 0; i < max_reports - 1; i++)
 			reports = reports->next;
 		tmp = reports->next;
 		reports->next = 0;
@@ -1335,9 +1335,9 @@ static void send_response(struct flow* flow, int requested_response_block_size)
 				flow->statistics[*i].bytes_written += rc;
 
 			if (flow->current_block_bytes_written >=
-			    (unsigned int)requested_response_block_size) {
+			    (unsigned)requested_response_block_size) {
 				assert(flow->current_block_bytes_written ==
-					(unsigned int)requested_response_block_size);
+					(unsigned)requested_response_block_size);
 				/* just finish sending response block */
 				flow->current_block_bytes_written = 0;
 				gettime(&flow->last_block_written);
