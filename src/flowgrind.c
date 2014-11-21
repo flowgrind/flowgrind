@@ -1377,144 +1377,133 @@ static bool column_width_changed(struct column *column, unsigned column_size)
 	return has_changed;
 }
 
-static bool create_column(char *strHead1Row, char *strHead2Row,
-			  char *strDataRow, int column_id, double value,
-			  int numDigitsDecimalPart)
+static bool create_column(char *header1, char *header2, char *data,
+			  enum column_id column_id, double value,
+			  unsigned accuracy)
 {
-	int lengthData = 0;
-	int lengthHead = 0;
-	unsigned int columnSize = 0;
-	char tempBuffer[50];
+	/* Only for convenience */
 	struct column *column = &column_info[column_id];
-	char* number_formatstring;
 
 	if (!column->state.visible)
 		return false;
 
-	/* get max columnsize */
+	/* Determine length of data */
+	unsigned data_len;
 	if (copt.symbolic) {
-		switch ((unsigned int)value) {
+		switch ((unsigned)value) {
 		case INT_MAX:
-			lengthData = strlen("INT_MAX");
+			data_len = strlen("INT_MAX");
 			break;
 		case USHRT_MAX:
-			lengthData = strlen("USHRT_MAX");
+			data_len = strlen("USHRT_MAX");
 			break;
 		case UINT_MAX:
-			lengthData = strlen("UINT_MAX");
+			data_len = strlen("UINT_MAX");
 			break;
 		default:
-			lengthData = det_num_digits(value) +
-				numDigitsDecimalPart + 1;
+			data_len = det_num_digits(value) + accuracy + 1;
 		}
 	} else {
-		lengthData = det_num_digits(value) + numDigitsDecimalPart + 1;
+		data_len = det_num_digits(value) + accuracy + 1;
 	}
-	/* leading space */
-	lengthData++;
 
-	/* decimal point if necessary */
-	if (numDigitsDecimalPart)
-		lengthData++;
+	/* Leading space */
+	data_len++;
 
-	lengthHead = MAX(strlen(column->header.name),
-			 strlen(column->header.unit));
-	columnSize = MAX(lengthData, lengthHead);
+	/* Decimal point if necessary */
+	if (accuracy)
+		data_len++;
 
-	/* check if columnsize has changed */
-	bool has_changed = column_width_changed(column, columnSize);
+	/* Get max column width */
+	unsigned header_len = MAX(strlen(column->header.name),
+				  strlen(column->header.unit));
+	unsigned column_width = MAX(data_len, header_len);
 
+	/* Check if column width has changed */
+	bool has_changed = column_width_changed(column, column_width);
 
-	number_formatstring = create_output_str(column->state.last_width,
-						numDigitsDecimalPart);
+	/* Create data column */
+	char buf[50];
+	char *formatstr = create_output_str(column->state.last_width, accuracy);
 
-	/* create columns */
-
-	/* output text for symbolic numbers */
 	if (copt.symbolic) {
 		switch ((int)value) {
 		case INT_MAX:
-			for (unsigned int a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " INT_MAX");
+			for (unsigned a = data_len;
+			     a < MAX(column_width, column->state.last_width); a++)
+				strcat(data, " ");
+			strcat(data, " INT_MAX");
 			break;
 		case USHRT_MAX:
-			for (unsigned int a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " USHRT_MAX");
+			for (unsigned a = data_len;
+			     a < MAX(column_width, column->state.last_width); a++)
+				strcat(data, " ");
+			strcat(data, " USHRT_MAX");
 			break;
 		case UINT_MAX:
-			for (unsigned int a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " UINT_MAX");
+			for (unsigned a = data_len;
+			     a < MAX(column_width, column->state.last_width); a++)
+				strcat(data, " ");
+			strcat(data, " UINT_MAX");
 			break;
 		default: /* number */
-			sprintf(tempBuffer, number_formatstring, value);
-			strcat(strDataRow, tempBuffer);
+			sprintf(buf, formatstr, value);
+			strcat(data, buf);
 		}
 	} else {
-		sprintf(tempBuffer, number_formatstring, value);
-		strcat(strDataRow, tempBuffer);
+		sprintf(buf, formatstr, value);
+		strcat(data, buf);
 	}
 
-	/* 1st header row */
-	for (unsigned int a = column->state.last_width;
+	/* Create 1st header row */
+	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.name); a--)
-		strcat(strHead1Row, " ");
-	strcat(strHead1Row, column->header.name);
+		strcat(header1, " ");
+	strcat(header1, column->header.name);
 
-	/* 2nd header row */
-	for (unsigned int a = column->state.last_width;
+	/* Create 2nd header row */
+	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.unit); a--)
-		strcat(strHead2Row, " ");
-	strcat(strHead2Row, column->header.unit);
+		strcat(header2, " ");
+	strcat(header2, column->header.unit);
 
 	return has_changed;
 }
 
-static bool create_column_str(char *strHead1Row, char *strHead2Row,
-			      char *strDataRow, int column_id, char* value)
+static bool create_column_str(char *header1, char *header2, char *data,
+			      enum column_id column_id, char* value)
 {
-
-	int lengthData = 0;
-	int lengthHead = 0;
-	unsigned int columnSize = 0;
+	/* Only for convenience */
 	struct column *column = &column_info[column_id];
 
 	if (!column->state.visible)
 		return false;
 
-	/* get max columnsize */
-	lengthData = strlen(value);
-	lengthHead = MAX(strlen(column->header.name),
-			 strlen(column->header.unit));
-	columnSize = MAX(lengthData, lengthHead) + 1;
+	/* Get max column width */
+	unsigned data_len = strlen(value);
+	unsigned header_len = MAX(strlen(column->header.name),
+				  strlen(column->header.unit));
+	unsigned column_width = MAX(data_len, header_len) + 1;
 
-	/* check if columnsize has changed */
-	bool has_changed = column_width_changed(column, columnSize);
+	/* Check if column width has changed */
+	bool has_changed = column_width_changed(column, column_width);
 
-	/* create columns */
-	for (unsigned int a = lengthData+1; a < columnSize; a++)
-		strcat(strDataRow, " ");
-	strcat(strDataRow, value);
+	/* Create data column */
+	for (unsigned a = data_len + 1; a < column_width; a++)
+		strcat(data, " ");
+	strcat(data, value);
 
-	/* 1st header row */
-	for (unsigned int a = column->state.last_width;
+	/* Create 1st header row */
+	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.name) + 1; a--)
-		strcat(strHead1Row, " ");
-	strcat(strHead1Row, column->header.name);
+		strcat(header1, " ");
+	strcat(header1, column->header.name);
 
-	/* 2nd header Row */
-	for (unsigned int a = column->state.last_width;
+	/* Create 2nd header Row */
+	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.unit) + 1; a--)
-		strcat(strHead2Row, " ");
-	strcat(strHead2Row, column->header.unit);
+		strcat(header2, " ");
+	strcat(header2, column->header.unit);
 
 	return has_changed;
 }
@@ -1573,9 +1562,9 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 
 	/* Blocks */
 	print_header = create_column(header1, header2, values, COL_BLOCK_REQU,
-				     (unsigned int)r->request_blocks_written, 0);
+				     (unsigned)r->request_blocks_written, 0);
 	print_header = create_column(header1, header2, values, COL_BLOCK_RESP,
-				     (unsigned int)r->response_blocks_written, 0);
+				     (unsigned)r->response_blocks_written, 0);
 
 	/* RTT */
 	double rtt_avg = 0.0;
@@ -1621,25 +1610,25 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 
 	/* TCP info struct */
 	print_header = create_column(header1, header2, values, COL_TCP_CWND,
-				     (unsigned int)r->tcp_info.tcpi_snd_cwnd, 0);
+				     (unsigned)r->tcp_info.tcpi_snd_cwnd, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_SSTH,
-				     (unsigned int)r->tcp_info.tcpi_snd_ssthresh, 0);
+				     (unsigned)r->tcp_info.tcpi_snd_ssthresh, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_UACK,
-				     (unsigned int)r->tcp_info.tcpi_unacked, 0);
+				     (unsigned)r->tcp_info.tcpi_unacked, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_SACK,
-				     (unsigned int)r->tcp_info.tcpi_sacked, 0);
+				     (unsigned)r->tcp_info.tcpi_sacked, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_LOST,
-				     (unsigned int)r->tcp_info.tcpi_lost, 0);
+				     (unsigned)r->tcp_info.tcpi_lost, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_RETR,
-				     (unsigned int)r->tcp_info.tcpi_retrans, 0);
+				     (unsigned)r->tcp_info.tcpi_retrans, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_TRET,
-				     (unsigned int)r->tcp_info.tcpi_retransmits, 0);
+				     (unsigned)r->tcp_info.tcpi_retransmits, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_FACK,
-				     (unsigned int)r->tcp_info.tcpi_fackets, 0);
+				     (unsigned)r->tcp_info.tcpi_fackets, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_REOR,
-				     (unsigned int)r->tcp_info.tcpi_reordering, 0);
+				     (unsigned)r->tcp_info.tcpi_reordering, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_BKOF,
-				     (unsigned int)r->tcp_info.tcpi_backoff, 0);
+				     (unsigned)r->tcp_info.tcpi_backoff, 0);
 	print_header = create_column(header1, header2, values, COL_TCP_RTT,
 				     (double)r->tcp_info.tcpi_rtt / 1e3, 1);
 	print_header = create_column(header1, header2, values, COL_TCP_RTTVAR,
@@ -1667,7 +1656,7 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 
 	/* SMSS & PMTU */
 	print_header = create_column(header1, header2, values, COL_SMSS,
-				     (unsigned int)r->tcp_info.tcpi_snd_mss, 0);
+				     (unsigned)r->tcp_info.tcpi_snd_mss, 0);
 	print_header = create_column(header1, header2, values, COL_PMTU,
 				     r->pmtu, 0);
 
