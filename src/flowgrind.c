@@ -738,7 +738,7 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 		     (copt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
 		     FLOWGRIND_VERSION);
 
-	/* prepare column visibility based on involved OSes */
+	/* Prepare column visibility based on involved OSes */
 	bool involved_os[] = {[0 ... NUM_OSes-1] = false};
 	for (unsigned j = 0; j < num_unique_servers; j++)
 		if (!strcmp(unique_servers[j].os_name, "Linux"))
@@ -760,7 +760,7 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 		HIDE_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_RTT,
 			     COL_TCP_RTTVAR, COL_TCP_RTO, COL_SMSS);
 
-	/* set unit for kernel TCP metrics to bytes */
+	/* Set unit for kernel TCP metrics to bytes */
 	if (copt.force_unit == BYTE_BASED || (copt.force_unit != SEGMENT_BASED &&
 	    strcmp(unique_servers[0].os_name, "Linux")))
 		SET_COLUMN_UNIT(" [B]", COL_TCP_CWND, COL_TCP_SSTH,
@@ -1688,8 +1688,8 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	free(fg_state);
 #endif /* DEBUG */
 
-	/* Print header again if either the column width has changed or 25
-	 * reports have be printed */
+	/* Print interval header again if either the column width has changed
+	 * or 25 reports have been printed since last time header was printed */
 	static int printed_reports = 0;
 	if (changed || (printed_reports % 25) == 0) {
 		print_output("%s\n", header1);
@@ -1741,7 +1741,7 @@ static char *guess_topology(unsigned mtu)
 }
 
 /**
- * Print final report (i.e summary line) for endpoint @p e of flow @p flow_id.
+ * Print final report (i.e. summary line) for endpoint @p e of flow @p flow_id.
  *
  * @param[in] flow_id flow a final report will be created for
  * @param[in] e flow endpoint (SOURCE or DESTINATION)
@@ -1751,7 +1751,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	/* To store the final report */
 	char *buf = NULL;
 
-	/* Only for convenience */
+	/* For convenience only */
 	struct flow_endpoint *endpoint = &cflow[flow_id].endpoint[e];
 	struct flow_settings *settings = &cflow[flow_id].settings[e];
 	struct report *report = cflow[flow_id].final_report[e];
@@ -1813,7 +1813,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 		delta_read = report_time - settings->duration[READ]
 					 - settings->delay[DESTINATION];
 
-	/* Calculate delta target vs real report time */
+	/* Calculate delta target vs. real report time */
 	double real_write = settings->duration[WRITE] + delta_write;
 	double real_read = settings->duration[READ] + delta_read;
 	if (settings->duration[WRITE])
@@ -1917,14 +1917,12 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 }
 
 /**
- * Create final report (i.e. summary line) for all configured flows.
+ * Print final report (i.e. summary line) for all configured flows.
  */
 static void create_final_reports(void)
 {
 	for (unsigned id = 0; id < copt.num_flows; id++) {
-		/* New line for each final flow report */
 		print_output("\n");
-
 		foreach(int *i, SOURCE, DESTINATION) {
 			print_final_report(id, *i);
 			free(cflow[id].final_report[*i]);
