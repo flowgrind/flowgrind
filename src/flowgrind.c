@@ -1358,14 +1358,6 @@ inline static double scale_thruput(double thruput)
         return thruput / 1e6 * (1<<3);
 }
 
-/* produces the string command for printf for the right number of digits and decimal part */
-static char *create_output_str(int digits, int decimalPart)
-{
-	static char outstr[30] = {0};
-
-	sprintf(outstr, "%%%d.%df", digits, decimalPart);
-	return outstr;
-}
 
 static bool update_column_width(struct column *column, unsigned column_size)
 {
@@ -1435,51 +1427,43 @@ static bool print_column(char **header1, char **header2, char **data,
 	/* Check if column width has changed */
 	bool has_changed = update_column_width(column, column_width);
 
-	/* Create data column */
-	char *formatstr = create_output_str(column->state.last_width, accuracy);
+	/* Create format specifiers of the right length */
+	char *fmt_num = NULL, *fmt_str = NULL;
+	if (asprintf(&fmt_num, "%%%zu.%df",
+		     column->state.last_width, accuracy) == -1 ||
+	    asprintf(&fmt_str, "%%%zus",
+		     column->state.last_width) == -1)
+		critx("could not allocate memory for interval report");
 
+	/* Create data column */
 	asprintf_append(data, "  ");
 	if (copt.symbolic) {
 		switch ((int)value) {
 		case INT_MAX:
-			for (unsigned a = data_len;
-			     a < MAX(column_width, column->state.last_width); a++)
-				asprintf_append(data, " ");
-			asprintf_append(data, "INT_MAX");
+			asprintf_append(data, fmt_str, "INT_MAX");
 			break;
 		case USHRT_MAX:
-			for (unsigned a = data_len;
-			     a < MAX(column_width, column->state.last_width); a++)
-				asprintf_append(data, " ");
-			asprintf_append(data, "USHRT_MAX");
+			asprintf_append(data, fmt_str, "USHRT_MAX");
 			break;
 		case UINT_MAX:
-			for (unsigned a = data_len;
-			     a < MAX(column_width, column->state.last_width); a++)
-				asprintf_append(data, " ");
-			asprintf_append(data, "UINT_MAX");
+			asprintf_append(data, fmt_str, "UINT_MAX");
 			break;
 		default: /* number */
-			asprintf_append(data, formatstr, value);
+			asprintf_append(data, fmt_num, value);
 		}
 	} else {
-		asprintf_append(data, formatstr, value);
+		asprintf_append(data, fmt_num, value);
 	}
 
 	/* Create 1st header row */
 	asprintf_append(header1, "  ");
-	for (unsigned a = column->state.last_width;
-	     a > strlen(column->header.name); a--)
-		asprintf_append(header1, " ");
-	asprintf_append(header1, "%s", column->header.name);
+	asprintf_append(header1, fmt_str, column->header.name);
 
 	/* Create 2nd header row */
 	asprintf_append(header2, "  ");
-	for (unsigned a = column->state.last_width;
-	     a > strlen(column->header.unit); a--)
-		asprintf_append(header2, " ");
-	asprintf_append(header2, "%s", column->header.unit);
+	asprintf_append(header2, fmt_str, column->header.unit);
 
+	free_all(fmt_num, fmt_str);
 	return has_changed;
 }
 
@@ -1501,26 +1485,24 @@ static bool print_column_str(char **header1, char **header2, char **data,
 	/* Check if column width has changed */
 	bool has_changed = update_column_width(column, column_width);
 
+	/* Create format specifiers of the right length */
+	char *fmt_str = NULL;
+	if (asprintf(&fmt_str, "%%%zus", column->state.last_width) == -1)
+		critx("could not allocate memory for interval report");
+
 	/* Create data column */
 	asprintf_append(data, "  ");
-	for (unsigned a = data_len; a < column_width; a++)
-		asprintf_append(data, " ");
-	asprintf_append(data, "%s", value);
+	asprintf_append(data, fmt_str, value);
 
 	/* Create 1st header row */
 	asprintf_append(header1, "  ");
-	for (unsigned a = column->state.last_width;
-	     a > strlen(column->header.name); a--)
-		asprintf_append(header1, " ");
-	asprintf_append(header1, "%s", column->header.name);
+	asprintf_append(header1, fmt_str, column->header.name);
 
 	/* Create 2nd header Row */
 	asprintf_append(header2, "  ");
-	for (unsigned a = column->state.last_width;
-	     a > strlen(column->header.unit); a--)
-		asprintf_append(header2, " ");
-	asprintf_append(header2, "%s", column->header.unit);
+	asprintf_append(header2, fmt_str, column->header.unit);
 
+	free(fmt_str);
 	return has_changed;
 }
 
