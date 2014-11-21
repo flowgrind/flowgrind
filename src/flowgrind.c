@@ -130,71 +130,71 @@ static int active_flows = 0;
 static struct column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
 	 .header.unit = "#   ", .state.visible = true},
-	{.type = COL_BEGIN, .header.name = " begin",
-	 .header.unit = " [s]", .state.visible = true},
-	{.type = COL_END, .header.name = " end",
-	 .header.unit = " [s]", .state.visible = true},
-	{.type = COL_THROUGH, .header.name = " through",
-	 .header.unit = " [Mbit/s]", .state.visible = true},
-	{.type = COL_TRANSAC, .header.name = " transac",
-	 .header.unit = " [#/s]", .state.visible = true},
-	{.type = COL_BLOCK_REQU, .header.name = " requ",
-	 .header.unit = " [#]", .state.visible = false},
-	{.type = COL_BLOCK_RESP, .header.name = " resp",
-	 .header.unit = " [#]", .state.visible = false},
-	{.type = COL_RTT_MIN, .header.name = " min RTT",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_RTT_AVG, .header.name = " avg RTT",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_RTT_MAX, .header.name = " max RTT",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_IAT_MIN, .header.name = " min IAT",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_IAT_AVG, .header.name = " avg IAT",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_IAT_MAX, .header.name = " max IAT",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_DLY_MIN, .header.name = " min DLY",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_DLY_AVG, .header.name = " avg DLY",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_DLY_MAX, .header.name = " max DLY",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_TCP_CWND, .header.name = " cwnd",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_SSTH, .header.name = " ssth",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_UACK, .header.name = " uack",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_SACK, .header.name = " sack",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_LOST, .header.name = " lost",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_RETR, .header.name = " retr",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_TRET, .header.name = " tret",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_FACK, .header.name = " fack",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_REOR, .header.name = " reor",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_BKOF, .header.name = " bkof",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_RTT, .header.name = " rtt",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_TCP_RTTVAR, .header.name = " rttvar",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_TCP_RTO, .header.name = " rto",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_TCP_CA_STATE, .header.name = " ca state",
-	 .header.unit = " ", .state.visible = true},
-	{.type = COL_SMSS, .header.name = " smss",
+	{.type = COL_BEGIN, .header.name = "begin",
+	 .header.unit = "[s]", .state.visible = true},
+	{.type = COL_END, .header.name = "end",
+	 .header.unit = "[s]", .state.visible = true},
+	{.type = COL_THROUGH, .header.name = "through",
+	 .header.unit = "[Mbit/s]", .state.visible = true},
+	{.type = COL_TRANSAC, .header.name = "transac",
+	 .header.unit = "[#/s]", .state.visible = true},
+	{.type = COL_BLOCK_REQU, .header.name = "requ",
+	 .header.unit = "[#]", .state.visible = false},
+	{.type = COL_BLOCK_RESP, .header.name = "resp",
+	 .header.unit = "[#]", .state.visible = false},
+	{.type = COL_RTT_MIN, .header.name = "min RTT",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_RTT_AVG, .header.name = "avg RTT",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_RTT_MAX, .header.name = "max RTT",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_IAT_MIN, .header.name = "min IAT",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_IAT_AVG, .header.name = "avg IAT",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_IAT_MAX, .header.name = "max IAT",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_DLY_MIN, .header.name = "min DLY",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_DLY_AVG, .header.name = "avg DLY",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_DLY_MAX, .header.name = "max DLY",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_TCP_CWND, .header.name = "cwnd",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_SSTH, .header.name = "ssth",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_UACK, .header.name = "uack",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_SACK, .header.name = "sack",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_LOST, .header.name = "lost",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_RETR, .header.name = "retr",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_TRET, .header.name = "tret",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_FACK, .header.name = "fack",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_REOR, .header.name = "reor",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_BKOF, .header.name = "bkof",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_RTT, .header.name = "rtt",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_TCP_RTTVAR, .header.name = "rttvar",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_TCP_RTO, .header.name = "rto",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_TCP_CA_STATE, .header.name = "ca state",
+	 .header.unit = "", .state.visible = true},
+	{.type = COL_SMSS, .header.name = "smss",
 	 .header.unit = "[B]", .state.visible = true},
-	{.type = COL_PMTU, .header.name = " pmtu",
+	{.type = COL_PMTU, .header.name = "pmtu",
 	 .header.unit = "[B]", .state.visible = true},
 #ifdef DEBUG
-	{.type = COL_STATUS, .header.name = " status",
-	 .header.unit = " ", .state.visible = false}
+	{.type = COL_STATUS, .header.name = "status",
+	 .header.unit = "", .state.visible = false}
 #endif /* DEBUG */
 };
 #pragma GCC diagnostic pop
@@ -1387,10 +1387,16 @@ static bool print_column(char **header1, char **header2, char **data,
 	if (!column->state.visible)
 		return false;
 
-	/* Determine length of data */
-	unsigned data_len;
+	/* Determine data length */
+	unsigned data_len = det_num_digits(value);
+
+	/* Decimal place and one addtional space for decimal point */
+	if (accuracy)
+		data_len += accuracy + 1;
+
+	/* Print symbolic values instead of numbers */
 	if (copt.symbolic) {
-		switch ((unsigned)value) {
+		switch ((int)value) {
 		case INT_MAX:
 			data_len = strlen("INT_MAX");
 			break;
@@ -1400,19 +1406,8 @@ static bool print_column(char **header1, char **header2, char **data,
 		case UINT_MAX:
 			data_len = strlen("UINT_MAX");
 			break;
-		default:
-			data_len = det_num_digits(value) + accuracy + 1;
 		}
-	} else {
-		data_len = det_num_digits(value) + accuracy + 1;
 	}
-
-	/* Leading space */
-	data_len++;
-
-	/* Decimal point if necessary */
-	if (accuracy)
-		data_len++;
 
 	/* Get max column width */
 	unsigned header_len = MAX(strlen(column->header.name),
@@ -1425,25 +1420,26 @@ static bool print_column(char **header1, char **header2, char **data,
 	/* Create data column */
 	char *formatstr = create_output_str(column->state.last_width, accuracy);
 
+	asprintf_append(data, "  ");
 	if (copt.symbolic) {
 		switch ((int)value) {
 		case INT_MAX:
 			for (unsigned a = data_len;
 			     a < MAX(column_width, column->state.last_width); a++)
 				asprintf_append(data, " ");
-			asprintf_append(data, " INT_MAX");
+			asprintf_append(data, "INT_MAX");
 			break;
 		case USHRT_MAX:
 			for (unsigned a = data_len;
 			     a < MAX(column_width, column->state.last_width); a++)
 				asprintf_append(data, " ");
-			asprintf_append(data, " USHRT_MAX");
+			asprintf_append(data, "USHRT_MAX");
 			break;
 		case UINT_MAX:
 			for (unsigned a = data_len;
 			     a < MAX(column_width, column->state.last_width); a++)
 				asprintf_append(data, " ");
-			asprintf_append(data, " UINT_MAX");
+			asprintf_append(data, "UINT_MAX");
 			break;
 		default: /* number */
 			asprintf_append(data, formatstr, value);
@@ -1453,12 +1449,14 @@ static bool print_column(char **header1, char **header2, char **data,
 	}
 
 	/* Create 1st header row */
+	asprintf_append(header1, "  ");
 	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.name); a--)
 		asprintf_append(header1, " ");
 	asprintf_append(header1, "%s", column->header.name);
 
 	/* Create 2nd header row */
+	asprintf_append(header2, "  ");
 	for (unsigned a = column->state.last_width;
 	     a > strlen(column->header.unit); a--)
 		asprintf_append(header2, " ");
@@ -1480,25 +1478,28 @@ static bool print_column_str(char **header1, char **header2, char **data,
 	unsigned data_len = strlen(value);
 	unsigned header_len = MAX(strlen(column->header.name),
 				  strlen(column->header.unit));
-	unsigned column_width = MAX(data_len, header_len) + 1;
+	unsigned column_width = MAX(data_len, header_len);
 
 	/* Check if column width has changed */
 	bool has_changed = update_column_width(column, column_width);
 
 	/* Create data column */
-	for (unsigned a = data_len + 1; a < column_width; a++)
+	asprintf_append(data, "  ");
+	for (unsigned a = data_len; a < column_width; a++)
 		asprintf_append(data, " ");
 	asprintf_append(data, "%s", value);
 
 	/* Create 1st header row */
+	asprintf_append(header1, "  ");
 	for (unsigned a = column->state.last_width;
-	     a > strlen(column->header.name) + 1; a--)
+	     a > strlen(column->header.name); a--)
 		asprintf_append(header1, " ");
 	asprintf_append(header1, "%s", column->header.name);
 
 	/* Create 2nd header Row */
+	asprintf_append(header2, "  ");
 	for (unsigned a = column->state.last_width;
-	     a > strlen(column->header.unit) + 1; a--)
+	     a > strlen(column->header.unit); a--)
 		asprintf_append(header2, " ");
 	asprintf_append(header2, "%s", column->header.unit);
 
