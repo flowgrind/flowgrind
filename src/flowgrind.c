@@ -1351,6 +1351,13 @@ static inline size_t det_num_digits(double value)
 		return floor(log10(abs((int)value))) + 1;
 }
 
+inline static double scale_thruput(double thruput)
+{
+        if (copt.mbyte)
+                return thruput / (1<<20);
+        return thruput / 1e6 * (1<<3);
+}
+
 /* produces the string command for printf for the right number of digits and decimal part */
 static char *create_output_str(int digits, int decimalPart)
 {
@@ -1515,13 +1522,6 @@ static bool print_column_str(char **header1, char **header2, char **data,
 	asprintf_append(header2, "%s", column->header.unit);
 
 	return has_changed;
-}
-
-inline static double scale_thruput(double thruput)
-{
-        if (copt.mbyte)
-                return thruput / (1<<20);
-        return thruput / 1e6 * (1<<3);
 }
 
 /* Output a single report (with header if width has changed */
