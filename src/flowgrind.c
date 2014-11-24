@@ -1349,7 +1349,7 @@ static char *create_output_str(int digits, int decimalPart)
 	return outstr;
 }
 
-static bool column_width_changed(struct column *column, unsigned column_size)
+static bool update_column_width(struct column *column, unsigned column_size)
 {
 	/* true if column size has changed */
 	bool has_changed = false;
@@ -1377,9 +1377,9 @@ static bool column_width_changed(struct column *column, unsigned column_size)
 	return has_changed;
 }
 
-static bool create_column(char **header1, char **header2, char **data,
-			  enum column_id column_id, double value,
-			  unsigned accuracy)
+static bool print_column(char **header1, char **header2, char **data,
+			 enum column_id column_id, double value,
+			 unsigned accuracy)
 {
 	/* Only for convenience */
 	struct column *column = &column_info[column_id];
@@ -1420,7 +1420,7 @@ static bool create_column(char **header1, char **header2, char **data,
 	unsigned column_width = MAX(data_len, header_len);
 
 	/* Check if column width has changed */
-	bool has_changed = column_width_changed(column, column_width);
+	bool has_changed = update_column_width(column, column_width);
 
 	/* Create data column */
 	char *formatstr = create_output_str(column->state.last_width, accuracy);
@@ -1467,8 +1467,8 @@ static bool create_column(char **header1, char **header2, char **data,
 	return has_changed;
 }
 
-static bool create_column_str(char **header1, char **header2, char **data,
-			      enum column_id column_id, char* value)
+static bool print_column_str(char **header1, char **header2, char **data,
+			     enum column_id column_id, char* value)
 {
 	/* Only for convenience */
 	struct column *column = &column_info[column_id];
@@ -1483,7 +1483,7 @@ static bool create_column_str(char **header1, char **header2, char **data,
 	unsigned column_width = MAX(data_len, header_len) + 1;
 
 	/* Check if column width has changed */
-	bool has_changed = column_width_changed(column, column_width);
+	bool has_changed = update_column_width(column, column_width);
 
 	/* Create data column */
 	for (unsigned a = data_len + 1; a < column_width; a++)
@@ -1516,9 +1516,8 @@ inline static double scale_thruput(double thruput)
 static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 				  struct report *r)
 {
-	/* Whether or not column header should printed */
-	bool print_header = false;
-
+	/* Whether or not column width has been changed */
+	bool changed = false;
 	/* 1st header row, 2nd header row, and the actual measured data */
 	char *header1 = NULL, *header2 = NULL, *data = NULL;
 
@@ -1533,30 +1532,29 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 					   &r->begin);
 	double diff_first_now = time_diff(&cflow[flow_id].start_timestamp[e],
 					  &r->end);
-
-	print_header = create_column(&header1, &header2, &data, COL_BEGIN,
-				     diff_first_last, 3);
-	print_header = create_column(&header1, &header2, &data, COL_END,
-				     diff_first_now, 3);
+	changed |= print_column(&header1, &header2, &data, COL_BEGIN,
+				diff_first_last, 3);
+	changed |= print_column(&header1, &header2, &data, COL_END,
+				diff_first_now, 3);
 
 	/* Throughput */
 	double thruput = (double)r->bytes_written /
 			 (diff_first_now - diff_first_last);
 	thruput = scale_thruput(thruput);
-	print_header = create_column(&header1, &header2, &data, COL_THROUGH,
-				     thruput, 6);
+	changed |= print_column(&header1, &header2, &data, COL_THROUGH,
+				thruput, 6);
 
 	/* Transactions */
 	double transac = (double)r->response_blocks_read /
 			 (diff_first_now - diff_first_last);
-	print_header = create_column(&header1, &header2, &data, COL_TRANSAC,
-				     transac, 2);
+	changed |= print_column(&header1, &header2, &data, COL_TRANSAC,
+				transac, 2);
 
 	/* Blocks */
-	print_header = create_column(&header1, &header2, &data, COL_BLOCK_REQU,
-				     (unsigned)r->request_blocks_written, 0);
-	print_header = create_column(&header1, &header2, &data, COL_BLOCK_RESP,
-				     (unsigned)r->response_blocks_written, 0);
+	changed |= print_column(&header1, &header2, &data, COL_BLOCK_REQU,
+				(unsigned)r->request_blocks_written, 0);
+	changed |= print_column(&header1, &header2, &data, COL_BLOCK_RESP,
+				(unsigned)r->response_blocks_written, 0);
 
 	/* RTT */
 	double rtt_avg = 0.0;
@@ -1564,13 +1562,12 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 		rtt_avg = r->rtt_sum / (double)(r->response_blocks_read);
 	else
 		r->rtt_min = r->rtt_max = rtt_avg = INFINITY;
-
-	print_header = create_column(&header1, &header2, &data, COL_RTT_MIN,
-				     r->rtt_min * 1e3, 3);
-	print_header = create_column(&header1, &header2, &data, COL_RTT_AVG,
-				     rtt_avg * 1e3, 3);
-	print_header = create_column(&header1, &header2, &data, COL_RTT_MAX,
-				     r->rtt_max * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_RTT_MIN,
+				r->rtt_min * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_RTT_AVG,
+				rtt_avg * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_RTT_MAX,
+				r->rtt_max * 1e3, 3);
 
 	/* IAT */
 	double iat_avg = 0.0;
@@ -1578,13 +1575,12 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 		iat_avg = r->iat_sum / (double)(r->request_blocks_read);
 	else
 		r->iat_min = r->iat_max = iat_avg = INFINITY;
-
-	print_header = create_column(&header1, &header2, &data, COL_IAT_MIN,
-				     r->rtt_min * 1e3, 3);
-	print_header = create_column(&header1, &header2, &data, COL_IAT_AVG,
-				     iat_avg * 1e3, 3);
-	print_header = create_column(&header1, &header2, &data, COL_IAT_MAX,
-				     r->iat_max * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_IAT_MIN,
+				r->rtt_min * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_IAT_AVG,
+				iat_avg * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_IAT_MAX,
+				r->iat_max * 1e3, 3);
 
 	/* Delay */
 	double delay_avg = 0.0;
@@ -1592,41 +1588,40 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 		delay_avg = r->delay_sum / (double)(r->request_blocks_read);
 	else
 		r->delay_min = r->delay_max = delay_avg = INFINITY;
-
-	print_header = create_column(&header1, &header2, &data, COL_DLY_MIN,
-				     r->delay_min * 1e3, 3);
-	print_header = create_column(&header1, &header2, &data, COL_DLY_AVG,
-				     delay_avg * 1e3, 3);
-	print_header = create_column(&header1, &header2, &data, COL_DLY_MAX,
-				     r->delay_max * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_DLY_MIN,
+				r->delay_min * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_DLY_AVG,
+				delay_avg * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_DLY_MAX,
+				r->delay_max * 1e3, 3);
 
 	/* TCP info struct */
-	print_header = create_column(&header1, &header2, &data, COL_TCP_CWND,
-				     (unsigned)r->tcp_info.tcpi_snd_cwnd, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_SSTH,
-				     (unsigned)r->tcp_info.tcpi_snd_ssthresh, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_UACK,
-				     (unsigned)r->tcp_info.tcpi_unacked, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_SACK,
-				     (unsigned)r->tcp_info.tcpi_sacked, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_LOST,
-				     (unsigned)r->tcp_info.tcpi_lost, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_RETR,
-				     (unsigned)r->tcp_info.tcpi_retrans, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_TRET,
-				     (unsigned)r->tcp_info.tcpi_retransmits, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_FACK,
-				     (unsigned)r->tcp_info.tcpi_fackets, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_REOR,
-				     (unsigned)r->tcp_info.tcpi_reordering, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_BKOF,
-				     (unsigned)r->tcp_info.tcpi_backoff, 0);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_RTT,
-				     (double)r->tcp_info.tcpi_rtt / 1e3, 1);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_RTTVAR,
-				     (double)r->tcp_info.tcpi_rttvar / 1e3, 1);
-	print_header = create_column(&header1, &header2, &data, COL_TCP_RTO,
-				     (double)r->tcp_info.tcpi_rto / 1e3, 1);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_CWND,
+				(unsigned)r->tcp_info.tcpi_snd_cwnd, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_SSTH,
+				(unsigned)r->tcp_info.tcpi_snd_ssthresh, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_UACK,
+				(unsigned)r->tcp_info.tcpi_unacked, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_SACK,
+				(unsigned)r->tcp_info.tcpi_sacked, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_LOST,
+				(unsigned)r->tcp_info.tcpi_lost, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RETR,
+				(unsigned)r->tcp_info.tcpi_retrans, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_TRET,
+				(unsigned)r->tcp_info.tcpi_retransmits, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_FACK,
+				(unsigned)r->tcp_info.tcpi_fackets, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_REOR,
+				(unsigned)r->tcp_info.tcpi_reordering, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_BKOF,
+				(unsigned)r->tcp_info.tcpi_backoff, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RTT,
+				(double)r->tcp_info.tcpi_rtt / 1e3, 1);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RTTVAR,
+				(double)r->tcp_info.tcpi_rttvar / 1e3, 1);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RTO,
+				(double)r->tcp_info.tcpi_rto / 1e3, 1);
 
 	/* TCP CA state */
 	char *ca_state = NULL;
@@ -1643,14 +1638,14 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	else
 		ca_state = "unknown";
 
-	print_header = create_column_str(&header1, &header2, &data,
-					 COL_TCP_CA_STATE, ca_state);
+	changed |= print_column_str(&header1, &header2, &data,
+				    COL_TCP_CA_STATE, ca_state);
 
 	/* SMSS & PMTU */
-	print_header = create_column(&header1, &header2, &data, COL_SMSS,
-				     (unsigned)r->tcp_info.tcpi_snd_mss, 0);
-	print_header = create_column(&header1, &header2, &data, COL_PMTU,
-				     r->pmtu, 0);
+	changed |= print_column(&header1, &header2, &data, COL_SMSS,
+				(unsigned)r->tcp_info.tcpi_snd_mss, 0);
+	changed |= print_column(&header1, &header2, &data, COL_PMTU,
+				r->pmtu, 0);
 
 /* Internal flowgrind state */
 #ifdef DEBUG
@@ -1676,8 +1671,8 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	if (rc == -1)
 		critx("could not allocate memory for flowgrind status string");
 
-	print_header = create_column_str(&header1, &header2, &data, COL_STATUS,
-					 fg_state);
+	changed |= print_column_str(&header1, &header2, &data, COL_STATUS,
+				    fg_state);
 	free(fg_state);
 #endif /* DEBUG */
 
@@ -1689,7 +1684,7 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	/* Print header again if either the column width has changed or 25
 	 * reports have be printed */
 	static int printed_reports = 0;
-	if (print_header || (printed_reports % 25) == 0) {
+	if (changed || (printed_reports % 25) == 0) {
 		log_output(header1);
 		log_output(header2);
 	}
