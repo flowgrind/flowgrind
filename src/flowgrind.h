@@ -39,6 +39,15 @@
 
 #include "common.h"
 
+/** Number of whitespaces between to two interval report columns. */
+#define COL_SPACES 2
+
+/** How often an interval report column can be too large before get shrinked. */
+#define MAX_COLUM_TOO_LARGE 5
+
+/** Number of emited reports before interval header is printed again. */
+#define MAX_REPORTS_IN_ROW 25
+
 /** Transport protocols. */
 enum protocol_t {
 	/** Transmission Control Protocol. */

@@ -1370,7 +1370,7 @@ static bool update_column_width(struct column *column, unsigned column_size)
 		column->state.oversized = 0;
 	} else if (column->state.last_width > 1 + column_size) {
 		/* column too big */
-		if (column->state.oversized >= copt.num_flows * 5) {
+		if (column->state.oversized >= MAX_COLUM_TOO_LARGE) {
 			/* column too big for quite a while */
 			has_changed = true;
 			column->state.last_width = column_size;
@@ -1404,21 +1404,15 @@ static bool print_column_str(char **header1, char **header2, char **data,
 	/* Check if column width has changed */
 	bool has_changed = update_column_width(column, column_width);
 
-	/* Create format specifiers of the right length */
+	/* Create format specifiers of right length */
 	char *fmt_str = NULL;
-	if (asprintf(&fmt_str, "%%%zus", column->state.last_width) == -1)
+	if (asprintf(&fmt_str, "%%%zus",
+		     column->state.last_width + COL_SPACES) == -1)
 		critx("could not allocate memory for interval report");
 
-	/* Create data column */
-	asprintf_append(data, "  ");
+	/* Print data, 1st and 2nd header row */
 	asprintf_append(data, fmt_str, value);
-
-	/* Create 1st header row */
-	asprintf_append(header1, "  ");
 	asprintf_append(header1, fmt_str, column->header.name);
-
-	/* Create 2nd header Row */
-	asprintf_append(header2, "  ");
 	asprintf_append(header2, fmt_str, column->header.unit);
 
 	free(fmt_str);
@@ -1465,16 +1459,15 @@ static bool print_column(char **header1, char **header2, char **data,
 	/* Check if column width has changed */
 	bool has_changed = update_column_width(column, column_width);
 
-	/* Create format specifiers of the right length */
+	/* Create format specifiers of right length */
 	char *fmt_num = NULL, *fmt_str = NULL;
 	if (asprintf(&fmt_num, "%%%zu.%df",
-		     column->state.last_width, accuracy) == -1 ||
+		     column->state.last_width + COL_SPACES, accuracy) == -1 ||
 	    asprintf(&fmt_str, "%%%zus",
-		     column->state.last_width) == -1)
+		     column->state.last_width + COL_SPACES) == -1)
 		critx("could not allocate memory for interval report");
 
 	/* Create data column */
-	asprintf_append(data, "  ");
 	if (copt.symbolic) {
 		switch ((int)value) {
 		case INT_MAX:
@@ -1493,12 +1486,8 @@ static bool print_column(char **header1, char **header2, char **data,
 		asprintf_append(data, fmt_num, value);
 	}
 
-	/* Create 1st header row */
-	asprintf_append(header1, "  ");
+	/* Print 1st and 2nd header row */
 	asprintf_append(header1, fmt_str, column->header.name);
-
-	/* Create 2nd header row */
-	asprintf_append(header2, "  ");
 	asprintf_append(header2, fmt_str, column->header.unit);
 
 	free_all(fmt_num, fmt_str);
@@ -1678,10 +1667,11 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 	free(fg_state);
 #endif /* DEBUG */
 
-	/* Print interval header again if either the column width has changed
-	 * or 25 reports have been printed since last time header was printed */
+	/* Print interval header again if either the column width has been
+	 * changed or MAX_REPORTS_BEFORE_HEADER reports have been emited
+	 * since last time header was printed */
 	static unsigned short printed_reports = 0;
-	if (changed || (printed_reports % 25) == 0) {
+	if (changed || (printed_reports % MAX_REPORTS_IN_ROW) == 0) {
 		print_output("%s\n", header1);
 		print_output("%s\n", header2);
 	}
