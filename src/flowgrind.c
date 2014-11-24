@@ -1546,9 +1546,9 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 
 	/* Blocks */
 	changed |= print_column(&header1, &header2, &data, COL_BLOCK_REQU,
-				(unsigned)r->request_blocks_written, 0);
+				r->request_blocks_written, 0);
 	changed |= print_column(&header1, &header2, &data, COL_BLOCK_RESP,
-				(unsigned)r->response_blocks_written, 0);
+				r->response_blocks_written, 0);
 
 	/* RTT */
 	double rtt_avg = 0.0;
@@ -1591,31 +1591,31 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 
 	/* TCP info struct */
 	changed |= print_column(&header1, &header2, &data, COL_TCP_CWND,
-				(unsigned)r->tcp_info.tcpi_snd_cwnd, 0);
+				r->tcp_info.tcpi_snd_cwnd, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_SSTH,
-				(unsigned)r->tcp_info.tcpi_snd_ssthresh, 0);
+				r->tcp_info.tcpi_snd_ssthresh, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_UACK,
-				(unsigned)r->tcp_info.tcpi_unacked, 0);
+				r->tcp_info.tcpi_unacked, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_SACK,
-				(unsigned)r->tcp_info.tcpi_sacked, 0);
+				r->tcp_info.tcpi_sacked, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_LOST,
-				(unsigned)r->tcp_info.tcpi_lost, 0);
+				r->tcp_info.tcpi_lost, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_RETR,
-				(unsigned)r->tcp_info.tcpi_retrans, 0);
+				r->tcp_info.tcpi_retrans, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_TRET,
-				(unsigned)r->tcp_info.tcpi_retransmits, 0);
+				r->tcp_info.tcpi_retransmits, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_FACK,
-				(unsigned)r->tcp_info.tcpi_fackets, 0);
+				r->tcp_info.tcpi_fackets, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_REOR,
-				(unsigned)r->tcp_info.tcpi_reordering, 0);
+				r->tcp_info.tcpi_reordering, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_BKOF,
-				(unsigned)r->tcp_info.tcpi_backoff, 0);
+				r->tcp_info.tcpi_backoff, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_RTT,
-				(double)r->tcp_info.tcpi_rtt / 1e3, 1);
+				r->tcp_info.tcpi_rtt / 1e3, 1);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_RTTVAR,
-				(double)r->tcp_info.tcpi_rttvar / 1e3, 1);
+				r->tcp_info.tcpi_rttvar / 1e3, 1);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_RTO,
-				(double)r->tcp_info.tcpi_rto / 1e3, 1);
+				r->tcp_info.tcpi_rto / 1e3, 1);
 
 	/* TCP CA state */
 	char *ca_state = NULL;
@@ -1637,7 +1637,7 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 
 	/* SMSS & PMTU */
 	changed |= print_column(&header1, &header2, &data, COL_SMSS,
-				(unsigned)r->tcp_info.tcpi_snd_mss, 0);
+				r->tcp_info.tcpi_snd_mss, 0);
 	changed |= print_column(&header1, &header2, &data, COL_PMTU,
 				r->pmtu, 0);
 
