@@ -1386,6 +1386,45 @@ static bool update_column_width(struct column *column, unsigned column_size)
 	return has_changed;
 }
 
+static bool print_column_str(char **header1, char **header2, char **data,
+			     enum column_id column_id, char* value)
+{
+	/* Only for convenience */
+	struct column *column = &column_info[column_id];
+
+	if (!column->state.visible)
+		return false;
+
+	/* Get max column width */
+	unsigned data_len = strlen(value);
+	unsigned header_len = MAX(strlen(column->header.name),
+				  strlen(column->header.unit));
+	unsigned column_width = MAX(data_len, header_len);
+
+	/* Check if column width has changed */
+	bool has_changed = update_column_width(column, column_width);
+
+	/* Create format specifiers of the right length */
+	char *fmt_str = NULL;
+	if (asprintf(&fmt_str, "%%%zus", column->state.last_width) == -1)
+		critx("could not allocate memory for interval report");
+
+	/* Create data column */
+	asprintf_append(data, "  ");
+	asprintf_append(data, fmt_str, value);
+
+	/* Create 1st header row */
+	asprintf_append(header1, "  ");
+	asprintf_append(header1, fmt_str, column->header.name);
+
+	/* Create 2nd header Row */
+	asprintf_append(header2, "  ");
+	asprintf_append(header2, fmt_str, column->header.unit);
+
+	free(fmt_str);
+	return has_changed;
+}
+
 static bool print_column(char **header1, char **header2, char **data,
 			 enum column_id column_id, double value,
 			 unsigned accuracy)
@@ -1463,45 +1502,6 @@ static bool print_column(char **header1, char **header2, char **data,
 	asprintf_append(header2, fmt_str, column->header.unit);
 
 	free_all(fmt_num, fmt_str);
-	return has_changed;
-}
-
-static bool print_column_str(char **header1, char **header2, char **data,
-			     enum column_id column_id, char* value)
-{
-	/* Only for convenience */
-	struct column *column = &column_info[column_id];
-
-	if (!column->state.visible)
-		return false;
-
-	/* Get max column width */
-	unsigned data_len = strlen(value);
-	unsigned header_len = MAX(strlen(column->header.name),
-				  strlen(column->header.unit));
-	unsigned column_width = MAX(data_len, header_len);
-
-	/* Check if column width has changed */
-	bool has_changed = update_column_width(column, column_width);
-
-	/* Create format specifiers of the right length */
-	char *fmt_str = NULL;
-	if (asprintf(&fmt_str, "%%%zus", column->state.last_width) == -1)
-		critx("could not allocate memory for interval report");
-
-	/* Create data column */
-	asprintf_append(data, "  ");
-	asprintf_append(data, fmt_str, value);
-
-	/* Create 1st header row */
-	asprintf_append(header1, "  ");
-	asprintf_append(header1, fmt_str, column->header.name);
-
-	/* Create 2nd header Row */
-	asprintf_append(header2, "  ");
-	asprintf_append(header2, fmt_str, column->header.unit);
-
-	free(fmt_str);
 	return has_changed;
 }
 
