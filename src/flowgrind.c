@@ -106,7 +106,7 @@ static xmlrpc_env rpc_env;
 static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 
 /** Number of flowgrind dameons. */
-static unsigned num_unique_servers = 0;
+static unsigned short num_unique_servers = 0;
 
 /** Command line option parser. */
 static struct arg_parser parser;
@@ -121,7 +121,7 @@ static struct cflow cflow[MAX_FLOWS];
 static struct arg_parser parser;
 
 /** Number of currently active flows. */
-static int active_flows = 0;
+static unsigned short active_flows = 0;
 
 /* To cover a gcc bug (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36446) */
 #pragma GCC diagnostic push
@@ -640,7 +640,7 @@ static void check_version(xmlrpc_client *rpc_client)
 	xmlrpc_value * resultP = 0;
 	char mismatch = 0;
 
-	for (unsigned j = 0; j < num_unique_servers; j++) {
+	for (unsigned short j = 0; j < num_unique_servers; j++) {
 
 		if (sigint_caught)
 			return;
@@ -691,7 +691,7 @@ static void check_idle(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 
-	for (unsigned j = 0; j < num_unique_servers; j++) {
+	for (unsigned short j = 0; j < num_unique_servers; j++) {
 		if (sigint_caught)
 			return;
 
@@ -722,7 +722,7 @@ static void check_idle(xmlrpc_client *rpc_client)
 static void prepare_grinding(xmlrpc_client *rpc_client)
 {
 	/* prepare flows */
-	for (unsigned id = 0; id < copt.num_flows; id++) {
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		if (sigint_caught)
 			return;
 		prepare_flow(id, rpc_client);
@@ -740,7 +740,7 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 
 	/* Prepare column visibility based on involved OSes */
 	bool involved_os[] = {[0 ... NUM_OSes-1] = false};
-	for (unsigned j = 0; j < num_unique_servers; j++)
+	for (unsigned short j = 0; j < num_unique_servers; j++)
 		if (!strcmp(unique_servers[j].os_name, "Linux"))
 			involved_os[LINUX] = true;
 		else if (!strcmp(unique_servers[j].os_name, "FreeBSD"))
@@ -999,7 +999,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 	gettime(&lastreport_begin);
 	gettime(&now);
 
-	for (unsigned j = 0; j < num_unique_servers; j++) {
+	for (unsigned short j = 0; j < num_unique_servers; j++) {
 		if (sigint_caught)
 			return;
 
@@ -1036,7 +1036,7 @@ static void fetch_reports(xmlrpc_client *rpc_client)
 
 	xmlrpc_value * resultP = 0;
 
-	for (unsigned j = 0; j < num_unique_servers; j++) {
+	for (unsigned short j = 0; j < num_unique_servers; j++) {
 		int array_size, has_more;
 		xmlrpc_value *rv = 0;
 
@@ -1208,7 +1208,7 @@ static void report_flow(const struct daemon* daemon, struct report* report)
 {
 	const char* server_url = daemon->server_url;
 	int *i = NULL;
-	int id;
+	unsigned short id;
 	struct cflow *f = NULL;
 
 	/* Get matching flow for report */
@@ -1252,7 +1252,7 @@ static void close_flows(void)
 	xmlrpc_env env;
 	xmlrpc_client *client;
 
-	for (unsigned id = 0; id < copt.num_flows; id++) {
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "closing flow %u.", id);
 
 		if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
@@ -1284,7 +1284,6 @@ static void close_flows(void)
 
 			xmlrpc_env_clean(&env);
 		}
-
 
 		if (active_flows > 0)
 			active_flows--;
@@ -1672,7 +1671,7 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 
 	/* Print interval header again if either the column width has changed
 	 * or 25 reports have been printed since last time header was printed */
-	static int printed_reports = 0;
+	static unsigned short printed_reports = 0;
 	if (changed || (printed_reports % 25) == 0) {
 		print_output("%s\n", header1);
 		print_output("%s\n", header2);
@@ -1716,7 +1715,7 @@ static char *guess_topology(unsigned mtu)
 	};
 
 	size_t array_size = sizeof(mtu_hints) / sizeof(struct mtu_hint);
-	for (unsigned i = 0; i < array_size; i++)
+	for (unsigned short i = 0; i < array_size; i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
 	return "unknown";
@@ -1919,7 +1918,7 @@ static struct daemon * get_daemon_by_url(const char* server_url,
 					  unsigned short server_port)
 {
 	/* If we have already a daemon for this URL return a pointer to it */
-	for (unsigned i = 0; i < num_unique_servers; i++) {
+	for (unsigned short i = 0; i < num_unique_servers; i++) {
 		if (!strcmp(unique_servers[i].server_url, server_url))
 			return &unique_servers[i];
 	}
@@ -2727,7 +2726,7 @@ static void parse_cmdline(int argc, char *argv[])
 	}
 #endif /* 0 */
 
-	for (int id = 0; id < copt.num_flows; id++) {
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		cflow[id].settings[SOURCE].duration[READ] = cflow[id].settings[DESTINATION].duration[WRITE];
 		cflow[id].settings[DESTINATION].duration[READ] = cflow[id].settings[SOURCE].duration[WRITE];
 		cflow[id].settings[SOURCE].delay[READ] = cflow[id].settings[DESTINATION].delay[WRITE];
@@ -2752,7 +2751,7 @@ static void parse_cmdline(int argc, char *argv[])
  */
 static void sanity_check(void)
 {
-	for (int id = 0; id < copt.num_flows; id++) {
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_DEBUG, "sanity checking parameter set of flow %d", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
 		    cflow[id].late_connect &&
