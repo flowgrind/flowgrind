@@ -211,7 +211,7 @@ inline static void print_output(const char *fmt, ...)
 static void fetch_reports(xmlrpc_client *);
 static void report_flow(const struct daemon* daemon, struct report* report);
 static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
-		                  struct report *r);
+		                  struct report *report);
 
 /**
  * Print usage or error message and exit.
@@ -1507,7 +1507,7 @@ static bool print_column_str(char **header1, char **header2, char **data,
 
 /* Output a single report (with header if width has changed */
 static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
-				  struct report *r)
+				  struct report *report)
 {
 	/* Whether or not column width has been changed */
 	bool changed = false;
@@ -1522,123 +1522,132 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 
 	/* Calculate time */
 	double diff_first_last = time_diff(&cflow[flow_id].start_timestamp[e],
-					   &r->begin);
+					   &report->begin);
 	double diff_first_now = time_diff(&cflow[flow_id].start_timestamp[e],
-					  &r->end);
+					  &report->end);
 	changed |= print_column(&header1, &header2, &data, COL_BEGIN,
 				diff_first_last, 3);
 	changed |= print_column(&header1, &header2, &data, COL_END,
 				diff_first_now, 3);
 
 	/* Throughput */
-	double thruput = (double)r->bytes_written /
+	double thruput = (double)report->bytes_written /
 			 (diff_first_now - diff_first_last);
 	thruput = scale_thruput(thruput);
 	changed |= print_column(&header1, &header2, &data, COL_THROUGH,
 				thruput, 6);
 
 	/* Transactions */
-	double transac = (double)r->response_blocks_read /
+	double transac = (double)report->response_blocks_read /
 			 (diff_first_now - diff_first_last);
 	changed |= print_column(&header1, &header2, &data, COL_TRANSAC,
 				transac, 2);
 
 	/* Blocks */
 	changed |= print_column(&header1, &header2, &data, COL_BLOCK_REQU,
-				r->request_blocks_written, 0);
+				report->request_blocks_written, 0);
 	changed |= print_column(&header1, &header2, &data, COL_BLOCK_RESP,
-				r->response_blocks_written, 0);
+				report->response_blocks_written, 0);
 
 	/* RTT */
 	double rtt_avg = 0.0;
-	if (r->response_blocks_read && r->rtt_sum)
-		rtt_avg = r->rtt_sum / (double)(r->response_blocks_read);
+	if (report->response_blocks_read && report->rtt_sum)
+		rtt_avg = report->rtt_sum /
+			  (double)(report->response_blocks_read);
 	else
-		r->rtt_min = r->rtt_max = rtt_avg = INFINITY;
+		report->rtt_min = report->rtt_max = rtt_avg = INFINITY;
 	changed |= print_column(&header1, &header2, &data, COL_RTT_MIN,
-				r->rtt_min * 1e3, 3);
+				report->rtt_min * 1e3, 3);
 	changed |= print_column(&header1, &header2, &data, COL_RTT_AVG,
 				rtt_avg * 1e3, 3);
 	changed |= print_column(&header1, &header2, &data, COL_RTT_MAX,
-				r->rtt_max * 1e3, 3);
+				report->rtt_max * 1e3, 3);
 
 	/* IAT */
 	double iat_avg = 0.0;
-	if (r->request_blocks_read && r->iat_sum)
-		iat_avg = r->iat_sum / (double)(r->request_blocks_read);
+	if (report->request_blocks_read && report->iat_sum)
+		iat_avg = report->iat_sum /
+			  (double)(report->request_blocks_read);
 	else
-		r->iat_min = r->iat_max = iat_avg = INFINITY;
+		report->iat_min = report->iat_max = iat_avg = INFINITY;
 	changed |= print_column(&header1, &header2, &data, COL_IAT_MIN,
-				r->rtt_min * 1e3, 3);
+				report->rtt_min * 1e3, 3);
 	changed |= print_column(&header1, &header2, &data, COL_IAT_AVG,
 				iat_avg * 1e3, 3);
 	changed |= print_column(&header1, &header2, &data, COL_IAT_MAX,
-				r->iat_max * 1e3, 3);
+				report->iat_max * 1e3, 3);
 
 	/* Delay */
 	double delay_avg = 0.0;
-	if (r->request_blocks_read && r->delay_sum)
-		delay_avg = r->delay_sum / (double)(r->request_blocks_read);
+	if (report->request_blocks_read && report->delay_sum)
+		delay_avg = report->delay_sum /
+			    (double)(report->request_blocks_read);
 	else
-		r->delay_min = r->delay_max = delay_avg = INFINITY;
+		report->delay_min = report->delay_max = delay_avg = INFINITY;
 	changed |= print_column(&header1, &header2, &data, COL_DLY_MIN,
-				r->delay_min * 1e3, 3);
+				report->delay_min * 1e3, 3);
 	changed |= print_column(&header1, &header2, &data, COL_DLY_AVG,
 				delay_avg * 1e3, 3);
 	changed |= print_column(&header1, &header2, &data, COL_DLY_MAX,
-				r->delay_max * 1e3, 3);
+				report->delay_max * 1e3, 3);
 
 	/* TCP info struct */
 	changed |= print_column(&header1, &header2, &data, COL_TCP_CWND,
-				r->tcp_info.tcpi_snd_cwnd, 0);
+				report->tcp_info.tcpi_snd_cwnd, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_SSTH,
-				r->tcp_info.tcpi_snd_ssthresh, 0);
+				report->tcp_info.tcpi_snd_ssthresh, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_UACK,
-				r->tcp_info.tcpi_unacked, 0);
+				report->tcp_info.tcpi_unacked, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_SACK,
-				r->tcp_info.tcpi_sacked, 0);
+				report->tcp_info.tcpi_sacked, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_LOST,
-				r->tcp_info.tcpi_lost, 0);
+				report->tcp_info.tcpi_lost, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_RETR,
-				r->tcp_info.tcpi_retrans, 0);
+				report->tcp_info.tcpi_retrans, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_TRET,
-				r->tcp_info.tcpi_retransmits, 0);
+				report->tcp_info.tcpi_retransmits, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_FACK,
-				r->tcp_info.tcpi_fackets, 0);
+				report->tcp_info.tcpi_fackets, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_REOR,
-				r->tcp_info.tcpi_reordering, 0);
+				report->tcp_info.tcpi_reordering, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_BKOF,
-				r->tcp_info.tcpi_backoff, 0);
+				report->tcp_info.tcpi_backoff, 0);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_RTT,
-				r->tcp_info.tcpi_rtt / 1e3, 1);
+				report->tcp_info.tcpi_rtt / 1e3, 1);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_RTTVAR,
-				r->tcp_info.tcpi_rttvar / 1e3, 1);
+				report->tcp_info.tcpi_rttvar / 1e3, 1);
 	changed |= print_column(&header1, &header2, &data, COL_TCP_RTO,
-				r->tcp_info.tcpi_rto / 1e3, 1);
+				report->tcp_info.tcpi_rto / 1e3, 1);
 
 	/* TCP CA state */
 	char *ca_state = NULL;
-	if (r->tcp_info.tcpi_ca_state == TCP_CA_Open)
+	switch (report->tcp_info.tcpi_ca_state) {
+	case TCP_CA_Open:
 		ca_state = "open";
-	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Disorder)
+		break;
+	case TCP_CA_Disorder:
 		ca_state = "disorder";
-	else if (r->tcp_info.tcpi_ca_state == TCP_CA_CWR)
+		break;
+	case TCP_CA_CWR:
 		ca_state = "cwr";
-	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Recovery)
+		break;
+	case TCP_CA_Recovery:
 		ca_state = "recover";
-	else if (r->tcp_info.tcpi_ca_state == TCP_CA_Loss)
+		break;
+	case TCP_CA_Loss:
 		ca_state = "loss";
-	else
+		break;
+	default:
 		ca_state = "unknown";
-
+	}
 	changed |= print_column_str(&header1, &header2, &data,
 				    COL_TCP_CA_STATE, ca_state);
 
 	/* SMSS & PMTU */
 	changed |= print_column(&header1, &header2, &data, COL_SMSS,
-				r->tcp_info.tcpi_snd_mss, 0);
+				report->tcp_info.tcpi_snd_mss, 0);
 	changed |= print_column(&header1, &header2, &data, COL_PMTU,
-				r->pmtu, 0);
+				report->pmtu, 0);
 
 /* Internal flowgrind state */
 #ifdef DEBUG
@@ -1648,13 +1657,13 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 		rc = asprintf(&fg_state, "(stopped)");
 	} else {
 		/* Write status */
-		char ws = (char)(r->status & 0xFF);
+		char ws = (char)(report->status & 0xFF);
 		if  (ws != 'd' || ws != 'l' || ws != 'o' || ws != 'f' ||
 		     ws != 'c' || ws != 'n')
 			ws = 'u';
 
 		/* Read status */
-		char rs = (char)(r->status >> 8);
+		char rs = (char)(report->status >> 8);
 		if  (rs != 'd' || rs != 'l' || rs != 'o' || rs != 'f' ||
 		     rs != 'c' || rs != 'n')
 			rs = 'u';
@@ -1785,11 +1794,10 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 
 	/* Calculate time */
 	double report_time = time_diff(&report->begin, &report->end);
-	double delta_write = 0.0;
+	double delta_write = 0.0, delta_read = 0.0;
 	if (settings->duration[WRITE])
 		delta_write = report_time - settings->duration[WRITE]
 					  - settings->delay[SOURCE];
-	double delta_read = 0.0;
 	if (settings->duration[READ])
 		delta_read = report_time - settings->duration[READ]
 					 - settings->delay[DESTINATION];
@@ -1845,7 +1853,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	/* RTT */
 	if (report->response_blocks_read) {
 		double rtt_avg = report->rtt_sum /
-				(double)(report->response_blocks_read);
+				 (double)(report->response_blocks_read);
 		asprintf_append(&buf, ", RTT = %.3f/%.3f/%.3f [ms] (min/avg/max)",
 				report->rtt_min * 1e3, rtt_avg * 1e3,
 				report->rtt_max * 1e3);
