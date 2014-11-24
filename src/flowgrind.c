@@ -1747,7 +1747,13 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	struct report *report = cflow[flow_id].final_report[e];
 
 	/* Flow ID and endpoint (source or destination) */
-	asprintf_append(&buf, "# ID %3d %s: ", flow_id, e ? "D" : "S");
+	asprintf(&buf, "# ID %3d %s: ", flow_id, e ? "D" : "S");
+
+	/* No final report received. Skip final report line for this endpoint */
+	if (!report) {
+		asprintf_append(&buf, "Error: no final report received");
+		goto out;
+	}
 
 	/* Infos about the test connections */
 	asprintf_append(&buf, "%s", endpoint->test_address);
@@ -1760,12 +1766,6 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	/* Infos about the daemon OS */
 	asprintf_append(&buf, " (%s %s), ",
 			endpoint->daemon->os_name, endpoint->daemon->os_release);
-
-	/* No final report received. Skip endpoint this final report line */
-	if (!cflow[flow_id].final_report[e]) {
-		asprintf_append(&buf, "Error: no final report received");
-		return;
-	}
 
 	/* Random seed */
 	asprintf_append(&buf, "random seed: %u, ", cflow[flow_id].random_seed);
@@ -1901,6 +1901,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	if (cflow[flow_id].shutdown)
 		asprintf_append(&buf, ", calling shutdown");
 
+out:
 	print_output("%s\n", buf);
 	free(buf);
 }
