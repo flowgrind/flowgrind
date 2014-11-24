@@ -208,10 +208,7 @@ static void usage_trafgenopt(void)
 	__attribute__((noreturn));
 inline static void print_output(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
-static void prepare_flow(int id, xmlrpc_client *rpc_client);
 static void fetch_reports(xmlrpc_client *);
-static void set_column_visibility(bool visibility, unsigned nargs, ...);
-static void set_column_unit(const char *unit, unsigned nargs, ...);
 static void report_flow(const struct daemon* daemon, struct report* report);
 static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 		                  struct report *r);
@@ -717,6 +714,48 @@ static void check_idle(xmlrpc_client *rpc_client)
 			xmlrpc_DECREF(resultP);
 		}
 	}
+}
+
+/**
+ * To show/hide intermediated interval report columns.
+ *
+ * @param[in] visibility show/hide column
+ * @param[in] nargs length of variable argument list
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
+static void set_column_visibility(bool visibility, unsigned nargs, ...)
+{
+        va_list ap;
+        enum column_id col_id;
+
+        va_start(ap, nargs);
+        while (nargs--) {
+                col_id = va_arg(ap, enum column_id);
+                column_info[col_id].state.visible = visibility;
+        }
+        va_end(ap);
+}
+
+/**
+ * To set the unit the in header of intermediated interval report columns.
+ *
+ * @param[in] unit unit of column header as string
+ * @param[in] nargs length of variable argument list
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
+static void set_column_unit(const char *unit, unsigned nargs, ...)
+{
+        va_list ap;
+        enum column_id col_id;
+
+        va_start(ap, nargs);
+        while (nargs--) {
+                col_id = va_arg(ap, enum column_id);
+                column_info[col_id].header.unit = unit;
+        }
+        va_end(ap);
 }
 
 static void print_headline(void)
@@ -1297,54 +1336,12 @@ static void close_all_flows(void)
 }
 
 /**
- * To show/hide intermediated interval report columns.
- *
- * @param[in] visibility show/hide column
- * @param[in] nargs length of variable argument list
- * @param[in] ... column IDs
- * @see enum column_id
- */
-static void set_column_visibility(bool visibility, unsigned nargs, ...)
-{
-        va_list ap;
-        enum column_id col_id;
-
-        va_start(ap, nargs);
-        while (nargs--) {
-                col_id = va_arg(ap, enum column_id);
-                column_info[col_id].state.visible = visibility;
-        }
-        va_end(ap);
-}
-
-/**
- * To set the unit the in header of intermediated interval report columns.
- *
- * @param[in] unit unit of column header as string
- * @param[in] nargs length of variable argument list
- * @param[in] ... column IDs
- * @see enum column_id
- */
-static void set_column_unit(const char *unit, unsigned nargs, ...)
-{
-        va_list ap;
-        enum column_id col_id;
-
-        va_start(ap, nargs);
-        while (nargs--) {
-                col_id = va_arg(ap, enum column_id);
-                column_info[col_id].header.unit = unit;
-        }
-        va_end(ap);
-}
-
-/**
  * Determines the length of the integer part of a decimal number.
  *
  * @param[in] value decimal number
  * @return length of integer part
  */
-static inline size_t det_num_digits(double value)
+inline static size_t det_num_digits(double value)
 {
 	/* Avoiding divide-by-zero */
 	if (unlikely((int)value == 0))
