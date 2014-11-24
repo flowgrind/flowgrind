@@ -1747,7 +1747,8 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	struct report *report = cflow[flow_id].final_report[e];
 
 	/* Flow ID and endpoint (source or destination) */
-	asprintf(&buf, "# ID %3d %s: ", flow_id, e ? "D" : "S");
+	if (asprintf(&buf, "# ID %3d %s: ", flow_id, e ? "D" : "S") == -1)
+		critx("could not allocate memory for final report");;
 
 	/* No final report received. Skip final report line for this endpoint */
 	if (!report) {
