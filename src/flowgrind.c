@@ -719,15 +719,8 @@ static void check_idle(xmlrpc_client *rpc_client)
 	}
 }
 
-static void prepare_grinding(xmlrpc_client *rpc_client)
+static void print_headline(void)
 {
-	/* prepare flows */
-	for (unsigned short id = 0; id < copt.num_flows; id++) {
-		if (sigint_caught)
-			return;
-		prepare_flow(id, rpc_client);
-	}
-
 	/* Print headline */
 	struct utsname me;
 	int rc = uname(&me);
@@ -986,8 +979,18 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
 }
 
+static void prepare_all_flows(xmlrpc_client *rpc_client)
+{
+	/* prepare flows */
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
+		if (sigint_caught)
+			return;
+		prepare_flow(id, rpc_client);
+	}
+}
+
 /* start flows */
-static void grind_flows(xmlrpc_client *rpc_client)
+static void start_all_flows(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 
@@ -1247,7 +1250,7 @@ exit_outer_loop:
 	print_interval_report(id, *i, report);
 }
 
-static void close_flows(void)
+static void close_all_flows(void)
 {
 	xmlrpc_env env;
 	xmlrpc_client *client;
@@ -1900,7 +1903,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 /**
  * Print final report (i.e. summary line) for all configured flows.
  */
-static void create_final_reports(void)
+static void print_all_final_reports(void)
 {
 	for (unsigned id = 0; id < copt.num_flows; id++) {
 		print_output("\n");
@@ -2827,20 +2830,24 @@ int main(int argc, char *argv[])
 	if (!sigint_caught)
 		check_idle(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "prepare flows");
+	DEBUG_MSG(LOG_WARNING, "prepare all flows");
 	if (!sigint_caught)
-		prepare_grinding(rpc_client);
+		prepare_all_flows(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "start flows");
+	DEBUG_MSG(LOG_WARNING, "print headline");
 	if (!sigint_caught)
-		grind_flows(rpc_client);
+		print_headline();
 
-	DEBUG_MSG(LOG_WARNING, "close flows");
-	close_flows();
+	DEBUG_MSG(LOG_WARNING, "start all flows");
+	if (!sigint_caught)
+		start_all_flows(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "report final");
+	DEBUG_MSG(LOG_WARNING, "close all flows");
+	close_all_flows();
+
+	DEBUG_MSG(LOG_WARNING, "print all final report");
 	fetch_reports(rpc_client);
-	create_final_reports();
+	print_all_final_reports();
 
 	close_logfile();
 
