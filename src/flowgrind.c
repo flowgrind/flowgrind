@@ -1423,6 +1423,21 @@ static bool print_column(char **header1, char **header2, char **data,
 			 enum column_id column_id, double value,
 			 unsigned accuracy)
 {
+	/* Print symbolic values instead of numbers */
+	if (copt.symbolic) {
+		switch ((int)value) {
+		case INT_MAX:
+			return print_column_str(header1, header2, data,
+						column_id, "INT_MAX");
+		case USHRT_MAX:
+			return print_column_str(header1, header2, data,
+						column_id, "USHRT_MAX");
+		case UINT_MAX:
+			return print_column_str(header1, header2, data,
+						column_id, "UINT_MAX");
+		}
+	}
+
 	/* Only for convenience */
 	struct column *column = &column_info[column_id];
 
@@ -1435,21 +1450,6 @@ static bool print_column(char **header1, char **header2, char **data,
 	/* Decimal place and one addtional space for decimal point */
 	if (accuracy)
 		data_len += accuracy + 1;
-
-	/* Print symbolic values instead of numbers */
-	if (copt.symbolic) {
-		switch ((int)value) {
-		case INT_MAX:
-			data_len = strlen("INT_MAX");
-			break;
-		case USHRT_MAX:
-			data_len = strlen("USHRT_MAX");
-			break;
-		case UINT_MAX:
-			data_len = strlen("UINT_MAX");
-			break;
-		}
-	}
 
 	/* Get max column width */
 	unsigned header_len = MAX(strlen(column->header.name),
@@ -1467,26 +1467,8 @@ static bool print_column(char **header1, char **header2, char **data,
 		     column->state.last_width + COL_SPACES) == -1)
 		critx("could not allocate memory for interval report");
 
-	/* Create data column */
-	if (copt.symbolic) {
-		switch ((int)value) {
-		case INT_MAX:
-			asprintf_append(data, fmt_str, "INT_MAX");
-			break;
-		case USHRT_MAX:
-			asprintf_append(data, fmt_str, "USHRT_MAX");
-			break;
-		case UINT_MAX:
-			asprintf_append(data, fmt_str, "UINT_MAX");
-			break;
-		default: /* number */
-			asprintf_append(data, fmt_num, value);
-		}
-	} else {
-		asprintf_append(data, fmt_num, value);
-	}
-
-	/* Print 1st and 2nd header row */
+	/* Print data, 1st and 2nd header row */
+	asprintf_append(data, fmt_num, value);
 	asprintf_append(header1, fmt_str, column->header.name);
 	asprintf_append(header2, fmt_str, column->header.unit);
 
