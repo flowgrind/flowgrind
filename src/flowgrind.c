@@ -758,6 +758,10 @@ static void set_column_unit(const char *unit, unsigned nargs, ...)
         va_end(ap);
 }
 
+/**
+ * Print headline with various informations before the actual measurement will
+ * be begin.
+ */
 static void print_headline(void)
 {
 	/* Print headline */
@@ -1350,6 +1354,13 @@ inline static size_t det_num_digits(double value)
 		return floor(log10(abs((int)value))) + 1;
 }
 
+/**
+ * Scale the given throughput @p thruput in either Mebibyte per seconds or in
+ * Megabits per seconds.
+ *
+ * @param[in] thruput throughput in byte per seconds
+ * @return scaled throughput in MiB/s or Mb/s
+ */
 inline static double scale_thruput(double thruput)
 {
         if (copt.mbyte)
@@ -1357,23 +1368,30 @@ inline static double scale_thruput(double thruput)
         return thruput / 1e6 * (1<<3);
 }
 
-
-static bool update_column_width(struct column *column, unsigned column_size)
+/**
+ * Determines if the current column width @p column_width is larger or smaller
+ * than the old one and updates the state of column @p column accordingly.
+ *
+ * @param[in,out] column column that state to be updated
+ * @param[in] column_width current column width
+ * @return true if column state has been updated, false otherwise
+ */
+static bool update_column_width(struct column *column, unsigned column_width)
 {
-	/* true if column size has changed */
+	/* True if column width has changed */
 	bool has_changed = false;
 
-	if (column->state.last_width < column_size) {
-		/* column too small */
+	if (column->state.last_width < column_width) {
+		/* Column too small */
 		has_changed = true;
-		column->state.last_width = column_size;
+		column->state.last_width = column_width;
 		column->state.oversized = 0;
-	} else if (column->state.last_width > 1 + column_size) {
-		/* column too big */
+	} else if (column->state.last_width > 1 + column_width) {
+		/* Column too big */
 		if (column->state.oversized >= MAX_COLUM_TOO_LARGE) {
-			/* column too big for quite a while */
+			/* Column too big for quite a while */
 			has_changed = true;
-			column->state.last_width = column_size;
+			column->state.last_width = column_width;
 			column->state.oversized = 0;
 		} else {
 			(column->state.oversized)++;
@@ -1386,6 +1404,20 @@ static bool update_column_width(struct column *column, unsigned column_size)
 	return has_changed;
 }
 
+/**
+ * Append measured data for interval report column @p column_id to given strings.
+ *
+ * For the intermediated interval report column @p column_id, append measured
+ * data @p value to the destination data string @p data, and the name and unit
+ * of intermediated interval column header to @p header1 and @p header2.
+ *
+ * @param[in,out] header1 1st header string (name) to append to
+ * @param[in,out] header2 2nd header string (unit) to append to
+ * @param[in,out] data data value string to append to
+ * @param[in] column_id ID of intermediated interval report column
+ * @param[in] value measured data string to be append
+ * @return true if column width has changed, false otherwise
+ */
 static bool print_column_str(char **header1, char **header2, char **data,
 			     enum column_id column_id, char* value)
 {
@@ -1419,6 +1451,21 @@ static bool print_column_str(char **header1, char **header2, char **data,
 	return has_changed;
 }
 
+/**
+ * Append measured data for interval report column @p column_id to given strings.
+ *
+ * For the intermediated interval report column @p column_id, append measured
+ * data @p value to the destination data string @p data, and the name and unit
+ * of intermediated interval column header to @p header1 and @p header2.
+ *
+ * @param[in,out] header1 1st header string (name) to append to
+ * @param[in,out] header2 2nd header string (unit) to append to
+ * @param[in,out] data data value string to append to
+ * @param[in] column_id ID of intermediated interval report column
+ * @param[in] value measured data value to be append
+ * @param[in] accuracy number of decimal places to be append
+ * @return true if column width has changed, false otherwise
+ */
 static bool print_column(char **header1, char **header2, char **data,
 			 enum column_id column_id, double value,
 			 unsigned accuracy)
@@ -1469,7 +1516,16 @@ static bool print_column(char **header1, char **header2, char **data,
 	return has_changed;
 }
 
-/* Output a single report (with header if width has changed */
+/**
+ * Print interval report @p report for endpoint @p e of flow @p flow_id.
+ *
+ * In addition, if the width of one intermediated interval report columns has
+ * been changed, the interval column header will be printed again.
+ *
+ * @param[in] flow_id flow an interval report will be created for
+ * @param[in] e flow endpoint (SOURCE or DESTINATION)
+ * @param[in] report interval report to be printed
+ */
 static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 				  struct report *report)
 {
@@ -1657,7 +1713,7 @@ static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 }
 
 /**
- * Maps common MTU sizes to network technologies.
+ * Maps common MTU sizes to network known technologies.
  *
  * @param[in] mtu MTU size
  * @return return network technology as string
