@@ -1406,8 +1406,8 @@ static bool print_column_str(char **header1, char **header2, char **data,
 
 	/* Create format specifiers of right length */
 	char *fmt_str = NULL;
-	if (asprintf(&fmt_str, "%%%zus",
-		     column->state.last_width + COL_SPACES) == -1)
+	const size_t width = column->state.last_width;
+	if (asprintf(&fmt_str, "%%%zus", width + GUARDBAND) == -1)
 		critx("could not allocate memory for interval report");
 
 	/* Print data, 1st and 2nd header row */
@@ -1444,14 +1444,8 @@ static bool print_column(char **header1, char **header2, char **data,
 	if (!column->state.visible)
 		return false;
 
-	/* Determine data length */
-	unsigned data_len = det_num_digits(value);
-
-	/* Decimal place and one addtional space for decimal point */
-	if (accuracy)
-		data_len += accuracy + 1;
-
 	/* Get max column width */
+	unsigned data_len = det_num_digits(value) + (accuracy ? accuracy + 1 : 0);
 	unsigned header_len = MAX(strlen(column->header.name),
 				  strlen(column->header.unit));
 	unsigned column_width = MAX(data_len, header_len);
@@ -1461,10 +1455,9 @@ static bool print_column(char **header1, char **header2, char **data,
 
 	/* Create format specifiers of right length */
 	char *fmt_num = NULL, *fmt_str = NULL;
-	if (asprintf(&fmt_num, "%%%zu.%df",
-		     column->state.last_width + COL_SPACES, accuracy) == -1 ||
-	    asprintf(&fmt_str, "%%%zus",
-		     column->state.last_width + COL_SPACES) == -1)
+	const size_t width = column->state.last_width;
+	if (asprintf(&fmt_num, "%%%zu.%df", width + GUARDBAND, accuracy) == -1 ||
+	    asprintf(&fmt_str, "%%%zus", width + GUARDBAND) == -1)
 		critx("could not allocate memory for interval report");
 
 	/* Print data, 1st and 2nd header row */

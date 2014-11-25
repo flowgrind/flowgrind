@@ -40,7 +40,7 @@
 #include "common.h"
 
 /** Number of whitespaces between to two interval report columns. */
-#define COL_SPACES 2
+#define GUARDBAND 2
 
 /** How often an interval report column can be too large before get shrinked. */
 #define MAX_COLUM_TOO_LARGE 5
