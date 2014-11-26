@@ -1849,7 +1849,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	thruput_write = scale_thruput(thruput_write);
 
 	if (copt.mbyte)
-		asprintf_append(&buf, "through = %.6f/%.6f [Mbyte/s] (out/in)",
+		asprintf_append(&buf, "through = %.6f/%.6f [MiB/s] (out/in)",
 				thruput_write, thruput_read);
 	else
 		asprintf_append(&buf, "through = " "%.6f/%.6f [Mbit/s] (out/in)",
@@ -2477,7 +2477,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	case 'm':
 		copt.mbyte = true;
-		column_info[COL_THROUGH].header.unit = " [MB/s]";
+		column_info[COL_THROUGH].header.unit = " [MiB/s]";
 		break;
 	case 'n':
 		if (sscanf(arg, "%hd", &copt.num_flows) != 1 ||
