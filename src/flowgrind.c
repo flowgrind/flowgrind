@@ -315,7 +315,7 @@ static void usage(short status)
 		"                 M = 2**20, G = 2**30, and b = bits/s (default), B = bytes/s\n"
 		"  -S x=#         set block (message) size, in bytes (same as -G s=q,C,#)\n"
 		"  -T x=#.#       set flow duration, in seconds (default: s=10,d=0)\n"
-		"  -U #           set application buffer size, in bytes (default: 8192)\n"
+		"  -U x=#         set application buffer size, in bytes (default: 8192)\n"
 		"                 truncates values if used with stochastic traffic generation\n"
 		"  -W x=#         set requested receiver buffer (advertised window), in bytes\n"
 		"  -Y x=#.#       set initial delay before the host starts to send, in seconds\n"
@@ -413,7 +413,7 @@ static void usage_trafgenopt(void)
 #else /* HAVE_LIBGSL */
 		"               advanced distributions are only available if compiled with libgsl\n"
 #endif /* HAVE_LIBGSL */
-		"  -U #         specify a cap for the calculated values for request and response\n"
+		"  -U x=#       specify a cap for the calculated values for request and response\n"
 		"               size (not needed for constant values or uniform distribution),\n"
 		"               values over this cap are recalculated\n\n"
 
