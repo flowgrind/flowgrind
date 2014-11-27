@@ -987,12 +987,14 @@ static int write_data(struct flow *flow)
 					 interpacket_gap);
 				if (time_is_after(&flow->last_block_written,
 						  &flow->next_write_block_timestamp)) {
+					char timestamp[30] = "";
+					ctimespec_r(&flow->next_write_block_timestamp,
+						    timestamp, sizeof(timestamp), true);
 					DEBUG_MSG(LOG_WARNING, "incipient "
 						  "congestion on flow %u new "
 						  "block scheduled for %s, "
 						  "%.6lfs before now.",
-						   flow->id,
-						   ctimespec(&flow->next_write_block_timestamp, true),
+						   flow->id, timestamp,
 						   time_diff(&flow->next_write_block_timestamp,
 							     &flow->last_block_written));
 					flow->congestion_counter++;
