@@ -47,10 +47,13 @@
  * process and thread PID.
  */
 #define DEBUG_MSG(LVL, MSG, ...) do {					     \
+	char *timestamp = NULL;						     \
+	debug_timestamp(&timestamp);					     \
 	if (debug_level >= LVL)						     \
 		fprintf(stderr, "%s %s:%d  [%d/%d] " MSG "\n",		     \
-			debug_timestamp(), __FUNCTION__, __LINE__, getpid(), \
+			timestamp, __FUNCTION__, __LINE__, getpid(),	     \
 			(unsigned)pthread_self()%USHRT_MAX, ##__VA_ARGS__);  \
+		free(timestamp);					     \
 } while (0)
 
 /** Global debug level for flowgrind controller and daemon. */
@@ -65,10 +68,14 @@ void increase_debuglevel(void);
 /**
  * Helper function for DEBUG_MSG macro.
  *
- * @return string with the current time in seconds and nanoseconds since the
- * Epoch together with the delta in time since the last and first function call.
+ * Write string with the current time in seconds and nanoseconds since the
+ * Epoch together with the delta in time since the last and first call the
+ * function.
+ *
+ * @param[in,out] resultp destination string to write to
+ * @return return 0 for success, or -1 for failure
  */
-const char *debug_timestamp(void);
+int debug_timestamp(char **resultp);
 
 #else /* DEBUG */
 
