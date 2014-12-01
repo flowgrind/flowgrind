@@ -253,8 +253,10 @@ static void* fg_pcap_work(void *arg)
 	if (dump_prefix)
 		asprintf_append(&dump_filename, "%s", dump_prefix);
 
-	/* timestamp */
-	asprintf_append(&dump_filename, "%s", ctimenow(false));
+	/* timestamp - we need to use the thread-safe version ctimenow_r() */
+	char timestamp[30] = "";
+	ctimenow_r(timestamp, sizeof(timestamp), false);
+	asprintf_append(&dump_filename, "%s", timestamp);
 
 	/* hostname */
 	char hostname[128] = "";

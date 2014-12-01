@@ -86,12 +86,15 @@ void logging_log (int priority, const char *fmt, ...)
 
 void logging_log_string (int priority, const char *s)
 {
+	char timestamp[30] = "";
+	ctimenow_r(timestamp, sizeof(timestamp), false);
+
 	switch (log_type) {
 	case LOGTYPE_SYSLOG:
 		syslog(priority, "%s", s);
 		break;
 	case LOGTYPE_STDERR:
-		fprintf(stderr, "%s %s\n", ctimenow(false), s);
+		fprintf(stderr, "%s %s\n", timestamp, s);
 		fflush(stderr);
 		break;
 	}

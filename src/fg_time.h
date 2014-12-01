@@ -42,7 +42,7 @@
 #endif /* NSEC_PER_SEC */
 
 /**
- * Returns the current wall-clock time as null-terminated string
+ * Returns the current wall-clock time as null-terminated string.
  *
  * It stores the string in a user-supplied buffer @p buf.
  *
@@ -57,8 +57,12 @@ const char *ctimenow_r(char *buf, size_t size, bool ns);
 /**
  * Returns the current wall-clock time as null-terminated string.
  *
+ * The function returns a pointer to static data and hence is not thread-safe.
+ * The thread-safe version is ctimenow_r().
+ *
  * @param[in] ns if returned time string should have nanosecond precision
  * @return string of the form '2013-12-09-12:00:48[.34369902]'
+ * @see ctimenow_r
  */
 const char *ctimenow(bool ns);
 
@@ -79,9 +83,13 @@ const char *ctimespec_r(const struct timespec *tp, char *buf, size_t size,
 /**
  * Converts timespec struct @p tp into a null-terminated string.
  *
+ * The function returns a pointer to static data and hence is not thread-safe.
+ * The thread-safe version is ctimespec_r().
+ *
  * @param[in] tp point in time
  * @param[in] ns if returned time string should have nanosecond precision
  * @return string of the form '2013-12-09-12:00:48[.34369902]'
+ * @see ctimespec_r
  */
 const char *ctimespec(const struct timespec *tp, bool ns);
 
@@ -119,7 +127,7 @@ bool time_is_after(const struct timespec *tp1, const struct timespec *tp2);
  * Normalizes timespec struct @p tp.
  *
  * Ensures that the equation 0 <= tp->tv_nsec < NSEC_PER_SEC holds, meaning
- * that the amount of nanoseconds is not negative less than one second
+ * that the amount of nanoseconds is not negative less than one second.
  *
  * @param[in,out] tp point in time
  * @return true if timespec struct was already normalized, otherwise false
