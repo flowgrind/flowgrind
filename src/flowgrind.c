@@ -106,7 +106,7 @@ static xmlrpc_env rpc_env;
 static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
 
 /** Number of flowgrind dameons. */
-static unsigned num_unique_servers = 0;
+static unsigned short num_unique_servers = 0;
 
 /** Command line option parser. */
 static struct arg_parser parser;
@@ -121,7 +121,7 @@ static struct cflow cflow[MAX_FLOWS];
 static struct arg_parser parser;
 
 /** Number of currently active flows. */
-static int active_flows = 0;
+static unsigned short active_flows = 0;
 
 /* To cover a gcc bug (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36446) */
 #pragma GCC diagnostic push
@@ -130,85 +130,88 @@ static int active_flows = 0;
 static struct column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
 	 .header.unit = "#   ", .state.visible = true},
-	{.type = COL_BEGIN, .header.name = " begin",
-	 .header.unit = " [s]", .state.visible = true},
-	{.type = COL_END, .header.name = " end",
-	 .header.unit = " [s]", .state.visible = true},
-	{.type = COL_THROUGH, .header.name = " through",
-	 .header.unit = " [Mbit/s]", .state.visible = true},
-	{.type = COL_TRANSAC, .header.name = " transac",
-	 .header.unit = " [#/s]", .state.visible = true},
-	{.type = COL_BLOCK_REQU, .header.name = " requ",
-	 .header.unit = " [#]", .state.visible = false},
-	{.type = COL_BLOCK_RESP, .header.name = " resp",
-	 .header.unit = " [#]", .state.visible = false},
-	{.type = COL_RTT_MIN, .header.name = " min RTT",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_RTT_AVG, .header.name = " avg RTT",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_RTT_MAX, .header.name = " max RTT",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_IAT_MIN, .header.name = " min IAT",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_IAT_AVG, .header.name = " avg IAT",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_IAT_MAX, .header.name = " max IAT",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_DLY_MIN, .header.name = " min DLY",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_DLY_AVG, .header.name = " avg DLY",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_DLY_MAX, .header.name = " max DLY",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_TCP_CWND, .header.name = " cwnd",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_SSTH, .header.name = " ssth",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_UACK, .header.name = " uack",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_SACK, .header.name = " sack",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_LOST, .header.name = " lost",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_RETR, .header.name = " retr",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_TRET, .header.name = " tret",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_FACK, .header.name = " fack",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_REOR, .header.name = " reor",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_BKOF, .header.name = " bkof",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_RTT, .header.name = " rtt",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_TCP_RTTVAR, .header.name = " rttvar",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_TCP_RTO, .header.name = " rto",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_TCP_CA_STATE, .header.name = " ca state",
-	 .header.unit = " ", .state.visible = true},
-	{.type = COL_SMSS, .header.name = " smss",
+	{.type = COL_BEGIN, .header.name = "begin",
+	 .header.unit = "[s]", .state.visible = true},
+	{.type = COL_END, .header.name = "end",
+	 .header.unit = "[s]", .state.visible = true},
+	{.type = COL_THROUGH, .header.name = "through",
+	 .header.unit = "[Mbit/s]", .state.visible = true},
+	{.type = COL_TRANSAC, .header.name = "transac",
+	 .header.unit = "[#/s]", .state.visible = true},
+	{.type = COL_BLOCK_REQU, .header.name = "requ",
+	 .header.unit = "[#]", .state.visible = false},
+	{.type = COL_BLOCK_RESP, .header.name = "resp",
+	 .header.unit = "[#]", .state.visible = false},
+	{.type = COL_RTT_MIN, .header.name = "min RTT",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_RTT_AVG, .header.name = "avg RTT",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_RTT_MAX, .header.name = "max RTT",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_IAT_MIN, .header.name = "min IAT",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_IAT_AVG, .header.name = "avg IAT",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_IAT_MAX, .header.name = "max IAT",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_DLY_MIN, .header.name = "min DLY",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_DLY_AVG, .header.name = "avg DLY",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_DLY_MAX, .header.name = "max DLY",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_TCP_CWND, .header.name = "cwnd",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_SSTH, .header.name = "ssth",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_UACK, .header.name = "uack",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_SACK, .header.name = "sack",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_LOST, .header.name = "lost",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_RETR, .header.name = "retr",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_TRET, .header.name = "tret",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_FACK, .header.name = "fack",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_REOR, .header.name = "reor",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_BKOF, .header.name = "bkof",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_RTT, .header.name = "rtt",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_TCP_RTTVAR, .header.name = "rttvar",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_TCP_RTO, .header.name = "rto",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_TCP_CA_STATE, .header.name = "ca state",
+	 .header.unit = "", .state.visible = true},
+	{.type = COL_SMSS, .header.name = "smss",
 	 .header.unit = "[B]", .state.visible = true},
-	{.type = COL_PMTU, .header.name = " pmtu",
+	{.type = COL_PMTU, .header.name = "pmtu",
 	 .header.unit = "[B]", .state.visible = true},
 #ifdef DEBUG
-	{.type = COL_STATUS, .header.name = " status",
-	 .header.unit = " ", .state.visible = false}
+	{.type = COL_STATUS, .header.name = "status",
+	 .header.unit = "", .state.visible = false}
 #endif /* DEBUG */
 };
 #pragma GCC diagnostic pop
 
 /* Forward declarations */
-static void usage(short status) __attribute__((noreturn));
-static void usage_sockopt(void) __attribute__((noreturn));
-static void usage_trafgenopt(void) __attribute__((noreturn));
-static void prepare_flow(int id, xmlrpc_client *rpc_client);
+static void usage(short status)
+	__attribute__((noreturn));
+static void usage_sockopt(void)
+	__attribute__((noreturn));
+static void usage_trafgenopt(void)
+	__attribute__((noreturn));
+inline static void print_output(const char *fmt, ...)
+	__attribute__((format(printf, 1, 2)));
 static void fetch_reports(xmlrpc_client *);
-static void set_column_visibility(bool visibility, unsigned nargs, ...);
-static void set_column_unit(const char *unit, unsigned nargs, ...);
 static void report_flow(const struct daemon* daemon, struct report* report);
-static void print_report(int id, int endpoint, struct report* report);
+static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
+		                  struct report *report);
 
 /**
  * Print usage or error message and exit.
@@ -571,16 +574,26 @@ static void close_logfile(void)
 	free(log_filename);
 }
 
-inline static void log_output(const char *msg)
+/**
+ * Print measurement output to logfile and / or to stdout.
+ *
+ * @param[in] fmt format string
+ * @param[in] ... parameters used to fill fmt
+ */
+inline static void print_output(const char *fmt, ...)
 {
+	va_list ap;
+
+	va_start(ap, fmt);
 	if (copt.log_to_stdout) {
-		printf("%s", msg);
+		vprintf(fmt, ap);
 		fflush(stdout);
 	}
 	if (copt.log_to_file) {
-		fprintf(log_stream, "%s", msg);
+		vfprintf(log_stream, fmt, ap);
 		fflush(log_stream);
 	}
+	va_end(ap);
 }
 
 inline static void die_if_fault_occurred(xmlrpc_env *env)
@@ -624,7 +637,7 @@ static void check_version(xmlrpc_client *rpc_client)
 	xmlrpc_value * resultP = 0;
 	char mismatch = 0;
 
-	for (unsigned j = 0; j < num_unique_servers; j++) {
+	for (unsigned short j = 0; j < num_unique_servers; j++) {
 
 		if (sigint_caught)
 			return;
@@ -675,7 +688,7 @@ static void check_idle(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 
-	for (unsigned j = 0; j < num_unique_servers; j++) {
+	for (unsigned short j = 0; j < num_unique_servers; j++) {
 		if (sigint_caught)
 			return;
 
@@ -703,32 +716,67 @@ static void check_idle(xmlrpc_client *rpc_client)
 	}
 }
 
-static void prepare_grinding(xmlrpc_client *rpc_client)
+/**
+ * To show/hide intermediated interval report columns.
+ *
+ * @param[in] visibility show/hide column
+ * @param[in] nargs length of variable argument list
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
+static void set_column_visibility(bool visibility, unsigned nargs, ...)
 {
-	/* prepare flows */
-	for (unsigned id = 0; id < copt.num_flows; id++) {
-		if (sigint_caught)
-			return;
-		prepare_flow(id, rpc_client);
-	}
+        va_list ap;
+        enum column_id col_id;
 
-	/* prepare headline */
-	char headline[200];
+        va_start(ap, nargs);
+        while (nargs--) {
+                col_id = va_arg(ap, enum column_id);
+                column_info[col_id].state.visible = visibility;
+        }
+        va_end(ap);
+}
+
+/**
+ * To set the unit the in header of intermediated interval report columns.
+ *
+ * @param[in] unit unit of column header as string
+ * @param[in] nargs length of variable argument list
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
+static void set_column_unit(const char *unit, unsigned nargs, ...)
+{
+        va_list ap;
+        enum column_id col_id;
+
+        va_start(ap, nargs);
+        while (nargs--) {
+                col_id = va_arg(ap, enum column_id);
+                column_info[col_id].header.unit = unit;
+        }
+        va_end(ap);
+}
+
+/**
+ * Print headline with various informations before the actual measurement will
+ * be begin.
+ */
+static void print_headline(void)
+{
+	/* Print headline */
 	struct utsname me;
 	int rc = uname(&me);
+	print_output("# Date: %s, controlling host = %s, number of flows = %d, "
+		     "reporting interval = %.2fs, [through] = %s (%s)\n",
+		     ctimenow(false), (rc == -1 ? "(unknown)" : me.nodename),
+		     copt.num_flows, copt.reporting_interval,
+		     (copt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
+		     FLOWGRIND_VERSION);
 
-	snprintf(headline, sizeof(headline),
-		 "# Date: %s, controlling host = %s, number of flows = %d, "
-		 "reporting interval = %.2fs, [through] = %s (%s)\n",
-		 ctimenow(false), (rc == -1 ? "(unknown)" : me.nodename),
-		 copt.num_flows, copt.reporting_interval,
-		 (copt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
-		 FLOWGRIND_VERSION);
-	log_output(headline);
-
-	/* prepare column visibility based on involved OSes */
+	/* Prepare column visibility based on involved OSes */
 	bool involved_os[] = {[0 ... NUM_OSes-1] = false};
-	for (unsigned j = 0; j < num_unique_servers; j++)
+	for (unsigned short j = 0; j < num_unique_servers; j++)
 		if (!strcmp(unique_servers[j].os_name, "Linux"))
 			involved_os[LINUX] = true;
 		else if (!strcmp(unique_servers[j].os_name, "FreeBSD"))
@@ -748,7 +796,7 @@ static void prepare_grinding(xmlrpc_client *rpc_client)
 		HIDE_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_RTT,
 			     COL_TCP_RTTVAR, COL_TCP_RTO, COL_SMSS);
 
-	/* set unit for kernel TCP metrics to bytes */
+	/* Set unit for kernel TCP metrics to bytes */
 	if (copt.force_unit == BYTE_BASED || (copt.force_unit != SEGMENT_BASED &&
 	    strcmp(unique_servers[0].os_name, "Linux")))
 		SET_COLUMN_UNIT(" [B]", COL_TCP_CWND, COL_TCP_SSTH,
@@ -974,8 +1022,18 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
 }
 
+static void prepare_all_flows(xmlrpc_client *rpc_client)
+{
+	/* prepare flows */
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
+		if (sigint_caught)
+			return;
+		prepare_flow(id, rpc_client);
+	}
+}
+
 /* start flows */
-static void grind_flows(xmlrpc_client *rpc_client)
+static void start_all_flows(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 
@@ -987,7 +1045,7 @@ static void grind_flows(xmlrpc_client *rpc_client)
 	gettime(&lastreport_begin);
 	gettime(&now);
 
-	for (unsigned j = 0; j < num_unique_servers; j++) {
+	for (unsigned short j = 0; j < num_unique_servers; j++) {
 		if (sigint_caught)
 			return;
 
@@ -1024,7 +1082,7 @@ static void fetch_reports(xmlrpc_client *rpc_client)
 
 	xmlrpc_value * resultP = 0;
 
-	for (unsigned j = 0; j < num_unique_servers; j++) {
+	for (unsigned short j = 0; j < num_unique_servers; j++) {
 		int array_size, has_more;
 		xmlrpc_value *rv = 0;
 
@@ -1196,7 +1254,7 @@ static void report_flow(const struct daemon* daemon, struct report* report)
 {
 	const char* server_url = daemon->server_url;
 	int *i = NULL;
-	int id;
+	unsigned short id;
 	struct cflow *f = NULL;
 
 	/* Get matching flow for report */
@@ -1232,15 +1290,15 @@ exit_outer_loop:
 		}
 		return;
 	}
-	print_report(id, *i, report);
+	print_interval_report(id, *i, report);
 }
 
-static void close_flows(void)
+static void close_all_flows(void)
 {
 	xmlrpc_env env;
 	xmlrpc_client *client;
 
-	for (unsigned id = 0; id < copt.num_flows; id++) {
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "closing flow %u.", id);
 
 		if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
@@ -1273,7 +1331,6 @@ static void close_flows(void)
 			xmlrpc_env_clean(&env);
 		}
 
-
 		if (active_flows > 0)
 			active_flows--;
 
@@ -1283,54 +1340,12 @@ static void close_flows(void)
 }
 
 /**
- * To show/hide intermediated interval report columns.
- *
- * @param[in] visibility show/hide column
- * @param[in] nargs length of variable argument list
- * @param[in] ... column IDs
- * @see enum column_id
- */
-static void set_column_visibility(bool visibility, unsigned nargs, ...)
-{
-        va_list ap;
-        enum column_id col_id;
-
-        va_start(ap, nargs);
-        while (nargs--) {
-                col_id = va_arg(ap, enum column_id);
-                column_info[col_id].state.visible = visibility;
-        }
-        va_end(ap);
-}
-
-/**
- * To set the unit the in header of intermediated interval report columns.
- *
- * @param[in] unit unit of column header as string
- * @param[in] nargs length of variable argument list
- * @param[in] ... column IDs
- * @see enum column_id
- */
-static void set_column_unit(const char *unit, unsigned nargs, ...)
-{
-        va_list ap;
-        enum column_id col_id;
-
-        va_start(ap, nargs);
-        while (nargs--) {
-                col_id = va_arg(ap, enum column_id);
-                column_info[col_id].header.unit = unit;
-        }
-        va_end(ap);
-}
-
-/**
  * Determines the length of the integer part of a decimal number.
  *
  * @param[in] value decimal number
  * @return length of integer part
  */
-static inline size_t det_num_digits(double value)
+inline static size_t det_num_digits(double value)
 {
 	/* Avoiding divide-by-zero */
 	if (unlikely((int)value == 0))
@@ -1339,325 +1354,13 @@ static inline size_t det_num_digits(double value)
 		return floor(log10(abs((int)value))) + 1;
 }
 
-/* produces the string command for printf for the right number of digits and decimal part */
-static char *create_output_str(int digits, int decimalPart)
-{
-	static char outstr[30] = {0};
-
-	sprintf(outstr, "%%%d.%df", digits, decimalPart);
-	return outstr;
-}
-
-static void create_column(char *strHead1Row, char *strHead2Row,
-			  char *strDataRow, int column_id, double value,
-			  int numDigitsDecimalPart, int *columnWidthChanged)
-{
-	unsigned int maxTooLongColumns = copt.num_flows * 5;
-	int lengthData = 0;
-	int lengthHead = 0;
-	unsigned int columnSize = 0;
-	char tempBuffer[50];
-	struct column *column = &column_info[column_id];
-	char* number_formatstring;
-
-	if (!column->state.visible)
-		return;
-
-	/* get max columnsize */
-	if (copt.symbolic) {
-		switch ((unsigned int)value) {
-		case INT_MAX:
-			lengthData = strlen("INT_MAX");
-			break;
-		case USHRT_MAX:
-			lengthData = strlen("USHRT_MAX");
-			break;
-		case UINT_MAX:
-			lengthData = strlen("UINT_MAX");
-			break;
-		default:
-			lengthData = det_num_digits(value) +
-				numDigitsDecimalPart + 1;
-		}
-	} else {
-		lengthData = det_num_digits(value) + numDigitsDecimalPart + 1;
-	}
-	/* leading space */
-	lengthData++;
-
-	/* decimal point if necessary */
-	if (numDigitsDecimalPart)
-		lengthData++;
-
-	lengthHead = MAX(strlen(column->header.name),
-			 strlen(column->header.unit));
-	columnSize = MAX(lengthData, lengthHead);
-
-	/* check if columnsize has changed */
-	if (column->state.last_width < columnSize) {
-		/* column too small */
-		*columnWidthChanged = 1;
-		column->state.last_width = columnSize;
-		column->state.oversized = 0;
-	} else if (column->state.last_width > 1 + columnSize) {
-		/* column too big */
-		if (column->state.oversized >= maxTooLongColumns) {
-			/* column too big for quite a while */
-			*columnWidthChanged = 1;
-			column->state.last_width = columnSize;
-			column->state.oversized = 0;
-		} else {
-			(column->state.oversized)++;
-		}
-	} else {
-		/* This size was needed, keep it */
-		column->state.oversized = 0;
-	}
-	number_formatstring = create_output_str(column->state.last_width,
-						numDigitsDecimalPart);
-
-	/* create columns */
-
-	/* output text for symbolic numbers */
-	if (copt.symbolic) {
-		switch ((int)value) {
-		case INT_MAX:
-			for (unsigned int a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " INT_MAX");
-			break;
-		case USHRT_MAX:
-			for (unsigned int a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " USHRT_MAX");
-			break;
-		case UINT_MAX:
-			for (unsigned int a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " UINT_MAX");
-			break;
-		default: /* number */
-			sprintf(tempBuffer, number_formatstring, value);
-			strcat(strDataRow, tempBuffer);
-		}
-	} else {
-		sprintf(tempBuffer, number_formatstring, value);
-		strcat(strDataRow, tempBuffer);
-	}
-	/* 1st header row */
-	for (unsigned int a = column->state.last_width;
-	     a > strlen(column->header.name); a--)
-		strcat(strHead1Row, " ");
-	strcat(strHead1Row, column->header.name);
-
-	/* 2nd header row */
-	for (unsigned int a = column->state.last_width;
-	     a > strlen(column->header.unit); a--)
-		strcat(strHead2Row, " ");
-	strcat(strHead2Row, column->header.unit);
-}
-
-static void create_column_str(char *strHead1Row, char *strHead2Row,
-			      char *strDataRow, int column_id,
-			      char* value, int *columnWidthChanged)
-{
-
-	unsigned int maxTooLongColumns = copt.num_flows * 5;
-	int lengthData = 0;
-	int lengthHead = 0;
-	unsigned int columnSize = 0;
-	struct column *column = &column_info[column_id];
-
-	if (!column->state.visible)
-		return;
-
-	/* get max columnsize */
-	lengthData = strlen(value);
-	lengthHead = MAX(strlen(column->header.name),
-			 strlen(column->header.unit));
-	columnSize = MAX(lengthData, lengthHead) + 1;
-
-	/* check if columnsize has changed */
-	if (column->state.last_width < columnSize) {
-		/* column too small */
-		*columnWidthChanged = 1;
-		column->state.last_width = columnSize;
-		column->state.oversized = 0;
-	} else if (column->state.last_width > 1 + columnSize) {
-		/* column too big */
-		if (column->state.oversized >= maxTooLongColumns) {
-			/* column too big for quite a while */
-			*columnWidthChanged = 1;
-			column->state.last_width = columnSize;
-			column->state.oversized = 0;
-		} else {
-			(column->state.oversized)++;
-		}
-	} else {
-		/* This size was needed, keep it */
-		column->state.oversized = 0;
-	}
-
-	/* create columns */
-	for (unsigned int a = lengthData+1; a < columnSize; a++)
-		strcat(strDataRow, " ");
-	strcat(strDataRow, value);
-
-	/* 1st header row */
-	for (unsigned int a = column->state.last_width;
-	     a > strlen(column->header.name) + 1; a--)
-		strcat(strHead1Row, " ");
-	strcat(strHead1Row, column->header.name);
-
-	/* 2nd header Row */
-	for (unsigned int a = column->state.last_width;
-	     a > strlen(column->header.unit) + 1; a--)
-		strcat(strHead2Row, " ");
-	strcat(strHead2Row, column->header.unit);
-}
-
-/* Output a single report (with header if width has changed */
-static char *create_output(char hash, int id, int type, double begin, double end,
-		   double throughput, double transac,
-		   unsigned int request_blocks, unsigned int response_blocks,
-		   double rttmin, double rttavg, double rttmax,
-		   double iatmin, double iatavg, double iatmax,
-		   double delaymin, double delayavg, double delaymax,
-		   unsigned int cwnd, unsigned int ssth, unsigned int uack,
-		   unsigned int sack, unsigned int lost, unsigned int reor,
-		   unsigned int retr, unsigned int tret, unsigned int fack,
-		   double linrtt, double linrttvar, double linrto,
-		   unsigned int backoff, int ca_state, int snd_mss,  int pmtu,
-		   char* status)
-{
-	int columnWidthChanged = 0;
-	static int counter = 0;
-
-	/* Create Row + Header */
-	char dataString[250];
-	char headerString1[250];
-	char headerString2[250];
-	static char outputString[1000];
-	char tmp[100];
-
-	/* output string
-	param # + flow_id */
-	if (hash)
-		sprintf(dataString, "#");
-
-	if (type)
-		sprintf(dataString, "D%3d", id);
-	else
-		sprintf(dataString, "S%3d", id);
-
-	strcpy(headerString1, column_info[COL_FLOW_ID].header.name);
-	strcpy(headerString2, column_info[COL_FLOW_ID].header.unit);
-
-	if (ca_state == TCP_CA_Open)
-		strcpy(tmp, "open");
-	else if (ca_state == TCP_CA_Disorder)
-		strcpy(tmp, "disorder");
-	else if (ca_state == TCP_CA_CWR)
-		strcpy(tmp, "cwr");
-	else if (ca_state == TCP_CA_Recovery)
-		strcpy(tmp, "recover");
-	else if (ca_state == TCP_CA_Loss)
-		strcpy(tmp, "loss");
-	else
-		strcpy(tmp, "unknown");
-
-	create_column(headerString1, headerString2, dataString, COL_BEGIN,
-		      begin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_END,
-		      end, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_THROUGH,
-		      throughput, 6, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TRANSAC,
-		      transac, 2, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_BLOCK_REQU,
-		      request_blocks, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_BLOCK_RESP,
-		      response_blocks, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_MIN,
-		      rttmin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_AVG,
-		      rttavg, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_MAX,
-		      rttmax, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_MIN,
-		      iatmin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_AVG,
-		      iatavg, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_MAX,
-		      iatmax, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_MIN,
-		      delaymin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_AVG,
-		      delayavg, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_MAX,
-		      delaymax, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_CWND,
-		      cwnd, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_SSTH,
-		      ssth, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_UACK,
-		      uack, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_SACK,
-		      sack, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_LOST,
-		      lost, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RETR,
-		      retr, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_TRET,
-		      tret, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_FACK,
-		      fack, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_REOR,
-		      reor, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_BKOF,
-		      backoff, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTT,
-		      linrtt, 1, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTTVAR,
-		      linrttvar, 1, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTO,
-		      linrto, 1, &columnWidthChanged);
-	create_column_str(headerString1, headerString2, dataString,
-			  COL_TCP_CA_STATE, tmp, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_SMSS,
-		      snd_mss, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_PMTU,
-		      pmtu, 0, &columnWidthChanged);
-#ifdef DEBUG
-	create_column_str(headerString1, headerString2, dataString, COL_STATUS,
-			  status, &columnWidthChanged);
-#else /* DEBUG */
-	UNUSED_ARGUMENT(status);
-#endif /* DEBUG */
-
-	/* newline */
-	strcat(headerString1, "\n");
-	strcat(headerString2, "\n");
-	strcat(dataString, "\n");
-	/* output string end */
-	if (columnWidthChanged > 0 || (counter % 25) == 0) {
-		strcpy(outputString, headerString1);
-		strcat(outputString, headerString2);
-		strcat(outputString, dataString);
-	} else {
-		strcpy(outputString, dataString);
-	}
-	counter++;
-
-	return outputString;
-}
-
+/**
+ * Scale the given throughput @p thruput in either Mebibyte per seconds or in
+ * Megabits per seconds.
+ *
+ * @param[in] thruput throughput in byte per seconds
+ * @return scaled throughput in MiB/s or Mb/s
+ */
 inline static double scale_thruput(double thruput)
 {
         if (copt.mbyte)
@@ -1665,127 +1368,352 @@ inline static double scale_thruput(double thruput)
         return thruput / 1e6 * (1<<3);
 }
 
-static void print_report(int id, int endpoint, struct report* r)
+/**
+ * Determines if the current column width @p column_width is larger or smaller
+ * than the old one and updates the state of column @p column accordingly.
+ *
+ * @param[in,out] column column that state to be updated
+ * @param[in] column_width current column width
+ * @return true if column state has been updated, false otherwise
+ */
+static bool update_column_width(struct column *column, unsigned column_width)
 {
+	/* True if column width has changed */
+	bool has_changed = false;
 
-	double min_rtt = r->rtt_min;
-	double max_rtt = r->rtt_max;
-	double avg_rtt;
-	double min_iat = r->iat_min;
-	double max_iat = r->iat_max;
-	double avg_iat;
-	double min_delay = r->delay_min;
-	double max_delay = r->delay_max;
-	double avg_delay;
-
-	char comment_buffer[100] = " (";
-	char report_buffer[4000] = "";
-
-	#define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
-		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
-		strncat(comment_buffer, (s), sizeof(comment_buffer)-1); }while(0);
-
-	if (r->response_blocks_read && r->rtt_sum)
-		avg_rtt = r->rtt_sum / (double)(r->response_blocks_read);
-	else
-		min_rtt = max_rtt = avg_rtt = INFINITY;
-
-	if (r->request_blocks_read && r->iat_sum)
-		avg_iat = r->iat_sum / (double)(r->request_blocks_read);
-	else
-		min_iat = max_iat = avg_iat = INFINITY;
-
-	if (r->request_blocks_read && r->delay_sum)
-		avg_delay = r->delay_sum / (double)(r->request_blocks_read);
-	else
-		min_delay = max_delay = avg_delay = INFINITY;
-
-#ifdef DEBUG
-	if (cflow[id].finished[endpoint]) {
-		COMMENT_CAT("stopped")
+	if (column->state.last_width < column_width) {
+		/* Column too small */
+		has_changed = true;
+		column->state.last_width = column_width;
+		column->state.oversized = 0;
+	} else if (column->state.last_width > 1 + column_width) {
+		/* Column too big */
+		if (column->state.oversized >= MAX_COLUM_TOO_LARGE) {
+			/* Column too big for quite a while */
+			has_changed = true;
+			column->state.last_width = column_width;
+			column->state.oversized = 0;
+		} else {
+			(column->state.oversized)++;
+		}
 	} else {
-		char tmp[2];
-
-		/* Write status */
-		switch (r->status & 0xFF) {
-		case 'd':
-		case 'l':
-		case 'o':
-		case 'f':
-		case 'c':
-		case 'n':
-			tmp[0] = (char)(r->status & 0xFF);
-			tmp[1] = 0;
-			COMMENT_CAT(tmp);
-			break;
-		default:
-			COMMENT_CAT("u");
-			break;
-		}
-
-		/* Read status */
-		switch (r->status >> 8) {
-		case 'd':
-		case 'l':
-		case 'o':
-		case 'f':
-		case 'c':
-		case 'n':
-			tmp[0] = (char)(r->status >> 8);
-			tmp[1] = 0;
-			COMMENT_CAT(tmp);
-			break;
-		default:
-			COMMENT_CAT("u");
-			break;
-		}
+		/* This size was needed, keep it */
+		column->state.oversized = 0;
 	}
-#endif /* DEBUG */
-	strncat(comment_buffer, ")", sizeof(comment_buffer) - strlen(comment_buffer) - 1);
-	if (strlen(comment_buffer) == 2)
-		comment_buffer[0] = '\0';
 
-	char rep_string[4000];
-	double diff_first_last =
-		time_diff(&cflow[id].start_timestamp[endpoint], &r->begin);
-	double diff_first_now =
-		time_diff(&cflow[id].start_timestamp[endpoint], &r->end);
-	double thruput = scale_thruput((double)r->bytes_written /
-				       (diff_first_now - diff_first_last));
-	double transac = (double)r->response_blocks_read /
-			 (diff_first_now - diff_first_last);
-
-	strcpy(rep_string,
-	       create_output(0, id, endpoint, diff_first_last, diff_first_now,
-		             thruput, transac,
-			     (unsigned int)r->request_blocks_written,
-			     (unsigned int)r->response_blocks_written,
-			     min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
-			     min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
-			     min_delay * 1e3, avg_delay * 1e3, max_delay * 1e3,
-			     (unsigned int)r->tcp_info.tcpi_snd_cwnd,
-			     (unsigned int)r->tcp_info.tcpi_snd_ssthresh,
-			     (unsigned int)r->tcp_info.tcpi_unacked,
-			     (unsigned int)r->tcp_info.tcpi_sacked,
-			     (unsigned int)r->tcp_info.tcpi_lost,
-			     (unsigned int)r->tcp_info.tcpi_reordering,
-			     (unsigned int)r->tcp_info.tcpi_retrans,
-			     (unsigned int)r->tcp_info.tcpi_retransmits,
-			     (unsigned int)r->tcp_info.tcpi_fackets,
-			     (double)r->tcp_info.tcpi_rtt / 1e3,
-			     (double)r->tcp_info.tcpi_rttvar / 1e3,
-			     (double)r->tcp_info.tcpi_rto / 1e3,
-			     (unsigned int)r->tcp_info.tcpi_backoff,
-			     r->tcp_info.tcpi_ca_state,
-			     (unsigned int)r->tcp_info.tcpi_snd_mss,
-			     r->pmtu, comment_buffer));
-	strncpy(report_buffer, rep_string, sizeof(report_buffer));
-	report_buffer[sizeof(report_buffer) - 1] = 0;
-	log_output(report_buffer);
+	return has_changed;
 }
 
 /**
- * Maps common MTU sizes to network technologies.
+ * Append measured data for interval report column @p column_id to given strings.
+ *
+ * For the intermediated interval report column @p column_id, append measured
+ * data @p value to the destination data string @p data, and the name and unit
+ * of intermediated interval column header to @p header1 and @p header2.
+ *
+ * @param[in,out] header1 1st header string (name) to append to
+ * @param[in,out] header2 2nd header string (unit) to append to
+ * @param[in,out] data data value string to append to
+ * @param[in] column_id ID of intermediated interval report column
+ * @param[in] value measured data string to be append
+ * @return true if column width has changed, false otherwise
+ */
+static bool print_column_str(char **header1, char **header2, char **data,
+			     enum column_id column_id, char* value)
+{
+	/* Only for convenience */
+	struct column *column = &column_info[column_id];
+
+	if (!column->state.visible)
+		return false;
+
+	/* Get max column width */
+	unsigned data_len = strlen(value);
+	unsigned header_len = MAX(strlen(column->header.name),
+				  strlen(column->header.unit));
+	unsigned column_width = MAX(data_len, header_len);
+
+	/* Check if column width has changed */
+	bool has_changed = update_column_width(column, column_width);
+
+	/* Create format specifiers of right length */
+	char *fmt_str = NULL;
+	const size_t width = column->state.last_width;
+	if (asprintf(&fmt_str, "%%%zus", width + GUARDBAND) == -1)
+		critx("could not allocate memory for interval report");
+
+	/* Print data, 1st and 2nd header row */
+	asprintf_append(data, fmt_str, value);
+	asprintf_append(header1, fmt_str, column->header.name);
+	asprintf_append(header2, fmt_str, column->header.unit);
+
+	free(fmt_str);
+	return has_changed;
+}
+
+/**
+ * Append measured data for interval report column @p column_id to given strings.
+ *
+ * For the intermediated interval report column @p column_id, append measured
+ * data @p value to the destination data string @p data, and the name and unit
+ * of intermediated interval column header to @p header1 and @p header2.
+ *
+ * @param[in,out] header1 1st header string (name) to append to
+ * @param[in,out] header2 2nd header string (unit) to append to
+ * @param[in,out] data data value string to append to
+ * @param[in] column_id ID of intermediated interval report column
+ * @param[in] value measured data value to be append
+ * @param[in] accuracy number of decimal places to be append
+ * @return true if column width has changed, false otherwise
+ */
+static bool print_column(char **header1, char **header2, char **data,
+			 enum column_id column_id, double value,
+			 unsigned accuracy)
+{
+	/* Print symbolic values instead of numbers */
+	if (copt.symbolic) {
+		switch ((int)value) {
+		case INT_MAX:
+			return print_column_str(header1, header2, data,
+						column_id, "INT_MAX");
+		case USHRT_MAX:
+			return print_column_str(header1, header2, data,
+						column_id, "USHRT_MAX");
+		case UINT_MAX:
+			return print_column_str(header1, header2, data,
+						column_id, "UINT_MAX");
+		}
+	}
+
+	/* Only for convenience */
+	struct column *column = &column_info[column_id];
+
+	if (!column->state.visible)
+		return false;
+
+	/* Get max column width */
+	unsigned data_len = det_num_digits(value) + (accuracy ? accuracy + 1 : 0);
+	unsigned header_len = MAX(strlen(column->header.name),
+				  strlen(column->header.unit));
+	unsigned column_width = MAX(data_len, header_len);
+
+	/* Check if column width has changed */
+	bool has_changed = update_column_width(column, column_width);
+
+	/* Create format specifiers of right length */
+	char *fmt_num = NULL, *fmt_str = NULL;
+	const size_t width = column->state.last_width;
+	if (asprintf(&fmt_num, "%%%zu.%df", width + GUARDBAND, accuracy) == -1 ||
+	    asprintf(&fmt_str, "%%%zus", width + GUARDBAND) == -1)
+		critx("could not allocate memory for interval report");
+
+	/* Print data, 1st and 2nd header row */
+	asprintf_append(data, fmt_num, value);
+	asprintf_append(header1, fmt_str, column->header.name);
+	asprintf_append(header2, fmt_str, column->header.unit);
+
+	free_all(fmt_num, fmt_str);
+	return has_changed;
+}
+
+/**
+ * Print interval report @p report for endpoint @p e of flow @p flow_id.
+ *
+ * In addition, if the width of one intermediated interval report columns has
+ * been changed, the interval column header will be printed again.
+ *
+ * @param[in] flow_id flow an interval report will be created for
+ * @param[in] e flow endpoint (SOURCE or DESTINATION)
+ * @param[in] report interval report to be printed
+ */
+static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
+				  struct report *report)
+{
+	/* Whether or not column width has been changed */
+	bool changed = false;
+	/* 1st header row, 2nd header row, and the actual measured data */
+	char *header1 = NULL, *header2 = NULL, *data = NULL;
+
+	/* Flow ID and endpoint (source or destination) */
+	if (asprintf(&header1, "%s", column_info[COL_FLOW_ID].header.name) == -1 ||
+	    asprintf(&header2, "%s", column_info[COL_FLOW_ID].header.unit) == -1 ||
+	    asprintf(&data, "%s%3d", e ? "D" : "S", flow_id) == -1)
+		critx("could not allocate memory for interval report");
+
+	/* Calculate time */
+	double diff_first_last = time_diff(&cflow[flow_id].start_timestamp[e],
+					   &report->begin);
+	double diff_first_now = time_diff(&cflow[flow_id].start_timestamp[e],
+					  &report->end);
+	changed |= print_column(&header1, &header2, &data, COL_BEGIN,
+				diff_first_last, 3);
+	changed |= print_column(&header1, &header2, &data, COL_END,
+				diff_first_now, 3);
+
+	/* Throughput */
+	double thruput = (double)report->bytes_written /
+			 (diff_first_now - diff_first_last);
+	thruput = scale_thruput(thruput);
+	changed |= print_column(&header1, &header2, &data, COL_THROUGH,
+				thruput, 6);
+
+	/* Transactions */
+	double transac = (double)report->response_blocks_read /
+			 (diff_first_now - diff_first_last);
+	changed |= print_column(&header1, &header2, &data, COL_TRANSAC,
+				transac, 2);
+
+	/* Blocks */
+	changed |= print_column(&header1, &header2, &data, COL_BLOCK_REQU,
+				report->request_blocks_written, 0);
+	changed |= print_column(&header1, &header2, &data, COL_BLOCK_RESP,
+				report->response_blocks_written, 0);
+
+	/* RTT */
+	double rtt_avg = 0.0;
+	if (report->response_blocks_read && report->rtt_sum)
+		rtt_avg = report->rtt_sum /
+			  (double)(report->response_blocks_read);
+	else
+		report->rtt_min = report->rtt_max = rtt_avg = INFINITY;
+	changed |= print_column(&header1, &header2, &data, COL_RTT_MIN,
+				report->rtt_min * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_RTT_AVG,
+				rtt_avg * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_RTT_MAX,
+				report->rtt_max * 1e3, 3);
+
+	/* IAT */
+	double iat_avg = 0.0;
+	if (report->request_blocks_read && report->iat_sum)
+		iat_avg = report->iat_sum /
+			  (double)(report->request_blocks_read);
+	else
+		report->iat_min = report->iat_max = iat_avg = INFINITY;
+	changed |= print_column(&header1, &header2, &data, COL_IAT_MIN,
+				report->rtt_min * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_IAT_AVG,
+				iat_avg * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_IAT_MAX,
+				report->iat_max * 1e3, 3);
+
+	/* Delay */
+	double delay_avg = 0.0;
+	if (report->request_blocks_read && report->delay_sum)
+		delay_avg = report->delay_sum /
+			    (double)(report->request_blocks_read);
+	else
+		report->delay_min = report->delay_max = delay_avg = INFINITY;
+	changed |= print_column(&header1, &header2, &data, COL_DLY_MIN,
+				report->delay_min * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_DLY_AVG,
+				delay_avg * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_DLY_MAX,
+				report->delay_max * 1e3, 3);
+
+	/* TCP info struct */
+	changed |= print_column(&header1, &header2, &data, COL_TCP_CWND,
+				report->tcp_info.tcpi_snd_cwnd, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_SSTH,
+				report->tcp_info.tcpi_snd_ssthresh, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_UACK,
+				report->tcp_info.tcpi_unacked, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_SACK,
+				report->tcp_info.tcpi_sacked, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_LOST,
+				report->tcp_info.tcpi_lost, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RETR,
+				report->tcp_info.tcpi_retrans, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_TRET,
+				report->tcp_info.tcpi_retransmits, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_FACK,
+				report->tcp_info.tcpi_fackets, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_REOR,
+				report->tcp_info.tcpi_reordering, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_BKOF,
+				report->tcp_info.tcpi_backoff, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RTT,
+				report->tcp_info.tcpi_rtt / 1e3, 1);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RTTVAR,
+				report->tcp_info.tcpi_rttvar / 1e3, 1);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RTO,
+				report->tcp_info.tcpi_rto / 1e3, 1);
+
+	/* TCP CA state */
+	char *ca_state = NULL;
+	switch (report->tcp_info.tcpi_ca_state) {
+	case TCP_CA_Open:
+		ca_state = "open";
+		break;
+	case TCP_CA_Disorder:
+		ca_state = "disorder";
+		break;
+	case TCP_CA_CWR:
+		ca_state = "cwr";
+		break;
+	case TCP_CA_Recovery:
+		ca_state = "recover";
+		break;
+	case TCP_CA_Loss:
+		ca_state = "loss";
+		break;
+	default:
+		ca_state = "unknown";
+	}
+	changed |= print_column_str(&header1, &header2, &data,
+				    COL_TCP_CA_STATE, ca_state);
+
+	/* SMSS & PMTU */
+	changed |= print_column(&header1, &header2, &data, COL_SMSS,
+				report->tcp_info.tcpi_snd_mss, 0);
+	changed |= print_column(&header1, &header2, &data, COL_PMTU,
+				report->pmtu, 0);
+
+/* Internal flowgrind state */
+#ifdef DEBUG
+	int rc = 0;
+	char *fg_state = NULL;
+	if (cflow[flow_id].finished[e]) {
+		rc = asprintf(&fg_state, "(stopped)");
+	} else {
+		/* Write status */
+		char ws = (char)(report->status & 0xFF);
+		if  (ws != 'd' || ws != 'l' || ws != 'o' || ws != 'f' ||
+		     ws != 'c' || ws != 'n')
+			ws = 'u';
+
+		/* Read status */
+		char rs = (char)(report->status >> 8);
+		if  (rs != 'd' || rs != 'l' || rs != 'o' || rs != 'f' ||
+		     rs != 'c' || rs != 'n')
+			rs = 'u';
+		rc = asprintf(&fg_state, "(%c/%c)", ws, rs);
+	}
+
+	if (rc == -1)
+		critx("could not allocate memory for flowgrind status string");
+
+	changed |= print_column_str(&header1, &header2, &data, COL_STATUS,
+				    fg_state);
+	free(fg_state);
+#endif /* DEBUG */
+
+	/* Print interval header again if either the column width has been
+	 * changed or MAX_REPORTS_BEFORE_HEADER reports have been emited
+	 * since last time header was printed */
+	static unsigned short printed_reports = 0;
+	if (changed || (printed_reports % MAX_REPORTS_IN_ROW) == 0) {
+		print_output("%s\n", header1);
+		print_output("%s\n", header2);
+	}
+
+	print_output("%s\n", data);
+	printed_reports++;
+	free_all(header1, header2, data);
+}
+
+/**
+ * Maps common MTU sizes to network known technologies.
  *
  * @param[in] mtu MTU size
  * @return return network technology as string
@@ -1817,14 +1745,14 @@ static char *guess_topology(unsigned mtu)
 	};
 
 	size_t array_size = sizeof(mtu_hints) / sizeof(struct mtu_hint);
-	for (unsigned i = 0; i < array_size; i++)
+	for (unsigned short i = 0; i < array_size; i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
 	return "unknown";
 }
 
 /**
- * Print final report (i.e summary line) for endpoint @p e of flow @p flow_id.
+ * Print final report (i.e. summary line) for endpoint @p e of flow @p flow_id.
  *
  * @param[in] flow_id flow a final report will be created for
  * @param[in] e flow endpoint (SOURCE or DESTINATION)
@@ -1834,13 +1762,20 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	/* To store the final report */
 	char *buf = NULL;
 
-	/* Only for convenience */
+	/* For convenience only */
 	struct flow_endpoint *endpoint = &cflow[flow_id].endpoint[e];
 	struct flow_settings *settings = &cflow[flow_id].settings[e];
 	struct report *report = cflow[flow_id].final_report[e];
 
 	/* Flow ID and endpoint (source or destination) */
-	asprintf_append(&buf, "# ID %3d %s: ", flow_id, e ? "D" : "S");
+	if (asprintf(&buf, "# ID %3d %s: ", flow_id, e ? "D" : "S") == -1)
+		critx("could not allocate memory for final report");;
+
+	/* No final report received. Skip final report line for this endpoint */
+	if (!report) {
+		asprintf_append(&buf, "Error: no final report received");
+		goto out;
+	}
 
 	/* Infos about the test connections */
 	asprintf_append(&buf, "%s", endpoint->test_address);
@@ -1853,12 +1788,6 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	/* Infos about the daemon OS */
 	asprintf_append(&buf, " (%s %s), ",
 			endpoint->daemon->os_name, endpoint->daemon->os_release);
-
-	/* No final report received. Skip endpoint this final report line */
-	if (!cflow[flow_id].final_report[e]) {
-		asprintf_append(&buf, "Error: no final report received");
-		return;
-	}
 
 	/* Random seed */
 	asprintf_append(&buf, "random seed: %u, ", cflow[flow_id].random_seed);
@@ -1887,16 +1816,15 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 
 	/* Calculate time */
 	double report_time = time_diff(&report->begin, &report->end);
-	double delta_write = 0.0;
+	double delta_write = 0.0, delta_read = 0.0;
 	if (settings->duration[WRITE])
 		delta_write = report_time - settings->duration[WRITE]
 					  - settings->delay[SOURCE];
-	double delta_read = 0.0;
 	if (settings->duration[READ])
 		delta_read = report_time - settings->duration[READ]
 					 - settings->delay[DESTINATION];
 
-	/* Calculate delta target vs real report time */
+	/* Calculate delta target vs. real report time */
 	double real_write = settings->duration[WRITE] + delta_write;
 	double real_read = settings->duration[READ] + delta_read;
 	if (settings->duration[WRITE])
@@ -1921,7 +1849,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	thruput_write = scale_thruput(thruput_write);
 
 	if (copt.mbyte)
-		asprintf_append(&buf, "through = %.6f/%.6f [Mbyte/s] (out/in)",
+		asprintf_append(&buf, "through = %.6f/%.6f [MiB/s] (out/in)",
 				thruput_write, thruput_read);
 	else
 		asprintf_append(&buf, "through = " "%.6f/%.6f [Mbit/s] (out/in)",
@@ -1947,7 +1875,7 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	/* RTT */
 	if (report->response_blocks_read) {
 		double rtt_avg = report->rtt_sum /
-				(double)(report->response_blocks_read);
+				 (double)(report->response_blocks_read);
 		asprintf_append(&buf, ", RTT = %.3f/%.3f/%.3f [ms] (min/avg/max)",
 				report->rtt_min * 1e3, rtt_avg * 1e3,
 				report->rtt_max * 1e3);
@@ -1995,21 +1923,18 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	if (cflow[flow_id].shutdown)
 		asprintf_append(&buf, ", calling shutdown");
 
-	asprintf_append(&buf, "\n");
-
-	log_output(buf);
+out:
+	print_output("%s\n", buf);
 	free(buf);
 }
 
 /**
- * Create final report (i.e. summary line) for all configured flows.
+ * Print final report (i.e. summary line) for all configured flows.
  */
-static void create_final_reports(void)
+static void print_all_final_reports(void)
 {
 	for (unsigned id = 0; id < copt.num_flows; id++) {
-		/* New line for each final flow report */
-		log_output("\n");
-
+		print_output("\n");
 		foreach(int *i, SOURCE, DESTINATION) {
 			print_final_report(id, *i);
 			free(cflow[id].final_report[*i]);
@@ -2024,7 +1949,7 @@ static struct daemon * get_daemon_by_url(const char* server_url,
 					  unsigned short server_port)
 {
 	/* If we have already a daemon for this URL return a pointer to it */
-	for (unsigned i = 0; i < num_unique_servers; i++) {
+	for (unsigned short i = 0; i < num_unique_servers; i++) {
 		if (!strcmp(unique_servers[i].server_url, server_url))
 			return &unique_servers[i];
 	}
@@ -2552,7 +2477,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	case 'm':
 		copt.mbyte = true;
-		column_info[COL_THROUGH].header.unit = " [MB/s]";
+		column_info[COL_THROUGH].header.unit = " [MiB/s]";
 		break;
 	case 'n':
 		if (sscanf(arg, "%hd", &copt.num_flows) != 1 ||
@@ -2832,7 +2757,7 @@ static void parse_cmdline(int argc, char *argv[])
 	}
 #endif /* 0 */
 
-	for (int id = 0; id < copt.num_flows; id++) {
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		cflow[id].settings[SOURCE].duration[READ] = cflow[id].settings[DESTINATION].duration[WRITE];
 		cflow[id].settings[DESTINATION].duration[READ] = cflow[id].settings[SOURCE].duration[WRITE];
 		cflow[id].settings[SOURCE].delay[READ] = cflow[id].settings[DESTINATION].delay[WRITE];
@@ -2857,7 +2782,7 @@ static void parse_cmdline(int argc, char *argv[])
  */
 static void sanity_check(void)
 {
-	for (int id = 0; id < copt.num_flows; id++) {
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_DEBUG, "sanity checking parameter set of flow %d", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
 		    cflow[id].late_connect &&
@@ -2933,20 +2858,24 @@ int main(int argc, char *argv[])
 	if (!sigint_caught)
 		check_idle(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "prepare flows");
+	DEBUG_MSG(LOG_WARNING, "prepare all flows");
 	if (!sigint_caught)
-		prepare_grinding(rpc_client);
+		prepare_all_flows(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "start flows");
+	DEBUG_MSG(LOG_WARNING, "print headline");
 	if (!sigint_caught)
-		grind_flows(rpc_client);
+		print_headline();
 
-	DEBUG_MSG(LOG_WARNING, "close flows");
-	close_flows();
+	DEBUG_MSG(LOG_WARNING, "start all flows");
+	if (!sigint_caught)
+		start_all_flows(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "report final");
+	DEBUG_MSG(LOG_WARNING, "close all flows");
+	close_all_flows();
+
+	DEBUG_MSG(LOG_WARNING, "print all final report");
 	fetch_reports(rpc_client);
-	create_final_reports();
+	print_all_final_reports();
 
 	close_logfile();
 
