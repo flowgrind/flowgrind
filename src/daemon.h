@@ -236,6 +236,8 @@ struct request_get_status
 
 	int started;
 	int num_flows;
+	/** Server UUID */
+	char server_uuid[38];	
 };
 
 pthread_t daemon_thread;
@@ -267,5 +269,9 @@ int set_flow_tcp_options(struct flow *flow);
 /** Dispatch a request to daemon loop.
  * Is called by the rpc server to feed in requests to the daemon. */
  int dispatch_request(struct request *request, int type);
+ /** Get the daemon UUID as a string.
+ * If a daemon already has UUID, then it is retrieved, otherwise 
+ * new UUID is generated. */
+ void get_uuid_string(char *uuid_str);
 
 #endif /* _DAEMON_H_ */

@@ -266,6 +266,7 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
 AC_SEARCH_LIBS([clock_gettime], [rt])
+AC_SEARCH_LIBS([uuid_generate_time], [uuid])
 
 # Checking for types
 AC_TYPE_SIGNAL
@@ -485,6 +486,12 @@ CURL_LDADD=`$CURL_CONFIG --libs`
 
 AC_SUBST([CURL_CFLAGS])
 AC_SUBST([CURL_LDADD])
+
+# Checking for LIBUUID library
+PKG_CHECK_MODULES([UUID], [uuid],,[AC_MSG_ERROR([required pkg config uuid not found])])
+
+AC_SUBST([UUID_CFLAGS])
+AC_SUBST([UUID_LDADD])
 
 # Checking for xmlrpc-c library
 AS_IF([test -z "$XMLRPC_C_CONFIG"],

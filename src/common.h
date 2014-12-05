@@ -175,6 +175,8 @@ struct flow_settings {
 	/** The interface address for the flow (used by daemon). */
 	char bind_address[1000];
 
+	/** Flow ID maintained by controller. */
+	int flow_id;
 	/** Delay of flow in seconds (option -Y). */
 	double delay[2];
 	/** Duration of flow in seconds (option -T). */
@@ -276,6 +278,8 @@ struct fg_tcp_info {
 /* Report (measurement sample) of a flow */
 struct report {
 	int id;
+	/** daemon endpoint - either source or destination */
+	enum endpoint_t endpoint;
 	/** Report type - either INTERVAL or FINAL report */
 	enum report_t type;
 	struct timespec begin;

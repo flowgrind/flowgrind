@@ -102,11 +102,17 @@ static bool sigint_caught = false;
 /* XML-RPC environment object that contains any error that has occurred. */
 static xmlrpc_env rpc_env;
 
-/** Unique (by URL) flowgrind daemons. */
-static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
+/** Global pointer to the daemons(by unique URL) XML RPC connection information and version details. */
+static struct server_info *servers_info;
 
-/** Number of flowgrind dameons. */
-static unsigned short num_unique_servers = 0;
+/** Global pointer to unique daemos UUID and called state information. */
+static struct  daemon *unique_daemon;
+
+/** Number of daemons(by unique URL) in flowgrind controller flow option. */
+static unsigned short num_servers = 0;
+
+/** Number of real daemons by UUID, running in the server node. */
+static unsigned short num_unique_daemon = 0;
 
 /** Command line option parser. */
 static struct arg_parser parser;
@@ -209,7 +215,7 @@ static void usage_trafgenopt(void)
 inline static void print_output(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
 static void fetch_reports(xmlrpc_client *);
-static void report_flow(const struct daemon* daemon, struct report* report);
+static void report_flow(struct report* report);
 static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 		                  struct report *report);
 
@@ -474,7 +480,13 @@ static void init_controller_options(void)
 	copt.symbolic = true;
 	copt.force_unit = INT_MAX;
 }
-
+/**
+ * Initilization the flow option to default values.
+ *
+ * Initializes the controller flow option settings, 
+ * final report for both source and destination daemon 
+ * in the flow.
+ */
 static void init_flow_options(void)
 {
 	for (int id = 0; id < MAX_FLOWS; id++) {
@@ -491,8 +503,8 @@ static void init_flow_options(void)
 			cflow[id].settings[*i].route_record = 0;
 			strcpy(cflow[id].endpoint[*i].test_address, "localhost");
 
-			/* Default daemon is localhost, set in parse_cmdline */
-			cflow[id].endpoint[*i].daemon = 0;
+			/* Default server info is localhost, set in parse_cmdline */
+			cflow[id].endpoint[*i].server_info = 0;
 
 			cflow[id].settings[*i].pushy = 0;
 			cflow[id].settings[*i].cork = 0;
@@ -631,27 +643,37 @@ static void prepare_xmlrpc_client(xmlrpc_client **rpc_client)
 			     clientParms_cpsize, rpc_client);
 }
 
-/* Checks that all nodes use our flowgrind version */
+
+/**
+ * Checks that all nodes use flowgrind version.
+ *
+ * Collect the daemons flowgrind version and XML-RPC API version, 
+ * nodes OS name and release details 
+ * Store these information in the controller server info.
+ *
+ * @param[in] rpc_client to connect controller to daemon
+ */
 static void check_version(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 	char mismatch = 0;
 
-	for (unsigned short j = 0; j < num_unique_servers; j++) {
-
+	/* call daemons by unique URL */
+	for (unsigned short j = 0; j < num_servers; j++) {
 		if (sigint_caught)
 			return;
-
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
+		xmlrpc_client_call2f(&rpc_env, rpc_client, servers_info[j].server_url,
 					"get_version", &resultP, "()");
 		if ((rpc_env.fault_occurred) && (strcasestr(rpc_env.fault_string,"response code is 400")))
 			critx("node %s could not parse request.You are "
 			      "probably trying to use a numeric IPv6 address "
 			      "and the node's libxmlrpc is too old, please "
-			      "upgrade!", unique_servers[j].server_url);
+			      "upgrade!", servers_info[j].server_url);
 
 		die_if_fault_occurred(&rpc_env);
 
+		/* Decomposes the xmlrpc_value and extract the daemons data in it into 
+		 * controller local variable*/
 		if (resultP) {
 			char* version;
 			int api_version;
@@ -667,11 +689,14 @@ static void check_version(xmlrpc_client *rpc_client)
 			if (strcmp(version, FLOWGRIND_VERSION)) {
 				mismatch = 1;
 				warnx("node %s uses version %s",
-				      unique_servers[j].server_url, version);
+				      servers_info[j].server_url, version);
 			}
-			unique_servers[j].api_version = api_version;
-			strncpy(unique_servers[j].os_name, os_name, 256);
-			strncpy(unique_servers[j].os_release, os_release, 256);
+			/* Store the daemons XML RPC API version,
+			 * OS name and release in daemons info memory block*/
+			servers_info[j].api_version = api_version;
+			strncpy(servers_info[j].os_name, os_name, 256);
+			strncpy(servers_info[j].os_release, os_release, 256);
+
 			free_all(version, os_name, os_release);
 			xmlrpc_DECREF(resultP);
 		}
@@ -682,34 +707,107 @@ static void check_version(xmlrpc_client *rpc_client)
 		sleep(5);
 	}
 }
+/**
+ * Determine the daemons for controller flow by UUID.
+ *
+ * Determine the daemons memory block size by number of server in
+ * the controller flow option. Stores the daemons UUID and daemons call state
+ *
+ * Call state is used by controller to avoid calling the same daemon again
+ * in flow start/stop and fetching the reports from the daemons. Daemons
+ * give all flows report in a single request to controller. So call state
+ * used to prevent controller to call same daemon again.
+ *
+ * @param[in] server_uuid UUID from daemons
+ */
+static struct daemon* set_unique_daemon_by_uuid(const char* server_uuid)
+{
+	unsigned short i=0;
+	/* Allocate memory block to daemons according to the the number of
+	 * servers in the controller flow option. Store the first daemons
+	 * UUID and set call state to zero.First daemon is used as reference
+	 * to avoid the daemons duplication by their UUID */
+	if(num_unique_daemon == 0){
+	unique_daemon = (struct daemon*)malloc((num_servers*sizeof(struct daemon)));
+	strcpy(unique_daemon[num_unique_daemon].uuid,server_uuid);
+	unique_daemon[num_unique_daemon].called=0;
+	num_unique_daemon++;
+	return &unique_daemon[num_unique_daemon-1];
+	}
+	
+	/* Compare the incoming daemons UUID with all daemons UUID in 
+	 * memory in order to prevent dupliclity in storing the daemons.
+	 * All daemons call state are intialized to zero. If the incoming 
+	 * daemon UUID is already present in the daemons list, then return 
+	 * existing daemon pointer to controller connection. This is because
+	 * a single daemons can run and maintain mutliple data connection
+	 *  */	
+	for (i = 0; i < num_unique_daemon; i++) {
+		if (strcmp(unique_daemon[i].uuid,server_uuid)){
+			if(i == num_unique_daemon-1){
+			unique_daemon[num_unique_daemon].called=0;
+			strcpy(unique_daemon[num_unique_daemon].uuid,server_uuid);
+			num_unique_daemon++;
+			break;
+			}	
+		}
+		else
+			break;
+	}
 
-/* Checks that all nodes are currently idle */
+	return &unique_daemon[i];
+}
+
+/**
+ * Checks that all nodes are currently idle.
+ *
+ * Get the daemon's flow start status and number of flows running in 
+ * a daemon. This piece of information is used to determine, whether the
+ * daemon in a node is busy or idle
+ *
+ * In addition to it, daemon UUID is also retreived. This information is used
+ * to determine daemon in the controller flow information
+ *
+ * @param[in] rpc_client to connect controller to daemon
+ */
+
 static void check_idle(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 
-	for (unsigned short j = 0; j < num_unique_servers; j++) {
+	for (unsigned short j = 0; j < num_servers; j++) {
 		if (sigint_caught)
 			return;
-
+		
+		/* call daemons by unique URL */
 		xmlrpc_client_call2f(&rpc_env, rpc_client,
-				     unique_servers[j].server_url,
+				     servers_info[j].server_url,
 				     "get_status", &resultP, "()");
 		die_if_fault_occurred(&rpc_env);
 
+		/* Decomposes the xmlrpc_value and extract the daemons data
+		 *  in it into controller local variable*/
 		if (resultP) {
 			int started;
 			int num_flows;
+			char* server_uuid = 0;
 
 			xmlrpc_decompose_value(&rpc_env, resultP,
-					       "{s:i,s:i,*}", "started",
-					       &started, "num_flows",
-					       &num_flows);
+					"{s:i,s:i,s:s,*}",
+					"started",&started,
+					"num_flows",&num_flows,
+					"server_uuid",&server_uuid);
+			
+			/* Determine the daemon in controller flow data by UUID
+			 * This prevent the daemons duplication*/
+			servers_info[j].daemon=set_unique_daemon_by_uuid(server_uuid);
 			die_if_fault_occurred(&rpc_env);
 
+			/* Daemon start status and number of flows is used to
+			 *  determine node idle status*/
 			if (started || num_flows)
 				critx("node %s is busy. %d flows, started=%d",
-				       unique_servers[j].server_url, num_flows,
+				       servers_info[j].server_url, num_flows,
 				       started);
 			xmlrpc_DECREF(resultP);
 		}
@@ -776,12 +874,12 @@ static void print_headline(void)
 
 	/* Prepare column visibility based on involved OSes */
 	bool involved_os[] = {[0 ... NUM_OSes-1] = false};
-	for (unsigned short j = 0; j < num_unique_servers; j++)
-		if (!strcmp(unique_servers[j].os_name, "Linux"))
+	for (unsigned short j = 0; j < num_servers; j++)
+		if (!strcmp(servers_info[j].os_name, "Linux"))
 			involved_os[LINUX] = true;
-		else if (!strcmp(unique_servers[j].os_name, "FreeBSD"))
+		else if (!strcmp(servers_info[j].os_name, "FreeBSD"))
 			involved_os[FREEBSD] = true;
-		else if (!strcmp(unique_servers[j].os_name, "Darwin"))
+		else if (!strcmp(servers_info[j].os_name, "Darwin"))
 			involved_os[DARWIN] = true;
 
 	/* No Linux OS is involved in the test */
@@ -798,13 +896,22 @@ static void print_headline(void)
 
 	/* Set unit for kernel TCP metrics to bytes */
 	if (copt.force_unit == BYTE_BASED || (copt.force_unit != SEGMENT_BASED &&
-	    strcmp(unique_servers[0].os_name, "Linux")))
+	    strcmp(servers_info[0].os_name, "Linux")))
 		SET_COLUMN_UNIT(" [B]", COL_TCP_CWND, COL_TCP_SSTH,
 				COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
 				COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK,
 				COL_TCP_REOR, COL_TCP_BKOF);
 }
-
+/**
+ * Prepare test connection for a flow between source and destination daemons.
+ *
+ * Controller sends the flow option to source and destination daemons
+ * separately through XML RPC connection, and get backs the flow id and
+ * snd/rcx buffer size from the daemons.
+ *
+ * @param[in] id flow id to prepare the test connection in daemons
+ * @param[in] rpc_client to connect controller to daemon
+ */
 static void prepare_flow(int id, xmlrpc_client *rpc_client)
 {
 	xmlrpc_value *resultP, *extra_options;
@@ -829,10 +936,11 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(option);
 	}
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint[DESTINATION].daemon->server_url,
+		cflow[id].endpoint[DESTINATION].server_info->server_url,
 		"add_flow_destination", &resultP,
 		"("
 		"{s:s}"
+		"{s:i}"
 		"{s:d,s:d,s:d,s:d,s:d}"
 		"{s:i,s:i}"
 		"{s:i}"
@@ -850,6 +958,8 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 		/* general flow settings */
 		"bind_address", cflow[id].endpoint[DESTINATION].test_address,
+
+		"flow_id",id,
 
 		"write_delay", cflow[id].settings[DESTINATION].delay[WRITE],
 		"write_duration", cflow[id].settings[DESTINATION].duration[WRITE],
@@ -931,10 +1041,11 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint[SOURCE].daemon->server_url,
+		cflow[id].endpoint[SOURCE].server_info->server_url,
 		"add_flow_source", &resultP,
 		"("
 		"{s:s}"
+		"{s:i}"
 		"{s:d,s:d,s:d,s:d,s:d}"
 		"{s:i,s:i}"
 		"{s:i}"
@@ -953,6 +1064,8 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 		/* general flow settings */
 		"bind_address", cflow[id].endpoint[SOURCE].test_address,
+
+		"flow_id",id,
 
 		"write_delay", cflow[id].settings[SOURCE].delay[WRITE],
 		"write_duration", cflow[id].settings[SOURCE].duration[WRITE],
@@ -1021,7 +1134,14 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(resultP);
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
 }
-
+/**
+ * Prepare test connection for all flows in a test
+ *
+ * Prepare test connection for each flow according to the
+ * flow id
+ *
+ * @param[in] rpc_client to connect controller to daemon
+ */
 static void prepare_all_flows(xmlrpc_client *rpc_client)
 {
 	/* prepare flows */
@@ -1032,7 +1152,37 @@ static void prepare_all_flows(xmlrpc_client *rpc_client)
 	}
 }
 
-/* start flows */
+/**
+ * clear the daemon call state
+ *
+ * Daemon call state is cleared before starting the daemon test flow, 
+ * fetching the reports from the daemon and, while stopping the test flow.
+ * daemon call state is cleared to ensure the previous call state won't 
+ * affect the concurrent running functionality 
+ */
+
+static void clear_daemon_state(void)
+{
+	for (unsigned short j = 0; j < num_unique_daemon; j++) {
+		unique_daemon[j].called = 0;
+	}
+
+}
+/**
+ * Start test connections for all flows in a test
+ *
+ * All the test connection are started, but test connection flow in the 
+ * controller and in daemon are different. In the controller, test connection
+ * are respective to number of flows in a test,but in daemons test connection
+ * are respective to flow endpoints. Single daemons can maintain multiple flows
+ * endpoints, So controller should start a daemon only once.
+ *
+ * In order to faciliate this, the daemons call state is used to check, whether
+ * the daemon is called by the controller. If the daemon is called, then remote
+ * procedure call to that daemon again is ignored.
+ *
+ * @param[in] rpc_client to connect controller to daemon
+ */
 static void start_all_flows(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
@@ -1044,23 +1194,40 @@ static void start_all_flows(xmlrpc_client *rpc_client)
 	gettime(&lastreport_end);
 	gettime(&lastreport_begin);
 	gettime(&now);
-
-	for (unsigned short j = 0; j < num_unique_servers; j++) {
-		if (sigint_caught)
+	
+	/* clear the daemon call state before calling the daemon from the controller */
+	clear_daemon_state();
+	
+	/* All the flow endpoint daemons are started through flow rpc url connection */
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
+		foreach(int *i, SOURCE, DESTINATION) {
+			if (sigint_caught)
 			return;
-
-		DEBUG_MSG(LOG_ERR, "starting flow on server %u", j);
-		xmlrpc_client_call2f(&rpc_env, rpc_client,
-				     unique_servers[j].server_url,
-				     "start_flows", &resultP, "({s:i})",
-				     "start_timestamp", now.tv_sec + 2);
-		die_if_fault_occurred(&rpc_env);
-		if (resultP)
-			xmlrpc_DECREF(resultP);
+			
+			/* Before calling the daemon, it call state is checked */
+			if(!cflow[id].endpoint[*i].server_info->daemon->called) {
+				DEBUG_MSG(LOG_ERR, "starting flow on server %u", j);
+				xmlrpc_client_call2f(&rpc_env,
+						rpc_client,
+						cflow[id].endpoint[*i].server_info->server_url,
+						"start_flows", &resultP,
+						"({s:i})",
+						"start_timestamp", now.tv_sec + 2);
+				
+				/* After calling the daemon, it's call state is updated */
+				cflow[id].endpoint[*i].server_info->daemon->called=1;
+				
+				die_if_fault_occurred(&rpc_env);
+				
+				if (resultP)
+					xmlrpc_DECREF(resultP);
+			}
+		}
 	}
-
+	
 	active_flows = copt.num_flows;
-
+	
+	/* Reports are fetched from the daemons based on the report interval duration */
 	while (!sigint_caught) {
 		if ( time_diff_now(&lastreport_begin) <  copt.reporting_interval ) {
 			usleep(copt.reporting_interval - time_diff(&lastreport_begin,&lastreport_end) );
@@ -1076,183 +1243,222 @@ static void start_all_flows(xmlrpc_client *rpc_client)
 	}
 }
 
-/* Poll the daemons for reports */
+/**
+ * Reports are fetched from the flow endpoint daemon
+ *
+ * Single daemon can maintain multiple flows endpoints and daemons combine all 
+ * its flows reports and send them to the controller. So controller should call
+ * an daemon in its flows only once. 
+ *
+ * In order to faciliate this, the daemons call state is used to check, whether
+ * the daemon is called by the controller. If the daemon is called, then remote
+ * procedure call to that daemon again is ignored.
+ *
+ * @param[in] rpc_client to connect controller to daemon
+ */
 static void fetch_reports(xmlrpc_client *rpc_client)
 {
 
 	xmlrpc_value * resultP = 0;
+	
+	/* clear the daemon call state before calling the daemon from the controller */
+	clear_daemon_state();
 
-	for (unsigned short j = 0; j < num_unique_servers; j++) {
-		int array_size, has_more;
-		xmlrpc_value *rv = 0;
-
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
+		foreach(int *i, SOURCE, DESTINATION) {
+			if(!cflow[id].endpoint[*i].server_info->daemon->called){
+				int array_size, has_more;
+				xmlrpc_value *rv = 0;
+				/* After calling the daemon, it's call state is updated */
+				cflow[id].endpoint[*i].server_info->daemon->called = 1;
 has_more_reports:
-
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
-			"get_reports", &resultP, "()");
-		if (rpc_env.fault_occurred) {
-			errx("XML-RPC fault: %s (%d)", rpc_env.fault_string,
-			      rpc_env.fault_code);
-			continue;
-		}
-
-		if (!resultP)
-			continue;
-
-		array_size = xmlrpc_array_size(&rpc_env, resultP);
-		if (!array_size) {
-			warnx("empty array in get_reports reply");
-			continue;
-		}
-
-		xmlrpc_array_read_item(&rpc_env, resultP, 0, &rv);
-		xmlrpc_read_int(&rpc_env, rv, &has_more);
-		if (rpc_env.fault_occurred) {
-			errx("XML-RPC fault: %s (%d)", rpc_env.fault_string,
-			      rpc_env.fault_code);
-			xmlrpc_DECREF(rv);
-			continue;
-		}
-		xmlrpc_DECREF(rv);
-
-		for (int i = 1; i < array_size; i++) {
-			xmlrpc_value *rv = 0;
-
-			xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
-			if (rv) {
-				struct report report;
-				int begin_sec, begin_nsec, end_sec, end_nsec;
-				int tcpi_snd_cwnd;
-				int tcpi_snd_ssthresh;
-				int tcpi_unacked;
-				int tcpi_sacked;
-				int tcpi_lost;
-				int tcpi_retrans;
-				int tcpi_retransmits;
-				int tcpi_fackets;
-				int tcpi_reordering;
-				int tcpi_rtt;
-				int tcpi_rttvar;
-				int tcpi_rto;
-				int tcpi_backoff;
-				int tcpi_ca_state;
-				int tcpi_snd_mss;
-				int bytes_read_low, bytes_read_high;
-				int bytes_written_low, bytes_written_high;
-
-				xmlrpc_decompose_value(&rpc_env, rv,
-					"("
-					"{s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
-					"{s:i,s:i,s:i,s:i,*}" /* bytes */
-					"{s:i,s:i,s:i,s:i,*}" /* blocks */
-					"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT, Delay */
-					"{s:i,s:i,*}" /* MTU */
-					"{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
-					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
-					"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
-					"{s:i,*}"
-					")",
-
-					"id", &report.id,
-					"type", &report.type,
-					"begin_tv_sec", &begin_sec,
-					"begin_tv_nsec", &begin_nsec,
-					"end_tv_sec", &end_sec,
-					"end_tv_nsec", &end_nsec,
-
-					"bytes_read_high", &bytes_read_high,
-					"bytes_read_low", &bytes_read_low,
-					"bytes_written_high", &bytes_written_high,
-					"bytes_written_low", &bytes_written_low,
-
-					"request_blocks_read", &report.request_blocks_read,
-					"request_blocks_written", &report.request_blocks_written,
-					"response_blocks_read", &report.response_blocks_read,
-					"response_blocks_written", &report.response_blocks_written,
-
-					"rtt_min", &report.rtt_min,
-					"rtt_max", &report.rtt_max,
-					"rtt_sum", &report.rtt_sum,
-					"iat_min", &report.iat_min,
-					"iat_max", &report.iat_max,
-					"iat_sum", &report.iat_sum,
-					"delay_min", &report.delay_min,
-					"delay_max", &report.delay_max,
-					"delay_sum", &report.delay_sum,
-
-					"pmtu", &report.pmtu,
-					"imtu", &report.imtu,
-
-					"tcpi_snd_cwnd", &tcpi_snd_cwnd,
-					"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
-					"tcpi_unacked", &tcpi_unacked,
-					"tcpi_sacked", &tcpi_sacked,
-					"tcpi_lost", &tcpi_lost,
-
-					"tcpi_retrans", &tcpi_retrans,
-					"tcpi_retransmits", &tcpi_retransmits,
-					"tcpi_fackets", &tcpi_fackets,
-					"tcpi_reordering", &tcpi_reordering,
-					"tcpi_rtt", &tcpi_rtt,
-
-					"tcpi_rttvar", &tcpi_rttvar,
-					"tcpi_rto", &tcpi_rto,
-					"tcpi_backoff", &tcpi_backoff,
-					"tcpi_ca_state", &tcpi_ca_state,
-					"tcpi_snd_mss", &tcpi_snd_mss,
-
-					"status", &report.status
-				);
+				xmlrpc_client_call2f(&rpc_env, rpc_client,
+						cflow[id].endpoint[*i].server_info->server_url,
+						"get_reports", &resultP, "()");
+				
+				if (rpc_env.fault_occurred) {
+					errx("XML-RPC fault: %s (%d)", rpc_env.fault_string,
+							rpc_env.fault_code);
+					continue;
+				}
+				
+				if (!resultP)
+					continue;
+				
+				array_size = xmlrpc_array_size(&rpc_env, resultP);
+				if(!array_size) {
+					warnx("empty array in get_reports reply");
+					continue;
+				}
+				
+				xmlrpc_array_read_item(&rpc_env, resultP, 0, &rv);
+				xmlrpc_read_int(&rpc_env, rv, &has_more);
+				if (rpc_env.fault_occurred) {
+					errx("XML-RPC fault: %s (%d)", rpc_env.fault_string,
+							rpc_env.fault_code);
+					xmlrpc_DECREF(rv);
+					continue;
+				}
+				
 				xmlrpc_DECREF(rv);
+				
+				for (int i = 1; i < array_size; i++) {
+					xmlrpc_value *rv = 0;
+					
+					xmlrpc_array_read_item(&rpc_env, resultP, i, &rv);
+					
+					if (rv) {
+						struct report report;
+						int begin_sec, begin_nsec, end_sec, end_nsec;
+						int tcpi_snd_cwnd;
+						int tcpi_snd_ssthresh;
+						int tcpi_unacked;
+						int tcpi_sacked;
+						int tcpi_lost;
+						int tcpi_retrans;
+						int tcpi_retransmits;
+						int tcpi_fackets;
+						int tcpi_reordering;
+						int tcpi_rtt;
+						int tcpi_rttvar;
+						int tcpi_rto;
+						int tcpi_backoff;
+						int tcpi_ca_state;
+						int tcpi_snd_mss;
+						int bytes_read_low, bytes_read_high;
+						int bytes_written_low, bytes_written_high;
+						
+						xmlrpc_decompose_value(&rpc_env,rv,
+								"("
+								"{s:i,s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
+								"{s:i,s:i,s:i,s:i,*}" /* bytes */
+								"{s:i,s:i,s:i,s:i,*}" /* blocks */
+								"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT, Delay */
+								"{s:i,s:i,*}" /* MTU */
+								"{s:i,s:i,s:i,s:i,s:i,*}" /* TCP info */
+								"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
+								"{s:i,s:i,s:i,s:i,s:i,*}" /* ...      */
+								"{s:i,*}"
+								")",
+								
+								"id", &report.id,
+								"endpoint", &report.endpoint,
+								"type", &report.type,
+								"begin_tv_sec", &begin_sec,
+								"begin_tv_nsec", &begin_nsec,
+								"end_tv_sec", &end_sec,
+								"end_tv_nsec", &end_nsec,
+								
+								"bytes_read_high", &bytes_read_high,
+								"bytes_read_low", &bytes_read_low,
+								"bytes_written_high", &bytes_written_high,
+								"bytes_written_low", &bytes_written_low,
+								
+								"request_blocks_read", &report.request_blocks_read,
+								"request_blocks_written", &report.request_blocks_written,
+								"response_blocks_read", &report.response_blocks_read,
+								"response_blocks_written", &report.response_blocks_written,
+								
+								"rtt_min", &report.rtt_min,
+								"rtt_max", &report.rtt_max,
+								"rtt_sum", &report.rtt_sum,
+								"iat_min", &report.iat_min,
+								"iat_max", &report.iat_max,
+								"iat_sum", &report.iat_sum,
+								"delay_min", &report.delay_min,
+								"delay_max", &report.delay_max,
+								"delay_sum", &report.delay_sum,
+								
+								"pmtu", &report.pmtu,
+								"imtu", &report.imtu,
+								
+								"tcpi_snd_cwnd", &tcpi_snd_cwnd,
+								"tcpi_snd_ssthresh", &tcpi_snd_ssthresh,
+								"tcpi_unacked", &tcpi_unacked,
+								"tcpi_sacked", &tcpi_sacked,
+								"tcpi_lost", &tcpi_lost,
+								
+								"tcpi_retrans", &tcpi_retrans,
+								"tcpi_retransmits", &tcpi_retransmits,
+								"tcpi_fackets", &tcpi_fackets,
+								"tcpi_reordering", &tcpi_reordering,
+								"tcpi_rtt", &tcpi_rtt,
+								
+								"tcpi_rttvar", &tcpi_rttvar,
+								"tcpi_rto", &tcpi_rto,
+								"tcpi_backoff", &tcpi_backoff,
+								"tcpi_ca_state", &tcpi_ca_state,
+								"tcpi_snd_mss", &tcpi_snd_mss,
+								
+								"status", &report.status
+									);
+						xmlrpc_DECREF(rv);
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
-				report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
-				report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
+						report.bytes_read = ((long long)bytes_read_high << 32) + (uint32_t)bytes_read_low;
+						report.bytes_written = ((long long)bytes_written_high << 32) + (uint32_t)bytes_written_low;
 #else /* HAVE_UNSIGNED_LONG_LONG_INT */
-				report.bytes_read = (uint32_t)bytes_read_low;
-				report.bytes_written = (uint32_t)bytes_written_low;
+						report.bytes_read = (uint32_t)bytes_read_low;
+						report.bytes_written = (uint32_t)bytes_written_low;
 #endif /* HAVE_UNSIGNED_LONG_LONG_INT */
-
-				/* FIXME Kernel metrics (tcp_info). Other OS than
-				 * Linux may not send valid values here. For
-				 * the moment we don't care and handle this in
-				 * the output/display routines. However, this
-				 * do not work in heterogeneous environments */
-				report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
-				report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
-				report.tcp_info.tcpi_unacked = tcpi_unacked;
-				report.tcp_info.tcpi_sacked = tcpi_sacked;
-				report.tcp_info.tcpi_lost = tcpi_lost;
-				report.tcp_info.tcpi_retrans = tcpi_retrans;
-				report.tcp_info.tcpi_retransmits = tcpi_retransmits;
-				report.tcp_info.tcpi_fackets = tcpi_fackets;
-				report.tcp_info.tcpi_reordering = tcpi_reordering;
-				report.tcp_info.tcpi_rtt = tcpi_rtt;
-				report.tcp_info.tcpi_rttvar = tcpi_rttvar;
-				report.tcp_info.tcpi_rto = tcpi_rto;
-				report.tcp_info.tcpi_backoff = tcpi_backoff;
-				report.tcp_info.tcpi_ca_state = tcpi_ca_state;
-				report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
-
-				report.begin.tv_sec = begin_sec;
-				report.begin.tv_nsec = begin_nsec;
-				report.end.tv_sec = end_sec;
-				report.end.tv_nsec = end_nsec;
-
-				report_flow(&unique_servers[j], &report);
+						/* FIXME Kernel metrics (tcp_info).
+						 * Other OS than Linux may not
+						 * send valid values here. For
+						 * the moment we don't care and
+						 * handle this in the output/display
+						 * routines. However, this
+						 * do not work in heterogeneous
+						 * environments */
+						report.tcp_info.tcpi_snd_cwnd = tcpi_snd_cwnd;
+						report.tcp_info.tcpi_snd_ssthresh = tcpi_snd_ssthresh;
+						report.tcp_info.tcpi_unacked = tcpi_unacked;
+						report.tcp_info.tcpi_sacked = tcpi_sacked;
+						report.tcp_info.tcpi_lost = tcpi_lost;
+						report.tcp_info.tcpi_retrans = tcpi_retrans;
+						report.tcp_info.tcpi_retransmits = tcpi_retransmits;
+						report.tcp_info.tcpi_fackets = tcpi_fackets;
+						report.tcp_info.tcpi_reordering = tcpi_reordering;
+						report.tcp_info.tcpi_rtt = tcpi_rtt;
+						report.tcp_info.tcpi_rttvar = tcpi_rttvar;
+						report.tcp_info.tcpi_rto = tcpi_rto;
+						report.tcp_info.tcpi_backoff = tcpi_backoff;
+						report.tcp_info.tcpi_ca_state = tcpi_ca_state;
+						report.tcp_info.tcpi_snd_mss = tcpi_snd_mss;
+						
+						report.begin.tv_sec = begin_sec;
+						report.begin.tv_nsec = begin_nsec;
+						report.end.tv_sec = end_sec;
+						report.end.tv_nsec = end_nsec;
+						
+						report_flow(&report);
+					}
+				}
+				xmlrpc_DECREF(resultP);
+				
+				if (has_more)
+					goto has_more_reports;
 			}
 		}
-		xmlrpc_DECREF(resultP);
-
-		if (has_more)
-			goto has_more_reports;
 	}
 }
 
-/* This function allots an report received from one daemon (identified
- * by server_url)  to the proper flow */
-static void report_flow(const struct daemon* daemon, struct report* report)
+/**
+ * Reports are fetched from the flow endpoint daemon
+ *
+ * Single daemon can maintain multiple flows endpoints and daemons combine all
+ * it flows report and send the controller. So controller give the flow ID to
+ * daemons, while prepare the flow.Controller flow ID is maintained by the
+ * daemons to maintain its flow endpoints.So When getting back the reports from
+ * the daemons, the controller use those flow ID registered for the daemon in
+ * the prepare flow as reference to distinguish the reports.
+ *
+ * The daemon also send back the details regarding flow endpoints
+ * i.e. source or destination. So this information is also used by the daemons
+ * to distinguish the report in the report flow.
+ *
+ * @param[in] report report from the daemon
+ */
+static void report_flow(struct report* report)
 {
-	const char* server_url = daemon->server_url;
 	int *i = NULL;
 	unsigned short id;
 	struct cflow *f = NULL;
@@ -1263,8 +1469,8 @@ static void report_flow(const struct daemon* daemon, struct report* report)
 		f = &cflow[id];
 
 		foreach(i, SOURCE, DESTINATION)
-			if (f->endpoint_id[*i] == report->id &&
-			    !strcmp(server_url, f->endpoint[*i].daemon->server_url))
+			if ((f->endpoint_id[*i] == report->id) && 
+					(*i == (int)report->endpoint))
 				goto exit_outer_loop;
 	}
 exit_outer_loop:
@@ -1292,12 +1498,28 @@ exit_outer_loop:
 	}
 	print_interval_report(id, *i, report);
 }
-
+/**
+ * Stop test connections for all flows in a test
+ *
+ *
+ * All the test connection are stopped, but the test connection flow in the
+ * controller and in daemon are different. In the controller, test connection
+ * are respective to number of flows in a test,but in daemons test connection
+ * are respective to flow endpoints. Single daemons can maintain multiple flows
+ * endpoints, So controller should stop a daemon only once.
+ *
+ * In order to faciliate this, the daemons call state is used to check,
+ * whether the daemon is called by the controller. If the daemon is called, 
+ * then remote procedure call to that daemon again is ignored.
+ *
+ * @param[in] rpc_client to connect controller to daemon
+ */
 static void close_all_flows(void)
 {
 	xmlrpc_env env;
 	xmlrpc_client *client;
-
+	
+	clear_daemon_state();
 	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_WARNING, "closing flow %u.", id);
 
@@ -1306,7 +1528,8 @@ static void close_all_flows(void)
 
 		/* We use new env and client, old one might be in fault condition */
 		xmlrpc_env_init(&env);
-		xmlrpc_client_create(&env, XMLRPC_CLIENT_NO_FLAGS, "Flowgrind", FLOWGRIND_VERSION, NULL, 0, &client);
+		xmlrpc_client_create(&env, XMLRPC_CLIENT_NO_FLAGS,
+				"Flowgrind", FLOWGRIND_VERSION, NULL, 0, &client);
 		die_if_fault_occurred(&env);
 		xmlrpc_env_clean(&env);
 
@@ -1314,26 +1537,30 @@ static void close_all_flows(void)
 			xmlrpc_value * resultP = 0;
 
 			if (cflow[id].endpoint_id[*i] == -1 ||
-			    cflow[id].finished[*i])
+					cflow[id].finished[*i])
 				/* Endpoint does not need closing */
 				continue;
-
+			
 			cflow[id].finished[*i] = 1;
 
-			xmlrpc_env_init(&env);
-			xmlrpc_client_call2f(&env, client,
-					     cflow[id].endpoint[*i].daemon->server_url,
-					     "stop_flow", &resultP, "({s:i})",
-					     "flow_id", cflow[id].endpoint_id[*i]);
-			if (resultP)
-				xmlrpc_DECREF(resultP);
-
-			xmlrpc_env_clean(&env);
+			if(!cflow[id].endpoint[*i].server_info->daemon->called){
+				xmlrpc_env_init(&env);
+				xmlrpc_client_call2f(&env, client,
+						cflow[id].endpoint[*i].server_info->server_url,
+						"stop_flow", &resultP,
+						"({s:i})",
+						"flow_id", cflow[id].endpoint_id[*i]);
+				cflow[id].endpoint[*i].server_info->daemon->called=1;
+				
+				if (resultP)
+					xmlrpc_DECREF(resultP);
+				xmlrpc_env_clean(&env);
+			}
 		}
-
+		
 		if (active_flows > 0)
 			active_flows--;
-
+		
 		xmlrpc_client_destroy(client);
 		DEBUG_MSG(LOG_WARNING, "closed flow %u.", id);
 	}
@@ -1752,11 +1979,19 @@ static char *guess_topology(unsigned mtu)
 }
 
 /**
- * Print final report (i.e. summary line) for endpoint @p e of flow @p flow_id.
+ * To calculate the performance metrics and display the results in flowgrind 
+ * controller
  *
- * @param[in] flow_id flow a final report will be created for
- * @param[in] e flow endpoint (SOURCE or DESTINATION)
- */
+ * All the daemon information regarding the daemons IP address,controller-daemon 
+ * RPC connection information, Node OS name and release details are stored in
+ * the server information memory block. Final report use the final report sent
+ * by the daemon to calculate the final performance metrics for the final test
+ * result. Use both server information and calculated results to display the
+ * final report in the controller
+ *
+ * @param[in] flow_id controller flow ID
+ * @param[in] e source or destination endpoint
+ * */
 static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 {
 	/* To store the final report */
@@ -1780,14 +2015,14 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	/* Infos about the test connections */
 	asprintf_append(&buf, "%s", endpoint->test_address);
 
-	if (strcmp(endpoint->daemon->server_name, endpoint->test_address) != 0)
-		asprintf_append(&buf, "/%s", endpoint->daemon->server_name);
-	if (endpoint->daemon->server_port != DEFAULT_LISTEN_PORT)
-		asprintf_append(&buf, ":%d", endpoint->daemon->server_port);
+	if (strcmp(endpoint->server_info->server_name, endpoint->test_address) != 0)
+		asprintf_append(&buf, "/%s", endpoint->server_info->server_name);
+	if (endpoint->server_info->server_port != DEFAULT_LISTEN_PORT)
+		asprintf_append(&buf, ":%d", endpoint->server_info->server_port);
 
 	/* Infos about the daemon OS */
 	asprintf_append(&buf, " (%s %s), ",
-			endpoint->daemon->os_name, endpoint->daemon->os_release);
+			endpoint->server_info->os_name, endpoint->server_info->os_release);
 
 	/* Random seed */
 	asprintf_append(&buf, "random seed: %u, ", cflow[flow_id].random_seed);
@@ -1942,23 +2177,34 @@ static void print_all_final_reports(void)
 	}
 }
 
-/* Finds the daemon (or creating a new one) for a given server_url,
- * uses global static unique_servers variable for storage */
-static struct daemon * get_daemon_by_url(const char* server_url,
-					  const char* server_name,
-					  unsigned short server_port)
+/**
+ * Finds the daemon (or creating a new one) for a given server_url,
+ * uses global static servers_info pointer variable for storage
+ *
+ * @param[in] XML-RPC connection url
+ * @param[in] server_name flow endpoints IP address
+ * @param[in] server_port controller - daemon XML-RPC connection port Nr
+ * @return server_info allocated memory block for the given server url 
+ * */
+static struct server_info * get_server_info_by_url(const char* server_url, 
+		const char* server_name,
+	       	unsigned short server_port)
 {
+	if(num_servers == 0)
+		servers_info = (struct server_info*)malloc((copt.num_flows*2)*sizeof(struct server_info));
+	
 	/* If we have already a daemon for this URL return a pointer to it */
-	for (unsigned short i = 0; i < num_unique_servers; i++) {
-		if (!strcmp(unique_servers[i].server_url, server_url))
-			return &unique_servers[i];
+	for (unsigned short i = 0; i < num_servers; i++) {
+		if (!strcmp(servers_info[i].server_url, server_url))
+			return &servers_info[i];
 	}
+	
 	/* didn't find anything, seems to be a new one */
-	memset(&unique_servers[num_unique_servers], 0, sizeof(struct daemon));
-	strcpy(unique_servers[num_unique_servers].server_url, server_url);
-	strcpy(unique_servers[num_unique_servers].server_name, server_name);
-	unique_servers[num_unique_servers].server_port = server_port;
-	return &unique_servers[num_unique_servers++];
+	memset(&servers_info[num_servers], 0, sizeof(struct server_info));
+	strcpy(servers_info[num_servers].server_url, server_url);
+	strcpy(servers_info[num_servers].server_name, server_name);
+	servers_info[num_servers].server_port = server_port;
+	return &servers_info[num_servers++];
 }
 
 /**
@@ -2131,7 +2377,7 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 {
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
-	struct daemon* daemon;
+	struct server_info* servers;
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
@@ -2181,9 +2427,10 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 
 	if (rc == -1)
 		critx("could not allocate memory for RPC URL");
-
-	daemon = get_daemon_by_url(url, rpc_address, port);
-	endpoint->daemon = daemon;
+	
+	/* Get flow endpoint server information for each flow*/
+	servers = get_server_info_by_url(url, rpc_address, port);
+	endpoint->server_info = servers;
 	strcpy(endpoint->test_address, arg);
 	free_all(arg, url);
 }
@@ -2765,8 +3012,8 @@ static void parse_cmdline(int argc, char *argv[])
 
 		foreach(int *i, SOURCE, DESTINATION) {
 			/* Default to localhost, if no endpoints were set for a flow */
-			if (!cflow[id].endpoint[*i].daemon) {
-				cflow[id].endpoint[*i].daemon = get_daemon_by_url(
+			if (!cflow[id].endpoint[*i].server_info) {
+				cflow[id].endpoint[*i].server_info = get_server_info_by_url(
 					"http://localhost:5999/RPC2", "localhost", DEFAULT_LISTEN_PORT);
 			}
 		}

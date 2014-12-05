@@ -56,7 +56,7 @@ flowgrindd_SOURCES = src/common.h src/daemon.h src/daemon.c src/debug.c \
 					 src/fg_list.c src/fg_definitions.h src/fg_affinity.h \
 					 src/fg_affinity.c src/fg_rpc_server.h src/fg_rpc_server.c
 flowgrindd_LDADD = $(LIBS) $(XMLRPC_C_SERVER_LDADD) $(GSL_LDADD)
-flowgrindd_CFLAGS = $(AM_CFLAGS) $(XMLRPC_C_SERVER_CFLAGS) $(GSL_CFLAGS)
+flowgrindd_CFLAGS = $(AM_CFLAGS) $(XMLRPC_C_SERVER_CFLAGS) $(UUID_CFLAGS)$(GSL_CFLAGS)
 
 # flowgrind-stop
 flowgrind_stop_SOURCES = src/fg_error.h src/fg_error.c src/fg_progname.h \
