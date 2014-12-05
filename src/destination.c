@@ -146,7 +146,15 @@ static int create_listen_socket(struct flow *flow, char *bind_addr,
 
 	return fd;
 }
-
+/**
+ * To set daemon flow as destination endpoint
+ *
+ * To set the flow options and settings as destination endpoint. Listening port
+ * created and the details replied back to the controller in the same request structure
+ *
+ * @param[in] request Contain the test option and parameter for destination 
+ * source endpoint 
+ */
 void add_flow_destination(struct request_add_flow_destination *request)
 {
 	struct flow *flow;
@@ -171,6 +179,8 @@ void add_flow_destination(struct request_add_flow_destination *request)
 	flow->settings = request->settings;
 	flow->write_block = calloc(1, flow->settings.maximum_block_size );
 	flow->read_block = calloc(1, flow->settings.maximum_block_size );
+	/* Controller flow ID is set in the daemon */
+	flow->id=flow->settings.flow_id;
 	if (flow->write_block == NULL || flow->read_block == NULL) {
 		logging_log(LOG_ALERT, "could not allocate memory for "
 			    "read/write blocks");

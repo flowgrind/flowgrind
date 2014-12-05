@@ -149,7 +149,15 @@ static int name2socket(struct flow *flow, char *server_name, unsigned port, stru
 
 	return fd;
 }
-
+/**
+ * To set daemon flow as source endpoint
+ *
+ * To set the flow options and settings as source endpoint. Depending upon the 
+ * late connection option the data connection is established to connect the 
+ * destination daemon listening port address with source daemon. 
+ *
+ * @param[in] request Contain the test option and parameter for daemon source endpoint 
+ */
 int add_flow_source(struct request_add_flow_source *request)
 {
 #ifdef HAVE_SO_TCP_CONGESTION
@@ -176,7 +184,8 @@ int add_flow_source(struct request_add_flow_source *request)
 	/* be greedy with buffer sizes */
 	flow->write_block = calloc(1, flow->settings.maximum_block_size);
 	flow->read_block = calloc(1, flow->settings.maximum_block_size);
-
+	/* Controller flow ID is set in the daemon */
+	flow->id = flow->settings.flow_id;
 	if (flow->write_block == NULL || flow->read_block == NULL) {
 		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");

@@ -43,6 +43,22 @@
 #include "debug.h"
 #include "fg_rpc_server.h"
 
+/**
+ * Prepare data connection for source endpoint.
+ *
+ * Flowgrind rpc server decode the information from the controller XML-RPC and 
+ * construct the request data structure to add flow in the source daemon. The
+ * request is dispatched to source daemon. The source daemon execute the request
+ * and send back the executed result in the request reply to the flowgrind rpc 
+ * server. Flowgrind rpc server then encode the requested reply information from
+ * the daemon and send back the data to the flowgrind controller through
+ * XML-RPC connection
+ *
+ * @param[in] env XML-RPC environment object
+ * @param[in] param_array XML-RPC value
+ * @param[in] user_data unused arg
+ * return xmlrpc_value XML-RPC value
+ */
 static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
@@ -67,6 +83,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	xmlrpc_decompose_value(env, param_array,
 		"("
 		"{s:s,*}"
+		"{s:i,*}"
 		"{s:d,s:d,s:d,s:d,s:d,*}"
 		"{s:i,s:i,*}"
 		"{s:i,*}"
@@ -85,6 +102,8 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 		/* general settings */
 		"bind_address", &bind_address,
+
+		"flow_id", &settings.flow_id,
 
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
@@ -237,7 +256,22 @@ cleanup:
 
 	return ret;
 }
-
+/**
+ * Prepare data connection for destination endpoint.
+ *
+ * Flowgrind rpc server decode the information from the controller XML-RPC and 
+ * construct the request data structure to add flow in the destination daemon.
+ * The request is dispatched to destination daemon. The destination daemon execute
+ * the request and send back the executed result in the requested reply to the
+ * flowgrind rpc server. Flowgrind rpc server then encode the request reply
+ * information from the daemon and send back the data to the flowgrind
+ * controller through XML-RPC connection
+ *
+ * @param[in] env XML-RPC environment object
+ * @param[in] param_array XML-RPC value
+ * @param[in] user_data unused arg
+ * return xmlrpc_value XML-RPC value
+ */
 static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
@@ -260,6 +294,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	xmlrpc_decompose_value(env, param_array,
 		"("
 		"{s:s,*}"
+		"{s:i,*}"
 		"{s:d,s:d,s:d,s:d,s:d,*}"
 		"{s:i,s:i,*}"
 		"{s:i,*}"
@@ -277,6 +312,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 
 		/* general settings */
 		"bind_address", &bind_address,
+
+		"flow_id", &settings.flow_id,
 
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
@@ -462,7 +499,17 @@ cleanup:
 
 	return ret;
 }
-
+/**
+ * To get the reports from the daemon.
+ *
+ * Flowgrind rpc server get the reports from the daemon and encode the information
+ * and send the report data to the controller through XML-RPC connection
+ *
+ * @param[in] env XML-RPC environment object
+ * @param[in] param_array unused arg
+ * @param[in] user_data unused arg
+ * return xmlrpc_value XML-RPC value
+ */
 static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
@@ -487,7 +534,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	while (report) {
 		xmlrpc_value *rv = xmlrpc_build_value(env,
 			"("
-			"{s:i,s:i,s:i,s:i,s:i,s:i}" /* timeval */
+			"{s:i,s:i,s:i,s:i,s:i,s:i,s:i}" /* timeval */
 			"{s:i,s:i,s:i,s:i}" /* bytes */
 			"{s:i,s:i,s:i,s:i}" /* block counts */
 			"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d}" /* RTT, IAT, Delay */
@@ -499,6 +546,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			")",
 
 			"id", report->id,
+			"endpoint",report->endpoint,
 			"type", report->type,
 			"begin_tv_sec", (int)report->begin.tv_sec,
 			"begin_tv_nsec", (int)report->begin.tv_nsec,
@@ -641,8 +689,21 @@ static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 
 	return ret;
 }
-
-/* This method returns the number of flows and if actual test has started */
+/**
+ * To get the daemons flow start status, UUID and num. of flows maintained 
+ * by the daemon.
+ *
+ * Flowgrind rpc server dispatch the request to get the daemon flow start
+ * status, UUID and if the flows are started, then number of flows maintained 
+ * by the daemon. After getting these information, flowgrind rpc server encode 
+ * the information and send back the details to the controller through the 
+ * XML-RPC connection.
+ *
+ * @param[in] env XML-RPC environment object
+ * @param[in] param_array unused arg
+ * @param[in] user_data unused arg
+ * return xmlrpc_value XML-RPC value
+ */
 static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 		   xmlrpc_value * const param_array,
 		   void * const user_data)
@@ -663,9 +724,10 @@ static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
 
 	/* Return our result. */
-	ret = xmlrpc_build_value(env, "{s:i,s:i}",
+	ret = xmlrpc_build_value(env, "{s:i,s:i,s:s}",
 		"started", request->started,
-		"num_flows", request->num_flows);
+		"num_flows", request->num_flows,
+		"server_uuid", request->server_uuid);
 
 cleanup:
 	if (request)

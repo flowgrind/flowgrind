@@ -198,6 +198,14 @@ struct controller_options {
 /** Infos about a flowgrind daemon. */
 struct daemon {
 /* Note: a daemon can potentially managing multiple flows */
+	/** UUID of the daemon. */
+	char uuid[38];
+	/** daemon call state. */
+	int called;
+};
+
+/** Infos about a flowgrind daemon and daemon-controller connection. */
+struct server_info{
 	/** XMLRPC URL for this daemon. */
 	char server_url[1000];
 	/** Name of the XMLRPC server. */
@@ -210,6 +218,8 @@ struct daemon {
 	char os_name[257];
 	/** Release number of the OS. */
 	char os_release[257];
+	/** Pointer to the acutal daemon(unique by UUID) managing the endpoints. */
+	struct daemon* daemon;
 };
 
 /** Infos about the flow endpoint. */
@@ -218,9 +228,8 @@ struct flow_endpoint {
 	int send_buffer_size_real;
 	/** Receiver buffer (SO_RCVBUF). */
 	int receive_buffer_size_real;
-
-	/** Pointer to the daemon managing this endpoint. */
-	struct daemon* daemon;
+	/** Pointer to manage flow endpoint server information */
+	struct server_info* server_info;
 	/** network address where the actual test connection goes to. */
 	char test_address[1000];
 };
