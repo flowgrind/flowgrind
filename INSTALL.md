@@ -35,6 +35,7 @@ Flowgrind depends on the following tools and libraries:
 
 * GNU Build System (aka Autotools)
 * libxmlrpc-c with curl transport and abyss server
+* uuid-dev - Universally unique id library
 
 These libraries as well as their headers and tools need to be installed (install appropriate -dev packages too).
 
@@ -50,7 +51,7 @@ Debian & Ubuntu
 * Install essentials and required xmlrpc-c library:
 
         # sudo apt-get install build-essential debhelper cdbs autotools-dev
-        # sudo apt-get install libxmlrpc-core-c3 libxmlrpc-core-c3-dev libcurl4-gnutls-dev
+        # sudo apt-get install libxmlrpc-core-c3 libxmlrpc-core-c3-dev libcurl4-gnutls-dev uuid-dev
 
 * Install optional libGSL and libpcap library if you want to use all flowgrind features:
 
@@ -105,6 +106,10 @@ FreeBSD
 * Install required xmlrpc-c library:
 
         # cd /usr/ports/net/xmlrpc-c; make install clean (activate curl)
+
+* Install required uuid-dev library:
+
+        # cd /usr/ports/misc/e2fsprogs-libuuid; make install clean
 
 * Install optional libGSL and libpcap library if you want to use all flowgrind features:
 
