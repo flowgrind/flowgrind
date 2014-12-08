@@ -33,7 +33,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "log.h"
+#include "fg_log.h"
 #include "fg_time.h"
 #include "fg_error.h"
 

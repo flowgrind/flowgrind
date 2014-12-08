@@ -50,7 +50,7 @@ flowgrindd_SOURCES = src/common.h src/daemon.h src/daemon.c src/debug.c \
 					 src/fg_error.c src/fg_math.h src/fg_math.c \
 					 src/fg_progname.h src/fg_progname.c src/fg_socket.c \
 					 src/fg_socket.h src/fg_string.h src/fg_string.c \
-					 src/fg_time.c src/flowgrindd.c src/log.h src/log.c \
+					 src/fg_time.c src/flowgrindd.c src/fg_log.h src/fg_log.c \
 					 src/source.h src/source.c src/trafgen.h src/trafgen.c \
 					 src/fg_argparser.h src/fg_argparser.c src/fg_list.h \
 					 src/fg_list.c src/fg_definitions.h src/fg_affinity.h \

@@ -58,7 +58,7 @@
 #include "fg_math.h"
 #include "fg_socket.h"
 #include "fg_time.h"
-#include "log.h"
+#include "fg_log.h"
 
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"

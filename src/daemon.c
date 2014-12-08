@@ -63,7 +63,7 @@
 #include "fg_definitions.h"
 #include "fg_socket.h"
 #include "fg_time.h"
-#include "log.h"
+#include "fg_log.h"
 #include "daemon.h"
 #include "source.h"
 #include "destination.h"

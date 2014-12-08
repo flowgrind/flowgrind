@@ -51,7 +51,7 @@
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "fg_string.h"
-#include "log.h"
+#include "fg_log.h"
 #include "daemon.h"
 #include "fg_pcap.h"
 

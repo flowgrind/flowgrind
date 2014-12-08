@@ -58,7 +58,7 @@
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "fg_math.h"
-#include "log.h"
+#include "fg_log.h"
 #include "daemon.h"
 
 #ifdef HAVE_LIBPCAP

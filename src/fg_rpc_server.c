@@ -37,7 +37,7 @@
 
 #include "common.h"
 #include "daemon.h"
-#include "log.h"
+#include "fg_log.h"
 #include "fg_error.h"
 #include "fg_definitions.h"
 #include "debug.h"
