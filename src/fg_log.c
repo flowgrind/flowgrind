@@ -70,21 +70,6 @@ void logging_exit (void)
 	free(logstr);
 }
 
-void logging_log (int priority, const char *fmt, ...)
-{
-	int n;
-	va_list ap;
-
-	memset(logstr, 0, LOGGING_MAXLEN);
-
-	va_start(ap, fmt);
-	n = vsnprintf(logstr, LOGGING_MAXLEN, fmt, ap);
-	va_end(ap);
-
-	if (n > -1 && n < LOGGING_MAXLEN)
-		logging_log_string(priority, logstr);
-}
-
 void logging_log_string (int priority, const char *s)
 {
 	char timestamp[30] = "";
@@ -100,3 +85,20 @@ void logging_log_string (int priority, const char *s)
 		break;
 	}
 }
+
+void logging_log (int priority, const char *fmt, ...)
+{
+	int n;
+	va_list ap;
+
+	memset(logstr, 0, LOGGING_MAXLEN);
+
+	va_start(ap, fmt);
+	n = vsnprintf(logstr, LOGGING_MAXLEN, fmt, ap);
+	va_end(ap);
+
+	if (n > -1 && n < LOGGING_MAXLEN)
+		logging_log_string(priority, logstr);
+}
+
+

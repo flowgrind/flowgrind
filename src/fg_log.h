@@ -49,6 +49,5 @@ extern enum log_types log_type;
 void logging_init (void);
 void logging_exit (void);
 void logging_log (int priority, const char *fmt, ...);
-void logging_log_string (int priority, const char *s);
 
 #endif /* _LOG_H_ */
