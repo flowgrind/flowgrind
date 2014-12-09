@@ -90,6 +90,7 @@ extern int daemon(int, int);
 
 /* External global variables */
 extern const char *progname;
+extern enum log_types log_type;
 
 /* XXX add a brief description doxygen */
 static unsigned port = DEFAULT_LISTEN_PORT;

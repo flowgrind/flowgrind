@@ -35,12 +35,16 @@
 /** Maximum length of logging string. */
 #define LOGGING_MAXLEN	255
 
-extern int log_type;
-
-enum {
-	LOGTYPE_SYSLOG,
-	LOGTYPE_STDERR
+/** Supported output streams for logging. */
+enum log_types {
+	/** Log to syslog. */
+	LOGTYPE_SYSLOG = 0,
+	/** Log to stderr. */
+	LOGTYPE_STDERR,
 };
+
+/** To which output stream we log */
+extern enum log_types log_type;
 
 void logging_init (void);
 void logging_exit (void);

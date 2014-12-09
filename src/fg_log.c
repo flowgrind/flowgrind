@@ -38,7 +38,8 @@
 #include "fg_error.h"
 
 char *logstr = NULL;
-int log_type = LOGTYPE_SYSLOG;
+
+enum log_types log_type = LOGTYPE_SYSLOG;
 
 void logging_init (void)
 {
