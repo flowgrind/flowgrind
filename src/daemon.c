@@ -171,14 +171,14 @@ void uninit_flow(struct flow *flow)
 	if (flow->settings.traffic_dump && flow->pcap_thread) {
 		rc = pthread_cancel(flow->pcap_thread);
 		if (rc)
-			logging_log(LOG_WARNING, "failed to cancel dump "
-				    "thread: %s", strerror(rc));
+			logging(LOG_WARNING, "failed to cancel dump thread: %s",
+				strerror(rc));
 
 		/* wait for the dump thread to react to the cancellation request */
 		rc = pthread_join(flow->pcap_thread, NULL);
 		if (rc)
-			logging_log(LOG_WARNING, "failed to join dump "
-					"thread: %s", strerror(rc));
+			logging(LOG_WARNING, "failed to join dump thread: %s",
+				strerror(rc));
 	}
 #endif /* HAVE_LIBPCAP */
 	free_all(flow->read_block, flow->write_block, flow->addr, flow->error);
@@ -938,8 +938,8 @@ static int write_data(struct flow *flow)
 
 		if (rc == -1) {
 			if (errno == EAGAIN) {
-				logging_log(LOG_WARNING, "write queue limit hit "
-					    "for flow %d", flow->id);
+				logging(LOG_WARNING, "write queue limit hit for "
+					"flow %d", flow->id);
 				break;
 			}
 			DEBUG_MSG(LOG_WARNING, "write() returned %d on flow %d, "
@@ -1098,9 +1098,9 @@ static int read_data(struct flow *flow)
 		    optint <= flow->settings.maximum_block_size )
 			flow->current_read_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal cbs %d, "
-				    "ignoring (max: %d)", flow->id, optint,
-				    flow->settings.maximum_block_size);
+			logging(LOG_WARNING, "flow %d parsed illegal cbs %d, "
+				"ignoring (max: %d)", flow->id, optint,
+				flow->settings.maximum_block_size);
 
 		/* parse and check current request size for validity */
 		optint = ntohl( ((struct block *)flow->read_block)->request_block_size );
@@ -1109,11 +1109,9 @@ static int read_data(struct flow *flow)
 		     optint <= flow->settings.maximum_block_size))
 			requested_response_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal qbs "
-				    "%d, ignoring (max: %d)",
-				    flow->id,
-				    optint,
-				    flow->settings.maximum_block_size);
+			logging(LOG_WARNING, "flow %d parsed illegal qbs %d, "
+				"ignoring (max: %d)", flow->id, optint,
+				flow->settings.maximum_block_size);
 #ifdef DEBUG
 		if (requested_response_block_size == -1) {
 			DEBUG_MSG(LOG_NOTICE, "processing response block on "
@@ -1181,9 +1179,8 @@ static void process_rtt(struct flow* flow)
 	current_rtt = time_diff(data, &now);
 
 	if (current_rtt < 0) {
-		logging_log(LOG_CRIT, "received malformed rtt block of flow %d "
-			    "(rtt = %.3lfms), ignoring",
-			    flow->id, current_rtt * 1e3);
+		logging(LOG_CRIT, "received malformed rtt block of flow %d "
+			"(rtt = %.3lfms), ignoring", flow->id, current_rtt * 1e3);
 		current_rtt = NAN;
 	}
 
@@ -1215,9 +1212,9 @@ static void process_iat(struct flow* flow)
 		current_iat = NAN;
 
 	if (current_iat < 0) {
-		logging_log(LOG_CRIT, "calculated malformed iat of flow %d "
-			    "(iat = %.3lfms) (clock skew?), ignoring",
-			    flow->id, current_iat * 1e3);
+		logging(LOG_CRIT, "calculated malformed iat of flow %d "
+			"(iat = %.3lfms) (clock skew?), ignoring",
+			flow->id, current_iat * 1e3);
 		current_iat = NAN;
 	}
 
@@ -1245,9 +1242,9 @@ static void process_delay(struct flow* flow)
 	current_delay = time_diff(data, &now);
 
 	if (current_delay < 0) {
-		logging_log(LOG_CRIT, "calculated malformed delay of flow "
-			    "%d (rtt = %.3lfms) (clocks out-of-sync?), "
-			    "ignoring", flow->id, current_delay * 1e3);
+		logging(LOG_CRIT, "calculated malformed delay of flow "
+			"%d (rtt = %.3lfms) (clocks out-of-sync?), ignoring",
+			flow->id, current_delay * 1e3);
 		current_delay = NAN;
 	}
 
@@ -1313,17 +1310,15 @@ static void send_response(struct flow* flow, int requested_response_block_size)
 				try++;
 				if (try >= CONGESTION_LIMIT &&
 				    !flow->current_block_bytes_written) {
-					logging_log(LOG_WARNING,
-						    "tried to send response "
-						    "block %d times without "
-						    "success, dropping (%s)",
-						    try, strerror(errno));
+					logging(LOG_WARNING, "tried to send "
+						"response block %d times without "
+						"success, dropping (%s)",
+						try, strerror(errno));
 						break;
 				}
 			} else {
-				logging_log(LOG_WARNING,
-					    "Premature end of test: %s, abort "
-					    "flow", strerror(errno));
+				logging(LOG_WARNING, "premature end of test: "
+					"%s, abort flow", strerror(errno));
 				flow->finished[READ] = 1;
 				break;
 			}

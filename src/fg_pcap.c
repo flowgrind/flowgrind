@@ -85,8 +85,7 @@ int fg_pcap_init(void)
 {
 	/* initalize *alldevs for later use */
 	if (pcap_findalldevs(&alldevs, errbuf) == -1) {
-		logging_log(LOG_WARNING,"Error in pcap_findalldevs: %s\n",
-			    errbuf);
+		logging(LOG_WARNING,"error in pcap_findalldevs: %s\n", errbuf);
 		return -1;
 	}
 
@@ -171,8 +170,8 @@ static void* fg_pcap_work(void *arg)
 	struct addrinfo *ainf = NULL;
 	int rc = getaddrinfo(flow->settings.bind_address, NULL, NULL, &ainf);
 	if (rc) {
-		logging_log(LOG_WARNING, "getaddrinfo() failed (%s). Eliding "
-			    "packet capture for flow.", gai_strerror(rc));
+		logging(LOG_WARNING, "getaddrinfo() failed (%s). Eliding "
+			"packet capture for flow", gai_strerror(rc));
 		goto remove;
 	}
 
@@ -197,8 +196,8 @@ static void* fg_pcap_work(void *arg)
 	}
 
 	if (!found) {
-		logging_log(LOG_WARNING, "Failed to determine interface "
-			    "for data connection. No pcap support.");
+		logging(LOG_WARNING, "failed to determine interface for data "
+			"connection. No pcap support");
 		goto remove;
 	}
 
@@ -207,22 +206,21 @@ static void* fg_pcap_work(void *arg)
 				0, errbuf); /* 0 = no read timeout */
 
 	if (!flow->pcap_handle) {
-		logging_log(LOG_WARNING, "Failed to init pcap on device %s: "
-			    "%s", d->name, errbuf);
+		logging(LOG_WARNING, "failed to init pcap on device %s: %s",
+			d->name, errbuf);
 		goto remove;
 	}
 
 	uint32_t net = 0, mask = 0;
 	if (pcap_lookupnet(d->name, &net, &mask, errbuf) < 0) {
-		logging_log(LOG_WARNING, "pcap: netmask lookup failed: %s",
-			    errbuf);
+		logging(LOG_WARNING, "pcap: netmask lookup failed: %s", errbuf);
 		goto remove;
 	}
 
 	/* we rely on a non-blocking dispatch loop */
 	if (pcap_setnonblock((pcap_t *)flow->pcap_handle, 1, errbuf) < 0) {
-		logging_log(LOG_WARNING, "pcap: failed to set non-blocking: "
-			    "%s", errbuf);
+		logging(LOG_WARNING, "pcap: failed to set non-blocking: %s",
+			errbuf);
 		goto remove;
 	}
 
@@ -230,17 +228,16 @@ static void* fg_pcap_work(void *arg)
 	struct bpf_program pcap_program;
 	if (pcap_compile((pcap_t *)flow->pcap_handle,
 			 &pcap_program, PCAP_FILTER, 1, mask) < 0) {
-		logging_log(LOG_WARNING, "pcap: failed compiling filter "
-			    "'%s': %s", PCAP_FILTER,
-			    pcap_geterr((pcap_t *)flow->pcap_handle));
+		logging(LOG_WARNING, "pcap: failed compiling filter '%s': %s",
+			PCAP_FILTER, pcap_geterr((pcap_t *)flow->pcap_handle));
 		goto remove;
 	}
 
 	/* attach filter to interface */
 	if (pcap_setfilter((pcap_t *)flow->pcap_handle,
 			   &pcap_program) < 0) {
-		logging_log(LOG_WARNING, "pcap: failed to set filter: "
-			    "%s", pcap_geterr((pcap_t *)flow->pcap_handle));
+		logging(LOG_WARNING, "pcap: failed to set filter: %s",
+			pcap_geterr((pcap_t *)flow->pcap_handle));
 		goto remove;
 	}
 
@@ -273,9 +270,8 @@ static void* fg_pcap_work(void *arg)
 	free(dump_filename);
 
 	if (!flow->pcap_dumper) {
-		logging_log(LOG_WARNING, "pcap: failed to open dump file "
-			    "writing: %s",
-			    pcap_geterr((pcap_t *)flow->pcap_handle));
+		logging(LOG_WARNING, "pcap: failed to open dump file writing: %s",
+			pcap_geterr((pcap_t *)flow->pcap_handle));
 		goto remove;
 	}
 
@@ -287,9 +283,8 @@ static void* fg_pcap_work(void *arg)
 				       &pcap_dump, (u_char *)flow->pcap_dumper);
 
 		if (rc < 0) {
-			logging_log(LOG_WARNING, "pcap_dispatch() failed. "
-				    "Packet dumping stopped for flow %d.",
-				    flow->id);
+			logging(LOG_WARNING, "pcap_dispatch() failed. Packet "
+				"dumping stopped for flow %d", flow->id);
 			/* cleanup automatically called */
 			pthread_exit(0);
 		}
@@ -322,8 +317,8 @@ void fg_pcap_go(struct flow *flow)
 		return;
 
 	if (dumping) {
-		logging_log(LOG_WARNING, "pcap: dumping already in progress "
-			    "on this host");
+		logging(LOG_WARNING, "pcap: dumping already in progress on "
+			"this host");
 		return;
 	}
 
@@ -337,7 +332,7 @@ void fg_pcap_go(struct flow *flow)
 	pthread_barrier_wait(&pcap_barrier);
 
 	if (rc)
-		logging_log(LOG_WARNING, "Could not start pcap thread: %s",
-			    strerror(rc) );
+		logging(LOG_WARNING, "could not start pcap thread: %s",
+			strerror(rc) );
 }
 

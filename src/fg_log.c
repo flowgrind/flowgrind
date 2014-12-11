@@ -4,6 +4,7 @@
  */
 
 /*
+ * Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
  * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
@@ -37,68 +38,62 @@
 #include "fg_time.h"
 #include "fg_error.h"
 
-char *logstr = NULL;
+enum log_types log_type = LOG_SYSLOG;
 
-enum log_types log_type = LOGTYPE_SYSLOG;
-
-void logging_init (void)
+void init_logging(void)
 {
-	logstr = malloc(LOGGING_MAXLEN);
-	if (logstr == NULL)
-		critx("could not allocate memory for logging string");
-
 	switch (log_type) {
-	case LOGTYPE_SYSLOG:
-		openlog("flowgrind_daemon", LOG_NDELAY | LOG_CONS |
-			LOG_PID, LOG_DAEMON);
+	case LOGGING_SYSLOG:
+		openlog("flowgrindd", LOG_NDELAY | LOG_CONS | LOG_PID, LOG_DAEMON);
 		break;
-	case LOGTYPE_STDERR:
+	case LOGGING_STDERR:
+	case LOGGING_STDOUT:
 		break;
 	}
 }
 
-void logging_exit (void)
+void close_logging(void)
 {
 	switch (log_type) {
-	case LOGTYPE_SYSLOG:
+	case LOGGING_SYSLOG:
 		closelog();
 		break;
-	case LOGTYPE_STDERR:
+	case LOGGING_STDERR:
+	case LOGGING_STDOUT:
 		break;
 	}
-
-	free(logstr);
 }
 
-void logging_log_string (int priority, const char *s)
+void logging(int priority, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vlogging(priority, fmt, ap);
+	va_end(ap);
+}
+
+void vlogging(int priority, const char *fmt, va_list ap)
 {
 	char timestamp[30] = "";
 	ctimenow_r(timestamp, sizeof(timestamp), false);
 
 	switch (log_type) {
-	case LOGTYPE_SYSLOG:
-		syslog(priority, "%s", s);
+	case LOGGING_SYSLOG:
+		vsyslog(priority, fmt, ap);
 		break;
-	case LOGTYPE_STDERR:
-		fprintf(stderr, "%s %s\n", timestamp, s);
+	case LOGGING_STDERR:
+		fprintf(stderr, "%s ", timestamp);
+		vfprintf(stderr, fmt, ap);
+		fprintf(stderr, "\n");
 		fflush(stderr);
 		break;
+	case LOGGING_STDOUT:
+		fprintf(stdout, "%s ", timestamp);
+		vfprintf(stdout, fmt, ap);
+		fprintf(stdout, "\n");
+		fflush(stdout);
+		break;
 	}
+
 }
-
-void logging_log (int priority, const char *fmt, ...)
-{
-	int n;
-	va_list ap;
-
-	memset(logstr, 0, LOGGING_MAXLEN);
-
-	va_start(ap, fmt);
-	n = vsnprintf(logstr, LOGGING_MAXLEN, fmt, ap);
-	va_end(ap);
-
-	if (n > -1 && n < LOGGING_MAXLEN)
-		logging_log_string(priority, logstr);
-}
-
-

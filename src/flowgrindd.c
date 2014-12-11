@@ -158,20 +158,20 @@ static void sighandler(int sig)
 	switch (sig) {
 	case SIGCHLD:
 		while (waitpid(-1, &status, WNOHANG) > 0)
-			logging_log(LOG_NOTICE, "child returned (status = %d)",
-				    status);
+			logging(LOG_NOTICE, "child returned (status = %d)",
+				status);
 		break;
 	case SIGHUP:
-		logging_log(LOG_NOTICE, "caught SIGHUP, Don't know what to do.");
+		logging(LOG_NOTICE, "caught SIGHUP. don't know what to do.");
 		break;
 	case SIGALRM:
-		logging_log(LOG_NOTICE, "caught SIGALRM. Don't know what to do.");
+		logging(LOG_NOTICE, "caught SIGALRM, don't know what to do.");
 		break;
 	case SIGPIPE:
 		break;
 	default:
-		logging_log(LOG_ALERT, "caught signal %d, but don't remember "
-			    "intercepting it, aborting...", sig);
+		logging(LOG_ALERT, "caught signal %d, but don't remember "
+			"intercepting it, aborting...", sig);
 		abort();
 	}
 }
@@ -200,8 +200,8 @@ void bind_daemon_to_core(void)
 	int rc = pthread_setaffinity(thread, core);
 
 	if (rc)
-		logging_log(LOG_WARNING, "failed to bind %s (PID %d) to "
-			    "CPU core %i", progname, thread, core);
+		logging(LOG_WARNING, "failed to bind %s (PID %d) to CPU core %i",
+			progname, thread, core);
 	else
 		DEBUG_MSG(LOG_INFO, "bind %s (PID %d) to CPU core %i",
 			  progname, getpid(), core);
@@ -289,7 +289,7 @@ static void parse_cmdline(int argc, char *argv[])
 				PARSE_ERR("failed to parse CPU number");
 			break;
 		case 'd':
-			log_type = LOGTYPE_STDERR;
+			log_type = LOGGING_STDERR;
 #ifdef DEBUG
 			increase_debuglevel();
 #endif /* DEBUG */
@@ -368,7 +368,7 @@ int main(int argc, char *argv[])
 
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
-	logging_init();
+	init_logging();
 	sanity_check();
 	fg_list_init(&flows);
 #ifdef HAVE_LIBPCAP
@@ -378,12 +378,12 @@ int main(int argc, char *argv[])
 	init_rpc_server(&server, rpc_bind_addr, port);
 
 	/* Push flowgrindd into the background */
-	if (log_type == LOGTYPE_SYSLOG) {
+	if (log_type == LOGGING_SYSLOG) {
 		/* Need to call daemon() before creating the thread because
 		 * it internally calls fork() which does not copy threads. */
 		if (daemon(0, 0) == -1)
 			crit("daemon() failed");
-		logging_log(LOG_NOTICE, "flowgrindd daemonized");
+		logging(LOG_NOTICE, "flowgrindd daemonized");
 	}
 
 	if (ap_is_used(&parser, 'c'))

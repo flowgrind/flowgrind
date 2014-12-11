@@ -158,14 +158,15 @@ int add_flow_source(struct request_add_flow_source *request)
 	struct flow *flow;
 
 	if (fg_list_size(&flows) >= MAX_FLOWS) {
-		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
+		logging(LOG_WARNING, "can not accept another flow, already "
+			"handling MAX_FLOW flows");
 		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
 		return -1;
 	}
 
 	flow = malloc(sizeof(struct flow));
 	if (!flow) {
-		logging_log(LOG_ALERT, "could not allocate memory for flow");
+		logging(LOG_ALERT, "could not allocate memory for flow");
 		return -1;
 	}
 
@@ -178,7 +179,8 @@ int add_flow_source(struct request_add_flow_source *request)
 	flow->read_block = calloc(1, flow->settings.maximum_block_size);
 
 	if (flow->write_block == NULL || flow->read_block == NULL) {
-		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
+		logging(LOG_ALERT, "could not allocate memory for read/write "
+			"blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");
 		uninit_flow(flow);
 		return -1;
@@ -196,7 +198,8 @@ int add_flow_source(struct request_add_flow_source *request)
 			flow->settings.requested_read_buffer_size, &request->real_read_buffer_size,
 			flow->settings.requested_send_buffer_size, &request->real_send_buffer_size);
 	if (flow->fd == -1) {
-		logging_log(LOG_ALERT, "Could not create data socket: %s", flow->error);
+		logging(LOG_ALERT, "could not create data socket: %s",
+			flow->error);
 		request_error(&request->r, "Could not create data socket: %s", flow->error);
 		uninit_flow(flow);
 		return -1;
