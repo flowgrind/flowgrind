@@ -90,7 +90,6 @@ extern int daemon(int, int);
 
 /* External global variables */
 extern const char *progname;
-extern enum log_types log_type;
 
 /* XXX add a brief description doxygen */
 static unsigned port = DEFAULT_LISTEN_PORT;
@@ -289,7 +288,6 @@ static void parse_cmdline(int argc, char *argv[])
 				PARSE_ERR("failed to parse CPU number");
 			break;
 		case 'd':
-			log_type = LOGGING_STDERR;
 #ifdef DEBUG
 			increase_debuglevel();
 #endif /* DEBUG */
@@ -353,6 +351,7 @@ int main(int argc, char *argv[])
 	/* Info about the xmlrpc server */
 	struct fg_rpc_server server;
 
+	/* Initialize sighandler */
 	struct sigaction sa;
 	sa.sa_handler = sighandler;
 	sa.sa_flags = 0;
@@ -368,9 +367,16 @@ int main(int argc, char *argv[])
 
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
-	init_logging();
 	sanity_check();
+
+	/* Initialize logging */
+	if (!ap_is_used(&parser, 'd'))
+		init_logging(LOGGING_SYSLOG);
+	else
+		init_logging(LOGGING_STDERR);
+
 	fg_list_init(&flows);
+
 #ifdef HAVE_LIBPCAP
 	fg_pcap_init();
 #endif /* HAVE_LIBPCAP */
@@ -378,7 +384,7 @@ int main(int argc, char *argv[])
 	init_rpc_server(&server, rpc_bind_addr, port);
 
 	/* Push flowgrindd into the background */
-	if (log_type == LOGGING_SYSLOG) {
+	if (!ap_is_used(&parser, 'd')) {
 		/* Need to call daemon() before creating the thread because
 		 * it internally calls fork() which does not copy threads. */
 		if (daemon(0, 0) == -1)

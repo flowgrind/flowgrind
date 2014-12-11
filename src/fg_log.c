@@ -38,11 +38,13 @@
 #include "fg_time.h"
 #include "fg_error.h"
 
-enum log_types log_type = LOG_SYSLOG;
+static enum log_streams log_stream = LOG_SYSLOG;
 
-void init_logging(void)
+void init_logging(enum log_streams stream)
 {
-	switch (log_type) {
+	log_stream = stream;
+
+	switch (log_stream) {
 	case LOGGING_SYSLOG:
 		openlog("flowgrindd", LOG_NDELAY | LOG_CONS | LOG_PID, LOG_DAEMON);
 		break;
@@ -54,7 +56,7 @@ void init_logging(void)
 
 void close_logging(void)
 {
-	switch (log_type) {
+	switch (log_stream) {
 	case LOGGING_SYSLOG:
 		closelog();
 		break;
@@ -78,7 +80,7 @@ void vlogging(int priority, const char *fmt, va_list ap)
 	char timestamp[30] = "";
 	ctimenow_r(timestamp, sizeof(timestamp), false);
 
-	switch (log_type) {
+	switch (log_stream) {
 	case LOGGING_SYSLOG:
 		vsyslog(priority, fmt, ap);
 		break;

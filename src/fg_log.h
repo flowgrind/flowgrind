@@ -34,7 +34,7 @@
 #endif /* HAVE_CONFIG_H */
 
 /** Supported output streams for logging. */
-enum log_types {
+enum log_streams {
 	/** Log to syslog. */
 	LOGGING_SYSLOG = 0,
 	/** Log to stderr. */
@@ -43,13 +43,12 @@ enum log_types {
 	LOGGING_STDOUT,
 };
 
-/** To which output stream we log */
-extern enum log_types log_type;
-
 /**
  * Open logging stream.
+ *
+ * @param[in] stream to which output stream we log
  */
-void init_logging(void);
+void init_logging(enum log_streams stream);
 
 /**
  * Close logging stream.
