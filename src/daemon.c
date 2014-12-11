@@ -993,7 +993,7 @@ static int write_data(struct flow *flow)
 					DEBUG_MSG(LOG_WARNING, "incipient "
 						  "congestion on flow %u new "
 						  "block scheduled for %s, "
-						  "%.6lfs before now.",
+						  "%.6lfs before now",
 						   flow->id, timestamp,
 						   time_diff(&flow->next_write_block_timestamp,
 							     &flow->last_block_written));
@@ -1051,8 +1051,8 @@ static inline int try_read_n_bytes(struct flow *flow, int bytes)
 	}
 
 	if (rc == 0) {
-		DEBUG_MSG(LOG_ERR, "server shut down test socket of "
-			  "flow %d", flow->id);
+		DEBUG_MSG(LOG_ERR, "server shut down test socket of flow %d",
+			  flow->id);
 		if (!flow->finished[READ] || !flow->settings.shutdown)
 			warnx("premature shutdown of server flow");
 		flow->finished[READ] = 1;
@@ -1068,9 +1068,8 @@ static inline int try_read_n_bytes(struct flow *flow, int bytes)
 
 #ifdef DEBUG
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg))
-		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, "
-			  "len = %u",
-		flow->id, cmsg->cmsg_type, (socklen_t) cmsg->cmsg_len);
+		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, len = %u",
+			  flow->id, cmsg->cmsg_type, (socklen_t) cmsg->cmsg_len);
 #endif /* DEBUG */
 
 	return rc;
@@ -1119,8 +1118,7 @@ static int read_data(struct flow *flow)
 				  flow->current_read_block_size);
 		} else {
 			DEBUG_MSG(LOG_NOTICE, "processing request block on "
-				  "flow %d size: %d, request: %d",
-				  flow->id,
+				  "flow %d size: %d, request: %d", flow->id,
 				  flow->current_read_block_size,
 				  requested_response_block_size);
 		}
@@ -1303,10 +1301,9 @@ static void send_response(struct flow* flow, int requested_response_block_size)
 
 		if (rc == -1) {
 			if (errno == EAGAIN) {
-				DEBUG_MSG(LOG_DEBUG,
-					  "%s, still trying to send response "
-					  "block (write queue hit limit)",
-					  strerror(errno));
+				DEBUG_MSG(LOG_DEBUG, "%s, still trying to send "
+					  "response block (write queue hit "
+					  "limit)", strerror(errno));
 				try++;
 				if (try >= CONGESTION_LIMIT &&
 				    !flow->current_block_bytes_written) {

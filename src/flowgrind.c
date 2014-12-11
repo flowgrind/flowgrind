@@ -1299,7 +1299,7 @@ static void close_all_flows(void)
 	xmlrpc_client *client;
 
 	for (unsigned short id = 0; id < copt.num_flows; id++) {
-		DEBUG_MSG(LOG_WARNING, "closing flow %u.", id);
+		DEBUG_MSG(LOG_WARNING, "closing flow %u", id);
 
 		if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
 			continue;
@@ -1335,7 +1335,7 @@ static void close_all_flows(void)
 			active_flows--;
 
 		xmlrpc_client_destroy(client);
-		DEBUG_MSG(LOG_WARNING, "closed flow %u.", id);
+		DEBUG_MSG(LOG_WARNING, "closed flow %u", id);
 	}
 }
 
