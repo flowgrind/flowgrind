@@ -206,7 +206,7 @@ void bind_daemon_to_core(void)
 
 	if (rc)
 		logging(LOG_WARNING, "failed to bind %s (PID %d) to CPU core %i",
-			progname, thread, core);
+			progname, getpid(), core);
 	else
 		DEBUG_MSG(LOG_INFO, "bind %s (PID %d) to CPU core %i",
 			  progname, getpid(), core);
