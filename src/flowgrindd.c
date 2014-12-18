@@ -105,6 +105,7 @@ static struct arg_parser parser;
 
 /* Forward declarations */
 static void usage(short status) __attribute__((noreturn));
+static void tear_down_daemon(void);
 
 /**
  * Print usage or error message and exit.
@@ -167,6 +168,11 @@ static void sighandler(int sig)
 		logging(LOG_NOTICE, "caught SIGALRM, don't know what to do.");
 		break;
 	case SIGPIPE:
+		break;
+	case SIGINT:
+	case SIGTERM:
+		logging(LOG_NOTICE, "caught SIGINT/SIGTERM, tear down daemon");
+		tear_down_daemon();
 		break;
 	default:
 		logging(LOG_ALERT, "caught signal %d, but don't remember "
@@ -346,6 +352,16 @@ static void sanity_check(void)
 	/* TODO more sanity checks... (e.g. if port is in valid range) */
 }
 
+/**
+ * Gracefully tear down daemon
+ */
+static void tear_down_daemon(void)
+{
+	ap_free(&parser);
+	close_logging();
+	exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char *argv[])
 {
 	/* Info about the xmlrpc server */
@@ -364,6 +380,10 @@ int main(int argc, char *argv[])
 		critx("could not set handler for SIGALRM");
 	if (sigaction (SIGCHLD, &sa, NULL))
 		critx("could not set handler for SIGCHLD");
+	if (sigaction(SIGINT, &sa, NULL))
+		critx("could not set handler for SIGINT");
+	if (sigaction(SIGTERM, &sa, NULL))
+		critx("could not set handler for SIGTERM");
 
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
@@ -399,8 +419,5 @@ int main(int argc, char *argv[])
 
 	/* This will block */
 	run_rpc_server(&server);
-
-	ap_free(&parser);
-
 	critx("control should never reach end of main()");
 }
