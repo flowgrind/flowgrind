@@ -278,6 +278,8 @@ struct fg_tcp_info {
 /* Report (measurement sample) of a flow */
 struct report {
 	int id;
+	/** Daemon endpoint - either source or destination */
+	enum endpoint_t endpoint;
 	/** Report type - either INTERVAL or FINAL report */
 	enum report_t type;
 	struct timespec begin;

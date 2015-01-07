@@ -493,7 +493,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	while (report) {
 		xmlrpc_value *rv = xmlrpc_build_value(env,
 			"("
-			"{s:i,s:i,s:i,s:i,s:i,s:i}" /* timeval */
+			"{s:i,s:i,s:i,s:i,s:i,s:i,s:i}" /* Report data & timeval */
 			"{s:i,s:i,s:i,s:i}" /* bytes */
 			"{s:i,s:i,s:i,s:i}" /* block counts */
 			"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d}" /* RTT, IAT, Delay */
@@ -505,6 +505,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 			")",
 
 			"id", report->id,
+			"endpoint",report->endpoint,
 			"type", report->type,
 			"begin_tv_sec", (int)report->begin.tv_sec,
 			"begin_tv_nsec", (int)report->begin.tv_nsec,

@@ -40,7 +40,7 @@ flowgrind_SOURCES = src/common.h src/debug.c src/fg_error.h src/fg_error.c \
 					src/fg_string.h src/fg_string.c src/fg_definitions.h \
 					src/fg_time.h src/fg_time.c src/flowgrind.h src/flowgrind.c \
 					src/fg_argparser.h src/fg_argparser.c src/fg_rpc_client.h \
-					src/fg_rpc_client.c
+					src/fg_rpc_client.c src/log.h src/log.c src/fg_list.h src/fg_list.c
 flowgrind_LDADD = $(LIBS) $(CURL_LDADD) $(XMLRPC_C_CLIENT_LDADD) $(GSL_LDADD)
 flowgrind_CFLAGS = $(AM_CFLAGS) $(CURL_CFLAGS) $(XMLRPC_C_CLIENT_CFLAGS) $(GSL_CFLAGS)
 

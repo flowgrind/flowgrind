@@ -68,6 +68,7 @@
 #include "debug.h"
 #include "fg_rpc_client.h"
 #include "fg_argparser.h"
+#include "log.h"
 
 /** To show intermediated interval report columns. */
 #define SHOW_COLUMNS(...)                                                   \
@@ -102,11 +103,11 @@ static bool sigint_caught = false;
 /* XML-RPC environment object that contains any error that has occurred. */
 static xmlrpc_env rpc_env;
 
-/** Unique (by URL) flowgrind daemons. */
-static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
+/** Global linked list to the flow endpoints XML RPC connection information. */
+static struct linked_list flows_rpc_info;
 
-/** Number of flowgrind dameons. */
-static unsigned short num_unique_servers = 0;
+/** Global linked list to the daemons containing UUID and daemons flowgrind version. */
+static struct linked_list unique_daemons;
 
 /** Command line option parser. */
 static struct arg_parser parser;
@@ -209,7 +210,7 @@ static void usage_trafgenopt(void)
 inline static void print_output(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
 static void fetch_reports(xmlrpc_client *);
-static void report_flow(const struct daemon* daemon, struct report* report);
+static void report_flow(struct report* report);
 static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
 		                  struct report *report);
 
@@ -492,6 +493,7 @@ static void init_flow_options(void)
 			strcpy(cflow[id].endpoint[*i].test_address, "localhost");
 
 			/* Default daemon is localhost, set in parse_cmdline */
+			cflow[id].endpoint[*i].rpc_info = 0;
 			cflow[id].endpoint[*i].daemon = 0;
 
 			cflow[id].settings[*i].pushy = 0;
@@ -637,21 +639,27 @@ static void check_version(xmlrpc_client *rpc_client)
 	xmlrpc_value * resultP = 0;
 	char mismatch = 0;
 
-	for (unsigned short j = 0; j < num_unique_servers; j++) {
+	const struct list_node *node = fg_list_front(&unique_daemons);
 
+	while (node) {
 		if (sigint_caught)
 			return;
 
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
+		struct daemon *daemon = node->data;
+		node = node->next;
+
+		xmlrpc_client_call2f(&rpc_env, rpc_client, daemon->url,
 					"get_version", &resultP, "()");
 		if ((rpc_env.fault_occurred) && (strcasestr(rpc_env.fault_string,"response code is 400")))
 			critx("node %s could not parse request.You are "
 			      "probably trying to use a numeric IPv6 address "
 			      "and the node's libxmlrpc is too old, please "
-			      "upgrade!", unique_servers[j].server_url);
+			      "upgrade!", daemon->url);
 
 		die_if_fault_occurred(&rpc_env);
 
+		/* Decomposes the xmlrpc value and extract the daemons data in
+		 * it into controller local variable */
 		if (resultP) {
 			char* version;
 			int api_version;
@@ -667,11 +675,13 @@ static void check_version(xmlrpc_client *rpc_client)
 			if (strcmp(version, FLOWGRIND_VERSION)) {
 				mismatch = 1;
 				warnx("node %s uses version %s",
-				      unique_servers[j].server_url, version);
+				      daemon->url, version);
 			}
-			unique_servers[j].api_version = api_version;
-			strncpy(unique_servers[j].os_name, os_name, 256);
-			strncpy(unique_servers[j].os_release, os_release, 256);
+			/* Store the daemons XML RPC API version, 
+			 * OS name and release in daemons linked list */
+			daemon->api_version = api_version;
+			strncpy(daemon->os_name, os_name, 256);
+			strncpy(daemon->os_release, os_release, 256);
 			free_all(version, os_name, os_release);
 			xmlrpc_DECREF(resultP);
 		}
@@ -683,20 +693,116 @@ static void check_version(xmlrpc_client *rpc_client)
 	}
 }
 
+static struct daemon * add_daemon_by_uuid(const char* server_uuid, 
+		char* daemon_url)
+{
+	struct daemon *daemon;
+	daemon = malloc((sizeof(struct daemon)));
+	
+	if (!daemon) {
+		logging_log(LOG_ALERT, "could not allocate memory for daemon");
+		return 0;
+	}
+
+	memset(daemon, 0, sizeof(struct daemon));
+	strcpy(daemon->uuid, server_uuid);
+	daemon->url = daemon_url;
+	fg_list_push_back(&unique_daemons, daemon);
+	return daemon;
+}
+
+static struct daemon * set_unique_daemon_by_uuid(const char* server_uuid, 
+		char* daemon_url)
+{
+	/* Store the first daemon UUID and XML RPC url connection string.
+	 * First daemon is used as reference to avoid the daemon duplication 
+	 * by their UUID */	
+	if (fg_list_size(&unique_daemons) == 0)
+		return add_daemon_by_uuid(server_uuid, daemon_url);
+	
+	/* Compare the incoming daemons UUID with all daemons UUID in 
+	 * memory in order to prevent dupliclity in storing the daemons. 
+	 * If the incoming daemon UUID is already present in the daemons list, 
+	 * then return existing daemon pointer to controller connection. 
+	 * This is because a single daemons can run and maintain mutliple 
+	 * data connection */
+	const struct list_node *node = fg_list_front(&unique_daemons);
+	while (node) {
+		struct daemon *daemon = node->data;
+		node = node->next;
+		if (!strcmp(daemon->uuid, server_uuid))
+			return daemon;
+	}
+	
+	return add_daemon_by_uuid(server_uuid, daemon_url);
+}
+
+static void set_flow_endpoint_daemon(const char* server_uuid, char* server_url)
+{
+	/* Determine the daemon in controller flow data by UUID 
+	 * This prevent the daemons duplication */
+	for (unsigned id = 0; id < copt.num_flows; id++) {
+		foreach(int *i, SOURCE, DESTINATION) {
+			struct flow_endpoint* e = &cflow[id].endpoint[*i];
+			if(!strcmp(e->rpc_info->server_url, server_url) && !e->daemon) {
+				e->daemon = set_unique_daemon_by_uuid(server_uuid,
+								      server_url);
+			}
+		}
+	}
+}
+
+static void find_daemon(xmlrpc_client *rpc_client)
+{
+	xmlrpc_value * resultP = 0;
+	const struct list_node *node = fg_list_front(&flows_rpc_info);
+	
+	while (node) {
+		if (sigint_caught)
+			return;
+		
+		struct rpc_info *flow_rpc_info= node->data;
+		node = node->next;
+		/* call daemons by flow option XML-RPC URL connection string */
+		xmlrpc_client_call2f(&rpc_env, rpc_client,
+				     flow_rpc_info->server_url,
+				     "get_uuid", &resultP, "()");
+		die_if_fault_occurred(&rpc_env);
+		
+		/* Decomposes the xmlrpc_value and extract the daemon UUID
+		 * in it into controller local variable */	
+		if (resultP) {
+			char* server_uuid = 0;
+			
+			xmlrpc_decompose_value(&rpc_env, resultP, "{s:s,*}", 
+					"server_uuid", &server_uuid);
+			set_flow_endpoint_daemon(server_uuid, flow_rpc_info->server_url);
+			die_if_fault_occurred(&rpc_env);
+			xmlrpc_DECREF(resultP);
+		}
+	}
+}
+
 /* Checks that all nodes are currently idle */
 static void check_idle(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
-
-	for (unsigned short j = 0; j < num_unique_servers; j++) {
+	const struct list_node *node = fg_list_front(&unique_daemons);
+	
+	while (node) {
 		if (sigint_caught)
 			return;
-
+		
+		struct daemon *daemon = node->data;
+		node = node->next;
+		
 		xmlrpc_client_call2f(&rpc_env, rpc_client,
-				     unique_servers[j].server_url,
+				     daemon->url,
 				     "get_status", &resultP, "()");
 		die_if_fault_occurred(&rpc_env);
-
+		
+		/* Decomposes the xmlrpc_value and extract the daemons data 
+		 * in it into controller local variable */
 		if (resultP) {
 			int started;
 			int num_flows;
@@ -707,9 +813,11 @@ static void check_idle(xmlrpc_client *rpc_client)
 					       &num_flows);
 			die_if_fault_occurred(&rpc_env);
 
+			/* Daemon start status and number of flows is used to
+			 * determine node idle status */
 			if (started || num_flows)
 				critx("node %s is busy. %d flows, started=%d",
-				       unique_servers[j].server_url, num_flows,
+				       daemon->url, num_flows,
 				       started);
 			xmlrpc_DECREF(resultP);
 		}
@@ -776,13 +884,17 @@ static void print_headline(void)
 
 	/* Prepare column visibility based on involved OSes */
 	bool involved_os[] = {[0 ... NUM_OSes-1] = false};
-	for (unsigned short j = 0; j < num_unique_servers; j++)
-		if (!strcmp(unique_servers[j].os_name, "Linux"))
+	const struct list_node *node = fg_list_front(&unique_daemons);
+	while (node) {
+		struct daemon *daemon = node->data;
+		node = node->next;
+		if (!strcmp(daemon->os_name, "Linux"))
 			involved_os[LINUX] = true;
-		else if (!strcmp(unique_servers[j].os_name, "FreeBSD"))
+		else if (!strcmp(daemon->os_name, "FreeBSD"))
 			involved_os[FREEBSD] = true;
-		else if (!strcmp(unique_servers[j].os_name, "Darwin"))
+		else if (!strcmp(daemon->os_name, "Darwin"))
 			involved_os[DARWIN] = true;
+	}
 
 	/* No Linux OS is involved in the test */
 	if (!involved_os[LINUX])
@@ -796,9 +908,12 @@ static void print_headline(void)
 		HIDE_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_RTT,
 			     COL_TCP_RTTVAR, COL_TCP_RTO, COL_SMSS);
 
+	const struct list_node *firstnode = fg_list_front(&unique_daemons);
+	struct daemon *daemon_firstnode = firstnode->data;
+	
 	/* Set unit for kernel TCP metrics to bytes */
 	if (copt.force_unit == BYTE_BASED || (copt.force_unit != SEGMENT_BASED &&
-	    strcmp(unique_servers[0].os_name, "Linux")))
+	    strcmp(daemon_firstnode->os_name, "Linux")))
 		SET_COLUMN_UNIT(" [B]", COL_TCP_CWND, COL_TCP_SSTH,
 				COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
 				COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK,
@@ -829,7 +944,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(option);
 	}
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint[DESTINATION].daemon->server_url,
+		cflow[id].endpoint[DESTINATION].rpc_info->server_url,
 		"add_flow_destination", &resultP,
 		"("
 		"{s:s}"
@@ -934,7 +1049,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint[SOURCE].daemon->server_url,
+		cflow[id].endpoint[SOURCE].rpc_info->server_url,
 		"add_flow_source", &resultP,
 		"("
 		"{s:s}"
@@ -1051,13 +1166,16 @@ static void start_all_flows(xmlrpc_client *rpc_client)
 	gettime(&lastreport_begin);
 	gettime(&now);
 
-	for (unsigned short j = 0; j < num_unique_servers; j++) {
+	const struct list_node *node = fg_list_front(&unique_daemons);
+	while (node) {
 		if (sigint_caught)
 			return;
+		struct daemon *daemon = node->data;
+		node = node->next;
 
-		DEBUG_MSG(LOG_ERR, "starting flow on server %u", j);
+		DEBUG_MSG(LOG_ERR, "starting flow on server with UUID %s",daemon->uuid);
 		xmlrpc_client_call2f(&rpc_env, rpc_client,
-				     unique_servers[j].server_url,
+				     daemon->url,
 				     "start_flows", &resultP, "({s:i})",
 				     "start_timestamp", now.tv_sec + 2);
 		die_if_fault_occurred(&rpc_env);
@@ -1067,6 +1185,8 @@ static void start_all_flows(xmlrpc_client *rpc_client)
 
 	active_flows = copt.num_flows;
 
+	/* Reports are fetched from the daemons based on the
+	 * report interval duration */
 	while (!sigint_caught) {
 		if ( time_diff_now(&lastreport_begin) <  copt.reporting_interval ) {
 			usleep(copt.reporting_interval - time_diff(&lastreport_begin,&lastreport_end) );
@@ -1087,14 +1207,17 @@ static void fetch_reports(xmlrpc_client *rpc_client)
 {
 
 	xmlrpc_value * resultP = 0;
+	const struct list_node *node = fg_list_front(&unique_daemons);
 
-	for (unsigned short j = 0; j < num_unique_servers; j++) {
+	while (node) {
+		struct daemon *daemon = node->data;
+		node = node->next;
 		int array_size, has_more;
 		xmlrpc_value *rv = 0;
 
 has_more_reports:
 
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
+		xmlrpc_client_call2f(&rpc_env, rpc_client, daemon->url,
 			"get_reports", &resultP, "()");
 		if (rpc_env.fault_occurred) {
 			errx("XML-RPC fault: %s (%d)", rpc_env.fault_string,
@@ -1148,7 +1271,7 @@ has_more_reports:
 
 				xmlrpc_decompose_value(&rpc_env, rv,
 					"("
-					"{s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
+					"{s:i,s:i,s:i,s:i,s:i,s:i,s:i,*}" /* Report data & timeval */
 					"{s:i,s:i,s:i,s:i,*}" /* bytes */
 					"{s:i,s:i,s:i,s:i,*}" /* blocks */
 					"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT, Delay */
@@ -1160,6 +1283,7 @@ has_more_reports:
 					")",
 
 					"id", &report.id,
+					"endpoint", &report.endpoint,
 					"type", &report.type,
 					"begin_tv_sec", &begin_sec,
 					"begin_tv_nsec", &begin_nsec,
@@ -1244,7 +1368,7 @@ has_more_reports:
 				report.end.tv_sec = end_sec;
 				report.end.tv_nsec = end_nsec;
 
-				report_flow(&unique_servers[j], &report);
+				report_flow(&report);
 			}
 		}
 		xmlrpc_DECREF(resultP);
@@ -1256,9 +1380,8 @@ has_more_reports:
 
 /* This function allots an report received from one daemon (identified
  * by server_url)  to the proper flow */
-static void report_flow(const struct daemon* daemon, struct report* report)
+static void report_flow(struct report* report)
 {
-	const char* server_url = daemon->server_url;
 	int *i = NULL;
 	unsigned short id;
 	struct cflow *f = NULL;
@@ -1270,7 +1393,7 @@ static void report_flow(const struct daemon* daemon, struct report* report)
 
 		foreach(i, SOURCE, DESTINATION)
 			if (f->endpoint_id[*i] == report->id &&
-			    !strcmp(server_url, f->endpoint[*i].daemon->server_url))
+			    *i == (int)report->endpoint)
 				goto exit_outer_loop;
 	}
 exit_outer_loop:
@@ -1328,7 +1451,7 @@ static void close_all_flows(void)
 
 			xmlrpc_env_init(&env);
 			xmlrpc_client_call2f(&env, client,
-					     cflow[id].endpoint[*i].daemon->server_url,
+					     cflow[id].endpoint[*i].rpc_info->server_url,
 					     "stop_flow", &resultP, "({s:i})",
 					     "flow_id", cflow[id].endpoint_id[*i]);
 			if (resultP)
@@ -1786,10 +1909,10 @@ static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 	/* Infos about the test connections */
 	asprintf_append(&buf, "%s", endpoint->test_address);
 
-	if (strcmp(endpoint->daemon->server_name, endpoint->test_address) != 0)
-		asprintf_append(&buf, "/%s", endpoint->daemon->server_name);
-	if (endpoint->daemon->server_port != DEFAULT_LISTEN_PORT)
-		asprintf_append(&buf, ":%d", endpoint->daemon->server_port);
+	if (strcmp(endpoint->rpc_info->server_name, endpoint->test_address) != 0)
+		asprintf_append(&buf, "/%s", endpoint->rpc_info->server_name);
+	if (endpoint->rpc_info->server_port != DEFAULT_LISTEN_PORT)
+		asprintf_append(&buf, ":%d", endpoint->rpc_info->server_port);
 
 	/* Infos about the daemon OS */
 	asprintf_append(&buf, " (%s %s), ",
@@ -1948,23 +2071,45 @@ static void print_all_final_reports(void)
 	}
 }
 
-/* Finds the daemon (or creating a new one) for a given server_url,
- * uses global static unique_servers variable for storage */
-static struct daemon * get_daemon_by_url(const char* server_url,
+static struct rpc_info * add_flow_endpoint_by_url(const char* server_url,
 					  const char* server_name,
 					  unsigned short server_port)
 {
-	/* If we have already a daemon for this URL return a pointer to it */
-	for (unsigned short i = 0; i < num_unique_servers; i++) {
-		if (!strcmp(unique_servers[i].server_url, server_url))
-			return &unique_servers[i];
+	struct rpc_info *flow_rpc_info;
+	flow_rpc_info = malloc((sizeof(struct rpc_info)));
+
+	if (!flow_rpc_info ) {
+		logging_log(LOG_ALERT, "could not allocate memory for flows rpc info");
+		return 0;
+	}
+
+	memset(flow_rpc_info, 0, sizeof(struct rpc_info));
+	
+	strcpy(flow_rpc_info->server_url, server_url);
+	strcpy(flow_rpc_info->server_name, server_name);
+	flow_rpc_info->server_port = server_port;
+	fg_list_push_back(&flows_rpc_info, flow_rpc_info);
+	return flow_rpc_info;
+}
+
+static struct rpc_info * set_rpc_info(const char* server_url,
+					  const char* server_name,
+					  unsigned short server_port)
+{
+	if(fg_list_size(&flows_rpc_info) == 0)
+		return add_flow_endpoint_by_url(server_url,server_name, server_port);
+	
+	/* If we have already stored flow info for this URL return a pointer to it */
+	const struct list_node *node = fg_list_front(&flows_rpc_info);
+	while (node) {
+		struct rpc_info *flow_rpc_info= node->data;
+		node = node->next;
+
+		if (!strcmp(flow_rpc_info->server_url, server_url))
+			return flow_rpc_info;
 	}
 	/* didn't find anything, seems to be a new one */
-	memset(&unique_servers[num_unique_servers], 0, sizeof(struct daemon));
-	strcpy(unique_servers[num_unique_servers].server_url, server_url);
-	strcpy(unique_servers[num_unique_servers].server_name, server_name);
-	unique_servers[num_unique_servers].server_port = server_port;
-	return &unique_servers[num_unique_servers++];
+	return add_flow_endpoint_by_url(server_url,server_name, server_port);
 }
 
 /**
@@ -2137,7 +2282,6 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 {
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
-	struct daemon* daemon;
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
@@ -2188,8 +2332,8 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 	if (rc == -1)
 		critx("could not allocate memory for RPC URL");
 
-	daemon = get_daemon_by_url(url, rpc_address, port);
-	endpoint->daemon = daemon;
+	/* Get flow endpoint server information for each flow */
+	endpoint->rpc_info  = set_rpc_info(url, rpc_address, port);
 	strcpy(endpoint->test_address, arg);
 	free_all(arg, url);
 }
@@ -2771,8 +2915,8 @@ static void parse_cmdline(int argc, char *argv[])
 
 		foreach(int *i, SOURCE, DESTINATION) {
 			/* Default to localhost, if no endpoints were set for a flow */
-			if (!cflow[id].endpoint[*i].daemon) {
-				cflow[id].endpoint[*i].daemon = get_daemon_by_url(
+			if (!cflow[id].endpoint[*i].rpc_info) {
+				cflow[id].endpoint[*i].rpc_info = set_rpc_info(
 					"http://localhost:5999/RPC2", "localhost", DEFAULT_LISTEN_PORT);
 			}
 		}
@@ -2848,6 +2992,9 @@ int main(int argc, char *argv[])
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
+	fg_list_init(&flows_rpc_info);
+	fg_list_init(&unique_daemons);
+
 	set_progname(argv[0]);
 	init_controller_options();
 	init_flow_options();
@@ -2855,6 +3002,10 @@ int main(int argc, char *argv[])
 	sanity_check();
 	open_logfile();
 	prepare_xmlrpc_client(&rpc_client);
+
+	DEBUG_MSG(LOG_WARNING, "check daemons in the flows");
+	if (!sigint_caught)
+		find_daemon(rpc_client);
 
 	DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
 	if (!sigint_caught)
@@ -2882,6 +3033,9 @@ int main(int argc, char *argv[])
 	DEBUG_MSG(LOG_WARNING, "print all final report");
 	fetch_reports(rpc_client);
 	print_all_final_reports();
+
+	fg_list_clear(&flows_rpc_info);
+	fg_list_clear(&unique_daemons);
 
 	close_logfile();
 

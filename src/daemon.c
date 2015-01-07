@@ -86,8 +86,6 @@
 
 int daemon_pipe[2];
 
-int next_flow_id = 0;
-
 pthread_mutex_t mutex;
 struct request *requests = 0, *requests_last = 0;
 
@@ -512,6 +510,7 @@ static void report_flow(struct flow* flow, int type)
 		(struct report*)malloc(sizeof(struct report));
 
 	report->id = flow->id;
+	report->endpoint = flow->endpoint;
 	report->type = type;
 
 	if (type == INTERVAL)
@@ -871,7 +870,8 @@ void init_flow(struct flow* flow, int is_source)
 {
 	memset(flow, 0, sizeof(struct flow));
 
-	flow->id = next_flow_id++;
+	/* flow id is given by controller */
+	flow->id = -1;
 	flow->endpoint = is_source ? SOURCE : DESTINATION;
 	flow->state = is_source ? GRIND_WAIT_CONNECT : GRIND_WAIT_ACCEPT;
 	flow->fd = -1;
