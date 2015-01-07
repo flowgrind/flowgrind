@@ -150,6 +150,15 @@ static int name2socket(struct flow *flow, char *server_name, unsigned port, stru
 	return fd;
 }
 
+/**
+ * To set daemon flow as source endpoint
+ *
+ * To set the flow options and settings as source endpoint. Depending upon the 
+ * late connection option the data connection is established to connect the 
+ * destination daemon listening port address with source daemon. 
+ *
+ * @param[in,out] request Contain the test option and parameter for daemon source endpoint 
+ */
 int add_flow_source(struct request_add_flow_source *request)
 {
 #ifdef HAVE_SO_TCP_CONGESTION
