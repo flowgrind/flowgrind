@@ -67,6 +67,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 	xmlrpc_decompose_value(env, param_array,
 		"("
 		"{s:s,*}"
+		"{s:i,*}"
 		"{s:d,s:d,s:d,s:d,s:d,*}"
 		"{s:i,s:i,*}"
 		"{s:i,*}"
@@ -85,6 +86,8 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 		/* general settings */
 		"bind_address", &bind_address,
+
+		"flow_id", &settings.flow_id,
 
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
@@ -260,6 +263,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 	xmlrpc_decompose_value(env, param_array,
 		"("
 		"{s:s,*}"
+		"{s:i,*}"
 		"{s:d,s:d,s:d,s:d,s:d,*}"
 		"{s:i,s:i,*}"
 		"{s:i,*}"
@@ -278,6 +282,8 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 		/* general settings */
 		"bind_address", &bind_address,
 
+		"flow_id", &settings.flow_id,
+		
 		"write_delay", &settings.delay[WRITE],
 		"write_duration", &settings.duration[WRITE],
 		"read_delay", &settings.delay[READ],

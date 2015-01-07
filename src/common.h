@@ -175,6 +175,8 @@ struct flow_settings {
 	/** The interface address for the flow (used by daemon). */
 	char bind_address[1000];
 
+	/** Flow ID maintained by controller. */
+	int flow_id;
 	/** Delay of flow in seconds (option -Y). */
 	double delay[2];
 	/** Duration of flow in seconds (option -T). */
