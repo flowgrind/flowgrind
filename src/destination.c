@@ -147,6 +147,14 @@ static int create_listen_socket(struct flow *flow, char *bind_addr,
 	return fd;
 }
 
+/**
+ * To set daemon flow as destination endpoint
+ *
+ * To set the flow options and settings as destination endpoint. Listening port
+ * created and send back to the controller in the same request structure
+ *
+ * @param[in,out] request contain the test option and parameter for destination source endpoint 
+ */
 void add_flow_destination(struct request_add_flow_destination *request)
 {
 	struct flow *flow;
