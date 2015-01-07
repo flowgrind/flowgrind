@@ -171,6 +171,8 @@ void add_flow_destination(struct request_add_flow_destination *request)
 	flow->settings = request->settings;
 	flow->write_block = calloc(1, flow->settings.maximum_block_size );
 	flow->read_block = calloc(1, flow->settings.maximum_block_size );
+	/* Controller flow ID is set in the daemon */
+	flow->id=flow->settings.flow_id;
 	if (flow->write_block == NULL || flow->read_block == NULL) {
 		logging_log(LOG_ALERT, "could not allocate memory for "
 			    "read/write blocks");
