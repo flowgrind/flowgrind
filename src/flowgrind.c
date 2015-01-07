@@ -833,6 +833,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"add_flow_destination", &resultP,
 		"("
 		"{s:s}"
+		"{s:i}"
 		"{s:d,s:d,s:d,s:d,s:d}"
 		"{s:i,s:i}"
 		"{s:i}"
@@ -850,6 +851,8 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 		/* general flow settings */
 		"bind_address", cflow[id].endpoint[DESTINATION].test_address,
+
+		"flow_id",id,
 
 		"write_delay", cflow[id].settings[DESTINATION].delay[WRITE],
 		"write_duration", cflow[id].settings[DESTINATION].duration[WRITE],
@@ -935,6 +938,7 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		"add_flow_source", &resultP,
 		"("
 		"{s:s}"
+		"{s:i}"
 		"{s:d,s:d,s:d,s:d,s:d}"
 		"{s:i,s:i}"
 		"{s:i}"
@@ -953,6 +957,8 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 		/* general flow settings */
 		"bind_address", cflow[id].endpoint[SOURCE].test_address,
+
+		"flow_id",id,
 
 		"write_delay", cflow[id].settings[SOURCE].delay[WRITE],
 		"write_duration", cflow[id].settings[SOURCE].duration[WRITE],
