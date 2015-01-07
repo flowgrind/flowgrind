@@ -266,6 +266,7 @@ AC_CHECK_HEADERS([netinet/if_ether.h netinet/ip.h], [],
 AC_SEARCH_LIBS([log], [m])
 AC_SEARCH_LIBS([pthread_create], [pthread])
 AC_SEARCH_LIBS([clock_gettime], [rt])
+AC_SEARCH_LIBS([uuid_generate_time], [uuid])
 
 # Checking for types
 AC_TYPE_SIGNAL
@@ -374,6 +375,7 @@ AC_CHECK_FUNCS(
 	 uname \
 	 asprintf \
 	 strdup \
+	 uuid_generate_time \
 	], [], [AC_MSG_ERROR([required function not found])])
 
 # Checking for function clock_gettime & clock_get_time
