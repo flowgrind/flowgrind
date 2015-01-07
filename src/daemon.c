@@ -55,6 +55,7 @@
 #include <pthread.h>
 #include <inttypes.h>
 #include <float.h>
+#include <uuid/uuid.h>
 
 #include "common.h"
 #include "debug.h"
@@ -479,6 +480,13 @@ static void process_requests()
 					(struct request_get_status *)request;
 				r->started = started;
 				r->num_flows = fg_list_size(&flows);
+			}
+			break;
+		case REQUEST_GET_UUID:
+			{
+				struct request_get_uuid *r =
+					(struct request_get_uuid *)request;
+				get_uuid_string(r->server_uuid);
 			}
 			break;
 		default:
@@ -1494,4 +1502,19 @@ int dispatch_request(struct request *request, int type)
 		return -1;
 
 	return 0;
+}
+
+void get_uuid_string(char *uuid_str)
+{
+	uuid_t uuid;
+	static char server_uuid[38] = "";
+
+	if (!strlen(server_uuid)) {
+		uuid_generate_time(uuid);
+		uuid_unparse(uuid,uuid_str);
+		memset(server_uuid,0,sizeof(server_uuid));
+		strcpy(server_uuid,uuid_str);
+		return;
+	}
+	strcpy(uuid_str,server_uuid);
 }

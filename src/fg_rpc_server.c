@@ -679,6 +679,37 @@ cleanup:
 	return ret;
 }
 
+static xmlrpc_value * method_get_uuid(xmlrpc_env * const env,
+		   xmlrpc_value * const param_array,
+		   void * const user_data)
+{
+	UNUSED_ARGUMENT(param_array);
+	UNUSED_ARGUMENT(user_data);
+
+	DEBUG_MSG(LOG_WARNING, "Method get_uuid called");
+
+	xmlrpc_value *ret = 0;
+	struct request_get_uuid *request = malloc(sizeof(struct request_get_uuid));
+	int rc = dispatch_request((struct request*)request, REQUEST_GET_UUID);
+
+	if (rc == -1)
+		XMLRPC_FAIL(env, XMLRPC_INTERNAL_ERROR, request->r.error); /* goto cleanup on failure */
+
+	/* Return our result. */
+	ret = xmlrpc_build_value(env, "{s:s}", "server_uuid", request->server_uuid);
+
+cleanup:
+	if (request)
+		free_all(request->r.error, request);
+
+	if (env->fault_occurred)
+		logging_log(LOG_WARNING, "Method get_uuid failed: %s", env->fault_string);
+	else
+		DEBUG_MSG(LOG_WARNING, "Method get_uuid successful");
+
+	return ret;
+}
+
 /* Creates listen socket for the xmlrpc server. */
 static int bind_rpc_server(char *bind_addr, unsigned port) {
 	int rc;
@@ -747,6 +778,7 @@ void init_rpc_server(struct fg_rpc_server *server, char *rpc_bind_addr, unsigned
 	xmlrpc_registry_add_method(env, registryP, NULL, "stop_flow", &method_stop_flow, NULL);
 	xmlrpc_registry_add_method(env, registryP, NULL, "get_version", &method_get_version, NULL);
 	xmlrpc_registry_add_method(env, registryP, NULL, "get_status", &method_get_status, NULL);
+	xmlrpc_registry_add_method(env, registryP, NULL, "get_uuid", &method_get_uuid, NULL);
 
 	/* In the modern form of the Abyss API, we supply parameters in memory
 	   like a normal API.  We select the modern form by setting
