@@ -14,5 +14,5 @@ for PACKAGE in $PACKAGES; do
 done
 
 set -x
-sudo apt-get -qq install libxmlrpc-core-c3-dev libcurl4-gnutls-dev $EXTRA_PKGS
+sudo apt-get -qq install libxmlrpc-core-c3-dev libcurl4-gnutls-dev uuid-dev $EXTRA_PKGS
 
