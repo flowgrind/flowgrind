@@ -38,6 +38,7 @@
 #include <limits.h>
 
 #include "common.h"
+#include "fg_list.h"
 
 /** Number of whitespaces between to two interval report columns. */
 #define GUARDBAND 2
@@ -198,18 +199,26 @@ struct controller_options {
 /** Infos about a flowgrind daemon. */
 struct daemon {
 /* Note: a daemon can potentially managing multiple flows */
-	/** XMLRPC URL for this daemon. */
-	char server_url[1000];
-	/** Name of the XMLRPC server. */
-	char server_name[257];
-	/** Port of the XMLRPC server. */
-	unsigned short server_port;
+	/** UUID of the daemon. */
+	char uuid[38];
 	/** Flowgrind API version supported by this daemon. */
 	int api_version;
 	/** OS on which this daemon runs. */
 	char os_name[257];
 	/** Release number of the OS. */
 	char os_release[257];
+	/** Pointer to daemon XMLPRC URL. */
+	char *url;
+};
+
+/** Infos about a flowgrind daemon and daemon-controller connection. */
+struct rpc_info {
+	/** XMLRPC URL for this daemon. */
+	char server_url[1000];
+	/** Name of the XMLRPC server. */
+	char server_name[257];
+	/** Port of the XMLRPC server. */
+	unsigned short server_port;
 };
 
 /** Infos about the flow endpoint. */
@@ -218,8 +227,9 @@ struct flow_endpoint {
 	int send_buffer_size_real;
 	/** Receiver buffer (SO_RCVBUF). */
 	int receive_buffer_size_real;
-
-	/** Pointer to the daemon managing this endpoint. */
+	/** Pointer to manage flow endpoint XMLRPC information. */
+	struct rpc_info* rpc_info;
+	/** Pointer to manage flow endpoint daemon. */
 	struct daemon* daemon;
 	/** network address where the actual test connection goes to. */
 	char test_address[1000];
