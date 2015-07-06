@@ -74,8 +74,7 @@ extern void init_math_functions (struct flow *flow, unsigned long seed)
 
 	if (!seed) {
 	/* if no seed supplied use urandom */
-		DEBUG_MSG(LOG_WARNING, "client did not supply random seed "
-			  "value");
+		DEBUG_MSG(LOG_WARNING, "client did not supply random seed value");
 		int data = open("/dev/urandom", O_RDONLY);
 		rc = read(data, &seed, sizeof (long) );
 		close(data);

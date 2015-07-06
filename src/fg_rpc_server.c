@@ -37,7 +37,7 @@
 
 #include "common.h"
 #include "daemon.h"
-#include "log.h"
+#include "fg_log.h"
 #include "fg_error.h"
 #include "fg_definitions.h"
 #include "debug.h"
@@ -77,7 +77,7 @@ static xmlrpc_value * add_flow_source(xmlrpc_env * const env,
 
 	struct request_add_flow_source* request = 0;
 
-	DEBUG_MSG(LOG_WARNING, "Method add_flow_source called");
+	DEBUG_MSG(LOG_WARNING, "method add_flow_source called");
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array,
@@ -250,9 +250,10 @@ cleanup:
 		xmlrpc_DECREF(extra_options);
 
 	if (env->fault_occurred)
-		logging_log(LOG_WARNING, "Method add_flow_source failed: %s", env->fault_string);
+		logging(LOG_WARNING, "method add_flow_source failed: %s",
+			env->fault_string);
 	else
-		DEBUG_MSG(LOG_WARNING, "Method add_flow_source successful");
+		DEBUG_MSG(LOG_WARNING, "method add_flow_source successful");
 
 	return ret;
 }
@@ -289,7 +290,7 @@ static xmlrpc_value * add_flow_destination(xmlrpc_env * const env,
 
 	struct request_add_flow_destination* request = 0;
 
-	DEBUG_MSG(LOG_WARNING, "Method add_flow_destination called");
+	DEBUG_MSG(LOG_WARNING, "method add_flow_destination called");
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array,
@@ -450,9 +451,10 @@ cleanup:
 		xmlrpc_DECREF(extra_options);
 
 	if (env->fault_occurred)
-		logging_log(LOG_WARNING, "Method add_flow_destination failed: %s", env->fault_string);
+		logging(LOG_WARNING, "method add_flow_destination failed: %s",
+			env->fault_string);
 	else
-		DEBUG_MSG(LOG_WARNING, "Method add_flow_destination successful");
+		DEBUG_MSG(LOG_WARNING, "method add_flow_destination successful");
 
 	return ret;
 }
@@ -468,7 +470,7 @@ static xmlrpc_value * start_flows(xmlrpc_env * const env,
 	int start_timestamp;
 	struct request_start_flows *request = 0;
 
-	DEBUG_MSG(LOG_WARNING, "Method start_flows called");
+	DEBUG_MSG(LOG_WARNING, "method start_flows called");
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array, "({s:i,*})",
@@ -494,9 +496,10 @@ cleanup:
 		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
-		logging_log(LOG_WARNING, "Method start_flows failed: %s", env->fault_string);
+		logging(LOG_WARNING, "method start_flows failed: %s",
+			env->fault_string);
 	else
-		DEBUG_MSG(LOG_WARNING, "Method start_flows successful");
+		DEBUG_MSG(LOG_WARNING, "method start_flows successful");
 
 	return ret;
 }
@@ -522,7 +525,7 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	UNUSED_ARGUMENT(param_array);
 	UNUSED_ARGUMENT(user_data);
 
-	DEBUG_MSG(LOG_NOTICE, "Method get_reports called");
+	DEBUG_MSG(LOG_NOTICE, "method get_reports called");
 
 	struct report *report = get_reports(&has_more);
 
@@ -609,9 +612,10 @@ static xmlrpc_value * method_get_reports(xmlrpc_env * const env,
 	}
 
 	if (env->fault_occurred)
-		logging_log(LOG_WARNING, "Method get_reports failed: %s", env->fault_string);
+		logging(LOG_WARNING, "method get_reports failed: %s",
+			env->fault_string);
 	else
-		DEBUG_MSG(LOG_WARNING, "Method get_reports successful");
+		DEBUG_MSG(LOG_WARNING, "method get_reports successful");
 
 	return ret;
 }
@@ -627,7 +631,7 @@ static xmlrpc_value * method_stop_flow(xmlrpc_env * const env,
 	int flow_id;
 	struct request_stop_flow *request = 0;
 
-	DEBUG_MSG(LOG_WARNING, "Method stop_flow called");
+	DEBUG_MSG(LOG_WARNING, "method stop_flow called");
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(env, param_array, "({s:i,*})",
@@ -653,9 +657,10 @@ cleanup:
 		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
-		logging_log(LOG_WARNING, "Method stop_flow failed: %s", env->fault_string);
+		logging(LOG_WARNING, "method stop_flow failed: %s",
+			env->fault_string);
 	else
-		DEBUG_MSG(LOG_WARNING, "Method stop_flow successful");
+		DEBUG_MSG(LOG_WARNING, "method stop_flow successful");
 
 	return ret;
 }
@@ -671,10 +676,10 @@ static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 
 	xmlrpc_value *ret = 0;
 
-	DEBUG_MSG(LOG_WARNING, "Method get_version called");
+	DEBUG_MSG(LOG_WARNING, "method get_version called");
 
 	if (uname(&buf)) {
-		logging_log(LOG_WARNING, "uname() failed %s", strerror(errno));
+		logging(LOG_WARNING, "uname() failed %s", strerror(errno));
 		exit(1);
 	}
 
@@ -685,9 +690,10 @@ static xmlrpc_value * method_get_version(xmlrpc_env * const env,
 				 "os_release", buf.release);
 
 	if (env->fault_occurred)
-		logging_log(LOG_WARNING, "Method get_version failed: %s", env->fault_string);
+		logging(LOG_WARNING, "method get_version failed: %s",
+			env->fault_string);
 	else
-		DEBUG_MSG(LOG_WARNING, "Method get_version successful");
+		DEBUG_MSG(LOG_WARNING, "method get_version successful");
 
 	return ret;
 }
@@ -704,7 +710,7 @@ static xmlrpc_value * method_get_status(xmlrpc_env * const env,
 	xmlrpc_value *ret = 0;
 	struct request_get_status *request = 0;
 
-	DEBUG_MSG(LOG_WARNING, "Method get_status called");
+	DEBUG_MSG(LOG_WARNING, "method get_status called");
 
 	request = malloc(sizeof(struct request_get_status));
 	rc = dispatch_request((struct request*)request, REQUEST_GET_STATUS);
@@ -722,9 +728,10 @@ cleanup:
 		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
-		logging_log(LOG_WARNING, "Method get_status failed: %s", env->fault_string);
+		logging(LOG_WARNING, "method get_status failed: %s",
+			env->fault_string);
 	else
-		DEBUG_MSG(LOG_WARNING, "Method get_status successful");
+		DEBUG_MSG(LOG_WARNING, "method get_status successful");
 
 	return ret;
 }
@@ -861,7 +868,7 @@ void init_rpc_server(struct fg_rpc_server *server, char *rpc_bind_addr, unsigned
 	/* Disable introspection */
 	server->parms.dont_advertise = 1;
 
-	logging_log(LOG_NOTICE, "Running XML-RPC server on port %u", port);
+	logging(LOG_NOTICE, "running XML-RPC server on port %u", port);
 	printf("Running XML-RPC server...\n");
 
 	server->parms.socket_handle = bind_rpc_server(rpc_bind_addr, port);
@@ -874,8 +881,8 @@ void run_rpc_server(struct fg_rpc_server *server)
 	xmlrpc_server_abyss(env, &(server->parms), XMLRPC_APSIZE(socket_handle));
 
 	if (env->fault_occurred)
-		logging_log(LOG_ALERT, "XML-RPC Fault: %s (%d)\n",
-			    env->fault_string, env->fault_code);
+		logging(LOG_ALERT, "XML-RPC Fault: %s (%d)", env->fault_string,
+			env->fault_code);
 	/* xmlrpc_server_abyss() never returns */
 }
 

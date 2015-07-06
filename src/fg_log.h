@@ -4,6 +4,7 @@
  */
 
 /*
+ * Copyright (C) 2014 Alexander Zimmermann <alexander.zimmermann@netapp.com>
  * Copyright (C) 2010-2013 Christian Samsel <christian.samsel@rwth-aachen.de>
  * Copyright (C) 2009 Tim Kosse <tim.kosse@gmx.de>
  * Copyright (C) 2007-2008 Daniel Schaffrath <daniel.schaffrath@mac.com>
@@ -32,19 +33,46 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-/** Maximum length of logging string. */
-#define LOGGING_MAXLEN	255
-
-extern int log_type;
-
-enum {
-	LOGTYPE_SYSLOG,
-	LOGTYPE_STDERR
+/** Supported output streams for logging. */
+enum log_streams {
+	/** Log to syslog. */
+	LOGGING_SYSLOG = 0,
+	/** Log to stderr. */
+	LOGGING_STDERR,
+	/** Log to stdout. */
+	LOGGING_STDOUT,
 };
 
-void logging_init (void);
-void logging_exit (void);
-void logging_log (int priority, const char *fmt, ...);
-void logging_log_string (int priority, const char *s);
+/**
+ * Open logging stream.
+ *
+ * @param[in] stream to which output stream we log
+ */
+void init_logging(enum log_streams stream);
+
+/**
+ * Close logging stream.
+ */
+void close_logging(void);
+
+/**
+ * Submit log message @p fmt to logging stream.
+ *
+ * @param[in] priority priority code of log message
+ * @param[in] fmt format string
+ * @param[in] ... parameters used to fill fmt
+ */
+void logging(int priority, const char *fmt, ...)
+	__attribute__((format(printf, 2, 3)));
+
+/**
+ * Submit log message @p fmt to logging stream.
+ *
+ * @param[in] priority priority code of log message
+ * @param[in] fmt format string
+ * @param[in] ap parameters used to fill fmt
+ */
+void vlogging(int priority, const char *fmt, va_list ap)
+	__attribute__((format(printf, 2, 0)));
 
 #endif /* _LOG_H_ */

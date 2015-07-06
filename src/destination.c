@@ -58,7 +58,7 @@
 #include "fg_socket.h"
 #include "fg_time.h"
 #include "fg_math.h"
-#include "log.h"
+#include "fg_log.h"
 #include "daemon.h"
 
 #ifdef HAVE_LIBPCAP
@@ -90,8 +90,8 @@ static int create_listen_socket(struct flow *flow, char *bind_addr,
 
 	/* Any port will be fine */
 	if ((rc = getaddrinfo(bind_addr, "0", &hints, &res)) != 0) {
-		logging_log(LOG_ALERT, "Error: getaddrinfo() failed: %s\n",
-			    gai_strerror(rc));
+		logging(LOG_ALERT, "getaddrinfo() failed: %s",
+			gai_strerror(rc));
 		flow_error(flow, "getaddrinfo() failed: %s",
 			   gai_strerror(rc));
 		return -1;
@@ -110,8 +110,9 @@ static int create_listen_socket(struct flow *flow, char *bind_addr,
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
-		logging_log(LOG_ALERT, "failed to create listen socket");
-		flow_error(flow, "Failed to create listen socket: %s",
+		logging(LOG_ALERT, "failed to create listen socket: %s",
+			strerror(errno));
+		flow_error(flow, "failed to create listen socket: %s",
 			   strerror(errno));
 		freeaddrinfo(ressave);
 		return -1;
@@ -127,9 +128,8 @@ static int create_listen_socket(struct flow *flow, char *bind_addr,
 		set_congestion_control(fd, flow->settings.cc_alg);
 
 	if (listen(fd, 0) < 0) {
-		logging_log(LOG_ALERT, "listen failed: %s",
-			    strerror(errno));
-		flow_error(flow, "Listen failed: %s", strerror(errno));
+		logging(LOG_ALERT, "listen failed: %s", strerror(errno));
+		flow_error(flow, "listen failed: %s", strerror(errno));
 		return -1;
 	}
 
@@ -161,8 +161,8 @@ void add_flow_destination(struct request_add_flow_destination *request)
 	unsigned short server_data_port;
 
 	if (fg_list_size(&flows) >= MAX_FLOWS) {
-		logging_log(LOG_WARNING, "Can not accept another flow, already "
-			    "handling MAX_FLOW flows.");
+		logging(LOG_WARNING, "can not accept another flow, already "
+			"handling MAX_FLOW flows");
 		request_error(&request->r, "Can not accept another flow, "
 			     "already handling MAX_FLOW flows.");
 		return;
@@ -170,7 +170,7 @@ void add_flow_destination(struct request_add_flow_destination *request)
 
 	flow = malloc(sizeof(struct flow));
 	if (!flow) {
-		logging_log(LOG_ALERT, "could not allocate memory for flow");
+		logging(LOG_ALERT, "could not allocate memory for flow");
 		return;
 	}
 
@@ -182,8 +182,8 @@ void add_flow_destination(struct request_add_flow_destination *request)
 	/* Controller flow ID is set in the daemon */
 	flow->id=flow->settings.flow_id;
 	if (flow->write_block == NULL || flow->read_block == NULL) {
-		logging_log(LOG_ALERT, "could not allocate memory for "
-			    "read/write blocks");
+		logging(LOG_ALERT, "could not allocate memory for read/write "
+			"blocks");
 		request_error(&request->r, "could not allocate memory "
 			      "for read/write blocks");
 		uninit_flow(flow);
@@ -204,8 +204,8 @@ void add_flow_destination(struct request_add_flow_destination *request)
 					     flow->settings.bind_address[0]
 						? flow->settings.bind_address : 0,
 					     &server_data_port)) == -1) {
-		logging_log(LOG_ALERT, "could not create listen socket for "
-			    "data connection: %s", flow->error);
+		logging(LOG_ALERT, "could not create listen socket for "
+			"data connection: %s", flow->error);
 		request_error(&request->r, "could not create listen socket "
 			      "for data connection: %s", flow->error);
 		uninit_flow(flow);
@@ -250,15 +250,15 @@ int accept_data(struct flow *flow)
 		/* try again later .... */
 		if (errno == EINTR || errno == EAGAIN)
 			return 0;
-		logging_log(LOG_ALERT, "accept() failed: %s", strerror(errno));
+		logging(LOG_ALERT, "accept() failed: %s", strerror(errno));
 		return -1;
 	}
 	if (close(flow->listenfd_data) == -1)
-		logging_log(LOG_WARNING, "close(): failed");
+		logging(LOG_WARNING, "close() failed");
 	flow->listenfd_data = -1;
 
-	logging_log(LOG_NOTICE, "client %s connected for testing.",
-		    fg_nameinfo((struct sockaddr *)&caddr, addrlen));
+	logging(LOG_NOTICE, "client %s connected for testing",
+		fg_nameinfo((struct sockaddr *)&caddr, addrlen));
 
 #ifdef HAVE_LIBPCAP
 	fg_pcap_go(flow);
@@ -270,11 +270,10 @@ int accept_data(struct flow *flow)
 					 SO_SNDBUF);
 	if (flow->requested_server_test_port &&
 	    flow->real_listen_send_buffer_size != real_send_buffer_size) {
-		logging_log(LOG_WARNING, "Failed to set send buffer size of test "
-				"socket to send buffer size size of listen socket "
-				"(listen = %u, test = %u).",
-				flow->real_listen_send_buffer_size,
-				real_send_buffer_size);
+		logging(LOG_WARNING, "failed to set send buffer size of test "
+			"socket to send buffer size size of listen socket "
+			"(listen = %u, test = %u)",
+			flow->real_listen_send_buffer_size, real_send_buffer_size);
 		return -1;
 	}
 	real_receive_buffer_size =
@@ -283,12 +282,11 @@ int accept_data(struct flow *flow)
 					 SO_RCVBUF);
 	if (flow->requested_server_test_port &&
 	    flow->real_listen_receive_buffer_size != real_receive_buffer_size) {
-		logging_log(LOG_WARNING, "Failed to set receive buffer size "
-			    "(advertised window) of test socket to receive "
-			    "buffer size of listen socket (listen = %u, "
-			    "test = %u).",
-			    flow->real_listen_receive_buffer_size,
-			    real_receive_buffer_size);
+		logging(LOG_WARNING, "failed to set receive buffer size "
+			"(advertised window) of test socket to receive "
+			"buffer size of listen socket (listen = %u, "
+			"test = %u)", flow->real_listen_receive_buffer_size,
+			real_receive_buffer_size);
 		return -1;
 	}
 	if (set_flow_tcp_options(flow) == -1)

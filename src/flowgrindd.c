@@ -60,7 +60,7 @@
 
 #include "common.h"
 #include "daemon.h"
-#include "log.h"
+#include "fg_log.h"
 #include "fg_affinity.h"
 #include "fg_error.h"
 #include "fg_math.h"
@@ -105,6 +105,7 @@ static struct arg_parser parser;
 
 /* Forward declarations */
 static void usage(short status) __attribute__((noreturn));
+static void tear_down_daemon(void);
 
 /**
  * Print usage or error message and exit.
@@ -157,20 +158,25 @@ static void sighandler(int sig)
 	switch (sig) {
 	case SIGCHLD:
 		while (waitpid(-1, &status, WNOHANG) > 0)
-			logging_log(LOG_NOTICE, "child returned (status = %d)",
-				    status);
+			logging(LOG_NOTICE, "child returned (status = %d)",
+				status);
 		break;
 	case SIGHUP:
-		logging_log(LOG_NOTICE, "caught SIGHUP, Don't know what to do.");
+		logging(LOG_NOTICE, "caught SIGHUP. don't know what to do.");
 		break;
 	case SIGALRM:
-		logging_log(LOG_NOTICE, "caught SIGALRM. Don't know what to do.");
+		logging(LOG_NOTICE, "caught SIGALRM, don't know what to do.");
 		break;
 	case SIGPIPE:
 		break;
+	case SIGINT:
+	case SIGTERM:
+		logging(LOG_NOTICE, "caught SIGINT/SIGTERM, tear down daemon");
+		tear_down_daemon();
+		break;
 	default:
-		logging_log(LOG_ALERT, "caught signal %d, but don't remember "
-			    "intercepting it, aborting...", sig);
+		logging(LOG_ALERT, "caught signal %d, but don't remember "
+			"intercepting it, aborting...", sig);
 		abort();
 	}
 }
@@ -199,8 +205,8 @@ void bind_daemon_to_core(void)
 	int rc = pthread_setaffinity(thread, core);
 
 	if (rc)
-		logging_log(LOG_WARNING, "failed to bind %s (PID %d) to "
-			    "CPU core %i", progname, thread, core);
+		logging(LOG_WARNING, "failed to bind %s (PID %d) to CPU core %i",
+			progname, getpid(), core);
 	else
 		DEBUG_MSG(LOG_INFO, "bind %s (PID %d) to CPU core %i",
 			  progname, getpid(), core);
@@ -214,19 +220,19 @@ int process_dump_dir() {
 	struct stat dirstats;
 
 	if (stat(dump_dir, &dirstats) == -1) {
-		DEBUG_MSG(LOG_WARNING, "Unable to stat %s: %s",
-			  dump_dir, strerror(errno));
+		DEBUG_MSG(LOG_WARNING, "unable to stat %s: %s", dump_dir,
+			  strerror(errno));
 		return 0;
 	}
 
 	if (!S_ISDIR(dirstats.st_mode)) {
-		DEBUG_MSG(LOG_ERR, "Provided path %s is not a directory",
+		DEBUG_MSG(LOG_ERR, "provided path %s is not a directory",
 			  dump_dir);
 		return 0;
 	}
 
 	if (access(dump_dir, W_OK | X_OK) == -1) {
-		DEBUG_MSG(LOG_ERR, "Insufficent permissions to access %s: %s",
+		DEBUG_MSG(LOG_ERR, "insufficent permissions to access %s: %s",
 			  dump_dir, strerror(errno));
 		return 0;
 	}
@@ -288,7 +294,6 @@ static void parse_cmdline(int argc, char *argv[])
 				PARSE_ERR("failed to parse CPU number");
 			break;
 		case 'd':
-			log_type = LOGTYPE_STDERR;
 #ifdef DEBUG
 			increase_debuglevel();
 #endif /* DEBUG */
@@ -347,11 +352,22 @@ static void sanity_check(void)
 	/* TODO more sanity checks... (e.g. if port is in valid range) */
 }
 
+/**
+ * Gracefully tear down daemon
+ */
+static void tear_down_daemon(void)
+{
+	ap_free(&parser);
+	close_logging();
+	exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char *argv[])
 {
 	/* Info about the xmlrpc server */
 	struct fg_rpc_server server;
 
+	/* Initialize sighandler */
 	struct sigaction sa;
 	sa.sa_handler = sighandler;
 	sa.sa_flags = 0;
@@ -364,12 +380,23 @@ int main(int argc, char *argv[])
 		critx("could not set handler for SIGALRM");
 	if (sigaction (SIGCHLD, &sa, NULL))
 		critx("could not set handler for SIGCHLD");
+	if (sigaction(SIGINT, &sa, NULL))
+		critx("could not set handler for SIGINT");
+	if (sigaction(SIGTERM, &sa, NULL))
+		critx("could not set handler for SIGTERM");
 
 	set_progname(argv[0]);
 	parse_cmdline(argc, argv);
-	logging_init();
 	sanity_check();
+
+	/* Initialize logging */
+	if (!ap_is_used(&parser, 'd'))
+		init_logging(LOGGING_SYSLOG);
+	else
+		init_logging(LOGGING_STDERR);
+
 	fg_list_init(&flows);
+
 #ifdef HAVE_LIBPCAP
 	fg_pcap_init();
 #endif /* HAVE_LIBPCAP */
@@ -377,12 +404,12 @@ int main(int argc, char *argv[])
 	init_rpc_server(&server, rpc_bind_addr, port);
 
 	/* Push flowgrindd into the background */
-	if (log_type == LOGTYPE_SYSLOG) {
+	if (!ap_is_used(&parser, 'd')) {
 		/* Need to call daemon() before creating the thread because
 		 * it internally calls fork() which does not copy threads. */
 		if (daemon(0, 0) == -1)
 			crit("daemon() failed");
-		logging_log(LOG_NOTICE, "flowgrindd daemonized");
+		logging(LOG_NOTICE, "flowgrindd daemonized");
 	}
 
 	if (ap_is_used(&parser, 'c'))
@@ -392,8 +419,5 @@ int main(int argc, char *argv[])
 
 	/* This will block */
 	run_rpc_server(&server);
-
-	ap_free(&parser);
-
 	critx("control should never reach end of main()");
 }
