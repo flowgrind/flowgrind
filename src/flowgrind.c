@@ -958,8 +958,8 @@ static void print_headline(void)
 			     COL_TCP_REOR, COL_TCP_BKOF, COL_TCP_CA_STATE,
 			     COL_PMTU);
 
-	/* No FreeBSD OS is involved in the test */
-	if (!involved_os[FREEBSD])
+	/* No Linux and FreeBSD OS is involved in the test */
+	if (!involved_os[FREEBSD] && !involved_os[LINUX])
 		HIDE_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_RTT,
 			     COL_TCP_RTTVAR, COL_TCP_RTO, COL_SMSS);
 
