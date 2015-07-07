@@ -68,7 +68,7 @@
 #include "debug.h"
 #include "fg_rpc_client.h"
 #include "fg_argparser.h"
-#include "log.h"
+#include "fg_log.h"
 
 /** To show intermediated interval report columns. */
 #define SHOW_COLUMNS(...)                                                   \
@@ -724,7 +724,7 @@ static struct daemon * add_daemon_by_uuid(const char* server_uuid,
 	daemon = malloc((sizeof(struct daemon)));
 	
 	if (!daemon) {
-		logging_log(LOG_ALERT, "could not allocate memory for daemon");
+		logging(LOG_ALERT, "could not allocate memory for daemon");
 		return 0;
 	}
 
@@ -2197,7 +2197,7 @@ static struct rpc_info * add_flow_endpoint_by_url(const char* server_url,
 	flow_rpc_info = malloc((sizeof(struct rpc_info)));
 
 	if (!flow_rpc_info ) {
-		logging_log(LOG_ALERT, "could not allocate memory for flows rpc info");
+		logging(LOG_ALERT, "could not allocate memory for flows rpc info");
 		return 0;
 	}
 

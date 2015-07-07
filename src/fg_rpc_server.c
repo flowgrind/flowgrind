@@ -773,7 +773,7 @@ cleanup:
 		free_all(request->r.error, request);
 
 	if (env->fault_occurred)
-		logging_log(LOG_WARNING, "Method get_uuid failed: %s", env->fault_string);
+		logging(LOG_WARNING, "Method get_uuid failed: %s", env->fault_string);
 	else
 		DEBUG_MSG(LOG_WARNING, "Method get_uuid successful");
 
