@@ -30,11 +30,11 @@
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-/** String containing name the program is called with */
+/** String containing name the program is called with. */
 extern const char *progname;
 
 /**
- * Set global variable 'progname', based on argv[0]
+ * Set global variable 'progname', based on argv[0].
  *
  * @param[in] argv0 the name by which the program was called (argv[0])
  */

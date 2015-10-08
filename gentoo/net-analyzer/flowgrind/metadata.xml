@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
-<herd>netmon</herd>
-<use>
-  <flag name='debug'>compile with debugging support</flag>
-  <flag name='gsl'>Uses <pkg>sci-libs/gsl</pkg> to support advanced random number
-  distributions</flag>
-  <flag name='pcap'>Uses <pkg>net-libs/libpcap</pkg> for automatic traffic
-  dump support</flag>
-</use>
+	<herd>netmon</herd>
+	<use>	
+		<flag name='debug'>compile with debugging support</flag>
+		<flag name='gsl'>Use <pkg>sci-libs/gsl</pkg> to support advanced random number distributions</flag>
+  		<flag name='pcap'>Use <pkg>net-libs/libpcap</pkg> for automatic traffic dump support</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">flowgrind/flowgrind</remote-id>
+	</upstream>
 </pkgmetadata>

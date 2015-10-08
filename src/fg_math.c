@@ -74,8 +74,7 @@ extern void init_math_functions (struct flow *flow, unsigned long seed)
 
 	if (!seed) {
 	/* if no seed supplied use urandom */
-		DEBUG_MSG(LOG_WARNING, "client did not supply random seed "
-			  "value");
+		DEBUG_MSG(LOG_WARNING, "client did not supply random seed value");
 		int data = open("/dev/urandom", O_RDONLY);
 		rc = read(data, &seed, sizeof (long) );
 		close(data);
@@ -89,9 +88,9 @@ extern void init_math_functions (struct flow *flow, unsigned long seed)
 		  "flow %d with seed %lu, gsl generator is: %s",
 		  flow->id,seed,gsl_rng_name (flow->r));
 #else /* HAVE_LIBGSL */
-	srand((unsigned int)seed);
+	srand((unsigned)seed);
 	DEBUG_MSG(LOG_WARNING, "initalized posix random functions with seed "
-		  "%u", (unsigned int)seed);
+		  "%u", (unsigned)seed);
 #endif /* HAVE_LIBGSL */
 }
 

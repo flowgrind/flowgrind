@@ -35,9 +35,9 @@ fi
 
 src_configure() {
 	econf \
-	$(use_enable pcap) \
-	$(use_enable debug) \
-	$(use_enable gsl) || die
+	$(use_with gsl) \
+	$(use_with pcap) \
+	$(use_enable debug) || die
 }
 
 src_compile() {
@@ -48,5 +48,5 @@ src_install() {
 	emake DESTDIR="${D}" install || die
 	prepalldocs
 	doman man/*.1 || die
-	dodoc AUTHORS NEWS README.md COPYING INSTALL.Gentoo || die
+	dodoc AUTHORS NEWS README.md COPYING || die
 }

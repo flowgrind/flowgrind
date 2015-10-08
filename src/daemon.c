@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <strings.h>
 #include <signal.h>
 #include <string.h>
@@ -54,6 +55,7 @@
 #include <pthread.h>
 #include <inttypes.h>
 #include <float.h>
+#include <uuid/uuid.h>
 
 #include "common.h"
 #include "debug.h"
@@ -62,7 +64,7 @@
 #include "fg_definitions.h"
 #include "fg_socket.h"
 #include "fg_time.h"
-#include "log.h"
+#include "fg_log.h"
 #include "daemon.h"
 #include "source.h"
 #include "destination.h"
@@ -84,8 +86,6 @@
 
 int daemon_pipe[2];
 
-int next_flow_id = 0;
-
 pthread_mutex_t mutex;
 struct request *requests = 0, *requests_last = 0;
 
@@ -94,15 +94,11 @@ int maxfd;
 
 struct report* reports = 0;
 struct report* reports_last = 0;
-unsigned int pending_reports = 0;
+unsigned pending_reports = 0;
 
 struct linked_list flows;
 
 char started = 0;
-
-#ifdef HAVE_LIBPCAP
-char dumping = 0;
-#endif /* HAVE_LIBPCAP */
 
 /* Forward declarations */
 static int write_data(struct flow *flow);
@@ -174,14 +170,14 @@ void uninit_flow(struct flow *flow)
 	if (flow->settings.traffic_dump && flow->pcap_thread) {
 		rc = pthread_cancel(flow->pcap_thread);
 		if (rc)
-			logging_log(LOG_WARNING, "failed to cancel dump "
-				    "thread: %s", strerror(rc));
+			logging(LOG_WARNING, "failed to cancel dump thread: %s",
+				strerror(rc));
 
 		/* wait for the dump thread to react to the cancellation request */
 		rc = pthread_join(flow->pcap_thread, NULL);
 		if (rc)
-			logging_log(LOG_WARNING, "failed to join dump "
-					"thread: %s", strerror(rc));
+			logging(LOG_WARNING, "failed to join dump thread: %s",
+				strerror(rc));
 	}
 #endif /* HAVE_LIBPCAP */
 	free_all(flow->read_block, flow->write_block, flow->addr, flow->error);
@@ -440,6 +436,13 @@ static void stop_flow(struct request_stop_flow *request)
 	request_error(&request->r, "Unknown flow id");
 }
 
+/**
+ * To process the request issued from the controller.
+ *
+ * The daemon reads the request from the controller, and executes the issued
+ * request type from the controller. The daemons have separate data structure
+ * for each request type.
+ */
 static void process_requests()
 {
 	int rc;
@@ -484,6 +487,13 @@ static void process_requests()
 				r->num_flows = fg_list_size(&flows);
 			}
 			break;
+		case REQUEST_GET_UUID:
+			{
+				struct request_get_uuid *r =
+					(struct request_get_uuid *)request;
+				get_uuid_string(r->server_uuid);
+			}
+			break;
 		default:
 			request_error(request, "Unknown request type");
 			break;
@@ -496,8 +506,18 @@ static void process_requests()
 	DEBUG_MSG(LOG_DEBUG, "process_requests unlocked mutex");
 }
 
-/*
- * Prepare a report. type is either INTERVAL or FINAL
+/**
+ * To prepare a report, report type is either INTERVAL or FINAL.
+ *
+ * The daemon report the test data and results according to time duration
+ * for reporting interval. The daemon maintain all its data in its @p flow
+ * statistics data structure. These data are stored in the report data structure
+ * and reported to the controller.The flow id, flow endpoint (source or
+ * destination) and report @p type (interval or final) are used to identify the 
+ * flow report in controller.
+ *
+ * @param[in,out] flow flow structure maintained by a daemon
+ * @param[in] type To determine report type i.e. interval or final
  */
 static void report_flow(struct flow* flow, int type)
 {
@@ -507,6 +527,7 @@ static void report_flow(struct flow* flow, int type)
 		(struct report*)malloc(sizeof(struct report));
 
 	report->id = flow->id;
+	report->endpoint = flow->endpoint;
 	report->type = type;
 
 	if (type == INTERVAL)
@@ -831,7 +852,7 @@ void add_report(struct report* report)
 
 struct report* get_reports(int *has_more)
 {
-	const unsigned int max_reports = 50;
+	const unsigned max_reports = 50;
 
 	struct report* ret;
 	DEBUG_MSG(LOG_DEBUG, "get_reports trying to lock mutex");
@@ -847,7 +868,7 @@ struct report* get_reports(int *has_more)
 	} else {
 		/* Split off first 50 items */
 		struct report* tmp;
-		for (unsigned int i = 0; i < max_reports - 1; i++)
+		for (unsigned i = 0; i < max_reports - 1; i++)
 			reports = reports->next;
 		tmp = reports->next;
 		reports->next = 0;
@@ -862,11 +883,22 @@ struct report* get_reports(int *has_more)
 	return ret;
 }
 
+/**
+ * To initialize all flows to the default value.
+ *
+ * The daemon maintain all its data in its @p flow statistics data structure.
+ * These data are initialize to the default value or zero value according to 
+ * their metrics details.
+ *
+ * @param[in,out] flow flow structure maintained by a daemon
+ * @param[in] is_source to determine flow endpoint i.e. source or destination
+ */
 void init_flow(struct flow* flow, int is_source)
 {
 	memset(flow, 0, sizeof(struct flow));
 
-	flow->id = next_flow_id++;
+	/* flow id is given by controller */
+	flow->id = -1;
 	flow->endpoint = is_source ? SOURCE : DESTINATION;
 	flow->state = is_source ? GRIND_WAIT_CONNECT : GRIND_WAIT_ACCEPT;
 	flow->fd = -1;
@@ -878,25 +910,25 @@ void init_flow(struct flow* flow, int is_source)
 	flow->finished[READ] = flow->finished[WRITE] = 0;
 
 	flow->addr = 0;
-	/* INTERVAL and FINAL */
-	for (int i = 0; i < 2; i++) {
-		flow->statistics[i].bytes_read = 0;
-		flow->statistics[i].bytes_written = 0;
 
-		flow->statistics[i].request_blocks_read = 0;
-		flow->statistics[i].request_blocks_written = 0;
-		flow->statistics[i].response_blocks_read = 0;
-		flow->statistics[i].response_blocks_written = 0;
+	foreach(int *i, INTERVAL, FINAL) {
+		flow->statistics[*i].bytes_read = 0;
+		flow->statistics[*i].bytes_written = 0;
 
-		flow->statistics[i].rtt_min = FLT_MAX;
-		flow->statistics[i].rtt_max = FLT_MIN;
-		flow->statistics[i].rtt_sum = 0.0F;
-		flow->statistics[i].iat_min = FLT_MAX;
-		flow->statistics[i].iat_max = FLT_MIN;
-		flow->statistics[i].iat_sum = 0.0F;
-		flow->statistics[i].delay_min = FLT_MAX;
-		flow->statistics[i].delay_max = FLT_MIN;
-		flow->statistics[i].delay_sum = 0.0F;
+		flow->statistics[*i].request_blocks_read = 0;
+		flow->statistics[*i].request_blocks_written = 0;
+		flow->statistics[*i].response_blocks_read = 0;
+		flow->statistics[*i].response_blocks_written = 0;
+
+		flow->statistics[*i].rtt_min = FLT_MAX;
+		flow->statistics[*i].rtt_max = FLT_MIN;
+		flow->statistics[*i].rtt_sum = 0.0F;
+		flow->statistics[*i].iat_min = FLT_MAX;
+		flow->statistics[*i].iat_max = FLT_MIN;
+		flow->statistics[*i].iat_sum = 0.0F;
+		flow->statistics[*i].delay_min = FLT_MAX;
+		flow->statistics[*i].delay_max = FLT_MIN;
+		flow->statistics[*i].delay_sum = 0.0F;
 	}
 
 	DEBUG_MSG(LOG_NOTICE, "called init flow %d", flow->id);
@@ -941,8 +973,8 @@ static int write_data(struct flow *flow)
 
 		if (rc == -1) {
 			if (errno == EAGAIN) {
-				logging_log(LOG_WARNING, "write queue limit hit "
-					    "for flow %d", flow->id);
+				logging(LOG_WARNING, "write queue limit hit for "
+					"flow %d", flow->id);
 				break;
 			}
 			DEBUG_MSG(LOG_WARNING, "write() returned %d on flow %d, "
@@ -964,8 +996,8 @@ static int write_data(struct flow *flow)
 			  flow->current_write_block_size,
 			  flow->current_block_bytes_written);
 
-		for (int i = 0; i < 2; i++)
-			flow->statistics[i].bytes_written += rc;
+		foreach(int *i, INTERVAL, FINAL)
+			flow->statistics[*i].bytes_written += rc;
 
 		flow->current_block_bytes_written += rc;
 
@@ -976,8 +1008,9 @@ static int write_data(struct flow *flow)
 			/* we just finished writing a block */
 			flow->current_block_bytes_written = 0;
 			gettime(&flow->last_block_written);
-			for (int i = 0; i < 2; i++)
-				flow->statistics[i].request_blocks_written++;
+
+			foreach(int *i, INTERVAL, FINAL)
+				flow->statistics[*i].request_blocks_written++;
 
 			interpacket_gap = next_interpacket_gap(flow);
 
@@ -989,12 +1022,14 @@ static int write_data(struct flow *flow)
 					 interpacket_gap);
 				if (time_is_after(&flow->last_block_written,
 						  &flow->next_write_block_timestamp)) {
+					char timestamp[30] = "";
+					ctimespec_r(&flow->next_write_block_timestamp,
+						    timestamp, sizeof(timestamp), true);
 					DEBUG_MSG(LOG_WARNING, "incipient "
 						  "congestion on flow %u new "
 						  "block scheduled for %s, "
-						  "%.6lfs before now.",
-						   flow->id,
-						   ctimespec(&flow->next_write_block_timestamp),
+						  "%.6lfs before now",
+						   flow->id, timestamp,
 						   time_diff(&flow->next_write_block_timestamp,
 							     &flow->last_block_written));
 					flow->congestion_counter++;
@@ -1051,8 +1086,8 @@ static inline int try_read_n_bytes(struct flow *flow, int bytes)
 	}
 
 	if (rc == 0) {
-		DEBUG_MSG(LOG_ERR, "server shut down test socket of "
-			  "flow %d", flow->id);
+		DEBUG_MSG(LOG_ERR, "server shut down test socket of flow %d",
+			  flow->id);
 		if (!flow->finished[READ] || !flow->settings.shutdown)
 			warnx("premature shutdown of server flow");
 		flow->finished[READ] = 1;
@@ -1062,14 +1097,14 @@ static inline int try_read_n_bytes(struct flow *flow, int bytes)
 	DEBUG_MSG(LOG_DEBUG, "flow %d received %u bytes", flow->id, rc);
 
 	flow->current_block_bytes_read += rc;
-	for (int i = 0; i < 2; i++)
-		flow->statistics[i].bytes_read += rc;
+
+	foreach(int *i, INTERVAL, FINAL)
+		flow->statistics[*i].bytes_read += rc;
 
 #ifdef DEBUG
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg))
-		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, "
-			  "len = %zu",
-		flow->id, cmsg->cmsg_type, cmsg->cmsg_len);
+		DEBUG_MSG(LOG_NOTICE, "flow %d received cmsg: type = %u, len = %u",
+			  flow->id, cmsg->cmsg_type, (socklen_t) cmsg->cmsg_len);
 #endif /* DEBUG */
 
 	return rc;
@@ -1097,9 +1132,9 @@ static int read_data(struct flow *flow)
 		    optint <= flow->settings.maximum_block_size )
 			flow->current_read_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal cbs %d, "
-				    "ignoring (max: %d)", flow->id, optint,
-				    flow->settings.maximum_block_size);
+			logging(LOG_WARNING, "flow %d parsed illegal cbs %d, "
+				"ignoring (max: %d)", flow->id, optint,
+				flow->settings.maximum_block_size);
 
 		/* parse and check current request size for validity */
 		optint = ntohl( ((struct block *)flow->read_block)->request_block_size );
@@ -1108,11 +1143,9 @@ static int read_data(struct flow *flow)
 		     optint <= flow->settings.maximum_block_size))
 			requested_response_block_size = optint;
 		else
-			logging_log(LOG_WARNING, "flow %d parsed illegal qbs "
-				    "%d, ignoring (max: %d)",
-				    flow->id,
-				    optint,
-				    flow->settings.maximum_block_size);
+			logging(LOG_WARNING, "flow %d parsed illegal qbs %d, "
+				"ignoring (max: %d)", flow->id, optint,
+				flow->settings.maximum_block_size);
 #ifdef DEBUG
 		if (requested_response_block_size == -1) {
 			DEBUG_MSG(LOG_NOTICE, "processing response block on "
@@ -1120,8 +1153,7 @@ static int read_data(struct flow *flow)
 				  flow->current_read_block_size);
 		} else {
 			DEBUG_MSG(LOG_NOTICE, "processing request block on "
-				  "flow %d size: %d, request: %d",
-				  flow->id,
+				  "flow %d size: %d, request: %d", flow->id,
 				  flow->current_read_block_size,
 				  requested_response_block_size);
 		}
@@ -1146,13 +1178,13 @@ static int read_data(struct flow *flow)
 			if (requested_response_block_size == -1) {
 				/* this is a response block, consider DATA as
 				 * RTT  */
-				for (int i = 0; i < 2; i++)
-					flow->statistics[i].response_blocks_read++;
+				foreach(int *i, INTERVAL, FINAL)
+					flow->statistics[*i].response_blocks_read++;
 				process_rtt(flow);
 			} else {
 				/* this is a request block, calculate IAT */
-				for (int i = 0; i < 2; i++)
-					flow->statistics[i].request_blocks_read++;
+				foreach(int *i, INTERVAL, FINAL)
+					flow->statistics[*i].request_blocks_read++;
 				process_iat(flow);
 				process_delay(flow);
 
@@ -1180,19 +1212,18 @@ static void process_rtt(struct flow* flow)
 	current_rtt = time_diff(data, &now);
 
 	if (current_rtt < 0) {
-		logging_log(LOG_CRIT, "received malformed rtt block of flow %d "
-			    "(rtt = %.3lfms), ignoring",
-			    flow->id, current_rtt * 1e3);
+		logging(LOG_CRIT, "received malformed rtt block of flow %d "
+			"(rtt = %.3lfms), ignoring", flow->id, current_rtt * 1e3);
 		current_rtt = NAN;
 	}
 
 	flow->last_block_read = now;
 
 	if (!isnan(current_rtt)) {
-		for (int i = 0; i < 2; i++) {
-			ASSIGN_MIN(flow->statistics[i].rtt_min, current_rtt);
-			ASSIGN_MAX(flow->statistics[i].rtt_max, current_rtt);
-			flow->statistics[i].rtt_sum += current_rtt;
+		foreach(int *i, INTERVAL, FINAL) {
+			ASSIGN_MIN(flow->statistics[*i].rtt_min, current_rtt);
+			ASSIGN_MAX(flow->statistics[*i].rtt_max, current_rtt);
+			flow->statistics[*i].rtt_sum += current_rtt;
 		}
 	}
 
@@ -1214,19 +1245,19 @@ static void process_iat(struct flow* flow)
 		current_iat = NAN;
 
 	if (current_iat < 0) {
-		logging_log(LOG_CRIT, "calculated malformed iat of flow %d "
-			    "(iat = %.3lfms) (clock skew?), ignoring",
-			    flow->id, current_iat * 1e3);
+		logging(LOG_CRIT, "calculated malformed iat of flow %d "
+			"(iat = %.3lfms) (clock skew?), ignoring",
+			flow->id, current_iat * 1e3);
 		current_iat = NAN;
 	}
 
 	flow->last_block_read = now;
 
 	if (!isnan(current_iat)) {
-		for (int i = 0; i < 2; i++) {
-			ASSIGN_MIN(flow->statistics[i].iat_min, current_iat);
-			ASSIGN_MAX(flow->statistics[i].iat_max, current_iat);
-			flow->statistics[i].iat_sum += current_iat;
+		foreach(int *i, INTERVAL, FINAL) {
+			ASSIGN_MIN(flow->statistics[*i].iat_min, current_iat);
+			ASSIGN_MAX(flow->statistics[*i].iat_max, current_iat);
+			flow->statistics[*i].iat_sum += current_iat;
 		}
 	}
 	DEBUG_MSG(LOG_NOTICE, "processed IAT of flow %d (%.3lfms)",
@@ -1244,19 +1275,19 @@ static void process_delay(struct flow* flow)
 	current_delay = time_diff(data, &now);
 
 	if (current_delay < 0) {
-		logging_log(LOG_CRIT, "calculated malformed delay of flow "
-			    "%d (rtt = %.3lfms) (clocks out-of-sync?), "
-			    "ignoring", flow->id, current_delay * 1e3);
+		logging(LOG_CRIT, "calculated malformed delay of flow "
+			"%d (rtt = %.3lfms) (clocks out-of-sync?), ignoring",
+			flow->id, current_delay * 1e3);
 		current_delay = NAN;
 	}
 
 	if (!isnan(current_delay)) {
-		for (int i = 0; i < 2; i++) {
-			ASSIGN_MIN(flow->statistics[i].delay_min,
+		foreach(int *i, INTERVAL, FINAL) {
+			ASSIGN_MIN(flow->statistics[*i].delay_min,
 				   current_delay);
-			ASSIGN_MAX(flow->statistics[i].delay_max,
+			ASSIGN_MAX(flow->statistics[*i].delay_max,
 				   current_delay);
-			flow->statistics[i].delay_sum += current_delay;
+			flow->statistics[*i].delay_sum += current_delay;
 		}
 	}
 
@@ -1305,41 +1336,38 @@ static void send_response(struct flow* flow, int requested_response_block_size)
 
 		if (rc == -1) {
 			if (errno == EAGAIN) {
-				DEBUG_MSG(LOG_DEBUG,
-					  "%s, still trying to send response "
-					  "block (write queue hit limit)",
-					  strerror(errno));
+				DEBUG_MSG(LOG_DEBUG, "%s, still trying to send "
+					  "response block (write queue hit "
+					  "limit)", strerror(errno));
 				try++;
 				if (try >= CONGESTION_LIMIT &&
 				    !flow->current_block_bytes_written) {
-					logging_log(LOG_WARNING,
-						    "tried to send response "
-						    "block %d times without "
-						    "success, dropping (%s)",
-						    try, strerror(errno));
+					logging(LOG_WARNING, "tried to send "
+						"response block %d times without "
+						"success, dropping (%s)",
+						try, strerror(errno));
 						break;
 				}
 			} else {
-				logging_log(LOG_WARNING,
-					    "Premature end of test: %s, abort "
-					    "flow", strerror(errno));
+				logging(LOG_WARNING, "premature end of test: "
+					"%s, abort flow", strerror(errno));
 				flow->finished[READ] = 1;
 				break;
 			}
 		} else {
 			flow->current_block_bytes_written += rc;
-			for (int i = 0; i < 2; i++)
-				flow->statistics[i].bytes_written += rc;
+			foreach(int *i, INTERVAL, FINAL)
+				flow->statistics[*i].bytes_written += rc;
 
 			if (flow->current_block_bytes_written >=
-			    (unsigned int)requested_response_block_size) {
+			    (unsigned)requested_response_block_size) {
 				assert(flow->current_block_bytes_written ==
-					(unsigned int)requested_response_block_size);
+					(unsigned)requested_response_block_size);
 				/* just finish sending response block */
 				flow->current_block_bytes_written = 0;
 				gettime(&flow->last_block_written);
-				for (int i = 0; i < 2; i++)
-					flow->statistics[i].response_blocks_written++;
+				foreach(int *i, INTERVAL, FINAL)
+					flow->statistics[*i].response_blocks_written++;
 				break;
 			}
 		}
@@ -1457,3 +1485,65 @@ int set_flow_tcp_options(struct flow *flow)
 	return 0;
 }
 
+/* Dispatch an incoming request to daemon thread */
+int dispatch_request(struct request *request, int type)
+{
+	pthread_cond_t cond;
+
+	request->error = NULL;
+	request->type = type;
+	request->next = NULL;
+
+	/* Create synchronization mutex */
+	if (pthread_cond_init(&cond, NULL)) {
+		request_error(request, "Could not create synchronization mutex");
+		return -1;
+	}
+	request->condition = &cond;
+
+	pthread_mutex_lock(&mutex);
+
+	if (!requests) {
+		requests = request;
+		requests_last = request;
+	} else {
+		requests_last->next = request;
+		requests_last = request;
+	}
+	if (write(daemon_pipe[1], &type, 1) != 1) /* Doesn't matter what we write */
+		return -1;
+	/* Wait until the daemon thread has processed the request */
+	pthread_cond_wait(&cond, &mutex);
+
+	pthread_mutex_unlock(&mutex);
+
+	if (request->error)
+		return -1;
+
+	return 0;
+}
+
+/**
+ * To generate daemon UUID
+ *
+ * Generate the daemon UUID and convert the UUID to a string data.
+ * UUID is generated by daemon only once and stored in the global variable.
+ * The daemon return the same UUID for all the flows it maintaining.
+ * This UUID is taken as a reference to identify the daemon in the controller.
+ *
+ * @param[in,out] uuid_str daemons UUID
+ */
+void get_uuid_string(char *uuid_str)
+{
+	uuid_t uuid;
+	static char server_uuid[38] = "";
+
+	if (!strlen(server_uuid)) {
+		uuid_generate_time(uuid);
+		uuid_unparse(uuid,uuid_str);
+		memset(server_uuid,0,sizeof(server_uuid));
+		strcpy(server_uuid,uuid_str);
+		return;
+	}
+	strcpy(uuid_str,server_uuid);
+}

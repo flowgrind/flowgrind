@@ -32,16 +32,16 @@
 
 #include <pthread.h>
 
-/** Query type for get_ncores()  */
+/** Query type for get_ncores(). */
 enum ncore_query {
-	/** Total number of processors configured */
+	/** Total number of processors configured. */
 	NCORE_CONFIG = 0,
-	/** Processors available to the current process */
+	/** Processors available to the current process. */
 	NCORE_CURRENT
 };
 
 /**
- * Return either the total number of configured or available cores
+ * Return either the total number of configured or available cores.
  *
  * @param[in] query indicates if either the configured or available cores
  * should be be returned @see enum nproc_query
@@ -50,22 +50,22 @@ enum ncore_query {
 int get_ncores(enum ncore_query query);
 
 /**
- * Set CPU affinity of the thread @p thread to the core @p core 
+ * Set CPU affinity of the thread @p thread to the core @p core.
  *
  * @param[in] thread thread ID
  * @param[in] core core to which thread @p thread will be bounded
  * @return return 0 for success, or -1 for failure
  */
-int pthread_setaffinity(pthread_t thread, unsigned int core);
+int pthread_setaffinity(pthread_t thread, unsigned core);
 
 /**
  * Returns the CPU affinity of thread @p thread in the buffer pointed to by
- * @p core
+ * @p core.
  *
  * @param[in] thread thread ID
  * @param[out] core core to which thread @p thread is bounded 
  * @return return 0 for success, or -1 for failure
  */
-int pthread_getaffinity(pthread_t thread, unsigned int *core);
+int pthread_getaffinity(pthread_t thread, unsigned *core);
 
 #endif /* _FG_AFFINITY_H_ */

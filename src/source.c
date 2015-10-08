@@ -58,13 +58,13 @@
 #include "fg_math.h"
 #include "fg_socket.h"
 #include "fg_time.h"
-#include "log.h"
+#include "fg_log.h"
 
 #ifdef HAVE_LIBPCAP
 #include "fg_pcap.h"
 #endif /* HAVE_LIBPCAP */
 
-void remove_flow(unsigned int i);
+void remove_flow(unsigned i);
 
 #ifdef HAVE_TCP_INFO
 int get_tcp_info(struct flow *flow, struct tcp_info *info);
@@ -150,6 +150,15 @@ static int name2socket(struct flow *flow, char *server_name, unsigned port, stru
 	return fd;
 }
 
+/**
+ * To set daemon flow as source endpoint
+ *
+ * To set the flow options and settings as source endpoint. Depending upon the 
+ * late connection option the data connection is established to connect the 
+ * destination daemon listening port address with source daemon. 
+ *
+ * @param[in,out] request Contain the test option and parameter for daemon source endpoint 
+ */
 int add_flow_source(struct request_add_flow_source *request)
 {
 #ifdef HAVE_SO_TCP_CONGESTION
@@ -158,14 +167,15 @@ int add_flow_source(struct request_add_flow_source *request)
 	struct flow *flow;
 
 	if (fg_list_size(&flows) >= MAX_FLOWS) {
-		logging_log(LOG_WARNING, "Can not accept another flow, already handling MAX_FLOW flows.");
+		logging(LOG_WARNING, "can not accept another flow, already "
+			"handling MAX_FLOW flows");
 		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
 		return -1;
 	}
 
 	flow = malloc(sizeof(struct flow));
 	if (!flow) {
-		logging_log(LOG_ALERT, "could not allocate memory for flow");
+		logging(LOG_ALERT, "could not allocate memory for flow");
 		return -1;
 	}
 
@@ -176,9 +186,11 @@ int add_flow_source(struct request_add_flow_source *request)
 	/* be greedy with buffer sizes */
 	flow->write_block = calloc(1, flow->settings.maximum_block_size);
 	flow->read_block = calloc(1, flow->settings.maximum_block_size);
-
+	/* Controller flow ID is set in the daemon */
+	flow->id = flow->settings.flow_id;
 	if (flow->write_block == NULL || flow->read_block == NULL) {
-		logging_log(LOG_ALERT, "could not allocate memory for read/write blocks");
+		logging(LOG_ALERT, "could not allocate memory for read/write "
+			"blocks");
 		request_error(&request->r, "could not allocate memory for read/write blocks");
 		uninit_flow(flow);
 		return -1;
@@ -196,7 +208,8 @@ int add_flow_source(struct request_add_flow_source *request)
 			flow->settings.requested_read_buffer_size, &request->real_read_buffer_size,
 			flow->settings.requested_send_buffer_size, &request->real_send_buffer_size);
 	if (flow->fd == -1) {
-		logging_log(LOG_ALERT, "Could not create data socket: %s", flow->error);
+		logging(LOG_ALERT, "could not create data socket: %s",
+			flow->error);
 		request_error(&request->r, "Could not create data socket: %s", flow->error);
 		uninit_flow(flow);
 		return -1;

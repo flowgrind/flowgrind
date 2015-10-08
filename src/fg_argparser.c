@@ -39,7 +39,7 @@
 #include "fg_argparser.h"
 
 /**
- * Assure at least a minimum size for buffer @p buf
+ * Assure at least a minimum size for buffer @p buf.
  *
  * @param[in] buf pointer to buffer
  * @param[in] min_size minimum size @p buf should hold in bytes
@@ -55,7 +55,7 @@ static void *ap_resize_buffer(void *buf, const int min_size)
 }
 
 /**
- * Store a parsed option in the state of the arg-parser given by @p ap
+ * Store a parsed option in the state of the arg-parser given by @p ap.
  *
  * @param[in] ap pointer to the arg-parser state
  * @param[in] option_index index of the option to store
@@ -95,7 +95,7 @@ static bool push_back_record(struct arg_parser *const ap, const int option_index
 }
 
 /**
- * Add an error message to the arg-parser @p ap
+ * Add an error message to the arg-parser @p ap.
  *
  * @param[in] ap pointer to the arg-parser state
  * @param[in] msg error string
@@ -115,7 +115,7 @@ static bool add_error(struct arg_parser *const ap, const char *const msg)
 }
 
 /**
- * Free all space required by the arg-parser @p ap
+ * Free all space required by the arg-parser @p ap.
  *
  * @param[in] ap pointer to the arg-parser state
  */
@@ -140,7 +140,7 @@ static void free_data(struct arg_parser *const ap)
 }
 
 /**
- * Parses a long option and adds it to the record of arg-parser @p ap
+ * Parses a long option and adds it to the record of arg-parser @p ap.
  *
  * @param[in] ap pointer to the arg-parser state
  * @param[in] opt long option string
@@ -161,7 +161,7 @@ static bool parse_long_option(struct arg_parser *const ap,
 
 	for (len = 0; opt[len + 2] && opt[len + 2] != '='; ++len) ;
 
-	/* Test all long options for either exact match or abbreviated matches. */
+	/* Test all long options for either exact match or abbreviated matches */
 	for (int i = 0; options[i].code != 0; ++i)
 		if (options[i].name
 		    && strncmp(options[i].name, &opt[2], len) == 0) {
@@ -229,7 +229,7 @@ static bool parse_long_option(struct arg_parser *const ap,
 }
 
 /**
- * Parses a short option and adds it to the record of arg-parser @p ap
+ * Parses a short option and adds it to the record of arg-parser @p ap.
  *
  * @param[in] ap pointer to the arg-parser state
  * @param[in] opt long option string
@@ -296,8 +296,9 @@ static bool parse_short_option(struct arg_parser *const ap,
 }
 
 /**
- * Extracts number of options in @p options. This is done by counting all
- * options until an option with code 0 is found
+ * Determines number of options in @p options.
+ *
+ * Counting all options until an option with code 0 is found.
  *
  * @param[in] options array of user-defined options
  * @return number of options in @p options
@@ -310,8 +311,9 @@ static int get_num_options(const struct ap_Option options[])
 }
 
 /**
- * Get the number of mutex in the option definitions. This is done by searching
- * for the greatest mutex ID in all options
+ * Get the number of mutex in the option definitions.
+ *
+ * Searching for the greatest mutex ID in all options.
  *
  * @param[in] options array of user-defined options
  * @return number of mutex in the option definitions
@@ -328,8 +330,9 @@ static int get_mutex_count(const struct ap_Option options[])
 }
 
 /**
- * Copy @p options into the arg-parser @p ap. This is a deep copy including
- * strings and arrays
+ * Copy @p options into the arg-parser @p ap.
+ *
+ * This is a deep copy including strings and arrays.
  *
  * @param[in] ap arg-parser
  * @param[in] options options struct to copy
@@ -586,32 +589,3 @@ void ap_free_mutex_state(struct ap_Mutex_state *const ms)
 	}
 }
 
-/* Parse RPC address for the xmlrpc control connection */
-void parse_rpc_address(char** rpc_address, int* port, bool* is_ipv6)
-{
-	char* sepptr = 0;
-
-	/* 1st case: IPv6 with port, e.g. "[a:b::c]:5999"  */
-	if ((sepptr = strchr(*rpc_address, ']'))) {
-		*is_ipv6 = true;
-		*sepptr = '\0';
-		if (*rpc_address[0] == '[')
-			(*rpc_address)++;
-		sepptr++;
-		if (sepptr != '\0' && *sepptr == ':')
-			sepptr++;
-		*port = atoi(sepptr);
-	} else if ((sepptr = strchr(*rpc_address, ':'))) {
-		/* 2nd case: IPv6 without port, e.g. "a:b::c"  */
-		if (strchr(sepptr+1, ':')) {
-			*is_ipv6 = true;
-		} else {
-		/* 3rd case: IPv4 or name with port 1.2.3.4:5999 */
-			*sepptr = '\0';
-			sepptr++;
-			if ((*sepptr != '\0') && (*sepptr == ':'))
-					sepptr++;
-			*port = atoi(sepptr);
-		}
-	}
-}

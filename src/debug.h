@@ -39,36 +39,43 @@
 #include <pthread.h>
 
 /**
- * Print debug message to standard error
+ * Print debug message to standard error.
  *
  * If the debug level is higher than the given debug level @p LVL, print debug
  * message @p MSG together with current time, the delta in time since the last
  * and first debug call, the function in which the debug call occurs, and the
- * process and thread PID
+ * process and thread PID.
  */
-#define DEBUG_MSG(LVL, MSG, ...) do {					       \
-	if (debug_level >= LVL)						       \
-		fprintf(stderr, "%s %s:%d  [%d/%d] " MSG "\n",		       \
-			debug_timestamp(), __FUNCTION__, __LINE__, getpid(),   \
-			(unsigned int)pthread_self()%USHRT_MAX, ##__VA_ARGS__);\
+#define DEBUG_MSG(LVL, MSG, ...) do {					     \
+	char *timestamp = NULL;						     \
+	debug_timestamp(&timestamp);					     \
+	if (debug_level >= LVL)						     \
+		fprintf(stderr, "%s %s:%d  [%d/%d] " MSG "\n",		     \
+			timestamp, __FUNCTION__, __LINE__, getpid(),	     \
+			(unsigned)pthread_self()%USHRT_MAX, ##__VA_ARGS__);  \
+		free(timestamp);					     \
 } while (0)
 
-/** Global debug level for flowgrind controller and daemon */
-unsigned int debug_level;
+/** Global debug level for flowgrind controller and daemon. */
+unsigned debug_level;
 
-/** Decrease debug level */
+/** Decrease debug level. */
 void decrease_debuglevel(void);
 
-/** Decrease debug level */
+/** Decrease debug level. */
 void increase_debuglevel(void);
 
 /**
- * Helper function for DEBUG_MSG macro
+ * Helper function for DEBUG_MSG macro.
  *
- * @return string with the current time in seconds and nanoseconds since the
- * Epoch together with the delta in time since the last and first function call
+ * Write string with the current time in seconds and nanoseconds since the
+ * Epoch together with the delta in time since the last and first call the
+ * function.
+ *
+ * @param[in,out] resultp destination string to write to
+ * @return return 0 for success, or -1 for failure
  */
-const char *debug_timestamp(void);
+int debug_timestamp(char **resultp);
 
 #else /* DEBUG */
 

@@ -47,39 +47,50 @@
 
 #define MAX_RUNS_PER_DISTRIBUTION 10
 
-inline static double calculate(struct flow *flow, enum distributions type, double param_one, double param_two) {
+inline static double calculate(struct flow *flow, enum distribution_t type, double param_one, double param_two) {
 
 	double val = 0;
 
 	switch (type) {
 		case NORMAL:
 			val = dist_normal (flow, param_one, param_two );
-			DEBUG_MSG(LOG_DEBUG, "calculated normal distribution value %f for parameters %f,%f", val, param_one, param_two);
+			DEBUG_MSG(LOG_DEBUG, "calculated normal distribution "
+				  "value %f for parameters %f,%f", val,
+				  param_one, param_two);
 		break;
 
 		case UNIFORM:
 			val = dist_uniform (flow, param_one, param_two );
-			DEBUG_MSG(LOG_DEBUG, "calculated uniform distribution value %f", val);
+			DEBUG_MSG(LOG_DEBUG, "calculated uniform distribution "
+				  "value %f", val);
 		break;
 
 		case WEIBULL:
 			val = dist_weibull (flow, param_one, param_two );
-			DEBUG_MSG(LOG_DEBUG, "calculated weibull distribution value %f for parameters %f,%f", val, param_one, param_two);
+			DEBUG_MSG(LOG_DEBUG, "calculated weibull distribution "
+				  "value %f for parameters %f,%f", val,
+				  param_one, param_two);
 		break;
 
 		case EXPONENTIAL:
 			val = dist_exponential (flow, param_one);
-			DEBUG_MSG(LOG_DEBUG, "calculated exponential distribution value %f for parameters %f", val, param_one);
+			DEBUG_MSG(LOG_DEBUG, "calculated exponential "
+				  "distribution value %f for parameters %f",
+				  val, param_one);
 		break;
 
 		case PARETO:
 			val = dist_pareto (flow, param_one, param_two);
-			DEBUG_MSG(LOG_DEBUG, "calculated pareto distribution value %f for parameters %f,%f", val, param_one, param_two);
+			DEBUG_MSG(LOG_DEBUG, "calculated pareto distribution "
+				  "value %f for parameters %f,%f", val,
+				  param_one, param_two);
 		break;
 
 		case LOGNORMAL:
 			val = dist_normal (flow, param_one, param_two );
-			DEBUG_MSG(LOG_DEBUG, "calculated lognormal distribution value %f for parameters %f,%f", val, param_one, param_two);
+			DEBUG_MSG(LOG_DEBUG, "calculated lognormal "
+				  "distribution value %f for parameters %f,%f",
+				  val, param_one, param_two);
 		break;
 
 		case CONSTANT:
@@ -112,16 +123,19 @@ int next_request_block_size(struct flow *flow)
 	/* sanity checks */
 	if (i >= MAX_RUNS_PER_DISTRIBUTION && bs < MIN_BLOCK_SIZE) {
 		bs = MIN_BLOCK_SIZE;
-		DEBUG_MSG(LOG_WARNING, "WARNING: applied minimal request size limit %d for flow %d", bs, flow->id);
+		DEBUG_MSG(LOG_WARNING, "applied minimal request size limit %d "
+			  "for flow %d", bs, flow->id);
 	}
 
 	if (i >= MAX_RUNS_PER_DISTRIBUTION && bs > flow->settings.maximum_block_size) {
 		bs = flow->settings.maximum_block_size;
-		DEBUG_MSG(LOG_WARNING, "WARNING: applied maximal request size limit %d for flow %d", bs, flow->id);
+		DEBUG_MSG(LOG_WARNING, "applied maximal request size limit %d "
+			  "for flow %d", bs, flow->id);
 
 	}
 
-	DEBUG_MSG(LOG_NOTICE, "calculated request size %d for flow %d after %d runs", bs, flow->id, i);
+	DEBUG_MSG(LOG_NOTICE, "calculated request size %d for flow %d after %d "
+		  "runs", bs, flow->id, i);
 
 	return bs;
 }
@@ -138,16 +152,19 @@ int next_response_block_size(struct flow *flow)
 	/* sanity checks */
 	if (bs && bs < MIN_BLOCK_SIZE) {
 		bs = MIN_BLOCK_SIZE;
-		DEBUG_MSG(LOG_WARNING, "applied minimal response size limit %d for flow %d", bs, flow->id);
+		DEBUG_MSG(LOG_WARNING, "applied minimal response size limit "
+			  "%d for flow %d", bs, flow->id);
 	}
 	if (bs > flow->settings.maximum_block_size) {
 		bs = flow->settings.maximum_block_size;
-		DEBUG_MSG(LOG_WARNING, "applied maximal response size limit %d for flow %d", bs, flow->id);
+		DEBUG_MSG(LOG_WARNING, "applied maximal response size limit "
+			  "%d for flow %d", bs, flow->id);
 
 	}
 
 	if (bs)
-		DEBUG_MSG(LOG_NOTICE, "calculated response size %d for flow %d", bs, flow->id);
+		DEBUG_MSG(LOG_NOTICE, "calculated response size %d for flow "
+			  "%d", bs, flow->id);
 
 	return bs;
 
@@ -166,7 +183,8 @@ double next_interpacket_gap(struct flow *flow) {
 				      );
 
 	if (gap)
-		DEBUG_MSG(LOG_NOTICE, "calculated next interpacket gap %.6fs for flow %d", gap, flow->id);
+		DEBUG_MSG(LOG_NOTICE, "calculated next interpacket gap %.6fs "
+			  "for flow %d", gap, flow->id);
 
 	return gap;
 }

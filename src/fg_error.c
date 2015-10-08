@@ -37,10 +37,8 @@
 
 void error(enum error_levels level, int errnum, const char *fmt, ...)
 {
-	va_list ap;
-	const char *err_prefix;
-	const char *err_errnum;
 
+	const char *err_prefix = NULL;
 	switch (level) {
 	case ERR_WARNING:
 		err_prefix = "warning";
@@ -55,10 +53,12 @@ void error(enum error_levels level, int errnum, const char *fmt, ...)
 
 	fprintf(stderr, "%s: %s: ", progname, err_prefix);
 
+	va_list ap;
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 
+	const char *err_errnum = NULL;
 	if (errnum) {
 		err_errnum = strerror(errnum);
 		if (!err_errnum)

@@ -39,6 +39,7 @@
 #include <string.h>
 
 #include "fg_time.h"
+#include "fg_string.h"
 
 inline void decrease_debuglevel()
 {
@@ -52,25 +53,27 @@ inline void increase_debuglevel()
 	printf("DEBUG_LEVEL=%u\n", debug_level);
 }
 
-const char *debug_timestamp()
+int debug_timestamp(char **strp)
 {
 	struct timespec now = {.tv_sec = 0, .tv_nsec = 0};
 	static struct timespec first = {.tv_sec = 0, .tv_nsec = 0};
 	static struct timespec last = {.tv_sec = 0, .tv_nsec = 0};
-	static char buf[80];
 
 	gettime(&now);
 
+	/* Save time of first call */
 	if (!first.tv_sec && !first.tv_nsec)
-		last = first = now;
+		first = last = now;
 
-	ctimespec_r(&now, buf, sizeof(buf));
-	snprintf(buf+strlen(buf), sizeof(buf)-strlen(buf),
-		 " [+%8.6lf] (%8.6lf)",
-		 time_diff(&last, &now), time_diff(&first, &now));
+	char timestamp[30] = "";
+	ctimespec_r(&now, timestamp, sizeof(timestamp), true);
+
+	if (asprintf(strp, "%s [+%8.6lf] (%8.6lf)", timestamp,
+		     time_diff(&last, &now), time_diff(&first, &now)) == -1)
+		return -1;
 
 	last = now;
-	return buf;
+	return 0;
 }
 
 #endif /* DEBUG */

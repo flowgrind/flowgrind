@@ -1,6 +1,6 @@
 /**
- * @file log.h
- * @brief Logging routines used by Flowgrind
+ * @file fg_rpc_client.h
+ * @brief RPC related functions used by the Flowgrind controller flowgrind-stop
  */
 
 /*
@@ -25,27 +25,23 @@
  *
  */
 
-#ifndef _LOG_H_
-#define _LOG_H_
+#ifndef _FG_RPC_CLIENT_H_
+#define _FG_RPC_CLIENT_H_
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
 
-/** Maximum length of logging string */
-#define LOGGING_MAXLEN	255
+#include <stdbool.h>
 
-extern int log_type;
+/**
+ * Parse RPC address for the xmlrpc control connection
+ *
+ * @param[in,out] rpc_address string in format CONTROL[:PORT]. It will be
+ * truncated to CONTROL
+ * @param[out] port port if the control address @p rpc_address contains a port
+ * @param[out] is_ipv6 true if control address @p rpc_address is a numerical
+ */
+void parse_rpc_address(char **rpc_address, int *port, bool *is_ipv6);
 
-enum {
-	LOGTYPE_SYSLOG,
-	LOGTYPE_STDERR
-};
-
-void logging_init (void);
-void logging_exit (void);
-void logging_log (int priority, const char *fmt, ...);
-void logging_log_string (int priority, const char *s);
-char *logging_time(void);
-
-#endif /* _LOG_H_ */
+#endif /* _FG_RPC_CLIENT_H_ */

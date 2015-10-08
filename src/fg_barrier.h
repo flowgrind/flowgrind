@@ -33,25 +33,26 @@
 
 #include <pthread.h>
 
-/** Barrier attribute object */
+/** Barrier attribute object. */
 typedef int pthread_barrierattr_t;
 
-/** Object for barrier synchronization */
+/** Object for barrier synchronization. */
 typedef struct {
-	/** Protect shared data structures from concurrent modifications */
+	/** Protect shared data structures from concurrent modifications. */
 	pthread_mutex_t mutex;
-	/** Thread to suspend its execution until the condition is satisfied */
+	/** Thread to suspend its execution until the condition is satisfied. */
 	pthread_cond_t cond;
-	/** Required number of threads have to wait at the barrier */
+	/** Required number of threads have to wait at the barrier. */
 	int count;
-	/** Current number of threads waiting at the barrier */
+	/** Current number of threads waiting at the barrier. */
 	int tripCount;
 } pthread_barrier_t;
 
 /**
- *  Allocates resources required to use the barrier referenced by @p barrier
- *  and initializes the barrier with attributes referenced by @p attr. If @p
- *  attr is NULL, the default barrier attributes are used. 
+ *  Allocates resources required to use the barrier referenced by @p barrier.
+ *
+ *  It initializes the barrier with attributes referenced by @p attr. If @p
+ *  attr is NULL, the default barrier attributes are used.
  *
  * @param[in] barrier barrier that should be initialized
  * @param[in] attr NULL, or the attributes @p attr that @p barrier should use
@@ -61,11 +62,12 @@ typedef struct {
  * appropriately)
  */
 int pthread_barrier_init(pthread_barrier_t *barrier,
-			 const pthread_barrierattr_t *attr, unsigned int count);
+			 const pthread_barrierattr_t *attr, unsigned count);
 /**
- * Destroys the barrier referenced by @p barrier and releases any resources
- * used by the barrier. Subsequent use of the barrier is undefined until the
- * barrier is reinitialized by pthread_barrier_init()
+ * Destroys the barrier referenced by @p barrier.
+ *
+ * It releases any resources used by the barrier. Subsequent use of the barrier
+ * is undefined until the barrier is reinitialized by pthread_barrier_init().
  *
  * @param[in] barrier barrier that should be initialized
  * @return return 0 for success, or -1 for failure (in which case errno is set
@@ -75,6 +77,7 @@ int pthread_barrier_destroy(pthread_barrier_t *barrier);
 
 /**
  * Synchronizes participating threads at the barrier referenced by @p barrier.
+ *
  * The calling thread blocks until the required number of threads have called
  * pthread_barrier_wait(), specifying the @p barrier.
  *

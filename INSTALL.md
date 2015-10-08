@@ -34,13 +34,14 @@ TARBALL or GIT VERSION Installation
 Flowgrind depends on the following tools and libraries:
 
 * GNU Build System (aka Autotools)
-* libxmlrpc-c with curl transport and abyss server
+* libxmlrpc-c - XMLRPC library with curl transport and abyss server
+* uuid-dev - Universally unique id library
 
 These libraries as well as their headers and tools need to be installed (install appropriate -dev packages too).
 
 The following dependencies are optional and only required for advanced features:
 
-* libpcap (for automatic dump, optional)
+* libpcap (for automatic traffic dump, optional)
 * libgsl (for advanced traffic generation, optional)
 
 
@@ -50,7 +51,7 @@ Debian & Ubuntu
 * Install essentials and required xmlrpc-c library:
 
         # sudo apt-get install build-essential debhelper cdbs autotools-dev
-        # sudo apt-get install libxmlrpc-core-c3 libxmlrpc-core-c3-dev libcurl4-gnutls-dev
+        # sudo apt-get install libxmlrpc-core-c3 libxmlrpc-core-c3-dev libcurl4-gnutls-dev uuid-dev
 
 * Install optional libGSL and libpcap library if you want to use all flowgrind features:
 
@@ -80,7 +81,7 @@ Debian & Ubuntu
 Gentoo
 ------
 
-If you want to install the GIT version from the git repository, you can use the provided ebuild with git support.
+If you want to install the latest version from the git repository, you can use the provided ebuild with git support.
 
 * Copying ebuild files into local portage overlay (e.g. /usr/local/portage)
 
@@ -92,12 +93,9 @@ If you want to install the GIT version from the git repository, you can use the 
         # echo "net-analyzer/flowgrind ** > /etc/portage/package.keywords/flowgrind
         # emerge flowgrind
 
-* Hint: you can select a different git branch (e.g., next) by setting the environment for the ebuild like this:
+* Hint: you can select a different git branch (e.g., next) by setting the environment for the emerge like this:
 
-        # mkdir -p /etc/portage/env/
-        # echo 'EGIT_BRANCH="next"' > /etc/portage/env/flowgrind-git-branch
-        # echo "net-analyzer/flowgrind flowgrind-git-branch" >>/etc/portage/package.env
-
+	# FLOWGRIND_LIVE_BRANCH=next emerge flowgrind
 
 FreeBSD
 -------
@@ -105,6 +103,10 @@ FreeBSD
 * Install required xmlrpc-c library:
 
         # cd /usr/ports/net/xmlrpc-c; make install clean (activate curl)
+
+* Install required uuid-dev library:
+
+        # cd /usr/ports/misc/e2fsprogs-libuuid; make install clean
 
 * Install optional libGSL and libpcap library if you want to use all flowgrind features:
 

@@ -54,7 +54,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <syslog.h>
-
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -67,151 +66,161 @@
 #include "fg_definitions.h"
 #include "fg_string.h"
 #include "debug.h"
+#include "fg_rpc_client.h"
 #include "fg_argparser.h"
+#include "fg_log.h"
 
-/** To show intermediated interval report columns */
+/** To show intermediated interval report columns. */
 #define SHOW_COLUMNS(...)                                                   \
         (set_column_visibility(true, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** To hide intermediated interval report columns */
+/** To hide intermediated interval report columns. */
 #define HIDE_COLUMNS(...)                                                   \
         (set_column_visibility(false, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** To set the unit of intermediated interval report columns */
+/** To set the unit of intermediated interval report columns. */
 #define SET_COLUMN_UNIT(unit, ...)                                          \
         (set_column_unit(unit, NARGS(__VA_ARGS__), __VA_ARGS__))
 
-/** Print error message, usage string and exit. Used for cmdline parsing errors */
+/** Print error message, usage string and exit. Used for cmdline parsing errors. */
 #define PARSE_ERR(err_msg, ...) do {	\
 	errx(err_msg, ##__VA_ARGS__);	\
 	usage(EXIT_FAILURE);		\
 } while (0)
 
-/** Logfile for measurement output */
+/* External global variables */
+extern const char *progname;
+
+/** Logfile for measurement output. */
 static FILE *log_stream = NULL;
 
-/** Name of logfile */
+/** Name of logfile. */
 static char *log_filename = NULL;
 
 /** SIGINT (CTRL-C) received? */
 static bool sigint_caught = false;
 
-/* XXX add a brief description doxygen */
+/* XML-RPC environment object that contains any error that has occurred. */
 static xmlrpc_env rpc_env;
 
-/** Unique (by URL) flowgrind daemons */
-static struct daemon unique_servers[MAX_FLOWS * 2]; /* flow has 2 endpoints */
+/** Global linked list to the flow endpoints XML RPC connection information. */
+static struct linked_list flows_rpc_info;
 
-/** Number of flowgrind dameons */
-static unsigned int num_unique_servers = 0;
+/** Global linked list to the daemons containing UUID and daemons flowgrind version. */
+static struct linked_list unique_daemons;
 
-/** Command line option parser */
+/** Command line option parser. */
 static struct arg_parser parser;
 
-/** Controller options */
+/** Controller options. */
 static struct controller_options copt;
 
-/** Infos about all flows including flow options */
+/** Infos about all flows including flow options. */
 static struct cflow cflow[MAX_FLOWS];
 
-/** Command line option parser */
+/** Command line option parser. */
 static struct arg_parser parser;
 
-/** Number of currently active flows */
-static int active_flows = 0;
+/** Number of currently active flows. */
+static unsigned short active_flows = 0;
 
 /* To cover a gcc bug (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36446) */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-/** Infos about the intermediated interval report columns */
+/** Infos about the intermediated interval report columns. */
 static struct column column_info[] = {
 	{.type = COL_FLOW_ID, .header.name = "# ID",
 	 .header.unit = "#   ", .state.visible = true},
-	{.type = COL_BEGIN, .header.name = " begin",
-	 .header.unit = " [s]", .state.visible = true},
-	{.type = COL_END, .header.name = " end",
-	 .header.unit = " [s]", .state.visible = true},
-	{.type = COL_THROUGH, .header.name = " through",
-	 .header.unit = " [Mbit/s]", .state.visible = true},
-	{.type = COL_TRANSAC, .header.name = " transac",
-	 .header.unit = " [#/s]", .state.visible = true},
-	{.type = COL_BLOCK_REQU, .header.name = " requ",
-	 .header.unit = " [#]", .state.visible = false},
-	{.type = COL_BLOCK_RESP, .header.name = " resp",
-	 .header.unit = " [#]", .state.visible = false},
-	{.type = COL_RTT_MIN, .header.name = " min RTT",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_RTT_AVG, .header.name = " avg RTT",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_RTT_MAX, .header.name = " max RTT",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_IAT_MIN, .header.name = " min IAT",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_IAT_AVG, .header.name = " avg IAT",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_IAT_MAX, .header.name = " max IAT",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_DLY_MIN, .header.name = " min DLY",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_DLY_AVG, .header.name = " avg DLY",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_DLY_MAX, .header.name = " max DLY",
-	 .header.unit = " [ms]", .state.visible = false},
-	{.type = COL_TCP_CWND, .header.name = " cwnd",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_SSTH, .header.name = " ssth",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_UACK, .header.name = " uack",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_SACK, .header.name = " sack",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_LOST, .header.name = " lost",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_RETR, .header.name = " retr",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_TRET, .header.name = " tret",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_FACK, .header.name = " fack",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_REOR, .header.name = " reor",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_BKOF, .header.name = " bkof",
-	 .header.unit = " [#]", .state.visible = true},
-	{.type = COL_TCP_RTT, .header.name = " rtt",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_TCP_RTTVAR, .header.name = " rttvar",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_TCP_RTO, .header.name = " rto",
-	 .header.unit = " [ms]", .state.visible = true},
-	{.type = COL_TCP_CA_STATE, .header.name = " ca state",
-	 .header.unit = " ", .state.visible = true},
-	{.type = COL_SMSS, .header.name = " smss",
+	{.type = COL_BEGIN, .header.name = "begin",
+	 .header.unit = "[s]", .state.visible = true},
+	{.type = COL_END, .header.name = "end",
+	 .header.unit = "[s]", .state.visible = true},
+	{.type = COL_THROUGH, .header.name = "through",
+	 .header.unit = "[Mbit/s]", .state.visible = true},
+	{.type = COL_TRANSAC, .header.name = "transac",
+	 .header.unit = "[#/s]", .state.visible = true},
+	{.type = COL_BLOCK_REQU, .header.name = "requ",
+	 .header.unit = "[#]", .state.visible = false},
+	{.type = COL_BLOCK_RESP, .header.name = "resp",
+	 .header.unit = "[#]", .state.visible = false},
+	{.type = COL_RTT_MIN, .header.name = "min RTT",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_RTT_AVG, .header.name = "avg RTT",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_RTT_MAX, .header.name = "max RTT",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_IAT_MIN, .header.name = "min IAT",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_IAT_AVG, .header.name = "avg IAT",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_IAT_MAX, .header.name = "max IAT",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_DLY_MIN, .header.name = "min DLY",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_DLY_AVG, .header.name = "avg DLY",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_DLY_MAX, .header.name = "max DLY",
+	 .header.unit = "[ms]", .state.visible = false},
+	{.type = COL_TCP_CWND, .header.name = "cwnd",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_SSTH, .header.name = "ssth",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_UACK, .header.name = "uack",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_SACK, .header.name = "sack",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_LOST, .header.name = "lost",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_RETR, .header.name = "retr",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_TRET, .header.name = "tret",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_FACK, .header.name = "fack",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_REOR, .header.name = "reor",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_BKOF, .header.name = "bkof",
+	 .header.unit = "[#]", .state.visible = true},
+	{.type = COL_TCP_RTT, .header.name = "rtt",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_TCP_RTTVAR, .header.name = "rttvar",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_TCP_RTO, .header.name = "rto",
+	 .header.unit = "[ms]", .state.visible = true},
+	{.type = COL_TCP_CA_STATE, .header.name = "ca state",
+	 .header.unit = "", .state.visible = true},
+	{.type = COL_SMSS, .header.name = "smss",
 	 .header.unit = "[B]", .state.visible = true},
-	{.type = COL_PMTU, .header.name = " pmtu",
+	{.type = COL_PMTU, .header.name = "pmtu",
 	 .header.unit = "[B]", .state.visible = true},
 #ifdef DEBUG
-	{.type = COL_STATUS, .header.name = " status",
-	 .header.unit = " ", .state.visible = false}
+	{.type = COL_STATUS, .header.name = "status",
+	 .header.unit = "", .state.visible = false}
 #endif /* DEBUG */
 };
 #pragma GCC diagnostic pop
 
-/* External global variables */
-extern const char *progname;
-
 /* Forward declarations */
-static void usage(short status) __attribute__((noreturn));
-static void usage_sockopt(void) __attribute__((noreturn));
-static void usage_trafgenopt(void) __attribute__((noreturn));
-static void prepare_flow(int id, xmlrpc_client *rpc_client);
+static void usage(short status)
+	__attribute__((noreturn));
+static void usage_sockopt(void)
+	__attribute__((noreturn));
+static void usage_trafgenopt(void)
+	__attribute__((noreturn));
+inline static void print_output(const char *fmt, ...)
+	__attribute__((format(printf, 1, 2)));
 static void fetch_reports(xmlrpc_client *);
-static void set_column_visibility(bool visibility, unsigned int nargs, ...);
-static void set_column_unit(const char *unit, unsigned int nargs, ...);
-static void report_flow(const struct daemon* daemon, struct report* report);
-static void print_report(int id, int endpoint, struct report* report);
+static void report_flow(struct report* report);
+static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
+		                  struct report *report);
 
 /**
- * Print flowgrind usage and exit
+ * Print usage or error message and exit.
+ *
+ * Depending on exit status @p status print either the usage or an error
+ * message. In all cases it call exit() with the given exit status @p status.
+ *
+ * @param[in] status exit status
  */
 static void usage(short status)
 {
@@ -221,7 +230,7 @@ static void usage(short status)
 		exit(status);
 	}
 
-	fprintf(stderr,
+	fprintf(stdout,
 		"Usage: %1$s [OPTION]...\n"
 		"Advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X.\n\n"
 
@@ -310,7 +319,7 @@ static void usage(short status)
 		"                 M = 2**20, G = 2**30, and b = bits/s (default), B = bytes/s\n"
 		"  -S x=#         set block (message) size, in bytes (same as -G s=q,C,#)\n"
 		"  -T x=#.#       set flow duration, in seconds (default: s=10,d=0)\n"
-		"  -U #           set application buffer size, in bytes (default: 8192)\n"
+		"  -U x=#         set application buffer size, in bytes (default: 8192)\n"
 		"                 truncates values if used with stochastic traffic generation\n"
 		"  -W x=#         set requested receiver buffer (advertised window), in bytes\n"
 		"  -Y x=#.#       set initial delay before the host starts to send, in seconds\n"
@@ -323,11 +332,11 @@ static void usage(short status)
 }
 
 /**
- * Print help on socket options and exit
+ * Print help on flowgrind's socket options and exit with EXIT_SUCCESS.
  */
 static void usage_sockopt(void)
 {
-	fprintf(stderr,
+	fprintf(stdout,
 		"%s allows to set the following standard and non-standard socket options. \n\n"
 
 		"All socket options take the flow endpoint as argument, denoted by 'x' in the\n"
@@ -336,35 +345,9 @@ static void usage_sockopt(void)
 		"values for each endpoints, separate them by comma. Moreover, it is possible to\n"
 		"repeatedly pass the same endpoint in order to specify multiple socket options\n\n"
 
-		"Standard socket options:\n", progname);
-#ifdef HAVE_SO_TCP_CONGESTION
-	FILE *fp;
-	char buf1[1024];
-
-	fprintf(stderr,
+		"Standard socket options:\n"
 		"  -O x=TCP_CONGESTION=ALG\n"
-		"               set congestion control algorithm ALG on test socket");
-
-	/* TODO Do not call /sbin/sysctl. Use /proc/sys instead. It seems that
-	 * we have to use a system call on FreeBSD since they deprecate
-	 * procfs */
-
-	/* Read and print available congestion control algorithms */
-	sprintf(buf1, "/sbin/sysctl -n %s", SYSCTL_CC_AVAILABLE);
-	fp = popen(buf1, "r");
-
-	if (fp != NULL) {
-		fprintf(stderr,
-			".\n "
-			"              Available algorithms are: ");
-		char buf2[1024];
-		while (fgets(buf2, 1024, fp) != NULL)
-			fprintf(stderr, "%s", buf2);
-
-		pclose(fp);
-	}
-#endif /* HAVE_SO_TCP_CONGESTION */
-	fprintf(stderr,
+		"               set congestion control algorithm ALG on test socket\n"
 		"  -O x=TCP_CORK\n"
 		"               set TCP_CORK on test socket\n"
 		"  -O x=TCP_NODELAY\n"
@@ -389,17 +372,17 @@ static void usage_sockopt(void)
 		"               sets Reno TCP as congestion control algorithm at the source and\n"
 		"               SO_DEBUG as socket option at the destinatio\n"
 		"  -O s=SO_DEBUG,s=TCP_CORK\n"
-		"               set SO_DEBUG and TCP_CORK as socket option at the source\n"
-		);
+		"               set SO_DEBUG and TCP_CORK as socket option at the source\n",
+		progname);
 	exit(EXIT_SUCCESS);
 }
 
 /**
- * Print help on traffic generation and exit
+ * Print help on flowgrind's traffic generation facilities and exit with EXIT_SUCCESS.
  */
 static void usage_trafgenopt(void)
 {
-	fprintf(stderr,
+	fprintf(stdout,
 		"%s supports stochastic traffic generation, which allows to conduct\n"
 		"besides normal bulk also advanced rate-limited and request-response data\n"
 		"transfers.\n\n"
@@ -434,17 +417,17 @@ static void usage_trafgenopt(void)
 #else /* HAVE_LIBGSL */
 		"               advanced distributions are only available if compiled with libgsl\n"
 #endif /* HAVE_LIBGSL */
-		"  -U #         specify a cap for the calculated values for request and response\n"
+		"  -U x=#       specify a cap for the calculated values for request and response\n"
 		"               size (not needed for constant values or uniform distribution),\n"
 		"               values over this cap are recalculated\n\n"
 
 		"Examples:\n"
-		"  -G s=q,C,40\n"
+		"  -G s=q:C:40\n"
 		"               use contant request size of 40 bytes\n"
-		"  -G s=p,N,2000,50\n"
+		"  -G s=p:N:2000:50\n"
 		"               use normal distributed response size with mean 2000 bytes and\n"
 		"               variance 50\n"
-		"  -G s=g,U,0.005,0.01\n"
+		"  -G s=g:U:0.005:0.01\n"
 		"               use uniform distributed interpacket gap with minimum 0.005s and\n"
 		"               maximum 0.01s\n\n"
 
@@ -457,6 +440,11 @@ static void usage_trafgenopt(void)
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Signal handler to catching signals.
+ *
+ * @param[in] sig signal to catch
+ */
 static void sighandler(int sig)
 {
 	UNUSED_ARGUMENT(sig);
@@ -464,8 +452,8 @@ static void sighandler(int sig)
 	DEBUG_MSG(LOG_ERR, "caught %s", strsignal(sig));
 
 	if (!sigint_caught) {
-		warnx("# received SIGINT, trying to gracefully close flows. "
-		      "Press CTRL+C again to force termination");
+		warnx("caught SIGINT, trying to gracefully close flows. "
+		      "Press CTRL+C again to force termination \n");
 		sigint_caught = true;
 	} else {
 		exit(EXIT_FAILURE);
@@ -473,7 +461,7 @@ static void sighandler(int sig)
 }
 
 /**
- * Initialization of general controller options
+ * Initialization of general controller options.
  */
 static void init_controller_options(void)
 {
@@ -488,39 +476,46 @@ static void init_controller_options(void)
 	copt.force_unit = INT_MAX;
 }
 
+/**
+ * Initilization the flow option to default values.
+ *
+ * Initializes the controller flow option settings, 
+ * final report for both source and destination daemon 
+ * in the flow.
+ */
 static void init_flow_options(void)
 {
 	for (int id = 0; id < MAX_FLOWS; id++) {
 
 		cflow[id].proto = PROTO_TCP;
 
-		for (int i = 0; i < 2; i++) {
-
-			cflow[id].settings[i].requested_send_buffer_size = 0;
-			cflow[id].settings[i].requested_read_buffer_size = 0;
-			cflow[id].settings[i].delay[WRITE] = 0;
-			cflow[id].settings[i].maximum_block_size = 8192;
-			cflow[id].settings[i].request_trafgen_options.param_one = 8192;
-			cflow[id].settings[i].response_trafgen_options.param_one = 0;
-			cflow[id].settings[i].route_record = 0;
-			strcpy(cflow[id].endpoint[i].test_address, "localhost");
+		foreach(int *i, SOURCE, DESTINATION) {
+			cflow[id].settings[*i].requested_send_buffer_size = 0;
+			cflow[id].settings[*i].requested_read_buffer_size = 0;
+			cflow[id].settings[*i].delay[WRITE] = 0;
+			cflow[id].settings[*i].maximum_block_size = 8192;
+			cflow[id].settings[*i].request_trafgen_options.param_one = 8192;
+			cflow[id].settings[*i].response_trafgen_options.param_one = 0;
+			cflow[id].settings[*i].route_record = 0;
+			strcpy(cflow[id].endpoint[*i].test_address, "localhost");
 
 			/* Default daemon is localhost, set in parse_cmdline */
-			cflow[id].endpoint[i].daemon = 0;
+			cflow[id].endpoint[*i].rpc_info = 0;
+			cflow[id].endpoint[*i].daemon = 0;
 
-			cflow[id].settings[i].pushy = 0;
-			cflow[id].settings[i].cork = 0;
-			cflow[id].settings[i].cc_alg[0] = 0;
-			cflow[id].settings[i].elcn = 0;
-			cflow[id].settings[i].lcd = 0;
-			cflow[id].settings[i].mtcp = 0;
-			cflow[id].settings[i].nonagle = 0;
-			cflow[id].settings[i].traffic_dump = 0;
-			cflow[id].settings[i].so_debug = 0;
-			cflow[id].settings[i].dscp = 0;
-			cflow[id].settings[i].ipmtudiscover = 0;
+			cflow[id].settings[*i].pushy = 0;
+			cflow[id].settings[*i].cork = 0;
+			cflow[id].settings[*i].cc_alg[0] = 0;
+			cflow[id].settings[*i].elcn = 0;
+			cflow[id].settings[*i].lcd = 0;
+			cflow[id].settings[*i].mtcp = 0;
+			cflow[id].settings[*i].nonagle = 0;
+			cflow[id].settings[*i].traffic_dump = 0;
+			cflow[id].settings[*i].so_debug = 0;
+			cflow[id].settings[*i].dscp = 0;
+			cflow[id].settings[*i].ipmtudiscover = 0;
 
-			cflow[id].settings[i].num_extra_socket_options = 0;
+			cflow[id].settings[*i].num_extra_socket_options = 0;
 		}
 		cflow[id].settings[SOURCE].duration[WRITE] = 10.0;
 		cflow[id].settings[DESTINATION].duration[WRITE] = 0.0;
@@ -551,7 +546,7 @@ static void init_flow_options(void)
 }
 
 /**
- * Create a logfile for measurement output
+ * Create a logfile for measurement output.
  */
 static void open_logfile(void)
 {
@@ -560,14 +555,9 @@ static void open_logfile(void)
 
 	/* Log filename is not given by cmdline */
 	if (!log_filename) {
-		struct timespec now;
-		char buf[60];
-
-		gettime(&now);
-		/* TODO Do not call strftime(); use functions from fg_time.h */
-		strftime(buf, sizeof(buf), "%F-%T", localtime(&now.tv_sec));
-		if (asprintf(&log_filename, "%s-%s.log", progname, buf) == -1)
-			critx("could not allocate memory for the log filename");
+		if (asprintf(&log_filename, "%s-%s.log", progname,
+			     ctimenow(false)) == -1)
+			critx("could not allocate memory for log filename");
 	}
 
 	if (!copt.clobber && access(log_filename, R_OK) == 0)
@@ -581,29 +571,38 @@ static void open_logfile(void)
 }
 
 /**
- * Close measurement output file
+ * Close measurement output file.
  */
 static void close_logfile(void)
 {
 	if (!copt.log_to_file)
 		return;
-
 	if (fclose(log_stream) == -1)
 		critx("could not close logfile '%s'", log_filename);
 
 	free(log_filename);
 }
 
-inline static void log_output(const char *msg)
+/**
+ * Print measurement output to logfile and / or to stdout.
+ *
+ * @param[in] fmt format string
+ * @param[in] ... parameters used to fill fmt
+ */
+inline static void print_output(const char *fmt, ...)
 {
+	va_list ap;
+
+	va_start(ap, fmt);
 	if (copt.log_to_stdout) {
-		printf("%s", msg);
+		vprintf(fmt, ap);
 		fflush(stdout);
 	}
 	if (copt.log_to_file) {
-		fprintf(log_stream, "%s", msg);
+		vfprintf(log_stream, fmt, ap);
 		fflush(log_stream);
 	}
+	va_end(ap);
 }
 
 inline static void die_if_fault_occurred(xmlrpc_env *env)
@@ -641,27 +640,41 @@ static void prepare_xmlrpc_client(xmlrpc_client **rpc_client)
 			     clientParms_cpsize, rpc_client);
 }
 
-/* Checks that all nodes use our flowgrind version */
+/**
+ * Checks all the daemons flowgrind version.
+ *
+ * Collect the daemons flowgrind version, XML-RPC API version, 
+ * OS name and release details. Store these information in the 
+ * daemons linked list for the result display
+ *
+ * @param[in,out] rpc_client to connect controller to daemon
+ */
 static void check_version(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 	char mismatch = 0;
 
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
+	const struct list_node *node = fg_list_front(&unique_daemons);
 
+	while (node) {
 		if (sigint_caught)
 			return;
 
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
+		struct daemon *daemon = node->data;
+		node = node->next;
+
+		xmlrpc_client_call2f(&rpc_env, rpc_client, daemon->url,
 					"get_version", &resultP, "()");
 		if ((rpc_env.fault_occurred) && (strcasestr(rpc_env.fault_string,"response code is 400")))
 			critx("node %s could not parse request.You are "
 			      "probably trying to use a numeric IPv6 address "
 			      "and the node's libxmlrpc is too old, please "
-			      "upgrade!", unique_servers[j].server_url);
+			      "upgrade!", daemon->url);
 
 		die_if_fault_occurred(&rpc_env);
 
+		/* Decomposes the xmlrpc value and extract the daemons data in
+		 * it into controller local variable */
 		if (resultP) {
 			char* version;
 			int api_version;
@@ -677,11 +690,13 @@ static void check_version(xmlrpc_client *rpc_client)
 			if (strcmp(version, FLOWGRIND_VERSION)) {
 				mismatch = 1;
 				warnx("node %s uses version %s",
-				      unique_servers[j].server_url, version);
+				      daemon->url, version);
 			}
-			unique_servers[j].api_version = api_version;
-			strncpy(unique_servers[j].os_name, os_name, 256);
-			strncpy(unique_servers[j].os_release, os_release, 256);
+			/* Store the daemons XML RPC API version, 
+			 * OS name and release in daemons linked list */
+			daemon->api_version = api_version;
+			strncpy(daemon->os_name, os_name, 256);
+			strncpy(daemon->os_release, os_release, 256);
 			free_all(version, os_name, os_release);
 			xmlrpc_DECREF(resultP);
 		}
@@ -693,20 +708,156 @@ static void check_version(xmlrpc_client *rpc_client)
 	}
 }
 
-/* Checks that all nodes are currently idle */
+/**
+ * Add daemon for controller flow by UUID.
+ *
+ * Stores the daemons data and push the data in linked list
+ * which contains daemons UUID and daemons XML RPC url
+ *
+ * @param[in,out] server_uuid UUID from daemons
+ * @param[in,out] daemon_url URL from daemons
+ */
+static struct daemon * add_daemon_by_uuid(const char* server_uuid, 
+		char* daemon_url)
+{
+	struct daemon *daemon;
+	daemon = malloc((sizeof(struct daemon)));
+	
+	if (!daemon) {
+		logging(LOG_ALERT, "could not allocate memory for daemon");
+		return 0;
+	}
+
+	memset(daemon, 0, sizeof(struct daemon));
+	strcpy(daemon->uuid, server_uuid);
+	daemon->url = daemon_url;
+	fg_list_push_back(&unique_daemons, daemon);
+	return daemon;
+}
+
+/**
+ * Determine the daemons for controller flow by UUID.
+ *
+ * Determine the daemons memory block size by number of server in
+ * the controller flow option.
+ *
+ * @param[in,out] server_uuid UUID from daemons
+ * @param[in,out] daemon_url URL from daemons
+ */
+static struct daemon * set_unique_daemon_by_uuid(const char* server_uuid, 
+		char* daemon_url)
+{
+	/* Store the first daemon UUID and XML RPC url connection string.
+	 * First daemon is used as reference to avoid the daemon duplication 
+	 * by their UUID */	
+	if (fg_list_size(&unique_daemons) == 0)
+		return add_daemon_by_uuid(server_uuid, daemon_url);
+	
+	/* Compare the incoming daemons UUID with all daemons UUID in 
+	 * memory in order to prevent dupliclity in storing the daemons. 
+	 * If the incoming daemon UUID is already present in the daemons list, 
+	 * then return existing daemon pointer to controller connection. 
+	 * This is because a single daemons can run and maintain mutliple 
+	 * data connection */
+	const struct list_node *node = fg_list_front(&unique_daemons);
+	while (node) {
+		struct daemon *daemon = node->data;
+		node = node->next;
+		if (!strcmp(daemon->uuid, server_uuid))
+			return daemon;
+	}
+	
+	return add_daemon_by_uuid(server_uuid, daemon_url);
+}
+
+/**
+ * Set the daemon for controller flow endpoint.
+ *
+ * @param[in,out] server_uuid UUID from daemons
+ * @param[in,out] daemon_url URL from daemons
+ */
+static void set_flow_endpoint_daemon(const char* server_uuid, char* server_url)
+{
+	/* Determine the daemon in controller flow data by UUID 
+	 * This prevent the daemons duplication */
+	for (unsigned id = 0; id < copt.num_flows; id++) {
+		foreach(int *i, SOURCE, DESTINATION) {
+			struct flow_endpoint* e = &cflow[id].endpoint[*i];
+			if(!strcmp(e->rpc_info->server_url, server_url) && !e->daemon) {
+				e->daemon = set_unique_daemon_by_uuid(server_uuid,
+								      server_url);
+			}
+		}
+	}
+}
+
+/**
+* Checks all daemons in flow option.
+*
+* Daemon UUID is retreived and this information is used
+* to determine daemon in the controller flow information.
+*
+* @param[in,out] rpc_client to connect controller to daemon
+*/
+static void find_daemon(xmlrpc_client *rpc_client)
+{
+	xmlrpc_value * resultP = 0;
+	const struct list_node *node = fg_list_front(&flows_rpc_info);
+	
+	while (node) {
+		if (sigint_caught)
+			return;
+		
+		struct rpc_info *flow_rpc_info= node->data;
+		node = node->next;
+		/* call daemons by flow option XML-RPC URL connection string */
+		xmlrpc_client_call2f(&rpc_env, rpc_client,
+				     flow_rpc_info->server_url,
+				     "get_uuid", &resultP, "()");
+		die_if_fault_occurred(&rpc_env);
+		
+		/* Decomposes the xmlrpc_value and extract the daemon UUID
+		 * in it into controller local variable */	
+		if (resultP) {
+			char* server_uuid = 0;
+			
+			xmlrpc_decompose_value(&rpc_env, resultP, "{s:s,*}", 
+					"server_uuid", &server_uuid);
+			set_flow_endpoint_daemon(server_uuid, flow_rpc_info->server_url);
+			die_if_fault_occurred(&rpc_env);
+			xmlrpc_DECREF(resultP);
+		}
+	}
+}
+
+/**
+* Checks that all nodes are currently idle.
+*
+* Get the daemon's flow start status and number of flows running in 
+* a daemon. This piece of information is used to determine, whether the
+* daemon in a node is busy or idle.
+*
+* @param[in,out] rpc_client to connect controller to daemon
+*/
 static void check_idle(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
-
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
+	const struct list_node *node = fg_list_front(&unique_daemons);
+	
+	while (node) {
 		if (sigint_caught)
 			return;
-
+		
+		struct daemon *daemon = node->data;
+		node = node->next;
+		
 		xmlrpc_client_call2f(&rpc_env, rpc_client,
-				     unique_servers[j].server_url,
+				     daemon->url,
 				     "get_status", &resultP, "()");
 		die_if_fault_occurred(&rpc_env);
-
+		
+		/* Decomposes the xmlrpc_value and extract the daemons data 
+		 * in it into controller local variable */
 		if (resultP) {
 			int started;
 			int num_flows;
@@ -717,72 +868,123 @@ static void check_idle(xmlrpc_client *rpc_client)
 					       &num_flows);
 			die_if_fault_occurred(&rpc_env);
 
+			/* Daemon start status and number of flows is used to
+			 * determine node idle status */
 			if (started || num_flows)
 				critx("node %s is busy. %d flows, started=%d",
-				       unique_servers[j].server_url, num_flows,
+				       daemon->url, num_flows,
 				       started);
 			xmlrpc_DECREF(resultP);
 		}
 	}
 }
 
-static void prepare_grinding(xmlrpc_client *rpc_client)
+/**
+ * To show/hide intermediated interval report columns.
+ *
+ * @param[in] visibility show/hide column
+ * @param[in] nargs length of variable argument list
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
+static void set_column_visibility(bool visibility, unsigned nargs, ...)
 {
-	/* prepare flows */
-	for (unsigned int id = 0; id < copt.num_flows; id++) {
-		if (sigint_caught)
-			return;
-		prepare_flow(id, rpc_client);
+        va_list ap;
+        enum column_id col_id;
+
+        va_start(ap, nargs);
+        while (nargs--) {
+                col_id = va_arg(ap, enum column_id);
+                column_info[col_id].state.visible = visibility;
+        }
+        va_end(ap);
+}
+
+/**
+ * To set the unit the in header of intermediated interval report columns.
+ *
+ * @param[in] unit unit of column header as string
+ * @param[in] nargs length of variable argument list
+ * @param[in] ... column IDs
+ * @see enum column_id
+ */
+static void set_column_unit(const char *unit, unsigned nargs, ...)
+{
+        va_list ap;
+        enum column_id col_id;
+
+        va_start(ap, nargs);
+        while (nargs--) {
+                col_id = va_arg(ap, enum column_id);
+                column_info[col_id].header.unit = unit;
+        }
+        va_end(ap);
+}
+
+/**
+ * Print headline with various informations before the actual measurement will
+ * be begin.
+ */
+static void print_headline(void)
+{
+	/* Print headline */
+	struct utsname me;
+	int rc = uname(&me);
+	print_output("# Date: %s, controlling host = %s, number of flows = %d, "
+		     "reporting interval = %.2fs, [through] = %s (%s)\n",
+		     ctimenow(false), (rc == -1 ? "(unknown)" : me.nodename),
+		     copt.num_flows, copt.reporting_interval,
+		     (copt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
+		     FLOWGRIND_VERSION);
+
+	/* Prepare column visibility based on involved OSes */
+	bool involved_os[] = {[0 ... NUM_OSes-1] = false};
+	const struct list_node *node = fg_list_front(&unique_daemons);
+	while (node) {
+		struct daemon *daemon = node->data;
+		node = node->next;
+		if (!strcmp(daemon->os_name, "Linux"))
+			involved_os[LINUX] = true;
+		else if (!strcmp(daemon->os_name, "FreeBSD"))
+			involved_os[FREEBSD] = true;
+		else if (!strcmp(daemon->os_name, "Darwin"))
+			involved_os[DARWIN] = true;
 	}
 
-	/* prepare headline */
-	char headline[200];
-	int rc;
-	struct utsname me;
-	time_t start_ts;
-	char start_ts_buffer[26];
+	/* No Linux OS is involved in the test */
+	if (!involved_os[LINUX])
+		HIDE_COLUMNS(COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
+			     COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK,
+			     COL_TCP_REOR, COL_TCP_BKOF, COL_TCP_CA_STATE,
+			     COL_PMTU);
 
-	rc = uname(&me);
-	/* TODO Use fg_time.c here */
-	start_ts = time(NULL);
-	ctime_r(&start_ts, start_ts_buffer);
-	start_ts_buffer[24] = '\0';
-	snprintf(headline, sizeof(headline),
-		 "# %s: controlling host = %s, number of flows = %d, "
-		 "reporting interval = %.2fs, [through] = %s (%s)\n",
-		 (start_ts == -1 ? "(time(NULL) failed)" : start_ts_buffer),
-		 (rc == -1 ? "(unknown)" : me.nodename),
-		 copt.num_flows, copt.reporting_interval,
-		 (copt.mbyte ? "2**20 bytes/second": "10**6 bit/second"),
-		 FLOWGRIND_VERSION);
-	log_output(headline);
-
-	/* prepare column visibility based on involved OSes */
-	bool has_linux = false, has_freebsd = false;
-	for (unsigned int j = 0; j < num_unique_servers; j++)
-		if (!strcmp(unique_servers[j].os_name, "Linux"))
-			has_linux = true;
-		else if (!strcmp(unique_servers[j].os_name, "FreeBSD"))
-			has_freebsd = true;
-		else if (has_linux && has_freebsd)
-			break;
-	if (!has_linux)
-		HIDE_COLUMNS(COL_TCP_UACK, COL_TCP_SACK, COL_TCP_RETR,
-			     COL_TCP_TRET, COL_TCP_FACK, COL_TCP_REOR,
-			     COL_TCP_BKOF, COL_TCP_CA_STATE);
-	if (!has_freebsd)
+	/* No Linux and FreeBSD OS is involved in the test */
+	if (!involved_os[FREEBSD] && !involved_os[LINUX])
 		HIDE_COLUMNS(COL_TCP_CWND, COL_TCP_SSTH, COL_TCP_RTT,
 			     COL_TCP_RTTVAR, COL_TCP_RTO, COL_SMSS);
 
-	/* set unit for kernel TCP metrics to bytes */
+	const struct list_node *firstnode = fg_list_front(&unique_daemons);
+	struct daemon *daemon_firstnode = firstnode->data;
+	
+	/* Set unit for kernel TCP metrics to bytes */
 	if (copt.force_unit == BYTE_BASED || (copt.force_unit != SEGMENT_BASED &&
-	    strcmp(unique_servers[0].os_name, "Linux")))
+	    strcmp(daemon_firstnode->os_name, "Linux")))
 		SET_COLUMN_UNIT(" [B]", COL_TCP_CWND, COL_TCP_SSTH,
 				COL_TCP_UACK, COL_TCP_SACK, COL_TCP_LOST,
 				COL_TCP_RETR, COL_TCP_TRET, COL_TCP_FACK,
 				COL_TCP_REOR, COL_TCP_BKOF);
 }
 
+/**
+ * Prepare test connection for a flow between source and destination daemons.
+ * 
+ * Controller sends the flow option to source and destination daemons
+ * separately through XML RPC connection and get backs the flow id and
+ * snd/rcx buffer size from the daemons.
+ *
+ * @param[in] id flow id to prepare the test connection in daemons
+ * @param[in,out] rpc_client to connect controller to daemon
+ */
 static void prepare_flow(int id, xmlrpc_client *rpc_client)
 {
 	xmlrpc_value *resultP, *extra_options;
@@ -807,10 +1009,11 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 		xmlrpc_DECREF(option);
 	}
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint[DESTINATION].daemon->server_url,
+		cflow[id].endpoint[DESTINATION].rpc_info->server_url,
 		"add_flow_destination", &resultP,
 		"("
 		"{s:s}"
+		"{s:i}"
 		"{s:d,s:d,s:d,s:d,s:d}"
 		"{s:i,s:i}"
 		"{s:i}"
@@ -828,6 +1031,8 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 		/* general flow settings */
 		"bind_address", cflow[id].endpoint[DESTINATION].test_address,
+
+		"flow_id",id,
 
 		"write_delay", cflow[id].settings[DESTINATION].delay[WRITE],
 		"write_duration", cflow[id].settings[DESTINATION].duration[WRITE],
@@ -909,10 +1114,11 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d source", id);
 
 	xmlrpc_client_call2f(&rpc_env, rpc_client,
-		cflow[id].endpoint[SOURCE].daemon->server_url,
+		cflow[id].endpoint[SOURCE].rpc_info->server_url,
 		"add_flow_source", &resultP,
 		"("
 		"{s:s}"
+		"{s:i}"
 		"{s:d,s:d,s:d,s:d,s:d}"
 		"{s:i,s:i}"
 		"{s:i}"
@@ -931,6 +1137,8 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 
 		/* general flow settings */
 		"bind_address", cflow[id].endpoint[SOURCE].test_address,
+
+		"flow_id",id,
 
 		"write_delay", cflow[id].settings[SOURCE].delay[WRITE],
 		"write_duration", cflow[id].settings[SOURCE].duration[WRITE],
@@ -1000,8 +1208,33 @@ static void prepare_flow(int id, xmlrpc_client *rpc_client)
 	DEBUG_MSG(LOG_WARNING, "prepare flow %d completed", id);
 }
 
-/* start flows */
-static void grind_flows(xmlrpc_client *rpc_client)
+/**
+ * Prepare test connection for all flows in a test
+ *
+ * @param[in,out] rpc_client to connect controller to daemon
+ */
+static void prepare_all_flows(xmlrpc_client *rpc_client)
+{
+	/* prepare flows */
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
+		if (sigint_caught)
+			return;
+		prepare_flow(id, rpc_client);
+	}
+}
+
+/**
+ * Start test connections for all flows in a test
+ *
+ * All the test connection are started, but test connection flow in the 
+ * controller and in daemon are different. In the controller, test connection
+ * are respective to number of flows in a test,but in daemons test connection
+ * are respective to flow endpoints. Single daemons can maintain multiple flows
+ * endpoints, So controller should start a daemon only once.
+ *
+ * @param[in,out] rpc_client to connect controller to daemon
+ */
+static void start_all_flows(xmlrpc_client *rpc_client)
 {
 	xmlrpc_value * resultP = 0;
 
@@ -1013,13 +1246,16 @@ static void grind_flows(xmlrpc_client *rpc_client)
 	gettime(&lastreport_begin);
 	gettime(&now);
 
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
+	const struct list_node *node = fg_list_front(&unique_daemons);
+	while (node) {
 		if (sigint_caught)
 			return;
+		struct daemon *daemon = node->data;
+		node = node->next;
 
-		DEBUG_MSG(LOG_ERR, "starting flow on server %u", j);
+		DEBUG_MSG(LOG_ERR, "starting flow on server with UUID %s",daemon->uuid);
 		xmlrpc_client_call2f(&rpc_env, rpc_client,
-				     unique_servers[j].server_url,
+				     daemon->url,
 				     "start_flows", &resultP, "({s:i})",
 				     "start_timestamp", now.tv_sec + 2);
 		die_if_fault_occurred(&rpc_env);
@@ -1029,6 +1265,8 @@ static void grind_flows(xmlrpc_client *rpc_client)
 
 	active_flows = copt.num_flows;
 
+	/* Reports are fetched from the daemons based on the
+	 * report interval duration */
 	while (!sigint_caught) {
 		if ( time_diff_now(&lastreport_begin) <  copt.reporting_interval ) {
 			usleep(copt.reporting_interval - time_diff(&lastreport_begin,&lastreport_end) );
@@ -1044,19 +1282,30 @@ static void grind_flows(xmlrpc_client *rpc_client)
 	}
 }
 
-/* Poll the daemons for reports */
+/**
+ * Reports are fetched from the flow endpoint daemon.
+ *
+ * Single daemon can maintain multiple flows endpoints and daemons combine all 
+ * its flows reports and send them to the controller. So controller should call
+ * a daemon in its flows only once. 
+ *
+ * @param[in,out] rpc_client to connect controller to daemon
+ */
 static void fetch_reports(xmlrpc_client *rpc_client)
 {
 
 	xmlrpc_value * resultP = 0;
+	const struct list_node *node = fg_list_front(&unique_daemons);
 
-	for (unsigned int j = 0; j < num_unique_servers; j++) {
+	while (node) {
+		struct daemon *daemon = node->data;
+		node = node->next;
 		int array_size, has_more;
 		xmlrpc_value *rv = 0;
 
 has_more_reports:
 
-		xmlrpc_client_call2f(&rpc_env, rpc_client, unique_servers[j].server_url,
+		xmlrpc_client_call2f(&rpc_env, rpc_client, daemon->url,
 			"get_reports", &resultP, "()");
 		if (rpc_env.fault_occurred) {
 			errx("XML-RPC fault: %s (%d)", rpc_env.fault_string,
@@ -1110,7 +1359,7 @@ has_more_reports:
 
 				xmlrpc_decompose_value(&rpc_env, rv,
 					"("
-					"{s:i,s:i,s:i,s:i,s:i,s:i,*}" /* timeval */
+					"{s:i,s:i,s:i,s:i,s:i,s:i,s:i,*}" /* Report data & timeval */
 					"{s:i,s:i,s:i,s:i,*}" /* bytes */
 					"{s:i,s:i,s:i,s:i,*}" /* blocks */
 					"{s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,*}" /* RTT, IAT, Delay */
@@ -1122,6 +1371,7 @@ has_more_reports:
 					")",
 
 					"id", &report.id,
+					"endpoint", &report.endpoint,
 					"type", &report.type,
 					"begin_tv_sec", &begin_sec,
 					"begin_tv_nsec", &begin_nsec,
@@ -1206,7 +1456,7 @@ has_more_reports:
 				report.end.tv_sec = end_sec;
 				report.end.tv_nsec = end_nsec;
 
-				report_flow(&unique_servers[j], &report);
+				report_flow(&report);
 			}
 		}
 		xmlrpc_DECREF(resultP);
@@ -1216,13 +1466,25 @@ has_more_reports:
 	}
 }
 
-/* This function allots an report received from one daemon (identified
- * by server_url)  to the proper flow */
-static void report_flow(const struct daemon* daemon, struct report* report)
+/**
+ * Reports are fetched from the flow endpoint daemon
+ *
+ * Single daemon can maintain multiple flows endpoints and daemons combine all
+ * it flows report and send the controller. So controller give the flow ID to
+ * daemons, while prepare the flow.Controller flow ID is maintained by the
+ * daemons to maintain its flow endpoints.So When getting back the reports from
+ * the daemons, the controller use those flow ID registered for the daemon in
+ * the prepare flow as reference to distinguish the @p report.
+ * The daemon also send back the details regarding flow endpoints
+ * i.e. source or destination. So this information is also used by the daemons
+ * to distinguish the report in the report flow.
+ *
+ * @param[in] report report from the daemon
+ */
+static void report_flow(struct report* report)
 {
-	const char* server_url = daemon->server_url;
-	int endpoint;
-	int id;
+	int *i = NULL;
+	unsigned short id;
 	struct cflow *f = NULL;
 
 	/* Get matching flow for report */
@@ -1230,27 +1492,26 @@ static void report_flow(const struct daemon* daemon, struct report* report)
 	for (id = 0; id < copt.num_flows; id++) {
 		f = &cflow[id];
 
-		for (endpoint = 0; endpoint < 2; endpoint++) {
-			if (f->endpoint_id[endpoint] == report->id &&
-			    !strcmp(server_url, f->endpoint[endpoint].daemon->server_url))
+		foreach(i, SOURCE, DESTINATION)
+			if (f->endpoint_id[*i] == report->id &&
+			    *i == (int)report->endpoint)
 				goto exit_outer_loop;
-		}
 	}
 exit_outer_loop:
 
-	if (f->start_timestamp[endpoint].tv_sec == 0)
-		f->start_timestamp[endpoint] = report->begin;
+	if (f->start_timestamp[*i].tv_sec == 0)
+		f->start_timestamp[*i] = report->begin;
 
 	if (report->type == FINAL) {
 		DEBUG_MSG(LOG_DEBUG, "received final report for flow %d", id);
 		/* Final report, keep it for later */
-		free(f->final_report[endpoint]);
-		f->final_report[endpoint] = malloc(sizeof(struct report));
-		*f->final_report[endpoint] = *report;
+		free(f->final_report[*i]);
+		f->final_report[*i] = malloc(sizeof(struct report));
+		*f->final_report[*i] = *report;
 
-		if (!f->finished[endpoint]) {
-			f->finished[endpoint] = 1;
-			if (f->finished[1 - endpoint]) {
+		if (!f->finished[*i]) {
+			f->finished[*i] = 1;
+			if (f->finished[1 - *i]) {
 				active_flows--;
 				DEBUG_MSG(LOG_DEBUG, "remaining active flows: "
 					  "%d", active_flows);
@@ -1259,16 +1520,25 @@ exit_outer_loop:
 		}
 		return;
 	}
-	print_report(id, endpoint, report);
+	print_interval_report(id, *i, report);
 }
 
-static void close_flows(void)
+/**
+ * Stop test connections for all flows in a test
+ *
+ * All the test connection are stopped, but the test connection flow in the
+ * controller and in daemon are different. In the controller, test connection
+ * are respective to number of flows in a test,but in daemons test connection
+ * are respective to flow endpoints. Single daemons can maintain multiple flows
+ * endpoints, So controller should stop a daemon only once.
+ */
+static void close_all_flows(void)
 {
 	xmlrpc_env env;
 	xmlrpc_client *client;
 
-	for (unsigned int id = 0; id < copt.num_flows; id++) {
-		DEBUG_MSG(LOG_WARNING, "closing flow %u.", id);
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
+		DEBUG_MSG(LOG_WARNING, "closing flow %u", id);
 
 		if (cflow[id].finished[SOURCE] && cflow[id].finished[DESTINATION])
 			continue;
@@ -1279,413 +1549,57 @@ static void close_flows(void)
 		die_if_fault_occurred(&env);
 		xmlrpc_env_clean(&env);
 
-		for (unsigned int endpoint = 0; endpoint < 2; endpoint++) {
+		foreach(int *i, SOURCE, DESTINATION) {
 			xmlrpc_value * resultP = 0;
 
-			if (cflow[id].endpoint_id[endpoint] == -1 ||
-					cflow[id].finished[endpoint]) {
+			if (cflow[id].endpoint_id[*i] == -1 ||
+			    cflow[id].finished[*i])
 				/* Endpoint does not need closing */
 				continue;
-			}
 
-			cflow[id].finished[endpoint] = 1;
+			cflow[id].finished[*i] = 1;
 
 			xmlrpc_env_init(&env);
 			xmlrpc_client_call2f(&env, client,
-				cflow[id].endpoint[endpoint].daemon->server_url,
-				"stop_flow", &resultP, "({s:i})", "flow_id", cflow[id].endpoint_id[endpoint]);
+					     cflow[id].endpoint[*i].rpc_info->server_url,
+					     "stop_flow", &resultP, "({s:i})",
+					     "flow_id", cflow[id].endpoint_id[*i]);
 			if (resultP)
 				xmlrpc_DECREF(resultP);
 
 			xmlrpc_env_clean(&env);
 		}
 
-
 		if (active_flows > 0)
 			active_flows--;
 
 		xmlrpc_client_destroy(client);
-		DEBUG_MSG(LOG_WARNING, "closed flow %u.", id);
+		DEBUG_MSG(LOG_WARNING, "closed flow %u", id);
 	}
 }
 
 /**
- * To show/hide intermediated interval report columns
+ * Determines the length of the integer part of a decimal number.
  *
- * @param[in] visibility show/hide column
- * @param[in] nargs length of variable argument list
- * @param[in] ... column IDs
- * @see enum column_id
+ * @param[in] value decimal number
+ * @return length of integer part
  */
-static void set_column_visibility(bool visibility, unsigned int nargs, ...)
+inline static size_t det_num_digits(double value)
 {
-        va_list ap;
-        enum column_id col_id;
-
-        va_start(ap, nargs);
-        while (nargs--) {
-                col_id = va_arg(ap, enum column_id);
-                column_info[col_id].state.visible = visibility;
-        }
-        va_end(ap);
+	/* Avoiding divide-by-zero */
+	if (unlikely((int)value == 0))
+		return 1;
+	else
+		return floor(log10(abs((int)value))) + 1;
 }
 
 /**
- * To set the unit the in header of intermediated interval report columns
+ * Scale the given throughput @p thruput in either Mebibyte per seconds or in
+ * Megabits per seconds.
  *
- * @param[in] unit unit of column header as string
- * @param[in] nargs length of variable argument list
- * @param[in] ... column IDs
- * @see enum column_id
+ * @param[in] thruput throughput in byte per seconds
+ * @return scaled throughput in MiB/s or Mb/s
  */
-static void set_column_unit(const char *unit, unsigned int nargs, ...)
-{
-        va_list ap;
-        enum column_id col_id;
-
-        va_start(ap, nargs);
-        while (nargs--) {
-                col_id = va_arg(ap, enum column_id);
-                column_info[col_id].header.unit = unit;
-        }
-        va_end(ap);
-}
-
-/* New output determines the number of digits before the comma */
-static int det_column_size(double value)
-{
-	int i = 1;
-	double dez = 10.0;
-
-	if (value < 0)
-		i++;
-	while ((abs(value) / (dez - 1.0)) > 1.0) {
-		i++;
-		dez *= 10;
-	}
-	return i;
-}
-
-/* produces the string command for printf for the right number of digits and decimal part */
-static char *create_output_str(int digits, int decimalPart)
-{
-	static char outstr[30] = {0};
-
-	sprintf(outstr, "%%%d.%df", digits, decimalPart);
-	return outstr;
-}
-
-static void create_column(char *strHead1Row, char *strHead2Row,
-			  char *strDataRow, int column_id, double value,
-			  int numDigitsDecimalPart, int *columnWidthChanged)
-{
-	unsigned int maxTooLongColumns = copt.num_flows * 5;
-	int lengthData = 0;
-	int lengthHead = 0;
-	unsigned int columnSize = 0;
-	char tempBuffer[50];
-	struct column *column = &column_info[column_id];
-	char* number_formatstring;
-
-	if (!column->state.visible)
-		return;
-
-	/* get max columnsize */
-	if (copt.symbolic) {
-		switch ((unsigned int)value) {
-		case INT_MAX:
-			lengthData = strlen("INT_MAX");
-			break;
-		case USHRT_MAX:
-			lengthData = strlen("USHRT_MAX");
-			break;
-		case UINT_MAX:
-			lengthData = strlen("UINT_MAX");
-			break;
-		default:
-			lengthData = det_column_size(value) +
-					numDigitsDecimalPart + 1;
-		}
-	} else {
-		lengthData = det_column_size(value) +
-				numDigitsDecimalPart + 1;
-	}
-	/* leading space */
-	lengthData++;
-
-	/* decimal point if necessary */
-	if (numDigitsDecimalPart)
-		lengthData++;
-
-	lengthHead = MAX(strlen(column->header.name),
-			 strlen(column->header.unit));
-	columnSize = MAX(lengthData, lengthHead);
-
-	/* check if columnsize has changed */
-	if (column->state.last_width < columnSize) {
-		/* column too small */
-		*columnWidthChanged = 1;
-		column->state.last_width = columnSize;
-		column->state.oversized = 0;
-	} else if (column->state.last_width > 1 + columnSize) {
-		/* column too big */
-		if (column->state.oversized >= maxTooLongColumns) {
-			/* column too big for quite a while */
-			*columnWidthChanged = 1;
-			column->state.last_width = columnSize;
-			column->state.oversized = 0;
-		} else {
-			(column->state.oversized)++;
-		}
-	} else {
-		/* This size was needed, keep it */
-		column->state.oversized = 0;
-	}
-	number_formatstring = create_output_str(column->state.last_width,
-						numDigitsDecimalPart);
-
-	/* create columns */
-
-	/* output text for symbolic numbers */
-	if (copt.symbolic) {
-		switch ((int)value) {
-		case INT_MAX:
-			for (unsigned int a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " INT_MAX");
-			break;
-		case USHRT_MAX:
-			for (unsigned int a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " USHRT_MAX");
-			break;
-		case UINT_MAX:
-			for (unsigned int a = lengthData;
-			     a < MAX(columnSize, column->state.last_width);
-			     a++)
-				strcat(strDataRow, " ");
-			strcat(strDataRow, " UINT_MAX");
-			break;
-		default: /* number */
-			sprintf(tempBuffer, number_formatstring, value);
-			strcat(strDataRow, tempBuffer);
-		}
-	} else {
-		sprintf(tempBuffer, number_formatstring, value);
-		strcat(strDataRow, tempBuffer);
-	}
-	/* 1st header row */
-	for (unsigned int a = column->state.last_width;
-	     a > strlen(column->header.name); a--)
-		strcat(strHead1Row, " ");
-	strcat(strHead1Row, column->header.name);
-
-	/* 2nd header row */
-	for (unsigned int a = column->state.last_width;
-	     a > strlen(column->header.unit); a--)
-		strcat(strHead2Row, " ");
-	strcat(strHead2Row, column->header.unit);
-}
-
-static void create_column_str(char *strHead1Row, char *strHead2Row,
-			      char *strDataRow, int column_id,
-			      char* value, int *columnWidthChanged)
-{
-
-	unsigned int maxTooLongColumns = copt.num_flows * 5;
-	int lengthData = 0;
-	int lengthHead = 0;
-	unsigned int columnSize = 0;
-	struct column *column = &column_info[column_id];
-
-	if (!column->state.visible)
-		return;
-
-	/* get max columnsize */
-	lengthData = strlen(value);
-	lengthHead = MAX(strlen(column->header.name),
-			 strlen(column->header.unit));
-	columnSize = MAX(lengthData, lengthHead) + 1;
-
-	/* check if columnsize has changed */
-	if (column->state.last_width < columnSize) {
-		/* column too small */
-		*columnWidthChanged = 1;
-		column->state.last_width = columnSize;
-		column->state.oversized = 0;
-	} else if (column->state.last_width > 1 + columnSize) {
-		/* column too big */
-		if (column->state.oversized >= maxTooLongColumns) {
-			/* column too big for quite a while */
-			*columnWidthChanged = 1;
-			column->state.last_width = columnSize;
-			column->state.oversized = 0;
-		} else {
-			(column->state.oversized)++;
-		}
-	} else {
-		/* This size was needed, keep it */
-		column->state.oversized = 0;
-	}
-
-	/* create columns */
-	for (unsigned int a = lengthData+1; a < columnSize; a++)
-		strcat(strDataRow, " ");
-	strcat(strDataRow, value);
-
-	/* 1st header row */
-	for (unsigned int a = column->state.last_width;
-	     a > strlen(column->header.name) + 1; a--)
-		strcat(strHead1Row, " ");
-	strcat(strHead1Row, column->header.name);
-
-	/* 2nd header Row */
-	for (unsigned int a = column->state.last_width;
-	     a > strlen(column->header.unit) + 1; a--)
-		strcat(strHead2Row, " ");
-	strcat(strHead2Row, column->header.unit);
-}
-
-/* Output a single report (with header if width has changed */
-static char *create_output(char hash, int id, int type, double begin, double end,
-		   double throughput, double transac,
-		   unsigned int request_blocks, unsigned int response_blocks,
-		   double rttmin, double rttavg, double rttmax,
-		   double iatmin, double iatavg, double iatmax,
-		   double delaymin, double delayavg, double delaymax,
-		   unsigned int cwnd, unsigned int ssth, unsigned int uack,
-		   unsigned int sack, unsigned int lost, unsigned int reor,
-		   unsigned int retr, unsigned int tret, unsigned int fack,
-		   double linrtt, double linrttvar, double linrto,
-		   unsigned int backoff, int ca_state, int snd_mss,  int pmtu,
-		   char* status)
-{
-	int columnWidthChanged = 0;
-	static int counter = 0;
-
-	/* Create Row + Header */
-	char dataString[250];
-	char headerString1[250];
-	char headerString2[250];
-	static char outputString[1000];
-	char tmp[100];
-
-	/* output string
-	param # + flow_id */
-	if (hash)
-		sprintf(dataString, "#");
-
-	if (type)
-		sprintf(dataString, "D%3d", id);
-	else
-		sprintf(dataString, "S%3d", id);
-
-	strcpy(headerString1, column_info[COL_FLOW_ID].header.name);
-	strcpy(headerString2, column_info[COL_FLOW_ID].header.unit);
-
-	if (ca_state == TCP_CA_Open)
-		strcpy(tmp, "open");
-	else if (ca_state == TCP_CA_Disorder)
-		strcpy(tmp, "disorder");
-	else if (ca_state == TCP_CA_CWR)
-		strcpy(tmp, "cwr");
-	else if (ca_state == TCP_CA_Recovery)
-		strcpy(tmp, "recover");
-	else if (ca_state == TCP_CA_Loss)
-		strcpy(tmp, "loss");
-	else
-		strcpy(tmp, "unknown");
-
-	create_column(headerString1, headerString2, dataString, COL_BEGIN,
-		      begin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_END,
-		      end, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_THROUGH,
-		      throughput, 6, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TRANSAC,
-		      transac, 2, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_BLOCK_REQU,
-		      request_blocks, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_BLOCK_RESP,
-		      response_blocks, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_MIN,
-		      rttmin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_AVG,
-		      rttavg, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_RTT_MAX,
-		      rttmax, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_MIN,
-		      iatmin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_AVG,
-		      iatavg, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_IAT_MAX,
-		      iatmax, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_MIN,
-		      delaymin, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_AVG,
-		      delayavg, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_DLY_MAX,
-		      delaymax, 3, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_CWND,
-		      cwnd, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_SSTH,
-		      ssth, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_UACK,
-		      uack, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_SACK,
-		      sack, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_LOST,
-		      lost, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RETR,
-		      retr, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_TRET,
-		      tret, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_FACK,
-		      fack, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_REOR,
-		      reor, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_BKOF,
-		      backoff, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTT,
-		      linrtt, 1, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTTVAR,
-		      linrttvar, 1, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_TCP_RTO,
-		      linrto, 1, &columnWidthChanged);
-	create_column_str(headerString1, headerString2, dataString,
-			  COL_TCP_CA_STATE, tmp, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_SMSS,
-		      snd_mss, 0, &columnWidthChanged);
-	create_column(headerString1, headerString2, dataString, COL_PMTU,
-		      pmtu, 0, &columnWidthChanged);
-#ifdef DEBUG
-	create_column_str(headerString1, headerString2, dataString, COL_STATUS,
-			  status, &columnWidthChanged);
-#else /* DEBUG */
-	UNUSED_ARGUMENT(status);
-#endif /* DEBUG */
-
-	/* newline */
-	strcat(headerString1, "\n");
-	strcat(headerString2, "\n");
-	strcat(dataString, "\n");
-	/* output string end */
-	if (columnWidthChanged > 0 || (counter % 25) == 0) {
-		strcpy(outputString, headerString1);
-		strcat(outputString, headerString2);
-		strcat(outputString, dataString);
-	} else {
-		strcpy(outputString, dataString);
-	}
-	counter++;
-
-	return outputString;
-}
-
 inline static double scale_thruput(double thruput)
 {
         if (copt.mbyte)
@@ -1693,130 +1607,360 @@ inline static double scale_thruput(double thruput)
         return thruput / 1e6 * (1<<3);
 }
 
-static void print_report(int id, int endpoint, struct report* r)
+/**
+ * Determines if the current column width @p column_width is larger or smaller
+ * than the old one and updates the state of column @p column accordingly.
+ *
+ * @param[in,out] column column that state to be updated
+ * @param[in] column_width current column width
+ * @return true if column state has been updated, false otherwise
+ */
+static bool update_column_width(struct column *column, unsigned column_width)
 {
+	/* True if column width has changed */
+	bool has_changed = false;
 
-	double min_rtt = r->rtt_min;
-	double max_rtt = r->rtt_max;
-	double avg_rtt;
-	double min_iat = r->iat_min;
-	double max_iat = r->iat_max;
-	double avg_iat;
-	double min_delay = r->delay_min;
-	double max_delay = r->delay_max;
-	double avg_delay;
-
-	char comment_buffer[100] = " (";
-	char report_buffer[4000] = "";
-
-	#define COMMENT_CAT(s) do { if (strlen(comment_buffer) > 2) \
-		strncat(comment_buffer, "/", sizeof(comment_buffer)-1); \
-		strncat(comment_buffer, (s), sizeof(comment_buffer)-1); }while(0);
-
-	if (r->response_blocks_read && r->rtt_sum)
-		avg_rtt = r->rtt_sum / (double)(r->response_blocks_read);
-	else
-		min_rtt = max_rtt = avg_rtt = INFINITY;
-
-	if (r->request_blocks_read && r->iat_sum)
-		avg_iat = r->iat_sum / (double)(r->request_blocks_read);
-	else
-		min_iat = max_iat = avg_iat = INFINITY;
-
-	if (r->request_blocks_read && r->delay_sum)
-		avg_delay = r->delay_sum / (double)(r->request_blocks_read);
-	else
-		min_delay = max_delay = avg_delay = INFINITY;
-
-#ifdef DEBUG
-	if (cflow[id].finished[endpoint]) {
-		COMMENT_CAT("stopped")
+	if (column->state.last_width < column_width) {
+		/* Column too small */
+		has_changed = true;
+		column->state.last_width = column_width;
+		column->state.oversized = 0;
+	} else if (column->state.last_width > 1 + column_width) {
+		/* Column too big */
+		if (column->state.oversized >= MAX_COLUM_TOO_LARGE) {
+			/* Column too big for quite a while */
+			has_changed = true;
+			column->state.last_width = column_width;
+			column->state.oversized = 0;
+		} else {
+			(column->state.oversized)++;
+		}
 	} else {
-		char tmp[2];
-
-		/* Write status */
-		switch (r->status & 0xFF) {
-		case 'd':
-		case 'l':
-		case 'o':
-		case 'f':
-		case 'c':
-		case 'n':
-			tmp[0] = (char)(r->status & 0xFF);
-			tmp[1] = 0;
-			COMMENT_CAT(tmp);
-			break;
-		default:
-			COMMENT_CAT("u");
-			break;
-		}
-
-		/* Read status */
-		switch (r->status >> 8) {
-		case 'd':
-		case 'l':
-		case 'o':
-		case 'f':
-		case 'c':
-		case 'n':
-			tmp[0] = (char)(r->status >> 8);
-			tmp[1] = 0;
-			COMMENT_CAT(tmp);
-			break;
-		default:
-			COMMENT_CAT("u");
-			break;
-		}
+		/* This size was needed, keep it */
+		column->state.oversized = 0;
 	}
-#endif /* DEBUG */
-	strncat(comment_buffer, ")", sizeof(comment_buffer) - strlen(comment_buffer) - 1);
-	if (strlen(comment_buffer) == 2)
-		comment_buffer[0] = '\0';
 
-	char rep_string[4000];
-	double diff_first_last =
-		time_diff(&cflow[id].start_timestamp[endpoint], &r->begin);
-	double diff_first_now =
-		time_diff(&cflow[id].start_timestamp[endpoint], &r->end);
-	double thruput = scale_thruput((double)r->bytes_written /
-				       (diff_first_now - diff_first_last));
-	double transac = (double)r->response_blocks_read /
-			 (diff_first_now - diff_first_last);
-
-	strcpy(rep_string,
-	       create_output(0, id, endpoint, diff_first_last, diff_first_now,
-		             thruput, transac,
-			     (unsigned int)r->request_blocks_written,
-			     (unsigned int)r->response_blocks_written,
-			     min_rtt * 1e3, avg_rtt * 1e3, max_rtt * 1e3,
-			     min_iat * 1e3, avg_iat * 1e3, max_iat * 1e3,
-			     min_delay * 1e3, avg_delay * 1e3, max_delay * 1e3,
-			     (unsigned int)r->tcp_info.tcpi_snd_cwnd,
-			     (unsigned int)r->tcp_info.tcpi_snd_ssthresh,
-			     (unsigned int)r->tcp_info.tcpi_unacked,
-			     (unsigned int)r->tcp_info.tcpi_sacked,
-			     (unsigned int)r->tcp_info.tcpi_lost,
-			     (unsigned int)r->tcp_info.tcpi_reordering,
-			     (unsigned int)r->tcp_info.tcpi_retrans,
-			     (unsigned int)r->tcp_info.tcpi_retransmits,
-			     (unsigned int)r->tcp_info.tcpi_fackets,
-			     (double)r->tcp_info.tcpi_rtt / 1e3,
-			     (double)r->tcp_info.tcpi_rttvar / 1e3,
-			     (double)r->tcp_info.tcpi_rto / 1e3,
-			     (unsigned int)r->tcp_info.tcpi_backoff,
-			     r->tcp_info.tcpi_ca_state,
-			     (unsigned int)r->tcp_info.tcpi_snd_mss,
-			     r->pmtu, comment_buffer));
-	strncpy(report_buffer, rep_string, sizeof(report_buffer));
-	report_buffer[sizeof(report_buffer) - 1] = 0;
-	log_output(report_buffer);
+	return has_changed;
 }
 
-static char *guess_topology (int mtu)
+/**
+ * Append measured data for interval report column @p column_id to given strings.
+ *
+ * For the intermediated interval report column @p column_id, append measured
+ * data @p value to the destination data string @p data, and the name and unit
+ * of intermediated interval column header to @p header1 and @p header2.
+ *
+ * @param[in,out] header1 1st header string (name) to append to
+ * @param[in,out] header2 2nd header string (unit) to append to
+ * @param[in,out] data data value string to append to
+ * @param[in] column_id ID of intermediated interval report column
+ * @param[in] value measured data string to be append
+ * @return true if column width has changed, false otherwise
+ */
+static bool print_column_str(char **header1, char **header2, char **data,
+			     enum column_id column_id, char* value)
 {
-	/* Mapping of common MTU sizes to network technologies */
+	/* Only for convenience */
+	struct column *column = &column_info[column_id];
+
+	if (!column->state.visible)
+		return false;
+
+	/* Get max column width */
+	unsigned data_len = strlen(value);
+	unsigned header_len = MAX(strlen(column->header.name),
+				  strlen(column->header.unit));
+	unsigned column_width = MAX(data_len, header_len);
+
+	/* Check if column width has changed */
+	bool has_changed = update_column_width(column, column_width);
+
+	/* Create format specifiers of right length */
+	char *fmt_str = NULL;
+	const size_t width = column->state.last_width;
+	if (asprintf(&fmt_str, "%%%zus", width + GUARDBAND) == -1)
+		critx("could not allocate memory for interval report");
+
+	/* Print data, 1st and 2nd header row */
+	asprintf_append(data, fmt_str, value);
+	asprintf_append(header1, fmt_str, column->header.name);
+	asprintf_append(header2, fmt_str, column->header.unit);
+
+	free(fmt_str);
+	return has_changed;
+}
+
+/**
+ * Append measured data for interval report column @p column_id to given strings.
+ *
+ * For the intermediated interval report column @p column_id, append measured
+ * data @p value to the destination data string @p data, and the name and unit
+ * of intermediated interval column header to @p header1 and @p header2.
+ *
+ * @param[in,out] header1 1st header string (name) to append to
+ * @param[in,out] header2 2nd header string (unit) to append to
+ * @param[in,out] data data value string to append to
+ * @param[in] column_id ID of intermediated interval report column
+ * @param[in] value measured data value to be append
+ * @param[in] accuracy number of decimal places to be append
+ * @return true if column width has changed, false otherwise
+ */
+static bool print_column(char **header1, char **header2, char **data,
+			 enum column_id column_id, double value,
+			 unsigned accuracy)
+{
+	/* Print symbolic values instead of numbers */
+	if (copt.symbolic) {
+		switch ((int)value) {
+		case INT_MAX:
+			return print_column_str(header1, header2, data,
+						column_id, "INT_MAX");
+		case USHRT_MAX:
+			return print_column_str(header1, header2, data,
+						column_id, "USHRT_MAX");
+		case UINT_MAX:
+			return print_column_str(header1, header2, data,
+						column_id, "UINT_MAX");
+		}
+	}
+
+	/* Only for convenience */
+	struct column *column = &column_info[column_id];
+
+	if (!column->state.visible)
+		return false;
+
+	/* Get max column width */
+	unsigned data_len = det_num_digits(value) + (accuracy ? accuracy + 1 : 0);
+	unsigned header_len = MAX(strlen(column->header.name),
+				  strlen(column->header.unit));
+	unsigned column_width = MAX(data_len, header_len);
+
+	/* Check if column width has changed */
+	bool has_changed = update_column_width(column, column_width);
+
+	/* Create format specifiers of right length */
+	char *fmt_num = NULL, *fmt_str = NULL;
+	const size_t width = column->state.last_width;
+	if (asprintf(&fmt_num, "%%%zu.%df", width + GUARDBAND, accuracy) == -1 ||
+	    asprintf(&fmt_str, "%%%zus", width + GUARDBAND) == -1)
+		critx("could not allocate memory for interval report");
+
+	/* Print data, 1st and 2nd header row */
+	asprintf_append(data, fmt_num, value);
+	asprintf_append(header1, fmt_str, column->header.name);
+	asprintf_append(header2, fmt_str, column->header.unit);
+
+	free_all(fmt_num, fmt_str);
+	return has_changed;
+}
+
+/**
+ * Print interval report @p report for endpoint @p e of flow @p flow_id.
+ *
+ * In addition, if the width of one intermediated interval report columns has
+ * been changed, the interval column header will be printed again.
+ *
+ * @param[in] flow_id flow an interval report will be created for
+ * @param[in] e flow endpoint (SOURCE or DESTINATION)
+ * @param[in] report interval report to be printed
+ */
+static void print_interval_report(unsigned short flow_id, enum endpoint_t e,
+				  struct report *report)
+{
+	/* Whether or not column width has been changed */
+	bool changed = false;
+	/* 1st header row, 2nd header row, and the actual measured data */
+	char *header1 = NULL, *header2 = NULL, *data = NULL;
+
+	/* Flow ID and endpoint (source or destination) */
+	if (asprintf(&header1, "%s", column_info[COL_FLOW_ID].header.name) == -1 ||
+	    asprintf(&header2, "%s", column_info[COL_FLOW_ID].header.unit) == -1 ||
+	    asprintf(&data, "%s%3d", e ? "D" : "S", flow_id) == -1)
+		critx("could not allocate memory for interval report");
+
+	/* Calculate time */
+	double diff_first_last = time_diff(&cflow[flow_id].start_timestamp[e],
+					   &report->begin);
+	double diff_first_now = time_diff(&cflow[flow_id].start_timestamp[e],
+					  &report->end);
+	changed |= print_column(&header1, &header2, &data, COL_BEGIN,
+				diff_first_last, 3);
+	changed |= print_column(&header1, &header2, &data, COL_END,
+				diff_first_now, 3);
+
+	/* Throughput */
+	double thruput = (double)report->bytes_written /
+			 (diff_first_now - diff_first_last);
+	thruput = scale_thruput(thruput);
+	changed |= print_column(&header1, &header2, &data, COL_THROUGH,
+				thruput, 6);
+
+	/* Transactions */
+	double transac = (double)report->response_blocks_read /
+			 (diff_first_now - diff_first_last);
+	changed |= print_column(&header1, &header2, &data, COL_TRANSAC,
+				transac, 2);
+
+	/* Blocks */
+	changed |= print_column(&header1, &header2, &data, COL_BLOCK_REQU,
+				report->request_blocks_written, 0);
+	changed |= print_column(&header1, &header2, &data, COL_BLOCK_RESP,
+				report->response_blocks_written, 0);
+
+	/* RTT */
+	double rtt_avg = 0.0;
+	if (report->response_blocks_read && report->rtt_sum)
+		rtt_avg = report->rtt_sum /
+			  (double)(report->response_blocks_read);
+	else
+		report->rtt_min = report->rtt_max = rtt_avg = INFINITY;
+	changed |= print_column(&header1, &header2, &data, COL_RTT_MIN,
+				report->rtt_min * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_RTT_AVG,
+				rtt_avg * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_RTT_MAX,
+				report->rtt_max * 1e3, 3);
+
+	/* IAT */
+	double iat_avg = 0.0;
+	if (report->request_blocks_read && report->iat_sum)
+		iat_avg = report->iat_sum /
+			  (double)(report->request_blocks_read);
+	else
+		report->iat_min = report->iat_max = iat_avg = INFINITY;
+	changed |= print_column(&header1, &header2, &data, COL_IAT_MIN,
+				report->rtt_min * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_IAT_AVG,
+				iat_avg * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_IAT_MAX,
+				report->iat_max * 1e3, 3);
+
+	/* Delay */
+	double delay_avg = 0.0;
+	if (report->request_blocks_read && report->delay_sum)
+		delay_avg = report->delay_sum /
+			    (double)(report->request_blocks_read);
+	else
+		report->delay_min = report->delay_max = delay_avg = INFINITY;
+	changed |= print_column(&header1, &header2, &data, COL_DLY_MIN,
+				report->delay_min * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_DLY_AVG,
+				delay_avg * 1e3, 3);
+	changed |= print_column(&header1, &header2, &data, COL_DLY_MAX,
+				report->delay_max * 1e3, 3);
+
+	/* TCP info struct */
+	changed |= print_column(&header1, &header2, &data, COL_TCP_CWND,
+				report->tcp_info.tcpi_snd_cwnd, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_SSTH,
+				report->tcp_info.tcpi_snd_ssthresh, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_UACK,
+				report->tcp_info.tcpi_unacked, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_SACK,
+				report->tcp_info.tcpi_sacked, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_LOST,
+				report->tcp_info.tcpi_lost, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RETR,
+				report->tcp_info.tcpi_retrans, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_TRET,
+				report->tcp_info.tcpi_retransmits, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_FACK,
+				report->tcp_info.tcpi_fackets, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_REOR,
+				report->tcp_info.tcpi_reordering, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_BKOF,
+				report->tcp_info.tcpi_backoff, 0);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RTT,
+				report->tcp_info.tcpi_rtt / 1e3, 1);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RTTVAR,
+				report->tcp_info.tcpi_rttvar / 1e3, 1);
+	changed |= print_column(&header1, &header2, &data, COL_TCP_RTO,
+				report->tcp_info.tcpi_rto / 1e3, 1);
+
+	/* TCP CA state */
+	char *ca_state = NULL;
+	switch (report->tcp_info.tcpi_ca_state) {
+	case TCP_CA_Open:
+		ca_state = "open";
+		break;
+	case TCP_CA_Disorder:
+		ca_state = "disorder";
+		break;
+	case TCP_CA_CWR:
+		ca_state = "cwr";
+		break;
+	case TCP_CA_Recovery:
+		ca_state = "recover";
+		break;
+	case TCP_CA_Loss:
+		ca_state = "loss";
+		break;
+	default:
+		ca_state = "unknown";
+	}
+	changed |= print_column_str(&header1, &header2, &data,
+				    COL_TCP_CA_STATE, ca_state);
+
+	/* SMSS & PMTU */
+	changed |= print_column(&header1, &header2, &data, COL_SMSS,
+				report->tcp_info.tcpi_snd_mss, 0);
+	changed |= print_column(&header1, &header2, &data, COL_PMTU,
+				report->pmtu, 0);
+
+/* Internal flowgrind state */
+#ifdef DEBUG
+	int rc = 0;
+	char *fg_state = NULL;
+	if (cflow[flow_id].finished[e]) {
+		rc = asprintf(&fg_state, "(stopped)");
+	} else {
+		/* Write status */
+		char ws = (char)(report->status & 0xFF);
+		if  (ws != 'd' || ws != 'l' || ws != 'o' || ws != 'f' ||
+		     ws != 'c' || ws != 'n')
+			ws = 'u';
+
+		/* Read status */
+		char rs = (char)(report->status >> 8);
+		if  (rs != 'd' || rs != 'l' || rs != 'o' || rs != 'f' ||
+		     rs != 'c' || rs != 'n')
+			rs = 'u';
+		rc = asprintf(&fg_state, "(%c/%c)", ws, rs);
+	}
+
+	if (rc == -1)
+		critx("could not allocate memory for flowgrind status string");
+
+	changed |= print_column_str(&header1, &header2, &data, COL_STATUS,
+				    fg_state);
+	free(fg_state);
+#endif /* DEBUG */
+
+	/* Print interval header again if either the column width has been
+	 * changed or MAX_REPORTS_BEFORE_HEADER reports have been emited
+	 * since last time header was printed */
+	static unsigned short printed_reports = 0;
+	if (changed || (printed_reports % MAX_REPORTS_IN_ROW) == 0) {
+		print_output("%s\n", header1);
+		print_output("%s\n", header2);
+	}
+
+	print_output("%s\n", data);
+	printed_reports++;
+	free_all(header1, header2, data);
+}
+
+/**
+ * Maps common MTU sizes to network known technologies.
+ *
+ * @param[in] mtu MTU size
+ * @return return network technology as string
+ */
+static char *guess_topology(unsigned mtu)
+{
 	struct mtu_hint {
-		int mtu;
+		unsigned mtu;
 		char *topology;
 	};
 
@@ -1839,202 +1983,263 @@ static char *guess_topology (int mtu)
 		{296,  "PPP (low delay)"},
 	};
 
-	for (unsigned int i = 0;
-	     i < sizeof(mtu_hints) / sizeof(struct mtu_hint); i++)
+	size_t array_size = sizeof(mtu_hints) / sizeof(struct mtu_hint);
+	for (unsigned short i = 0; i < array_size; i++)
 		if (mtu == mtu_hints[i].mtu)
 			return mtu_hints[i].topology;
 	return "unknown";
 }
 
-static void report_final(void)
+/**
+ * Print final report (i.e. summary line) for endpoint @p e of flow @p flow_id.
+ *
+ * @param[in] flow_id flow a final report will be created for
+ * @param[in] e flow endpoint (SOURCE or DESTINATION)
+ */
+static void print_final_report(unsigned short flow_id, enum endpoint_t e)
 {
-	char header_buffer[600] = "";
-	char header_nibble[600] = "";
+	/* To store the final report */
+	char *buf = NULL;
 
-	for (int id = 0; id < copt.num_flows; id++) {
+	/* For convenience only */
+	struct flow_endpoint *endpoint = &cflow[flow_id].endpoint[e];
+	struct flow_settings *settings = &cflow[flow_id].settings[e];
+	struct report *report = cflow[flow_id].final_report[e];
 
-#define CAT(fmt, args...) do {\
-	snprintf(header_nibble, sizeof(header_nibble), fmt, ##args); \
-	strncat(header_buffer, header_nibble, sizeof(header_buffer) - strlen(header_buffer) - 1); } while (0)
-#define CATC(fmt, args...) CAT(", "fmt, ##args)
+	/* Flow ID and endpoint (source or destination) */
+	if (asprintf(&buf, "# ID %3d %s: ", flow_id, e ? "D" : "S") == -1)
+		critx("could not allocate memory for final report");;
 
-		log_output("\n");
+	/* No final report received. Skip final report line for this endpoint */
+	if (!report) {
+		asprintf_append(&buf, "Error: no final report received");
+		goto out;
+	}
 
-		for (int endpoint = 0; endpoint < 2; endpoint++) {
-			header_buffer[0] = 0;
+	/* Infos about the test connections */
+	asprintf_append(&buf, "%s", endpoint->test_address);
 
-			CAT("#% 4d %s:", id, endpoint ? "D" : "S");
+	if (strcmp(endpoint->rpc_info->server_name, endpoint->test_address) != 0)
+		asprintf_append(&buf, "/%s", endpoint->rpc_info->server_name);
+	if (endpoint->rpc_info->server_port != DEFAULT_LISTEN_PORT)
+		asprintf_append(&buf, ":%d", endpoint->rpc_info->server_port);
 
-			CAT(" %s", cflow[id].endpoint[endpoint].test_address);
-			if (strcmp(cflow[id].endpoint[endpoint].daemon->server_name,
-				   cflow[id].endpoint[endpoint].test_address) != 0)
-				CAT("/%s", cflow[id].endpoint[endpoint].daemon->server_name);
-			if (cflow[id].endpoint[endpoint].daemon->server_port != DEFAULT_LISTEN_PORT)
-				CAT(":%d", cflow[id].endpoint[endpoint].daemon->server_port);
-			CAT(" (%s %s)", cflow[id].endpoint[endpoint].daemon->os_name,
-					cflow[id].endpoint[endpoint].daemon->os_release);
+	/* Infos about the daemon OS */
+	asprintf_append(&buf, " (%s %s), ",
+			endpoint->daemon->os_name, endpoint->daemon->os_release);
 
-			CATC("random seed: %u", cflow[id].random_seed);
+	/* Random seed */
+	asprintf_append(&buf, "random seed: %u, ", cflow[flow_id].random_seed);
 
-			if (cflow[id].final_report[endpoint]) {
+	/* Sending & Receiving buffer */
+	asprintf_append(&buf, "sbuf = %d/%d [B] (real/req), ",
+			endpoint->send_buffer_size_real,
+			settings->requested_send_buffer_size);
+	asprintf_append(&buf, "rbuf = %d/%d [B] (real/req), ",
+			endpoint->receive_buffer_size_real,
+			settings->requested_read_buffer_size);
 
-				CATC("sbuf = %d/%d, rbuf = %d/%d (real/req)",
-					cflow[id].endpoint[endpoint].send_buffer_size_real,
-					cflow[id].settings[endpoint].requested_send_buffer_size,
-					cflow[id].endpoint[endpoint].receive_buffer_size_real,
-					cflow[id].settings[endpoint].requested_read_buffer_size);
+	/* SMSS, Path MTU, Interface MTU */
+	if (report->tcp_info.tcpi_snd_mss > 0)
+		asprintf_append(&buf, "SMSS = %d [B], ",
+				report->tcp_info.tcpi_snd_mss);
+	if (report->pmtu > 0)
+		asprintf_append(&buf, "PMTU = %d [B], ", report->pmtu);
+	if (report->imtu > 0)
+		asprintf_append(&buf, "Interface MTU = %d (%s) [B], ",
+				report->imtu, guess_topology(report->imtu));
 
+	/* Congestion control algorithms */
+	if (settings->cc_alg[0])
+		asprintf_append(&buf, "CC = %s, ", settings->cc_alg);
 
-				/* SMSS, Path MTU, Interface MTU */
-				if (cflow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss > 0)
-					CATC("SMSS = %d", cflow[id].final_report[endpoint]->tcp_info.tcpi_snd_mss);
-				if (cflow[id].final_report[endpoint]->pmtu > 0)
-					CATC("Path MTU = %d", cflow[id].final_report[endpoint]->pmtu);
-				if (cflow[id].final_report[endpoint]->imtu > 0)
-					CATC("Interface MTU = %d (%s)", cflow[id].final_report[endpoint]->imtu,
-						guess_topology(cflow[id].final_report[endpoint]->imtu));
+	/* Calculate time */
+	double report_time = time_diff(&report->begin, &report->end);
+	double delta_write = 0.0, delta_read = 0.0;
+	if (settings->duration[WRITE])
+		delta_write = report_time - settings->duration[WRITE]
+					  - settings->delay[SOURCE];
+	if (settings->duration[READ])
+		delta_read = report_time - settings->duration[READ]
+					 - settings->delay[DESTINATION];
 
-				if (cflow[id].settings[endpoint].cc_alg[0])
-					CATC("cc = %s", cflow[id].settings[endpoint].cc_alg);
+	/* Calculate delta target vs. real report time */
+	double real_write = settings->duration[WRITE] + delta_write;
+	double real_read = settings->duration[READ] + delta_read;
+	if (settings->duration[WRITE])
+		asprintf_append(&buf, "duration = %.3f/%.3f [s] (real/req), ",
+				real_write, settings->duration[WRITE]);
+	if (settings->delay[WRITE])
+		asprintf_append(&buf, "write delay = %.3f [s], ",
+				settings->delay[WRITE]);
+	if (settings->delay[READ])
+		asprintf_append(&buf, "read delay = %.3f [s], ",
+				settings->delay[READ]);
 
+	/* Throughput */
+	double thruput_read = report->bytes_read / MAX(real_read, real_write);
+	double thruput_write = report->bytes_written / MAX(real_read, real_write);
+	if (isnan(thruput_read))
+		thruput_read = 0.0;
+	if (isnan(thruput_write))
+		thruput_write = 0.0;
 
-				double thruput_read, thruput_written, transactions_per_sec;
-				double report_time, report_delta_write = 0, report_delta_read = 0, duration_read, duration_write;
+	thruput_read = scale_thruput(thruput_read);
+	thruput_write = scale_thruput(thruput_write);
 
-				/* calculate time */
-				report_time = time_diff(&cflow[id].final_report[endpoint]->begin, &cflow[id].final_report[endpoint]->end);
-				if (cflow[id].settings[endpoint].duration[WRITE])
-					report_delta_write = report_time - cflow[id].settings[endpoint].duration[WRITE] - cflow[id].settings[endpoint].delay[SOURCE];
-				if (cflow[id].settings[endpoint].duration[READ])
-					report_delta_read = report_time - cflow[id].settings[endpoint].duration[READ] - cflow[id].settings[endpoint].delay[DESTINATION];
+	if (copt.mbyte)
+		asprintf_append(&buf, "through = %.6f/%.6f [MiB/s] (out/in)",
+				thruput_write, thruput_read);
+	else
+		asprintf_append(&buf, "through = " "%.6f/%.6f [Mbit/s] (out/in)",
+				thruput_write, thruput_read);
 
-				/* calculate delta target vs real report time */
-				duration_write = cflow[id].settings[endpoint].duration[WRITE] + report_delta_write;
-				duration_read = cflow[id].settings[endpoint].duration[READ] + report_delta_read;
+	/* Transactions */
+	double trans = report->response_blocks_read / MAX(real_read, real_write);
+	if (isnan(trans))
+		trans = 0.0;
+	if (trans)
+		asprintf_append(&buf, ", transactions/s = %.2f [#]", trans);
 
-				if (cflow[id].settings[endpoint].duration[WRITE])
-					CATC("flow duration = %.3fs/%.3fs (real/req)",
-						duration_write,
-						cflow[id].settings[endpoint].duration[WRITE]);
+	/* Blocks */
+	if (report->request_blocks_written || report->request_blocks_read)
+		asprintf_append(&buf, ", request blocks = %u/%u [#] (out/in)",
+				report->request_blocks_written,
+				report->request_blocks_read);
+	if (report->response_blocks_written || report->response_blocks_read)
+		asprintf_append(&buf, ", response blocks = %u/%u [#] (out/in)",
+				report->response_blocks_written,
+				report->response_blocks_read);
 
-				if (cflow[id].settings[endpoint].delay[WRITE])
-				       CATC("write delay = %.3fs", cflow[id].settings[endpoint].delay[WRITE]);
+	/* RTT */
+	if (report->response_blocks_read) {
+		double rtt_avg = report->rtt_sum /
+				 (double)(report->response_blocks_read);
+		asprintf_append(&buf, ", RTT = %.3f/%.3f/%.3f [ms] (min/avg/max)",
+				report->rtt_min * 1e3, rtt_avg * 1e3,
+				report->rtt_max * 1e3);
+	}
 
-				if (cflow[id].settings[endpoint].delay[READ])
-				       CATC("read delay = %.3fs", cflow[id].settings[endpoint].delay[READ]);
+	/* IAT */
+	if (report->request_blocks_read) {
+		double iat_avg = report->iat_sum /
+				 (double)(report->request_blocks_read);
+		asprintf_append(&buf, ", IAT = %.3f/%.3f/%.3f [ms] (min/avg/max)",
+				report->iat_min * 1e3, iat_avg * 1e3,
+				report->iat_max * 1e3);
+	}
 
-				/* calucate throughput */
-				thruput_read = cflow[id].final_report[endpoint]->bytes_read / MAX(duration_read, duration_write);
-				if (isnan(thruput_read))
-					thruput_read = 0.0;
+	/* Delay */
+	if (report->request_blocks_read) {
+		double delay_avg = report->delay_sum /
+				   (double)(report->request_blocks_read);
+		asprintf_append(&buf, ", delay = %.3f/%.3f/%.3f [ms] (min/avg/max)",
+				report->delay_min * 1e3, delay_avg * 1e3,
+				report->delay_max * 1e3);
+	}
 
-				thruput_written = cflow[id].final_report[endpoint]->bytes_written / MAX(duration_read, duration_write);
-				if (isnan(thruput_written))
-					thruput_written = 0.0;
+	/* Fixed sending rate per second was set */
+	if (settings->write_rate_str)
+		asprintf_append(&buf, ", rate = %s", settings->write_rate_str);
 
-				thruput_read = scale_thruput(thruput_read);
-				thruput_written = scale_thruput(thruput_written);
+	/* Socket options */
+	if (settings->elcn)
+		asprintf_append(&buf, ", ELCN");
+	if (settings->cork)
+		asprintf_append(&buf, ", TCP_CORK");
+	if (settings->pushy)
+		asprintf_append(&buf, ", PUSHY");
+	if (settings->nonagle)
+		asprintf_append(&buf, ", TCP_NODELAY");
+	if (settings->mtcp)
+		asprintf_append(&buf, ", TCP_MTCP");
+	if (settings->dscp)
+		asprintf_append(&buf, ", dscp = 0x%02x", settings->dscp);
 
-				if (copt.mbyte)
-					CATC("through = %.6f/%.6fMbyte/s (out/in)", thruput_written, thruput_read);
-				else
-					CATC("through = %.6f/%.6fMbit/s (out/in)", thruput_written, thruput_read);
+	/* Other flow options */
+	if (cflow[flow_id].late_connect)
+		asprintf_append(&buf, ", late connecting");
+	if (cflow[flow_id].shutdown)
+		asprintf_append(&buf, ", calling shutdown");
 
-				/* transactions */
-				transactions_per_sec = cflow[id].final_report[endpoint]->response_blocks_read / MAX(duration_read, duration_write);
-				if (isnan(transactions_per_sec))
-					transactions_per_sec = 0.0;
-				if (transactions_per_sec)
-					CATC("transactions/s = %.2f", transactions_per_sec);
-				/* blocks */
-				if (cflow[id].final_report[endpoint]->request_blocks_written || cflow[id].final_report[endpoint]->request_blocks_read)
-					CATC("request blocks = %u/%u (out/in)",
-					cflow[id].final_report[endpoint]->request_blocks_written,
-					cflow[id].final_report[endpoint]->request_blocks_read);
+out:
+	print_output("%s\n", buf);
+	free(buf);
+}
 
-				if (cflow[id].final_report[endpoint]->response_blocks_written || cflow[id].final_report[endpoint]->response_blocks_read)
-					CATC("response blocks = %u/%u (out/in)",
-					cflow[id].final_report[endpoint]->response_blocks_written,
-					cflow[id].final_report[endpoint]->response_blocks_read);
-				/* rtt */
-				if (cflow[id].final_report[endpoint]->response_blocks_read) {
-					double min_rtt = cflow[id].final_report[endpoint]->rtt_min;
-					double max_rtt = cflow[id].final_report[endpoint]->rtt_max;
-					double avg_rtt = cflow[id].final_report[endpoint]->rtt_sum /
-						(double)(cflow[id].final_report[endpoint]->response_blocks_read);
-					CATC("RTT = %.3f/%.3f/%.3f (min/avg/max)",
-					     min_rtt*1e3, avg_rtt*1e3, max_rtt*1e3);
-				}
-				/* iat */
-				if (cflow[id].final_report[endpoint]->request_blocks_read) {
-					double min_iat = cflow[id].final_report[endpoint]->iat_min;
-					double max_iat = cflow[id].final_report[endpoint]->iat_max;
-					double avg_iat = cflow[id].final_report[endpoint]->iat_sum /
-						(double)(cflow[id].final_report[endpoint]->request_blocks_read);
-					CATC("IAT = %.3f/%.3f/%.3f (min/avg/max)",
-					     min_iat*1e3, avg_iat*1e3, max_iat*1e3);
-				}
-				/* delay */
-				if (cflow[id].final_report[endpoint]->request_blocks_read) {
-					double min_delay = cflow[id].final_report[endpoint]->delay_min;
-					double max_delay = cflow[id].final_report[endpoint]->delay_max;
-					double avg_delay = cflow[id].final_report[endpoint]->delay_sum /
-						(double)(cflow[id].final_report[endpoint]->request_blocks_read);
-					CATC("DLY = %.3f/%.3f/%.3f (min/avg/max)",
-					     min_delay*1e3, avg_delay*1e3, max_delay*1e3);
-				}
-
-				free(cflow[id].final_report[endpoint]);
-
-			} else {
-				CATC("ERR: no final report received");
-			}
-			if (cflow[id].settings[endpoint].write_rate_str)
-				CATC("rate = %s", cflow[id].settings[endpoint].write_rate_str);
-			if (cflow[id].settings[endpoint].elcn)
-				CATC("ELCN %s", cflow[id].settings[endpoint].elcn == 1 ? "enabled" : "disabled");
-			if (cflow[id].settings[endpoint].cork)
-				CATC("TCP_CORK");
-			if (cflow[id].settings[endpoint].pushy)
-				CATC("PUSHY");
-			if (cflow[id].settings[endpoint].nonagle)
-				CATC("TCP_NODELAY");
-			if (cflow[id].settings[endpoint].mtcp)
-				CATC("TCP_MTCP");
-			if (cflow[id].settings[endpoint].dscp)
-				CATC("dscp = 0x%02x", cflow[id].settings[endpoint].dscp);
-			if (cflow[id].late_connect)
-				CATC("late connecting");
-			if (cflow[id].shutdown)
-				CATC("calling shutdown");
-
-			CAT("\n");
-			log_output(header_buffer);
+/**
+ * Print final report (i.e. summary line) for all configured flows.
+ */
+static void print_all_final_reports(void)
+{
+	for (unsigned id = 0; id < copt.num_flows; id++) {
+		print_output("\n");
+		foreach(int *i, SOURCE, DESTINATION) {
+			print_final_report(id, *i);
+			free(cflow[id].final_report[*i]);
 		}
 	}
 }
 
-/* Finds the daemon (or creating a new one) for a given server_url,
- * uses global static unique_servers variable for storage */
-static struct daemon * get_daemon_by_url(const char* server_url,
+/**
+ * Add the flow endpoint XML RPC data to the Global linked list.
+ *
+ * @param[in] XML-RPC connection url
+ * @param[in] server_name flow endpoints IP address
+ * @param[in] server_port controller - daemon XML-RPC connection port Nr
+ * @return rpc_info flow endpoint XML RPC structure data 
+ */
+static struct rpc_info * add_flow_endpoint_by_url(const char* server_url,
 					  const char* server_name,
 					  unsigned short server_port)
 {
-	/* If we have already a daemon for this URL return a pointer to it */
-	for (unsigned int i = 0; i < num_unique_servers; i++) {
-		if (!strcmp(unique_servers[i].server_url, server_url))
-			return &unique_servers[i];
+	struct rpc_info *flow_rpc_info;
+	flow_rpc_info = malloc((sizeof(struct rpc_info)));
+
+	if (!flow_rpc_info ) {
+		logging(LOG_ALERT, "could not allocate memory for flows rpc info");
+		return 0;
 	}
-	/* didn't find anything, seems to be a new one */
-	memset(&unique_servers[num_unique_servers], 0, sizeof(struct daemon));
-	strcpy(unique_servers[num_unique_servers].server_url, server_url);
-	strcpy(unique_servers[num_unique_servers].server_name, server_name);
-	unique_servers[num_unique_servers].server_port = server_port;
-	return &unique_servers[num_unique_servers++];
+
+	memset(flow_rpc_info, 0, sizeof(struct rpc_info));
+	
+	strcpy(flow_rpc_info->server_url, server_url);
+	strcpy(flow_rpc_info->server_name, server_name);
+	flow_rpc_info->server_port = server_port;
+	fg_list_push_back(&flows_rpc_info, flow_rpc_info);
+	return flow_rpc_info;
 }
 
 /**
- * Parse option for stochastic traffic generation (option -G)
+ * Set the flow endpoint XML RPC data for a given server_url.
+ *
+ * @param[in] XML-RPC connection url
+ * @param[in] server_name flow endpoints IP address
+ * @param[in] server_port controller - daemon XML-RPC connection port Nr
+ * @return rpc_info flow endpoint XML RPC structure data 
+ */
+static struct rpc_info * set_rpc_info(const char* server_url,
+					  const char* server_name,
+					  unsigned short server_port)
+{
+	if(fg_list_size(&flows_rpc_info) == 0)
+		return add_flow_endpoint_by_url(server_url,server_name, server_port);
+	
+	/* If we have already stored flow info for this URL return a pointer to it */
+	const struct list_node *node = fg_list_front(&flows_rpc_info);
+	while (node) {
+		struct rpc_info *flow_rpc_info= node->data;
+		node = node->next;
+
+		if (!strcmp(flow_rpc_info->server_url, server_url))
+			return flow_rpc_info;
+	}
+	/* didn't find anything, seems to be a new one */
+	return add_flow_endpoint_by_url(server_url,server_name, server_port);
+}
+
+/**
+ * Parse option for stochastic traffic generation (option -G).
  *
  * @param[in] params parameter string in the form 'x=(q|p|g):(C|U|E|N|L|P|W):#1:[#2]'
  * @param[in] flow_id ID of flow to apply option to
@@ -2045,7 +2250,7 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 	int rc;
 	double param1 = 0, param2 = 0, unused;
 	char typechar, distchar;
-	enum distributions distr = CONSTANT;
+	enum distribution_t distr = CONSTANT;
 
 	rc = sscanf(params, "%c:%c:%lf:%lf:%lf", &typechar, &distchar,
 		    &param1, &param2, &unused);
@@ -2121,16 +2326,18 @@ static void parse_trafgen_option(const char *params, int flow_id, int endpoint_i
 	}
 
 	/* sanity check for max block size */
-	for (int i = 0; i < 2; i++) {
-		if (distr == CONSTANT && cflow[flow_id].settings[i].maximum_block_size < param1)
-			cflow[flow_id].settings[i].maximum_block_size = param1;
-		if (distr == UNIFORM && cflow[flow_id].settings[i].maximum_block_size < param2)
-			cflow[flow_id].settings[i].maximum_block_size = param2;
+	foreach(int *i, SOURCE, DESTINATION) {
+		if (distr == CONSTANT &&
+		    cflow[flow_id].settings[*i].maximum_block_size < param1)
+			cflow[flow_id].settings[*i].maximum_block_size = param1;
+		if (distr == UNIFORM &&
+		    cflow[flow_id].settings[*i].maximum_block_size < param2)
+			cflow[flow_id].settings[*i].maximum_block_size = param2;
 	}
 }
 
 /**
- * Parse argument for option -R, which specifies the rate the endpoint will send
+ * Parse argument for option -R, which specifies the rate the endpoint will send.
  *
  * @param[in] arg argument for option -R in form of #.#(z|k|M|G)(b|B|o)
  * @param[in] flow_id ID of flow to apply option to
@@ -2188,7 +2395,7 @@ static void parse_rate_option(const char *arg, int flow_id, int endpoint_id)
 
 
 /**
- * Parse argument for option -H, which specifies the endpoints of a flow
+ * Parse argument for option -H, which specifies the endpoints of a flow.
  *
  * @param[in] hostarg argument for option -H in form of HOST[/CONTROL[:PORT]]
  *	- HOST: test address where the actual test connection goes to
@@ -2201,14 +2408,12 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 {
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
-	struct daemon* daemon;
 	int port = DEFAULT_LISTEN_PORT;
 	bool extra_rpc = false;
 	bool is_ipv6 = false;
 	char *rpc_address, *url = 0, *sepptr = 0;
 	char *arg = strdup(hostarg);
 	struct flow_endpoint* endpoint = &cflow[flow_id].endpoint[endpoint_id];
-	int rc;
 
 	/* extra RPC address ? */
 	sepptr = strchr(arg, '/');
@@ -2243,22 +2448,24 @@ static void parse_host_option(const char* hostarg, int flow_id, int endpoint_id)
 
 	if (!*arg)
 		PARSE_ERR("flow %i: no test host given in argument", flow_id);
+
+	int rc = 0;
 	if (is_ipv6)
 		rc = asprintf(&url, "http://[%s]:%d/RPC2", rpc_address, port);
 	else
 		rc = asprintf(&url, "http://%s:%d/RPC2", rpc_address, port);
 
-	if (rc==-1)
-		critx("could not allocate memory for the RPC url");
+	if (rc == -1)
+		critx("could not allocate memory for RPC URL");
 
-	daemon = get_daemon_by_url(url, rpc_address, port);
-	endpoint->daemon = daemon;
+	/* Get flow endpoint server information for each flow */
+	endpoint->rpc_info  = set_rpc_info(url, rpc_address, port);
 	strcpy(endpoint->test_address, arg);
 	free_all(arg, url);
 }
 
 /**
- * Parse flow options with endpoint
+ * Parse flow options with endpoint.
  *
  * @param[in] code the code of the cmdline option
  * @param[in] arg the argument of the cmdline option
@@ -2361,9 +2568,11 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 		settings->request_trafgen_options.distribution = CONSTANT;
 		settings->request_trafgen_options.param_one = optint;
 		for (int id = 0; id < MAX_FLOWS; id++) {
-			for (int i = 0; i < 2; i++) {
-				if ((signed)optint > cflow[id].settings[i].maximum_block_size)
-					cflow[id].settings[i].maximum_block_size = (signed)optint;
+			foreach(int *i, SOURCE, DESTINATION) {
+				if ((signed)optint >
+				    cflow[id].settings[*i].maximum_block_size)
+					cflow[id].settings[*i].maximum_block_size =
+						(signed)optint;
 			}
 		}
 		break;
@@ -2395,7 +2604,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 }
 
 /**
- * Parse flow options without endpoint
+ * Parse flow options without endpoint.
  *
  * @param[in] code the code of the cmdline option
  * @param[in] arg the argument string of the cmdline option
@@ -2435,7 +2644,7 @@ static void parse_flow_option(int code, const char* arg, const char* opt_string,
 
 /**
  * Parse argument for option -c to hide/show intermediated interval report
- * columns
+ * columns.
  *
  * @param[in] arg argument for option -c
  */
@@ -2490,7 +2699,7 @@ static void parse_colon_option(const char *arg)
 }
 
 /**
- * Parse general controller options given on the cmdline
+ * Parse general controller options given on the cmdline.
  *
  * @param[in] code the code of the cmdline option
  * @param[in] arg the argument string of the cmdline option
@@ -2514,7 +2723,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 			PARSE_ERR("invalid argument '%s' for %s", arg, opt_string);
 		break;
 	case 'v':
-		fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+		fprintf(stdout, "%s %s\n%s\n%s\n\n%s\n", progname,
 			FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
 			FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 		exit(EXIT_SUCCESS);
@@ -2544,7 +2753,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	case 'm':
 		copt.mbyte = true;
-		column_info[COL_THROUGH].header.unit = " [MB/s]";
+		column_info[COL_THROUGH].header.unit = " [MiB/s]";
 		break;
 	case 'n':
 		if (sscanf(arg, "%hd", &copt.num_flows) != 1 ||
@@ -2585,7 +2794,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * Wrapper function for mutex checking and error message printing.
  *
  * Defines the cmdline options and distinguishes option types (flow, general, ...)
- * and tokenizes flow options which can have several endpoints
+ * and tokenizes flow options which can have several endpoints.
  *
  * @param[in] ms array of mutex states
  * @param[in] context the mutex context of this option (see enum #mutex_contexts)
@@ -2593,7 +2802,7 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
  * @param[in] flow_id ID of the flow to show in error message
  */
 static void check_mutex(struct ap_Mutex_state ms[],
-			const enum mutex_contexts context,
+			const enum mutex_context_t context,
 			const int argind, int flow_id)
 {
 	int mutex_index;
@@ -2611,9 +2820,10 @@ static void check_mutex(struct ap_Mutex_state ms[],
 }
 
 /**
- * Parse flow options for multiple endpoints
+ * Parse flow options for multiple endpoints.
  *
- * This iterates through the endpoints given in the argument string (e.g. s=#,d=# or b=#)
+ * This iterates through the endpoints given in the argument string
+ * (e.g. s=#,d=# or b=#).
  *
  * @param[in] code the code of the cmdline option
  * @param[in] arg the argument of the multi-endpoint flow option
@@ -2640,7 +2850,7 @@ static void parse_multi_endpoint_option(int code, const char* arg,
 			arg = token + 1;
 
 		if (type != 's' && type != 'd' && type != 'b')
-			PARSE_ERR("Invalid enpoint specifier in Option %s",
+			PARSE_ERR("Invalid endpoint specifier in Option %s",
 				  opt_string);
 
 		/* check mutex in context of current endpoint */
@@ -2659,10 +2869,10 @@ static void parse_multi_endpoint_option(int code, const char* arg,
 }
 
 /**
- * The main commandline argument parsing function
+ * The main commandline argument parsing function.
  *
  * Defines the cmdline options and distinguishes option types (flow, general,
- * ...) and tokenizes flow options which can have several endpoints
+ * ...) and tokenizes flow options which can have several endpoints.
  *
  * @param[in] argc number of arguments (as in main())
  * @param[in] argv array of argument strings (as in main())
@@ -2724,10 +2934,9 @@ static void parse_cmdline(int argc, char *argv[])
 
 	/* initialize 4 mutex contexts (for SOURCE+DESTINATION+CONTROLLER+BOTH ENDPOINTS) */
 	struct ap_Mutex_state ms[4];
-	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_CONTROLLER]);
-	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_TWO_SIDED]);
-	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_SOURCE]);
-	ap_init_mutex_state(&parser, &ms[MUTEX_CONTEXT_DESTINATION]);
+	foreach(int *i, MUTEX_CONTEXT_CONTROLLER, MUTEX_CONTEXT_TWO_SIDED,
+			MUTEX_CONTEXT_TWO_SIDED, MUTEX_CONTEXT_DESTINATION)
+		ap_init_mutex_state(&parser, &ms[*i]);
 
 	/* if no option -F is given, configure all flows*/
 	for (int i = 0; i < MAX_FLOWS; i++)
@@ -2769,9 +2978,10 @@ static void parse_cmdline(int argc, char *argv[])
 			}
 			free(argcpy);
 			/* reset mutex for each new flow */
-			ap_reset_mutex(&ms[MUTEX_CONTEXT_SOURCE]);
-			ap_reset_mutex(&ms[MUTEX_CONTEXT_DESTINATION]);
-			ap_reset_mutex(&ms[MUTEX_CONTEXT_TWO_SIDED]);
+			foreach(int *i, MUTEX_CONTEXT_SOURCE,
+					MUTEX_CONTEXT_DESTINATION,
+					MUTEX_CONTEXT_TWO_SIDED)
+				ap_reset_mutex(&ms[*i]);
 			break;
 		case OPT_FLOW:
 			check_mutex(ms, MUTEX_CONTEXT_TWO_SIDED, argind,
@@ -2823,33 +3033,32 @@ static void parse_cmdline(int argc, char *argv[])
 	}
 #endif /* 0 */
 
-	for (int id = 0; id < copt.num_flows; id++) {
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		cflow[id].settings[SOURCE].duration[READ] = cflow[id].settings[DESTINATION].duration[WRITE];
 		cflow[id].settings[DESTINATION].duration[READ] = cflow[id].settings[SOURCE].duration[WRITE];
 		cflow[id].settings[SOURCE].delay[READ] = cflow[id].settings[DESTINATION].delay[WRITE];
 		cflow[id].settings[DESTINATION].delay[READ] = cflow[id].settings[SOURCE].delay[WRITE];
 
-		for (unsigned i = 0; i < 2; i++) {
+		foreach(int *i, SOURCE, DESTINATION) {
 			/* Default to localhost, if no endpoints were set for a flow */
-			if (!cflow[id].endpoint[i].daemon) {
-				cflow[id].endpoint[i].daemon = get_daemon_by_url(
+			if (!cflow[id].endpoint[*i].rpc_info) {
+				cflow[id].endpoint[*i].rpc_info = set_rpc_info(
 					"http://localhost:5999/RPC2", "localhost", DEFAULT_LISTEN_PORT);
 			}
 		}
 	}
 
-	ap_free_mutex_state(&ms[MUTEX_CONTEXT_CONTROLLER]);
-	ap_free_mutex_state(&ms[MUTEX_CONTEXT_TWO_SIDED]);
-	ap_free_mutex_state(&ms[MUTEX_CONTEXT_SOURCE]);
-	ap_free_mutex_state(&ms[MUTEX_CONTEXT_DESTINATION]);
+	foreach(int *i, MUTEX_CONTEXT_CONTROLLER, MUTEX_CONTEXT_TWO_SIDED,
+			MUTEX_CONTEXT_TWO_SIDED, MUTEX_CONTEXT_DESTINATION)
+		ap_free_mutex_state(&ms[*i]);
 }
 
 /**
- * Sanity checking flow options
+ * Sanity checking flow options.
  */
 static void sanity_check(void)
 {
-	for (int id = 0; id < copt.num_flows; id++) {
+	for (unsigned short id = 0; id < copt.num_flows; id++) {
 		DEBUG_MSG(LOG_DEBUG, "sanity checking parameter set of flow %d", id);
 		if (cflow[id].settings[DESTINATION].duration[WRITE] > 0 &&
 		    cflow[id].late_connect &&
@@ -2876,17 +3085,17 @@ static void sanity_check(void)
 			exit(EXIT_FAILURE);
 		}
 
-		for (unsigned i = 0; i < 2; i++) {
-			if (cflow[id].settings[i].flow_control &&
-			    !cflow[id].settings[i].write_rate_str) {
+		foreach(int *i, SOURCE, DESTINATION) {
+			if (cflow[id].settings[*i].flow_control &&
+			    !cflow[id].settings[*i].write_rate_str) {
 				errx("flow %d has flow control enabled but no "
 				      "rate", id);
 				exit(EXIT_FAILURE);
 			}
 
-			if (cflow[id].settings[i].write_rate &&
-			    cflow[id].settings[i].write_rate /
-				cflow[id].settings[i].maximum_block_size < 1) {
+			if (cflow[id].settings[*i].write_rate &&
+			    (cflow[id].settings[*i].write_rate /
+			     cflow[id].settings[*i].maximum_block_size) < 1) {
 				errx("client block size for flow %u is too big for "
 				      "specified rate", id);
 				exit(EXIT_FAILURE);
@@ -2909,6 +3118,9 @@ int main(int argc, char *argv[])
 	xmlrpc_env_init(&rpc_env);
 	xmlrpc_client_setup_global_const(&rpc_env);
 
+	fg_list_init(&flows_rpc_info);
+	fg_list_init(&unique_daemons);
+
 	set_progname(argv[0]);
 	init_controller_options();
 	init_flow_options();
@@ -2916,6 +3128,10 @@ int main(int argc, char *argv[])
 	sanity_check();
 	open_logfile();
 	prepare_xmlrpc_client(&rpc_client);
+
+	DEBUG_MSG(LOG_WARNING, "check daemons in the flows");
+	if (!sigint_caught)
+		find_daemon(rpc_client);
 
 	DEBUG_MSG(LOG_WARNING, "check flowgrindds versions");
 	if (!sigint_caught)
@@ -2925,20 +3141,27 @@ int main(int argc, char *argv[])
 	if (!sigint_caught)
 		check_idle(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "prepare flows");
+	DEBUG_MSG(LOG_WARNING, "prepare all flows");
 	if (!sigint_caught)
-		prepare_grinding(rpc_client);
+		prepare_all_flows(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "start flows");
+	DEBUG_MSG(LOG_WARNING, "print headline");
 	if (!sigint_caught)
-		grind_flows(rpc_client);
+		print_headline();
 
-	DEBUG_MSG(LOG_WARNING, "close flows");
-	close_flows();
+	DEBUG_MSG(LOG_WARNING, "start all flows");
+	if (!sigint_caught)
+		start_all_flows(rpc_client);
 
-	DEBUG_MSG(LOG_WARNING, "report final");
+	DEBUG_MSG(LOG_WARNING, "close all flows");
+	close_all_flows();
+
+	DEBUG_MSG(LOG_WARNING, "print all final report");
 	fetch_reports(rpc_client);
-	report_final();
+	print_all_final_reports();
+
+	fg_list_clear(&flows_rpc_info);
+	fg_list_clear(&unique_daemons);
 
 	close_logfile();
 

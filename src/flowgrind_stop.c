@@ -33,14 +33,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
 /* for inet_pton */
 #include <arpa/inet.h>
 /* for AF_INET6 */
 #include <sys/socket.h>
 /* for sockaddr_in6 */
 #include <netinet/in.h>
-
 /* xmlrpc-c */
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
@@ -49,19 +47,20 @@
 #include "fg_definitions.h"
 #include "fg_error.h"
 #include "fg_progname.h"
+#include "fg_rpc_client.h"
 #include "fg_argparser.h"
 
-/** Command line option parser */
-static struct arg_parser parser;
-
-/* External global variables */
+/* External global variables. */
 extern const char *progname;
 
-/* Forward declarations */
+/** Command line option parser. */
+static struct arg_parser parser;
+
+/* Forward declarations. */
 static void usage(short status) __attribute__((noreturn));
 
 /**
- * Print flowgrind-stop usage and exit
+ * Print flowgrind-stop usage and exit.
  */
 static void usage(short status)
 {
@@ -71,7 +70,7 @@ static void usage(short status)
 		exit(status);
 	}
 
-	fprintf(stderr,
+	fprintf(stdout,
 		"Usage: %1$s [OPTION]... [ADDRESS]...\n"
 		"Stop all flows on the daemons running at the given addresses.\n\n"
 
@@ -93,7 +92,6 @@ static void stop_flows(const char* address)
 	int port = DEFAULT_LISTEN_PORT;
 	bool is_ipv6 = false;
 	char *arg, *url = 0;
-	int rc;
 	char *rpc_address = arg = strdup(address);
 	struct sockaddr_in6 source_in6;
 	source_in6.sin6_family = AF_INET6;
@@ -107,13 +105,14 @@ static void stop_flows(const char* address)
 	if (port < 1 || port > 65535)
 		errx("invalid port for RPC");
 
+	int rc = 0;
 	if (is_ipv6)
 		rc = asprintf(&url, "http://[%s]:%d/RPC2", rpc_address, port);
 	else
 		rc = asprintf(&url, "http://%s:%d/RPC2", rpc_address, port);
 
-	if (rc==-1)
-		critx("failed to build RPC URL");
+	if (rc == -1)
+		critx("could not allocate memory for RPC URL");
 
 	printf("Stopping all flows on %s\n", url);
 
@@ -168,7 +167,7 @@ int main(int argc, char *argv[])
 			usage(EXIT_SUCCESS);
 			break;
 		case 'v':
-			fprintf(stderr, "%s %s\n%s\n%s\n\n%s\n", progname,
+			fprintf(stdout, "%s %s\n%s\n%s\n\n%s\n", progname,
 				FLOWGRIND_VERSION, FLOWGRIND_COPYRIGHT,
 				FLOWGRIND_COPYING, FLOWGRIND_AUTHORS);
 			exit(EXIT_SUCCESS);
