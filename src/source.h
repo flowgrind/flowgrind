@@ -33,5 +33,6 @@
 #endif /* HAVE_CONFIG_H */
 
 int add_flow_source(struct request_add_flow_source *request);
+int do_connect(struct flow *flow);
 
 #endif /* _SOURCE_H_ */
