@@ -792,8 +792,8 @@ remove:
 		flow->pmtu = get_pmtu(flow->fd);
 		report_flow(flow, FINAL);
 		uninit_flow(flow);
+		DEBUG_MSG(LOG_ERR, "removing flow %d", flow->id);
 		remove_flow(flow);
-		DEBUG_MSG(LOG_ERR, "removed flow %d", flow->id);
 	}
 }
 
