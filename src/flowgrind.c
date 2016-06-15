@@ -794,8 +794,11 @@ static void set_flow_endpoint_daemon(const char* server_uuid, char* server_url)
 /**
 * Checks all daemons in flow option.
 *
-* Daemon UUID is retreived and this information is used
+* Daemon UUID is retrieved and this information is used
 * to determine daemon in the controller flow information.
+*
+* The UUID is used to detect if the same daemon instance is controlling
+* flows via different IP adresses.
 *
 * @param[in,out] rpc_client to connect controller to daemon
 */
