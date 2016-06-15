@@ -160,11 +160,11 @@ void add_flow_destination(struct request_add_flow_destination *request)
 	struct flow *flow;
 	unsigned short server_data_port;
 
-	if (fg_list_size(&flows) >= MAX_FLOWS) {
+	if (fg_list_size(&flows) >= MAX_FLOWS_DAEMON) {
 		logging(LOG_WARNING, "can not accept another flow, already "
-			"handling MAX_FLOW flows");
+			"handling %zu flows", fg_list_size(&flows));
 		request_error(&request->r, "Can not accept another flow, "
-			     "already handling MAX_FLOW flows.");
+			     "already handling %zu flows.", fg_list_size(&flows));
 		return;
 	}
 
@@ -211,9 +211,19 @@ void add_flow_destination(struct request_add_flow_destination *request)
 		uninit_flow(flow);
 		return;
 	} else {
+		/* FIXME: currently we use portable select() API, which
+		 * is limited by the number of bits in an fd_set */
+		if (flow->listenfd_data >= FD_SETSIZE) {
+			logging(LOG_ALERT, "failed to add listen socket: "
+				"fd number too high (fd=%u)", flow->listenfd_data);
+			flow_error(flow, "failed to add listen socket: too many"
+				"file descriptors in use by this daemon");
+			uninit_flow(flow);
+			return;
+		}
 		DEBUG_MSG(LOG_WARNING, "listening on %s port %u for data "
-			  "connection", flow->settings.bind_address,
-			  server_data_port);
+			  "connection (fd=%u)", flow->settings.bind_address,
+			  server_data_port, flow->listenfd_data);
 	}
 
 	flow->real_listen_send_buffer_size =
@@ -253,12 +263,24 @@ int accept_data(struct flow *flow)
 		logging(LOG_ALERT, "accept() failed: %s", strerror(errno));
 		return -1;
 	}
+
+	/* FIXME: currently we use portable select() API, which
+	 * is limited by the number of bits in an fd_set */
+	if (flow->fd >= FD_SETSIZE) {
+		logging(LOG_ALERT, "too many file descriptors are "
+			"already in use by this daemon (FD number=%u)", flow->fd);
+		flow_error(flow, "failed to add test connection: too many"
+			"file descriptors in use by this daemon");
+		close(flow->fd);
+		return -1;
+	}
+
 	if (close(flow->listenfd_data) == -1)
 		logging(LOG_WARNING, "close() failed");
 	flow->listenfd_data = -1;
 
-	logging(LOG_NOTICE, "client %s connected for testing",
-		fg_nameinfo((struct sockaddr *)&caddr, addrlen));
+	logging(LOG_NOTICE, "client %s connected for testing (fd=%u)",
+		fg_nameinfo((struct sockaddr *)&caddr, addrlen), flow->fd);
 
 #ifdef HAVE_LIBPCAP
 	fg_pcap_go(flow);
