@@ -116,7 +116,7 @@ static struct arg_parser parser;
 static struct controller_options copt;
 
 /** Infos about all flows including flow options. */
-static struct cflow cflow[MAX_FLOWS];
+static struct cflow cflow[MAX_FLOWS_CONTROLLER];
 
 /** Command line option parser. */
 static struct arg_parser parser;
@@ -485,7 +485,7 @@ static void init_controller_options(void)
  */
 static void init_flow_options(void)
 {
-	for (int id = 0; id < MAX_FLOWS; id++) {
+	for (int id = 0; id < MAX_FLOWS_CONTROLLER; id++) {
 
 		cflow[id].proto = PROTO_TCP;
 
@@ -2570,7 +2570,7 @@ static void parse_flow_option_endpoint(int code, const char* arg,
 				  flow_id, opt_string);
 		settings->request_trafgen_options.distribution = CONSTANT;
 		settings->request_trafgen_options.param_one = optint;
-		for (int id = 0; id < MAX_FLOWS; id++) {
+		for (int id = 0; id < MAX_FLOWS_CONTROLLER; id++) {
 			foreach(int *i, SOURCE, DESTINATION) {
 				if ((signed)optint >
 				    cflow[id].settings[*i].maximum_block_size)
@@ -2760,9 +2760,9 @@ static void parse_general_option(int code, const char* arg, const char* opt_stri
 		break;
 	case 'n':
 		if (sscanf(arg, "%hd", &copt.num_flows) != 1 ||
-			   copt.num_flows > MAX_FLOWS)
+			   copt.num_flows > MAX_FLOWS_CONTROLLER)
 			PARSE_ERR("option %s (number of flows) must be within "
-				  "[1..%d]", opt_string, MAX_FLOWS);
+				  "[1..%d]", opt_string, MAX_FLOWS_CONTROLLER);
 		break;
 	case 'o':
 		copt.clobber = true;
@@ -2884,7 +2884,7 @@ static void parse_cmdline(int argc, char *argv[])
 {
 	int rc = 0;
 	int cur_num_flows = 0;
-	int current_flow_ids[MAX_FLOWS];
+	int current_flow_ids[MAX_FLOWS_CONTROLLER];
 	int max_flow_specifier = 0;
 	int optint = 0;
 
@@ -2942,9 +2942,9 @@ static void parse_cmdline(int argc, char *argv[])
 		ap_init_mutex_state(&parser, &ms[*i]);
 
 	/* if no option -F is given, configure all flows*/
-	for (int i = 0; i < MAX_FLOWS; i++)
+	for (int i = 0; i < MAX_FLOWS_CONTROLLER; i++)
 		current_flow_ids[i] = i;
-	cur_num_flows = MAX_FLOWS;
+	cur_num_flows = MAX_FLOWS_CONTROLLER;
 
 	/* parse command line */
 	for (int argind = 0; argind < ap_arguments(&parser); argind++) {
@@ -2970,9 +2970,9 @@ static void parse_cmdline(int argc, char *argv[])
 
 				/* all flows */
 				if (optint == -1) {
-					for (int i = 0; i < MAX_FLOWS; i++)
+					for (int i = 0; i < MAX_FLOWS_CONTROLLER; i++)
 						current_flow_ids[i] = i;
-					cur_num_flows = MAX_FLOWS;
+					cur_num_flows = MAX_FLOWS_CONTROLLER;
 					break;
 				}
 

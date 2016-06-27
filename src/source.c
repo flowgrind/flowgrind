@@ -98,8 +98,20 @@ static int name2socket(struct flow *flow, char *server_name, unsigned port, stru
 	do {
 
 		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
 		if (fd < 0)
 			continue;
+		/* FIXME: currently we use portable select() API, which
+		 * is limited by the number of bits in an fd_set */
+		if (fd >= FD_SETSIZE) {
+		        logging(LOG_ALERT, "too many file descriptors are"
+				"already in use by this daemon");
+		        flow_error(flow, "failed to create listen socket: too many"
+		                "file descriptors in use by this daemon");
+		        close(fd);
+		        freeaddrinfo(ressave);
+			return -1;
+		}
 
 		if (send_buffer_size)
 			*send_buffer_size = set_window_size_directed(fd, send_buffer_size_req, SO_SNDBUF);
@@ -169,10 +181,12 @@ int add_flow_source(struct request_add_flow_source *request)
 #endif /* HAVE_SO_TCP_CONGESTION */
 	struct flow *flow;
 
-	if (fg_list_size(&flows) >= MAX_FLOWS) {
+	if (fg_list_size(&flows) >= MAX_FLOWS_DAEMON) {
 		logging(LOG_WARNING, "can not accept another flow, already "
-			"handling MAX_FLOW flows");
-		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
+			"handling %zu flows", fg_list_size(&flows));
+		request_error(&request->r,
+			"Can not accept another flow, already "
+			"handling %zu flows.", fg_list_size(&flows));
 		return -1;
 	}
 
@@ -240,7 +254,7 @@ int add_flow_source(struct request_add_flow_source *request)
 	fg_pcap_go(flow);
 #endif /* HAVE_LIBPCAP */
 	if (!flow->source_settings.late_connect) {
-		DEBUG_MSG(4, "(early) connecting test socket");
+		DEBUG_MSG(4, "(early) connecting test socket (fd=%u)", flow->fd);
 		if (do_connect(flow) == -1) {
 			request->r.error = flow->error;
 			flow->error = NULL;
