@@ -115,7 +115,7 @@ struct flow
 
 	unsigned congestion_counter;
 
-	/* Used for late_connect */
+	/* Used for do_connect for source flows */
 	struct sockaddr *addr;
 	socklen_t addr_len;
 
