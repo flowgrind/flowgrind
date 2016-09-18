@@ -33,7 +33,7 @@ Flowgrind is built using GNU autotools on all supported platforms. You can build
 	# ./configure
 	# make
 
-For more information see INSTALL.
+For more information see [INSTALL.md](INSTALL.md).
 
 
 Instructions to run a test
