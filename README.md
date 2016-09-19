@@ -24,7 +24,7 @@ The traffic generation itself is either bulk transfer, rate-limited, or sophisti
 Building flowgrind
 ==================
 
-Flowgrind builds cleanly on *Linux*, *FreeBSD*, and *Mac OS X*. Other operating systems are currently not planned to be supported. Flowgrind expects `libxmlrpc-c` to be available. Additionally, for the optional advanced traffic generation and automatic dump support `libgsl ` an `libpcap` should be installed.
+Flowgrind builds cleanly on *Linux*, *FreeBSD*, and *Mac OS X*. Other operating systems are currently not planned to be supported. Flowgrind expects `libxmlrpc-c` and OSSP `uuid` to be available. Additionally, for the optional advanced traffic generation and automatic dump support `libgsl ` an `libpcap` should be installed.
 
 Flowgrind is built using GNU autotools on all supported platforms. You can build it using the following commands:
 
