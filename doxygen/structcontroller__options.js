@@ -2,7 +2,7 @@ var structcontroller__options =
 [
     [ "clobber", "structcontroller__options.html#a28fd032db93dfe31bd060e556de059a2", null ],
     [ "dump_prefix", "structcontroller__options.html#a635390ce3ccf8edd9d47788dc6e2281f", null ],
-    [ "force_unit", "structcontroller__options.html#a5ed98f90412a04b3b71d1c062650e315", null ],
+    [ "force_unit", "structcontroller__options.html#ae1a3cc9eb12546a4358180d0052a44bb", null ],
     [ "log_to_file", "structcontroller__options.html#af5854eac658551c1fe1dd0b0ce23f63e", null ],
     [ "log_to_stdout", "structcontroller__options.html#a0889169ef0fe89eb7acc85ccaf9c7c9e", null ],
     [ "mbyte", "structcontroller__options.html#a6e253a740b47ca2248055146e53985b7", null ],

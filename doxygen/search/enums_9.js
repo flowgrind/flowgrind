@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['opt_5ftypes',['opt_types',['../flowgrind_8h.html#accacadfbbe7139089a7d26353f8756ad',1,'flowgrind.h']]]
+  ['option_5ft',['option_t',['../flowgrind_8h.html#a98a3d6a4016c9dad9cbd1a99a9c2a45a',1,'flowgrind.h']]],
+  ['os_5ft',['os_t',['../flowgrind_8h.html#a5e4e047b658aa4bcefbf2a4636874e5f',1,'flowgrind.h']]]
 ];

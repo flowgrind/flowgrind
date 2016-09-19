@@ -7,7 +7,7 @@ var searchData=
   ['tcp_5finfo',['tcp_info',['../structreport.html#a528c4587a08a4a415c7089932facd980',1,'report::tcp_info()'],['../structflow_1_1statistics.html#a7522f70d387cfd231efd047d7310d721',1,'flow::statistics::tcp_info()']]],
   ['tcp_5flcd',['TCP_LCD',['../fg__socket_8c.html#a8089c3c03f615da7ec262ba2e967f339',1,'fg_socket.c']]],
   ['tcp_5fmtcp',['TCP_MTCP',['../fg__socket_8c.html#a33cc2d41e9ec8bb423cf5e6eef8d2693',1,'fg_socket.c']]],
-  ['tcp_5fstack',['tcp_stack',['../flowgrind_8h.html#a815b8430f22a24a11d25db029a90baf7',1,'flowgrind.h']]],
+  ['tcp_5fstack_5ft',['tcp_stack_t',['../flowgrind_8h.html#abde148c17fa522618d465b68aeb11d6d',1,'flowgrind.h']]],
   ['tcpi_5fbackoff',['tcpi_backoff',['../structfg__tcp__info.html#a98adc6ad4917f8381344429d7fa6fa36',1,'fg_tcp_info']]],
   ['tcpi_5fca_5fstate',['tcpi_ca_state',['../structfg__tcp__info.html#a6afcefb10dd2f6ae579dfc10005ec7f1',1,'fg_tcp_info']]],
   ['tcpi_5ffackets',['tcpi_fackets',['../structfg__tcp__info.html#a6288c818b8fba26b1fea81de431b631f',1,'fg_tcp_info']]],
@@ -23,6 +23,7 @@ var searchData=
   ['tcpi_5fsnd_5fmss',['tcpi_snd_mss',['../structfg__tcp__info.html#aafc809e68bf6db2f46a4b329f2a45da8',1,'fg_tcp_info']]],
   ['tcpi_5fsnd_5fssthresh',['tcpi_snd_ssthresh',['../structfg__tcp__info.html#a2b22b6f56952b94931068174c6d90daa',1,'fg_tcp_info']]],
   ['tcpi_5funacked',['tcpi_unacked',['../structfg__tcp__info.html#a52f75bc5cd437d60782f84d456de7931',1,'fg_tcp_info']]],
+  ['tear_5fdown_5fdaemon',['tear_down_daemon',['../flowgrindd_8c.html#a4ff20ad168ece38339d151cf2c6269e1',1,'flowgrindd.c']]],
   ['test_5faddress',['test_address',['../structflow__endpoint.html#ad4b55dc49ec79a6a3df3e97e86c81883',1,'flow_endpoint']]],
   ['this_5fblock_5fsize',['this_block_size',['../structblock.html#a11f16380684254fdf0861b0dc1f0ae32',1,'block']]],
   ['time_5fadd',['time_add',['../fg__time_8c.html#a5017d8e7d42049ef923057b5a02404be',1,'time_add(struct timespec *tp, double seconds):&#160;fg_time.c'],['../fg__time_8h.html#a5017d8e7d42049ef923057b5a02404be',1,'time_add(struct timespec *tp, double seconds):&#160;fg_time.c']]],
@@ -31,7 +32,6 @@ var searchData=
   ['time_5fis_5fafter',['time_is_after',['../fg__time_8c.html#a801431f54cf89b9f658e3e29b2bba0fe',1,'time_is_after(const struct timespec *tp1, const struct timespec *tp2):&#160;fg_time.c'],['../fg__time_8h.html#a801431f54cf89b9f658e3e29b2bba0fe',1,'time_is_after(const struct timespec *tp1, const struct timespec *tp2):&#160;fg_time.c']]],
   ['time_5fwith_5fsys_5ftime',['TIME_WITH_SYS_TIME',['../config_8h.html#a2b44ef64cf38e064ef11e11f35271380',1,'config.h']]],
   ['timer_5fcheck',['timer_check',['../daemon_8c.html#af8bb1c94838c1b1156135080f0438faa',1,'daemon.c']]],
-  ['timestr',['timestr',['../log_8c.html#a6a7850c68c475636977a271001d00fa8',1,'log.c']]],
   ['todo_20list',['Todo List',['../todo.html',1,'']]],
   ['toggle_5ftcp_5fcork',['toggle_tcp_cork',['../fg__socket_8c.html#a2534f3f0b9b8526b2e30d9941f7e2dcf',1,'toggle_tcp_cork(int fd):&#160;fg_socket.c'],['../fg__socket_8h.html#a2534f3f0b9b8526b2e30d9941f7e2dcf',1,'toggle_tcp_cork(int fd):&#160;fg_socket.c']]],
   ['traffic_5fdump',['traffic_dump',['../structflow__settings.html#a3aee86084eac437051355cce738de2ef',1,'flow_settings']]],
@@ -40,5 +40,5 @@ var searchData=
   ['trafgen_5foptions',['trafgen_options',['../structtrafgen__options.html',1,'']]],
   ['tripcount',['tripCount',['../structpthread__barrier__t.html#a049c89476bb843c9bb4ae9fd162c8adb',1,'pthread_barrier_t']]],
   ['try_5fread_5fn_5fbytes',['try_read_n_bytes',['../daemon_8c.html#afea7e1b0e3888d8d15f970c32e1ff290',1,'daemon.c']]],
-  ['type',['type',['../structreport.html#a074020436cc4e002737faa81d4d8758d',1,'report::type()'],['../structrequest.html#a76afbbb7cbf4b0627459b37b75062b40',1,'request::type()'],['../structcolumn.html#aa85dfe52710bc8fd30479cf8e25b112a',1,'column::type()']]]
+  ['type',['type',['../structreport.html#ad501f3629fd9df5887dde4de44d02f45',1,'report::type()'],['../structrequest.html#a76afbbb7cbf4b0627459b37b75062b40',1,'request::type()'],['../structcolumn.html#aa85dfe52710bc8fd30479cf8e25b112a',1,'column::type()']]]
 ];

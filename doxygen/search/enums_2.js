@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['distributions',['distributions',['../common_8h.html#afe99a27e9d388ccb382ae15afca86804',1,'common.h']]]
+  ['distribution_5ft',['distribution_t',['../common_8h.html#afbb9a0c5990d157c2bfcdafffeeeb2e2',1,'common.h']]]
 ];

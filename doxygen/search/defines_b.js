@@ -1,14 +1,7 @@
 var searchData=
 [
-  ['package',['PACKAGE',['../config_8h.html#aca8570fb706c81df371b7f9bc454ae03',1,'config.h']]],
-  ['package_5fbugreport',['PACKAGE_BUGREPORT',['../config_8h.html#a1d1d2d7f8d2f95b376954d649ab03233',1,'config.h']]],
-  ['package_5fname',['PACKAGE_NAME',['../config_8h.html#a1c0439e4355794c09b64274849eb0279',1,'config.h']]],
-  ['package_5fstring',['PACKAGE_STRING',['../config_8h.html#ac73e6f903c16eca7710f92e36e1c6fbf',1,'config.h']]],
-  ['package_5ftarname',['PACKAGE_TARNAME',['../config_8h.html#af415af6bfede0e8d5453708afe68651c',1,'config.h']]],
-  ['package_5furl',['PACKAGE_URL',['../config_8h.html#a5c93853116d5a50307b6744f147840aa',1,'config.h']]],
-  ['package_5fversion',['PACKAGE_VERSION',['../config_8h.html#aa326a05d5e30f9e9a4bb0b4469d5d0c0',1,'config.h']]],
-  ['parse_5ferr',['PARSE_ERR',['../flowgrind_8c.html#a0ca0bc108655f88c8efb9b6b42c5c458',1,'PARSE_ERR():&#160;flowgrind.c'],['../flowgrindd_8c.html#a0ca0bc108655f88c8efb9b6b42c5c458',1,'PARSE_ERR():&#160;flowgrindd.c']]],
-  ['pcap_5ffilter',['PCAP_FILTER',['../fg__pcap_8c.html#a52e61302bf02a4a36d483908f3904f91',1,'fg_pcap.c']]],
-  ['pcap_5fpromisc',['PCAP_PROMISC',['../fg__pcap_8c.html#a5b9828e880b6f57c9c1a399923ec7102',1,'fg_pcap.c']]],
-  ['pcap_5fsnaplen',['PCAP_SNAPLEN',['../fg__pcap_8c.html#aed6005eb1c40eef377731c5488c11c43',1,'fg_pcap.c']]]
+  ['nargs',['NARGS',['../fg__definitions_8h.html#a2926846e60d0e98cb1c50defbbd6b48c',1,'fg_definitions.h']]],
+  ['ndebug',['NDEBUG',['../config_8h.html#a8de3ed741dadc9c979a4ff17c0a9116e',1,'config.h']]],
+  ['nroutes',['NROUTES',['../fg__socket_8c.html#a0c5ca3909cb0e413b5b3718d8b7c914c',1,'fg_socket.c']]],
+  ['nsec_5fper_5fsec',['NSEC_PER_SEC',['../fg__time_8h.html#a0501e82515b2bdf36453c4cc80f5e0cc',1,'fg_time.h']]]
 ];

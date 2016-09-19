@@ -23,6 +23,5 @@ var fg__argparser_8h =
     [ "ap_option", "fg__argparser_8h.html#a1a7ea7791c275af0bed797848089e88c", null ],
     [ "ap_reset_mutex", "fg__argparser_8h.html#a4615e62ea1e98ac1922c20c2076be8df", null ],
     [ "ap_set_check_mutex", "fg__argparser_8h.html#ac899df91705d7e1091b2da92bdfc63d5", null ],
-    [ "ap_set_mutex", "fg__argparser_8h.html#ac6000e3a09545e916e2c9a16c312e415", null ],
-    [ "parse_rpc_address", "fg__argparser_8h.html#a123ab1426a1aa4d600b9b01ef55106de", null ]
+    [ "ap_set_mutex", "fg__argparser_8h.html#ac6000e3a09545e916e2c9a16c312e415", null ]
 ];

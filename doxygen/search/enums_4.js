@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['flow_5fendpoint_5ftype',['flow_endpoint_type',['../common_8h.html#a8ce1128c4f31eb3b18469da81c255fdf',1,'common.h']]],
-  ['flow_5fstate',['flow_state',['../daemon_8h.html#a455f2e47bd02e9f0642a549971281ac3',1,'daemon.h']]]
+  ['flow_5fstate_5ft',['flow_state_t',['../daemon_8h.html#ab8dcbe03f47dda503913a20c52bf4de7',1,'daemon.h']]]
 ];

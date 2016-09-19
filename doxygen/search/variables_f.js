@@ -20,8 +20,7 @@ var searchData=
   ['tcpi_5funacked',['tcpi_unacked',['../structfg__tcp__info.html#a52f75bc5cd437d60782f84d456de7931',1,'fg_tcp_info']]],
   ['test_5faddress',['test_address',['../structflow__endpoint.html#ad4b55dc49ec79a6a3df3e97e86c81883',1,'flow_endpoint']]],
   ['this_5fblock_5fsize',['this_block_size',['../structblock.html#a11f16380684254fdf0861b0dc1f0ae32',1,'block']]],
-  ['timestr',['timestr',['../log_8c.html#a6a7850c68c475636977a271001d00fa8',1,'log.c']]],
   ['traffic_5fdump',['traffic_dump',['../structflow__settings.html#a3aee86084eac437051355cce738de2ef',1,'flow_settings']]],
   ['tripcount',['tripCount',['../structpthread__barrier__t.html#a049c89476bb843c9bb4ae9fd162c8adb',1,'pthread_barrier_t']]],
-  ['type',['type',['../structreport.html#a074020436cc4e002737faa81d4d8758d',1,'report::type()'],['../structrequest.html#a76afbbb7cbf4b0627459b37b75062b40',1,'request::type()'],['../structcolumn.html#aa85dfe52710bc8fd30479cf8e25b112a',1,'column::type()']]]
+  ['type',['type',['../structreport.html#ad501f3629fd9df5887dde4de44d02f45',1,'report::type()'],['../structrequest.html#a76afbbb7cbf4b0627459b37b75062b40',1,'request::type()'],['../structcolumn.html#aa85dfe52710bc8fd30479cf8e25b112a',1,'column::type()']]]
 ];

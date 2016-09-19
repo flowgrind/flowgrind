@@ -22,7 +22,6 @@ var fg__argparser_8c =
     [ "get_mutex_count", "fg__argparser_8c.html#a3681b09e0c787f6a120cfad107b3d331", null ],
     [ "get_num_options", "fg__argparser_8c.html#a5c4a71b20e2beb2cd5f1ea7af85607a0", null ],
     [ "parse_long_option", "fg__argparser_8c.html#af1cb3b09a7e811950ddf71ec72e5affd", null ],
-    [ "parse_rpc_address", "fg__argparser_8c.html#a123ab1426a1aa4d600b9b01ef55106de", null ],
     [ "parse_short_option", "fg__argparser_8c.html#a03a0bc54d6e3fb94c7f5fc6dd7bf117f", null ],
     [ "push_back_record", "fg__argparser_8c.html#a16e296dfddbc3ece5b7c4591ad776991", null ]
 ];
