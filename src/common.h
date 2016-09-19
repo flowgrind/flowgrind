@@ -54,8 +54,15 @@
 /** Daemon's default listen port. */
 #define DEFAULT_LISTEN_PORT 5999
 
-/** Maximal number of parallel flows. */
-#define MAX_FLOWS 2048
+/** Maximal number of parallel flows supported by one controller. */
+#define MAX_FLOWS_CONTROLLER 2048
+
+/** Maximal number of parallel flows supported by one daemon instance.
+  * This is currenty limited by the file descriptor number which can
+  * be added to an fd_set. As we currently may need up to two FDs per
+  * destination, we limit this to half of FD_SETSIZE.
+  */
+#define MAX_FLOWS_DAEMON FD_SETSIZE >> 1
 
 /** Max number of arbitrary extra socket options which may sent to the deamon. */
 #define MAX_EXTRA_SOCKET_OPTIONS 10

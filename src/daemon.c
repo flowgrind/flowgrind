@@ -244,13 +244,9 @@ static int prepare_rfds(struct timespec *now, struct flow *flow, fd_set *rfds)
 		DEBUG_MSG(LOG_ERR, "late connecting test socket for flow %d "
 			  "after %.3fs delay",
 			  flow->id, flow->settings.delay[WRITE]);
-		rc = connect(flow->fd, flow->addr, flow->addr_len);
-		if (rc == -1 && errno != EINPROGRESS) {
-			flow_error(flow, "Connect failed: %s", strerror(errno));
+		if (do_connect(flow) == -1) {
 			return -1;
 		}
-		flow->connect_called = 1;
-		flow->pmtu = get_pmtu(flow->fd);
 	}
 
 	/* Altough the server flow might be finished we keep the socket in
@@ -792,8 +788,8 @@ remove:
 		flow->pmtu = get_pmtu(flow->fd);
 		report_flow(flow, FINAL);
 		uninit_flow(flow);
+		DEBUG_MSG(LOG_ERR, "removing flow %d", flow->id);
 		remove_flow(flow);
-		DEBUG_MSG(LOG_ERR, "removed flow %d", flow->id);
 	}
 }
 

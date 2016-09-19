@@ -33,7 +33,7 @@ Flowgrind is built using GNU autotools on all supported platforms. You can build
 	# ./configure
 	# make
 
-For more information see INSTALL.
+For more information see [INSTALL.md](INSTALL.md).
 
 
 Instructions to run a test
@@ -53,3 +53,10 @@ Assume two machines running `flowgrindd`, each having two network adapters, one 
 	# flowgrind -H s=192.168.0.1/10.0.0.1,d=192.168.0.2/10.0.0.2
 
 In words: test from 192.168.0.1 to 192.168.0.2 on the nodes identified by 10.0.0.1 and 10.0.0.2 respectively.
+
+
+See also
+========
+There are other popular TCP measurement tools you might look into, especially if you are mainly interested in fast unidirectional bulk transfer performance.
+ * [Iperf3](https://github.com/esnet/iperf) - fresh reimplementation of the original iperf
+ * [Netperf](http://www.netperf.org/netperf/) - network performance benchmark, also supports unix domain sockets

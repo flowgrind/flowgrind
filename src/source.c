@@ -74,14 +74,12 @@ void init_flow(struct flow* flow, int is_source);
 void uninit_flow(struct flow *flow);
 
 static int name2socket(struct flow *flow, char *server_name, unsigned port, struct sockaddr **saptr,
-		socklen_t *lenp, char do_connect,
+		socklen_t *lenp,
 		const int read_buffer_size_req, int *read_buffer_size,
 		const int send_buffer_size_req, int *send_buffer_size)
 {
 	int fd, n;
 	struct addrinfo hints, *res, *ressave;
-	struct sockaddr_in *tempv4;
-	struct sockaddr_in6 *tempv6;
 	char service[7];
 
 	bzero(&hints, sizeof(struct addrinfo));
@@ -98,40 +96,34 @@ static int name2socket(struct flow *flow, char *server_name, unsigned port, stru
 	ressave = res;
 
 	do {
-		int rc;
 
 		fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
 		if (fd < 0)
 			continue;
+		/* FIXME: currently we use portable select() API, which
+		 * is limited by the number of bits in an fd_set */
+		if (fd >= FD_SETSIZE) {
+		        logging(LOG_ALERT, "too many file descriptors are"
+				"already in use by this daemon");
+		        flow_error(flow, "failed to create listen socket: too many"
+		                "file descriptors in use by this daemon");
+		        close(fd);
+		        freeaddrinfo(ressave);
+			return -1;
+		}
 
 		if (send_buffer_size)
 			*send_buffer_size = set_window_size_directed(fd, send_buffer_size_req, SO_SNDBUF);
 		if (read_buffer_size)
-		*read_buffer_size = set_window_size_directed(fd, read_buffer_size_req, SO_RCVBUF);
+			*read_buffer_size = set_window_size_directed(fd, read_buffer_size_req, SO_RCVBUF);
 
-		if (!do_connect)
-			break;
+		break;
 
-		rc = connect(fd, res->ai_addr, res->ai_addrlen);
-		if (rc == 0) {
-			if (res->ai_family == PF_INET) {
-				tempv4 = (struct sockaddr_in *) res->ai_addr;
-				strncpy(server_name, inet_ntoa(tempv4->sin_addr), 256);
-				server_name[255] = 0;
-			}
-			else if (res->ai_family == PF_INET6){
-				tempv6 = (struct sockaddr_in6 *) res->ai_addr;
-				inet_ntop(AF_INET6, &tempv6->sin6_addr, server_name, 256);
-			}
-			break;
-		}
-
-		warn("failed to connect to '%s:%d' ", server_name, port);
-		close(fd);
 	} while ((res = res->ai_next) != NULL);
 
 	if (res == NULL) {
-		flow_error(flow, "Could not establish connection to "
+		flow_error(flow, "Could not create socket for "
 				"\"%s:%d\": %s", server_name, port, strerror(errno));
 		freeaddrinfo(ressave);
 		return -1;
@@ -151,6 +143,29 @@ static int name2socket(struct flow *flow, char *server_name, unsigned port, stru
 }
 
 /**
+ * Establishes a connection of a flow.
+ *
+ * Establishes a connection to the destination daemon listening port, and
+ * marks the flow as connected.
+ *
+ * @param[in,out] flow Flow to connect.
+ */
+int do_connect(struct flow *flow) {
+	int rc;
+
+	rc = connect(flow->fd, flow->addr, flow->addr_len);
+	if (rc == -1 && errno != EINPROGRESS) {
+		flow_error(flow, "connect() failed: %s",
+				strerror(errno));
+		err("failed to connect flow %u", flow->id);
+		return rc;
+	}
+	flow->connect_called = 1;
+	flow->pmtu = get_pmtu(flow->fd);
+	return 0;
+}
+
+/**
  * To set daemon flow as source endpoint
  *
  * To set the flow options and settings as source endpoint. Depending upon the 
@@ -166,10 +181,12 @@ int add_flow_source(struct request_add_flow_source *request)
 #endif /* HAVE_SO_TCP_CONGESTION */
 	struct flow *flow;
 
-	if (fg_list_size(&flows) >= MAX_FLOWS) {
+	if (fg_list_size(&flows) >= MAX_FLOWS_DAEMON) {
 		logging(LOG_WARNING, "can not accept another flow, already "
-			"handling MAX_FLOW flows");
-		request_error(&request->r, "Can not accept another flow, already handling MAX_FLOW flows.");
+			"handling %zu flows", fg_list_size(&flows));
+		request_error(&request->r,
+			"Can not accept another flow, already "
+			"handling %zu flows.", fg_list_size(&flows));
 		return -1;
 	}
 
@@ -204,7 +221,7 @@ int add_flow_source(struct request_add_flow_source *request)
 	flow->state = GRIND_WAIT_CONNECT;
 	flow->fd = name2socket(flow, flow->source_settings.destination_host,
 			flow->source_settings.destination_port,
-			&flow->addr, &flow->addr_len, 0,
+			&flow->addr, &flow->addr_len,
 			flow->settings.requested_read_buffer_size, &request->real_read_buffer_size,
 			flow->settings.requested_send_buffer_size, &request->real_send_buffer_size);
 	if (flow->fd == -1) {
@@ -237,10 +254,13 @@ int add_flow_source(struct request_add_flow_source *request)
 	fg_pcap_go(flow);
 #endif /* HAVE_LIBPCAP */
 	if (!flow->source_settings.late_connect) {
-		DEBUG_MSG(4, "(early) connecting test socket");
-		connect(flow->fd, flow->addr, flow->addr_len);
-		flow->connect_called = 1;
-		flow->pmtu = get_pmtu(flow->fd);
+		DEBUG_MSG(4, "(early) connecting test socket (fd=%u)", flow->fd);
+		if (do_connect(flow) == -1) {
+			request->r.error = flow->error;
+			flow->error = NULL;
+			uninit_flow(flow);
+			return -1;
+		}
 	}
 
 	request->flow_id = flow->id;

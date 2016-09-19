@@ -150,7 +150,7 @@ int gettime(struct timespec *tp)
 	if (!res.tv_sec && !res.tv_nsec) {
 		clock_getres(CLOCK_REALTIME, &res);
 		/* Clock resolution is lower than expected (1ns) */
-		assert(res.tv_nsec > 1);
+		assert(res.tv_nsec == 1);
 	}
 
 	/* Get wall-clock time */
