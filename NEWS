@@ -1,3 +1,15 @@
+Release 0.8.0 (2016-09-19)
+- Happy Birthday Anna!
+- Now uses UUID to uniquely identify daemons with same address (unfortunately that makes flowgrind incompatible with earlier releases)
+- Includes a lot of bugfixes, to name a few:
+- Closes github issue #211 (No cwnd column in output)
+- Closes github issue #208 (buffer overlow in daemon with 2048 flows)
+- Closes github issue #177 (segfault in argparser)
+- Closes github issue #198 (DEBUG_MSG is not thread-safe)
+- Closes github issue #182 (Time to string conversion seriously broken)
+- Closes github issue #190 (-U option expects flow endpoint as argument)
+- Closes github issue #187 (Traffic Generation: contradicting examples)
+
 Release 0.7.5 (2014-10-23)
 - (Re-)added Mac OS X support (Closes issue #96, #95, #43)
 - Includes a lot of bugfixes, to name a few:
