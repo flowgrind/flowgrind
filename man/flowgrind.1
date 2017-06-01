@@ -1,4 +1,4 @@
-.TH "flowgrind" "1" "March 2014" "" "Flowgrind Manual"
+.TH "flowgrind" "1" "June 2017" "" "Flowgrind Manual"
 
 .SH "NAME"
 flowgrind \- advanced TCP traffic generator for Linux, FreeBSD, and Mac OS X
@@ -127,10 +127,10 @@ DSCP value for type\-of\-service (TOS) IP header byte
 enumerate bytes in payload instead of sending zeros
 .TP
 \fB\-F\fR \fI#\fR[,\fI#\fR]...
-flow options following this option apply only to the given flow IDs. Useful in
+Flow options following this option apply only to the given flow IDs. Useful in
 combination with \fB\-n\fR to set specific options for certain flows. Numbering
 starts with 0, so \fB\-F\fR 1 refers to the second flow. With -1 all flow can
-be refered
+be referred
 .TP
 \fB\-G\fR \fIx\fR=(\fIq\fR|\fIp\fR|\fIg\fR):(\fIC\fR|\fIU\fR|\fIE\fR|\fIN\fR|\fIL\fR|\fIP\fR|\fIW\fR):\fI#1\fR:[\fI#2\fR]
 activate stochastic traffic generation and set parameters according to the used
@@ -138,7 +138,7 @@ distribution. For additional information see section 'Traffic Generation Option'
 .TP
 \fB\-H\fR \fIx\fR=\fIHOST\fR[/\fICONTROL\fR[:\fIPORT\fR]]
 test from/to HOST. Optional argument is the address and port for the CONTROL
-connection to the same host.  An endpoint that isn't specified is assumed to be
+connection to the same host. An endpoint that isn't specified is assumed to be
 localhost
 .TP
 \fB\-J \fI#\fR
@@ -348,7 +348,7 @@ This scenario is based on the work in http://www.3gpp2.org/Public_html/specs/C.R
 .TP
 .B flowgrind \-M s \-G s=q:C:350 \-G s=p:L:9055:115.17 \-U 100000
 .br
-.\-r 42: use random seed 42 to make measurements reproduceable
+.\-r 42: use random seed 42 to make measurements reproducible
 .br
 \-M s: dump traffic on sender side
 .br
@@ -361,7 +361,7 @@ use lognormal distribution with mean 9055 and variance 115 for response size
 \-U 100000:
 Truncate response at 100 kbytes
 .PP
-For this scenario we recommened to focus on RTT (lower values are better) and
+For this scenario we recommend to focus on RTT (lower values are better) and
 Network Transactions/s as metric (higher values are better).
 
 .SS Interactive Session (Telnet)
@@ -383,7 +383,7 @@ This scenario emulates a video stream transfer with a bitrate of 800 kbit/s.
 .TP
 .B flowgrind \-G s=q:C:800 \-G s=g:N:0.008:0.001
 Use normal distributed interpacket gap with mean 0.008 and a small variance
-(0.001). In conjuction with request size 800 bytes a average bitrate of approx
+(0.001). In conjunction with a request size of 800 bytes an average bitrate of approx
 800 kbit/s is achieved. The variance is added to emulate a variable bitrate
 like it's used in todays video codecs.
 .PP
@@ -445,7 +445,7 @@ size of TCP congestion window (CWND) in number of segments (Linux) or bytes
 size of the slow-start threshold in number of segments (Linux) or bytes (FreeBSD)
 .TP
 .BR uack " (tcpi_unacked)"
-number of currently unacknowledged segments, i.e., number of segemnts in flight
+number of currently unacknowledged segments, i.e., number of segments in flight
 (FlightSize) (Linux only)
 .TP
 .BR sack " (tcpi_sacked)"
@@ -458,7 +458,7 @@ number of segments assumed lost (Linux only)
 number of unacknowledged retransmitted segments (Linux only)
 .TP
 .BR tret " (tcpi_retransmits)"
-number of retransmissions triggert by a retransmission timeout (RTO) (Linux only)
+number of retransmissions triggered by a retransmission timeout (RTO) (Linux only)
 .TP
 .BR fack " (tcpi_fackets)"
 number of segments between SND.UNA and the highest selectively acknowledged
@@ -466,7 +466,7 @@ sequence number (SND.FACK) (Linux only)
 .TP
 .BR reor " (tcpi_reordering)"
 segment reordering metric. The Linux kernel can detect and cope with reordering
-without sigificat loss of performance if the distance a segment gets displaced
+without significant loss of performance if the distance a segment gets displaced
 does not exceed the reordering metric (Linux only)
 .TP
 \fBrtt\fR (tcpi_rtt) and \fBrttvar\fR (tcpi_rttvar)
@@ -542,7 +542,7 @@ Flow has zero duration in that direction, no data is going to be exchanged
 Flowgrind was original started by Daniel Schaffrath. The distributed
 measurement architecture and advanced traffic generation were later on added by
 Tim Kosse and Christian Samsel. Currently, flowgrind is developed and
-maintained Arnd Hannemann and Alexander Zimmermann.
+maintained by Arnd Hannemann and Alexander Zimmermann.
 
 .SH "BUGS"
 .PP
