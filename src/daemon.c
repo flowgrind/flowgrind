@@ -1271,7 +1271,7 @@ static void process_delay(struct flow* flow)
 	current_delay = time_diff(data, &now);
 
 	if (current_delay < 0) {
-		logging(LOG_CRIT, "calculated malformed delay of flow "
+		logging(LOG_NOTICE, "calculated malformed delay of flow "
 			"%d (rtt = %.3lfms) (clocks out-of-sync?), ignoring",
 			flow->id, current_delay * 1e3);
 		current_delay = NAN;
