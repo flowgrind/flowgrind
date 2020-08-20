@@ -86,6 +86,10 @@
 
 int daemon_pipe[2];
 
+pthread_t daemon_thread;
+char *dump_prefix;
+char *dump_dir;
+
 pthread_mutex_t mutex;
 struct request *requests = 0, *requests_last = 0;
 
