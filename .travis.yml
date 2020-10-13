@@ -1,12 +1,15 @@
 # Travis-CI build for flowgrind. See https://travis-ci.org for details.
 # Flowgrind also uses Coverity Scan. See https://scan.coverity.com/ for details.
-
 language:
     - c
 
 os:
     - linux
     - osx
+
+arch:
+    - amd64
+    - ppc64le
 
 compiler:
     - gcc
@@ -34,6 +37,8 @@ matrix:
         # Only check clang on OS X
         - os: osx
           compiler: gcc
+        - os: osx
+          arch: ppc64le
 
     include:
         # Covertiy scan should only run once
