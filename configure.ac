@@ -19,8 +19,8 @@
 
 # Initialization & setup
 AC_INIT([Flowgrind], [0.8.0], [https://github.com/flowgrind/flowgrind/issues],
-	[flowgrind], [http://www.flowgrind.net])
-AC_COPYRIGHT([Copyright (C) 2007 - 2016 Flowgrind authors])
+	[flowgrind], [https://flowgrind.github.io])
+AC_COPYRIGHT([Copyright (C) 2007 - 2021 Flowgrind authors])
 
 AC_PREREQ([2.61])
 AC_CONFIG_AUX_DIR([build-aux])
