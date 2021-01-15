@@ -1,10 +1,10 @@
 Source: flowgrind
 Section: net
 Priority: extra
-Maintainer: Christian Samsel <christian.samsel@rwth-aachen.de>
+Maintainer: Arnd Hannemann <arnd@arndnet.de>
 Build-Depends: debhelper (>= 7), autotools-dev, libxmlrpc-c3-dev | libxmlrpc-core-c3-dev, libcurl4-gnutls-dev | libcurl4-openssl-dev, libgsl0-dev, libpcap-dev, uuid-dev
 Standards-Version: 3.9.6
-Homepage: http://www.flowgrind.net
+Homepage: https://flowgrind.github.io
 Vcs-Git: https://github.com/flowgrind/flowgrind.git
 Vcs-Browser: https://github.com/flowgrind/flowgrind
 

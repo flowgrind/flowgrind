@@ -7,7 +7,7 @@ EAPI="2"
 inherit eutils
 
 DESCRIPTION="network performance measurement tool"
-HOMEPAGE="http://www.flowgrind.net"
+HOMEPAGE="https://flowgrind.github.io"
 if [[ ${PV} == "9999" ]] ; then
 	inherit git-r3 autotools
 	EGIT_REPO_URI="git://github.com/${PN}/${PN}.git 

@@ -6,9 +6,9 @@ Flowgrind - TCP traffic generator
 
 Flowgrind is an advanced TCP traffic generator for testing and benchmarking **Linux**, **FreeBSD**, and **Mac OS X** TCP/IP stacks. In contrast to similar tools like iperf or netperf it features a distributed architecture, where throughput and other metrics are measured between arbitrary flowgrind server processes.
 
-* Website: [www.flowgrind.net](http://www.flowgrind.net)
+* Website: [flowgrind.github.io](https://flowgrind.github.io)
 * Issues: [GitHub Issues](https://github.com/flowgrind/flowgrind/issues)
-* API documentation: [Doxygen](http://www.flowgrind.net/doxygen/index.html)
+* API documentation: [Doxygen](https://flowgrind.github.io/doxygen/index.html)
 
 
 What It Can Do?

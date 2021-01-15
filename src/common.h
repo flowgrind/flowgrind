@@ -79,7 +79,7 @@
 #define MIN_BLOCK_SIZE (signed) sizeof (struct block)
 
 /** Flowgrind's copyright year. */
-#define FLOWGRIND_COPYRIGHT "Copyright (C) 2007 - 2016 Flowgrind authors."
+#define FLOWGRIND_COPYRIGHT "Copyright (C) 2007 - 2021 Flowgrind authors."
 
 /** Standard GPL3 no warranty message. */
 #define FLOWGRIND_COPYING								    \
