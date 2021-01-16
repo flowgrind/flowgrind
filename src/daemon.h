@@ -252,7 +252,7 @@ struct request_get_status
 	int num_flows;
 };
 
-pthread_t daemon_thread;
+extern pthread_t daemon_thread;
 
 /* Through this pipe we wakeup the thread from select */
 extern int daemon_pipe[2];
@@ -268,9 +268,8 @@ extern unsigned pending_reports;
  * large a reply can get */
 struct report* get_reports(int *has_more);
 
-/* FIXME: shouldn't be global? */
-char *dump_prefix;
-char *dump_dir;
+extern char *dump_prefix;
+extern char *dump_dir;
 
 void *daemon_main(void* ptr);
 void add_report(struct report* report);

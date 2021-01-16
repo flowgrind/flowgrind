@@ -6,9 +6,9 @@ Flowgrind - TCP traffic generator
 
 Flowgrind is an advanced TCP traffic generator for testing and benchmarking **Linux**, **FreeBSD**, and **Mac OS X** TCP/IP stacks. In contrast to similar tools like iperf or netperf it features a distributed architecture, where throughput and other metrics are measured between arbitrary flowgrind server processes.
 
-* Website: [www.flowgrind.net](http://www.flowgrind.net)
+* Website: [flowgrind.github.io](https://flowgrind.github.io)
 * Issues: [GitHub Issues](https://github.com/flowgrind/flowgrind/issues)
-* API documentation: [Doxygen](http://www.flowgrind.net/doxygen/index.html)
+* API documentation: [Doxygen](https://flowgrind.github.io/doxygen/index.html)
 
 
 What It Can Do?
@@ -24,7 +24,7 @@ The traffic generation itself is either bulk transfer, rate-limited, or sophisti
 Building flowgrind
 ==================
 
-Flowgrind builds cleanly on *Linux*, *FreeBSD*, and *Mac OS X*. Other operating systems are currently not planned to be supported. Flowgrind expects `libxmlrpc-c` to be available. Additionally, for the optional advanced traffic generation and automatic dump support `libgsl ` an `libpcap` should be installed.
+Flowgrind builds cleanly on *Linux*, *FreeBSD*, and *Mac OS X*. Other operating systems are currently not planned to be supported. Flowgrind expects `libxmlrpc-c` and OSSP `uuid` to be available. Additionally, for the optional advanced traffic generation and automatic dump support `libgsl ` an `libpcap` should be installed.
 
 Flowgrind is built using GNU autotools on all supported platforms. You can build it using the following commands:
 

@@ -86,6 +86,10 @@
 
 int daemon_pipe[2];
 
+pthread_t daemon_thread;
+char *dump_prefix;
+char *dump_dir;
+
 pthread_mutex_t mutex;
 struct request *requests = 0, *requests_last = 0;
 
@@ -1271,7 +1275,7 @@ static void process_delay(struct flow* flow)
 	current_delay = time_diff(data, &now);
 
 	if (current_delay < 0) {
-		logging(LOG_CRIT, "calculated malformed delay of flow "
+		logging(LOG_NOTICE, "calculated malformed delay of flow "
 			"%d (rtt = %.3lfms) (clocks out-of-sync?), ignoring",
 			flow->id, current_delay * 1e3);
 		current_delay = NAN;
