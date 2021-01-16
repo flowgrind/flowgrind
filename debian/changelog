@@ -1,4 +1,4 @@
-flowgrind (0.8.2) unstable; urgency=medium
+flowgrind (0.8.2-1) unstable; urgency=medium
 
   * Fix version number (flowgrind -version)
   * Fix minor groff issue in manual page
