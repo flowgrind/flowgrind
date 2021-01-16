@@ -1,3 +1,8 @@
+Release 0.8.1 (2021-01-16)
+- Fix compability with GCC10 (thanks to Jeroen Roovers <jer@gentoo.org>)
+- lower loglevel of delay calculation error to prevent log overflow
+- New website url: https://flowgrind.github.io (Closes #228)
+
 Release 0.8.0 (2016-09-19)
 - Happy Birthday Anna!
 - Now uses UUID to uniquely identify daemons with same address (unfortunately that makes flowgrind incompatible with earlier releases)
