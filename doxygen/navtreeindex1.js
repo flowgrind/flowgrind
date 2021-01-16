@@ -1,5 +1,7 @@
 var NAVTREEINDEX1 =
 {
+"fg__affinity_8c.html#af12f470efcaaa72601cc7086daea38ed":[3,0,0,8,1],
+"fg__affinity_8c_source.html":[3,0,0,8],
 "fg__affinity_8h.html":[3,0,0,9],
 "fg__affinity_8h.html#a19602dbf51429aacb43173deb6544feb":[3,0,0,9,0],
 "fg__affinity_8h.html#a19602dbf51429aacb43173deb6544feba648ba5f90c79792a66377e61a794ab0e":[3,0,0,9,0,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX1 =
 "fg__socket_8h.html#a1edeef337ec1070a0beead92d5071a81":[3,0,0,32,7],
 "fg__socket_8h.html#a2534f3f0b9b8526b2e30d9941f7e2dcf":[3,0,0,32,21],
 "fg__socket_8h.html#a28705e5f3da83f4c8721e547c41687c4":[3,0,0,32,6],
-"fg__socket_8h.html#a2c49d58f3483817990c8b7c732891ffd":[3,0,0,32,11],
-"fg__socket_8h.html#a3812672e43521addb0f94be5ec70a2c7":[3,0,0,32,16],
-"fg__socket_8h.html#a5c7f422f6d53d7f12b6aeba065bb94f2":[3,0,0,32,1]
+"fg__socket_8h.html#a2c49d58f3483817990c8b7c732891ffd":[3,0,0,32,11]
 };

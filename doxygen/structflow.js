@@ -34,7 +34,7 @@ var structflow =
     [ "source_settings", "structflow.html#a79abf940bb0e1fbdf027152aa00ba51a", null ],
     [ "start_timestamp", "structflow.html#aa1cfbf41ded33437a919e4ec1a7eb0c0", null ],
     [ "state", "structflow.html#ab7176e838d97cf4f2e2df0fe8ca31baa", null ],
-    [ "statistics", "structflow.html#a77af214aa02f403ca06d3734bb58c68b", null ],
+    [ "statistics", "structflow.html#aa2528505c57e84cca76a29fd0881fd37", null ],
     [ "stop_timestamp", "structflow.html#a9a3f07a95a7e900577be6067ccd0779d", null ],
     [ "write_block", "structflow.html#a38257f57bf1c4d26c1d50c02630c744d", null ]
 ];

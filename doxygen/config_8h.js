@@ -6,7 +6,6 @@ var config_8h =
     [ "_GNU_SOURCE", "config_8h.html#a369266c24eacffb87046522897a570d5", null ],
     [ "_POSIX_PTHREAD_SEMANTICS", "config_8h.html#ad44924736167f82a10ae2891fc98a608", null ],
     [ "_TANDEM_SOURCE", "config_8h.html#aca41d2cbf86c3393115fc92f87289dff", null ],
-    [ "DEBUG", "config_8h.html#ad72dbcf6d0153db1b8d8a58001feed83", null ],
     [ "HAVE__BOOL", "config_8h.html#a862ffdbac7ac8323712310a418b7d9a3", null ],
     [ "HAVE_ARPA_INET_H", "config_8h.html#a7d1a71461e07569d0c9003da24c30a59", null ],
     [ "HAVE_ASPRINTF", "config_8h.html#a08935f8da6105b08780306b7485c6de9", null ],

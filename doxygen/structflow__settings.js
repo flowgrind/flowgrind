@@ -9,7 +9,7 @@ var structflow__settings =
     [ "dscp", "structflow__settings.html#a06c29bb39cf7a6004178e5582949990a", null ],
     [ "duration", "structflow__settings.html#a4f29273c21baece6aabd20a46efdc0c8", null ],
     [ "elcn", "structflow__settings.html#a773a21e329a31811844f9f26da458e62", null ],
-    [ "extra_socket_options", "structflow__settings.html#a22210a3991fe95e08e4b43e1840b0394", null ],
+    [ "extra_socket_options", "structflow__settings.html#a44ef35fc53d7df357f7de2e851694273", null ],
     [ "flow_control", "structflow__settings.html#a9b37b291808623d607848c54c48f19f4", null ],
     [ "flow_id", "structflow__settings.html#a1144784676f7ead2cf557fa96838ddb2", null ],
     [ "interpacket_gap_trafgen_options", "structflow__settings.html#ab0eca59327ee781cddb8fd170bc6d28e", null ],
