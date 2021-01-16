@@ -18,7 +18,7 @@
 #
 
 # Initialization & setup
-AC_INIT([Flowgrind], [0.8.0], [https://github.com/flowgrind/flowgrind/issues],
+AC_INIT([Flowgrind], [0.8.2], [https://github.com/flowgrind/flowgrind/issues],
 	[flowgrind], [https://flowgrind.github.io])
 AC_COPYRIGHT([Copyright (C) 2007 - 2021 Flowgrind authors])
 
