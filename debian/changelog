@@ -1,4 +1,12 @@
-flowgrind (0.8.1) UNRELEASED; urgency=medium
+flowgrind (0.8.2) unstable; urgency=medium
+
+  * Fix version number (flowgrind -version)
+  * Fix minor groff issue in manual page
+  * Update debian packaging
+
+ -- Arnd Hannemann <arnd@arndnet.de>  Sat, 16 Jan 2021 19:16:40 +0100
+
+flowgrind (0.8.1) unstable; urgency=medium
 
   * Use secure URI in Vcs control header.
   * Fix website url.

@@ -1,3 +1,8 @@
+Release 0.8.2 (2021-01-16)
+- Fix version number (flowgrind -version)
+- Fix minor groff issue in manual page
+- Update debian packaging
+
 Release 0.8.1 (2021-01-16)
 - Fix compability with GCC10 (thanks to Jeroen Roovers <jer@gentoo.org>)
 - lower loglevel of delay calculation error to prevent log overflow
