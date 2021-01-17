@@ -16,7 +16,7 @@ flowgrind (0.8.1) unstable; urgency=medium
 
   * Use secure URI in Vcs control header.
   * Fix website url.
-  * daemon: Make daemon_thread, dump_prefix, dump_dir global
+  * daemon: Make daemon_thread, dump_prefix, dump_dir global (Closes: #957214)
 
  -- Jelmer Vernooĳ <jelmer@debian.org>  Fri, 14 Sep 2018 01:09:06 +0100
 
