@@ -1,3 +1,9 @@
+flowgrind (0.8.2-2) unstable; urgency=medium
+
+  * Build-Depend on libxmlrpc-core-c3-dev.
+
+ -- Christoph Berg <myon@debian.org>  Sun, 17 Jan 2021 14:09:35 +0100
+
 flowgrind (0.8.2-1) unstable; urgency=medium
 
   * Fix version number (flowgrind -version)
