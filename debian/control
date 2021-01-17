@@ -2,7 +2,7 @@ Source: flowgrind
 Section: net
 Priority: optional
 Maintainer: Arnd Hannemann <arnd@arndnet.de>
-Build-Depends: debhelper (>= 10), autotools-dev, libxmlrpc-c3-dev | libxmlrpc-core-c3-dev, libcurl4-gnutls-dev | libcurl4-openssl-dev, libgsl0-dev, libpcap-dev, uuid-dev
+Build-Depends: debhelper (>= 10), autotools-dev, libxmlrpc-core-c3-dev, libcurl4-gnutls-dev | libcurl4-openssl-dev, libgsl0-dev, libpcap-dev, uuid-dev
 Standards-Version: 4.5.1
 Homepage: https://flowgrind.github.io
 Vcs-Git: https://github.com/flowgrind/flowgrind.git
