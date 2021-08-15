@@ -1,4 +1,10 @@
-flowgrind (0.8.2) unstable; urgency=medium
+flowgrind (0.8.2-2) unstable; urgency=medium
+
+  * Build-Depend on libxmlrpc-core-c3-dev.
+
+ -- Christoph Berg <myon@debian.org>  Sun, 17 Jan 2021 14:09:35 +0100
+
+flowgrind (0.8.2-1) unstable; urgency=medium
 
   * Fix version number (flowgrind -version)
   * Fix minor groff issue in manual page
@@ -10,7 +16,7 @@ flowgrind (0.8.1) unstable; urgency=medium
 
   * Use secure URI in Vcs control header.
   * Fix website url.
-  * daemon: Make daemon_thread, dump_prefix, dump_dir global
+  * daemon: Make daemon_thread, dump_prefix, dump_dir global (Closes: #957214)
 
  -- Jelmer Vernooĳ <jelmer@debian.org>  Fri, 14 Sep 2018 01:09:06 +0100
 
